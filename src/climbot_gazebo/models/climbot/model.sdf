@@ -243,6 +243,28 @@
       <min_angular_acceleration>-1.50</min_angular_acceleration>
     </plugin>
 
+    <!--
+      The lateral compliance is intentionally non-zero. WheelSlip scales the
+      resulting force-dependent slip with wheel speed, so the stopped robot
+      remains supported by static friction while a moving robot creeps down
+      under gravity. The estimated normal load is 70% of 220 N, split equally.
+    -->
+    <plugin filename="gz-sim-wheel-slip-system"
+            name="gz::sim::systems::WheelSlip">
+      <wheel link_name="left_wheel_link">
+        <wheel_radius>0.08</wheel_radius>
+        <wheel_normal_force>77.0</wheel_normal_force>
+        <slip_compliance_lateral>0.20</slip_compliance_lateral>
+        <slip_compliance_longitudinal>0.02</slip_compliance_longitudinal>
+      </wheel>
+      <wheel link_name="right_wheel_link">
+        <wheel_radius>0.08</wheel_radius>
+        <wheel_normal_force>77.0</wheel_normal_force>
+        <slip_compliance_lateral>0.20</slip_compliance_lateral>
+        <slip_compliance_longitudinal>0.02</slip_compliance_longitudinal>
+      </wheel>
+    </plugin>
+
     <plugin filename="gz-sim-pose-publisher-system"
             name="gz::sim::systems::PosePublisher">
       <publish_model_pose>true</publish_model_pose>

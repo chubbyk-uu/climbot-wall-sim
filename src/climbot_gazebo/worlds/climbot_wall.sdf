@@ -1,0 +1,289 @@
+<?xml version="1.0"?>
+<sdf version="1.10">
+  <world name="climbot_wall">
+    <gravity>0 0 -9.81</gravity>
+    <physics name="physics" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-apply-link-wrench-system"
+            name="gz::sim::systems::ApplyLinkWrench">
+      <persistent>
+        <entity_name>climbot</entity_name>
+        <entity_type>model</entity_type>
+        <force>-220 0 0</force>
+        <torque>0 0 0</torque>
+      </persistent>
+    </plugin>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>4 -2 8 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+      <direction>-1 0.2 -0.4</direction>
+    </light>
+
+    <model name="wall">
+      <static>true</static>
+      <link name="wall_link">
+        <pose>0 0 4 0 0 0</pose>
+        <collision name="wall_collision">
+          <geometry>
+            <box>
+              <size>0.10 10.0 8.0</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.1</mu>
+                <mu2>1.1</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="wall_visual">
+          <geometry>
+            <box>
+              <size>0.10 10.0 8.0</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.62 0.64 0.68 1</ambient>
+            <diffuse>0.72 0.74 0.78 1</diffuse>
+            <specular>0.12 0.12 0.12 1</specular>
+          </material>
+        </visual>
+        <!-- High-contrast one-metre grid on the 10 m x 8 m wall front face. -->
+        <visual name="grid_vertical_m4">
+          <pose>0.053 -4 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_vertical_m3">
+          <pose>0.053 -3 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_vertical_m2">
+          <pose>0.053 -2 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_vertical_m1">
+          <pose>0.053 -1 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_vertical_0">
+          <pose>0.053 0 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.035 8.0</size></box></geometry>
+          <material><ambient>0.10 0.12 0.16 1</ambient><diffuse>0.10 0.12 0.16 1</diffuse></material>
+        </visual>
+        <visual name="grid_vertical_p1">
+          <pose>0.053 1 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_vertical_p2">
+          <pose>0.053 2 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_vertical_p3">
+          <pose>0.053 3 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_vertical_p4">
+          <pose>0.053 4 0 0 0 0</pose>
+          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_horizontal_m3">
+          <pose>0.053 0 -3 0 0 0</pose>
+          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_horizontal_m2">
+          <pose>0.053 0 -2 0 0 0</pose>
+          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_horizontal_m1">
+          <pose>0.053 0 -1 0 0 0</pose>
+          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_horizontal_0">
+          <pose>0.053 0 0 0 0 0</pose>
+          <geometry><box><size>0.006 10.0 0.035</size></box></geometry>
+          <material><ambient>0.10 0.12 0.16 1</ambient><diffuse>0.10 0.12 0.16 1</diffuse></material>
+        </visual>
+        <visual name="grid_horizontal_p1">
+          <pose>0.053 0 1 0 0 0</pose>
+          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_horizontal_p2">
+          <pose>0.053 0 2 0 0 0</pose>
+          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+        <visual name="grid_horizontal_p3">
+          <pose>0.053 0 3 0 0 0</pose>
+          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
+          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://climbot</uri>
+      <!-- local +X -> world +Y, local +Y -> world +Z, local +Z -> world +X -->
+      <pose>0.051 0 2.0 1.57079632679 0 1.57079632679</pose>
+    </include>
+
+    <gui fullscreen="false">
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>Climbot Wall Simulation</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.5 0.5 0.5</ambient_light>
+        <background_color>0.12 0.14 0.18</background_color>
+        <!-- Front-on view centred on the robot's initial pose. -->
+        <camera_pose>2.8 0 2.0 0 0 3.14159265359</camera_pose>
+      </plugin>
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="SelectEntities" name="Select Entities">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="TransformControl" name="Transform control">
+        <gz-gui>
+          <property key="x" type="double">0</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">250</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#777777</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="Screenshot" name="Screenshot">
+        <gz-gui>
+          <property key="x" type="double">250</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">50</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#777777</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+      </plugin>
+      <plugin filename="WorldStats" name="World stats">
+        <gz-gui>
+          <title>World stats</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">110</property>
+          <property type="double" key="width">290</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+        </gz-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui>
+          <property type="string" key="state">docked</property>
+          <property type="double" key="width">260</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <gz-gui>
+          <property type="string" key="state">docked_collapsed</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="ViewAngle" name="View angle">
+        <gz-gui>
+          <property type="string" key="state">docked_collapsed</property>
+        </gz-gui>
+      </plugin>
+    </gui>
+  </world>
+</sdf>
