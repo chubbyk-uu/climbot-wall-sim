@@ -1,0 +1,55 @@
+# Single source of truth for the robot's geometry, mass and drive limits.
+#
+# The Gazebo model (model.sdf.xacro) and the URDF used by robot_state_publisher
+# (climbot.urdf.xacro) are both rendered from this file, so the simulated body
+# and the published TF tree can never disagree.
+robot:
+  base:
+    size_xyz: [0.52, 0.44, 0.10]
+    mass_kg: 12.0
+    # Body centre in the model frame. The z value is the centre-of-mass
+    # standoff from the wall: gravity acting on it transfers normal load
+    # between the drive wheels and the rear caster whenever the robot moves
+    # up or down the wall, so it directly sets the anti-tip margin.
+    centre_xyz: [-0.03, 0.0, 0.15]
+
+  drive_wheel:
+    radius_m: 0.08
+    width_m: 0.045
+    mass_kg: 1.0
+    # Distance ahead of the model origin, and left-right track width.
+    axle_x_m: 0.08
+    separation_m: 0.43
+    mu: 1.1
+    # Lateral compliance is deliberately non-zero: WheelSlip scales
+    # force-dependent slip with wheel speed, so a stopped robot stays held by
+    # static friction while a moving one creeps down under gravity.
+    slip_lateral: 0.12
+    slip_longitudinal: 0.04
+    # Nominal load used to scale the slip compliance. The measured load varies
+    # widely with attitude, see results/normal_loads_before_p2.csv.
+    nominal_normal_force_n: 77.0
+
+  caster:
+    radius_m: 0.05
+    mass_kg: 0.5
+    centre_x_m: -0.25
+    mu: 0.35
+
+  drive:
+    max_linear_velocity_mps: 0.30
+    max_angular_velocity_rps: 1.20
+    max_linear_acceleration_mps2: 0.40
+    max_angular_acceleration_rps2: 1.50
+    joint_effort_nm: 80.0
+    joint_velocity_rps: 30.0
+    joint_damping: 0.05
+    odom_publish_frequency_hz: 50.0
+
+  imu:
+    update_rate_hz: 100.0
+    angular_velocity_stddev: 0.0002
+    linear_acceleration_stddev: 0.017
+
+  contact:
+    update_rate_hz: 50.0

@@ -1,0 +1,330 @@
+<?xml version="1.0"?>
+<!--
+  Rendered at launch time from config/robot.yaml, which is shared with the
+  URDF that robot_state_publisher uses. No dimension may be restated here.
+-->
+<sdf version="1.10" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="base_length" default="0.52"/>
+  <xacro:arg name="base_width" default="0.44"/>
+  <xacro:arg name="base_thickness" default="0.10"/>
+  <xacro:arg name="base_mass" default="12.0"/>
+  <xacro:arg name="base_x" default="-0.03"/>
+  <xacro:arg name="base_y" default="0.0"/>
+  <xacro:arg name="base_z" default="0.15"/>
+  <xacro:arg name="wheel_radius" default="0.08"/>
+  <xacro:arg name="wheel_width" default="0.045"/>
+  <xacro:arg name="wheel_mass" default="1.0"/>
+  <xacro:arg name="wheel_axle_x" default="0.08"/>
+  <xacro:arg name="wheel_separation" default="0.43"/>
+  <xacro:arg name="wheel_mu" default="1.1"/>
+  <xacro:arg name="slip_lateral" default="0.12"/>
+  <xacro:arg name="slip_longitudinal" default="0.04"/>
+  <xacro:arg name="nominal_normal_force" default="77.0"/>
+  <xacro:arg name="caster_radius" default="0.05"/>
+  <xacro:arg name="caster_mass" default="0.5"/>
+  <xacro:arg name="caster_x" default="-0.25"/>
+  <xacro:arg name="caster_mu" default="0.35"/>
+  <xacro:arg name="max_linear_velocity" default="0.30"/>
+  <xacro:arg name="max_angular_velocity" default="1.20"/>
+  <xacro:arg name="max_linear_acceleration" default="0.40"/>
+  <xacro:arg name="max_angular_acceleration" default="1.50"/>
+  <xacro:arg name="joint_effort" default="80.0"/>
+  <xacro:arg name="joint_velocity" default="30.0"/>
+  <xacro:arg name="joint_damping" default="0.05"/>
+  <xacro:arg name="odom_frequency" default="50.0"/>
+  <xacro:arg name="imu_rate" default="100.0"/>
+  <xacro:arg name="imu_gyro_stddev" default="0.0002"/>
+  <xacro:arg name="imu_accel_stddev" default="0.017"/>
+  <xacro:arg name="contact_rate" default="50.0"/>
+
+  <xacro:property name="length" value="$(arg base_length)"/>
+  <xacro:property name="width" value="$(arg base_width)"/>
+  <xacro:property name="thickness" value="$(arg base_thickness)"/>
+  <xacro:property name="base_mass" value="$(arg base_mass)"/>
+  <xacro:property name="wheel_radius" value="$(arg wheel_radius)"/>
+  <xacro:property name="wheel_width" value="$(arg wheel_width)"/>
+  <xacro:property name="wheel_mass" value="$(arg wheel_mass)"/>
+  <xacro:property name="wheel_axle_x" value="$(arg wheel_axle_x)"/>
+  <xacro:property name="half_track" value="${$(arg wheel_separation) / 2.0}"/>
+  <xacro:property name="caster_radius" value="$(arg caster_radius)"/>
+  <xacro:property name="caster_mass" value="$(arg caster_mass)"/>
+
+  <!-- Solid-box, solid-cylinder and solid-sphere inertias, so a size change
+       never leaves a stale inertia tensor behind. -->
+  <xacro:property name="base_ixx" value="${base_mass * (width * width + thickness * thickness) / 12.0}"/>
+  <xacro:property name="base_iyy" value="${base_mass * (length * length + thickness * thickness) / 12.0}"/>
+  <xacro:property name="base_izz" value="${base_mass * (length * length + width * width) / 12.0}"/>
+  <xacro:property name="wheel_ixx" value="${wheel_mass * (3.0 * wheel_radius * wheel_radius + wheel_width * wheel_width) / 12.0}"/>
+  <xacro:property name="wheel_izz" value="${wheel_mass * wheel_radius * wheel_radius / 2.0}"/>
+  <xacro:property name="caster_i" value="${0.4 * caster_mass * caster_radius * caster_radius}"/>
+
+  <xacro:macro name="drive_wheel" params="side sign">
+    <link name="${side}_wheel_link">
+      <pose>${wheel_axle_x} ${sign * half_track} ${wheel_radius} 1.57079632679 0 0</pose>
+      <inertial>
+        <mass>${wheel_mass}</mass>
+        <inertia>
+          <ixx>${wheel_ixx}</ixx>
+          <iyy>${wheel_ixx}</iyy>
+          <izz>${wheel_izz}</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name="${side}_wheel_collision">
+        <geometry>
+          <cylinder>
+            <radius>${wheel_radius}</radius>
+            <length>${wheel_width}</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>$(arg wheel_mu)</mu>
+              <mu2>$(arg wheel_mu)</mu2>
+              <fdir1>0 0 1</fdir1>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="${side}_wheel_visual">
+        <geometry>
+          <cylinder>
+            <radius>${wheel_radius}</radius>
+            <length>${wheel_width}</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.04 0.04 0.04 1</ambient>
+          <diffuse>0.08 0.08 0.08 1</diffuse>
+        </material>
+      </visual>
+      <!-- Wall-contact normal load, recorded for the load-distribution test.
+           Evaluation only: no control loop consumes this. -->
+      <sensor name="${side}_wheel_contact" type="contact">
+        <always_on>true</always_on>
+        <update_rate>$(arg contact_rate)</update_rate>
+        <contact>
+          <collision>${side}_wheel_collision</collision>
+        </contact>
+      </sensor>
+    </link>
+
+    <joint name="${side}_wheel_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>${side}_wheel_link</child>
+      <axis>
+        <xyz expressed_in="__model__">0 1 0</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+          <effort>$(arg joint_effort)</effort>
+          <velocity>$(arg joint_velocity)</velocity>
+        </limit>
+        <dynamics>
+          <damping>$(arg joint_damping)</damping>
+        </dynamics>
+      </axis>
+    </joint>
+  </xacro:macro>
+
+  <model name="climbot" canonical_link="base_link">
+    <self_collide>false</self_collide>
+
+    <!--
+      Robot frame follows REP 103: +X forward, +Y left, +Z away from
+      the driving surface. The world rotates this model onto the wall.
+    -->
+    <link name="base_link">
+      <pose>$(arg base_x) $(arg base_y) $(arg base_z) 0 0 0</pose>
+      <inertial>
+        <mass>${base_mass}</mass>
+        <inertia>
+          <ixx>${base_ixx}</ixx>
+          <iyy>${base_iyy}</iyy>
+          <izz>${base_izz}</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name="base_collision">
+        <geometry>
+          <box>
+            <size>${length} ${width} ${thickness}</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="base_visual">
+        <geometry>
+          <box>
+            <size>${length} ${width} ${thickness}</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.08 0.22 0.55 1</ambient>
+          <diffuse>0.10 0.32 0.80 1</diffuse>
+          <specular>0.25 0.25 0.25 1</specular>
+        </material>
+      </visual>
+      <visual name="front_marker">
+        <pose>${length / 2.0 - 0.03} 0 ${thickness / 2.0 + 0.011} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07 ${width * 0.41} 0.025</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.9 0.25 0.05 1</ambient>
+          <diffuse>1.0 0.32 0.05 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- The IMU is rigidly mounted at the body origin, so imu_link and
+           base_link differ only by the identity transform published by
+           robot_state_publisher. -->
+      <sensor name="imu" type="imu">
+        <always_on>true</always_on>
+        <update_rate>$(arg imu_rate)</update_rate>
+        <topic>/imu</topic>
+        <gz_frame_id>base_link</gz_frame_id>
+        <imu>
+          <angular_velocity>
+            <x><noise type="gaussian"><mean>0</mean><stddev>$(arg imu_gyro_stddev)</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>$(arg imu_gyro_stddev)</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>$(arg imu_gyro_stddev)</stddev></noise></z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x><noise type="gaussian"><mean>0</mean><stddev>$(arg imu_accel_stddev)</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>$(arg imu_accel_stddev)</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>$(arg imu_accel_stddev)</stddev></noise></z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+    </link>
+
+    <xacro:drive_wheel side="left" sign="1"/>
+    <xacro:drive_wheel side="right" sign="-1"/>
+
+    <link name="caster_ball_link">
+      <pose>$(arg caster_x) 0 ${caster_radius} 0 0 0</pose>
+      <inertial>
+        <mass>${caster_mass}</mass>
+        <inertia>
+          <ixx>${caster_i}</ixx>
+          <iyy>${caster_i}</iyy>
+          <izz>${caster_i}</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name="caster_collision">
+        <geometry>
+          <sphere>
+            <radius>${caster_radius}</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>$(arg caster_mu)</mu>
+              <mu2>$(arg caster_mu)</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="caster_visual">
+        <geometry>
+          <sphere>
+            <radius>${caster_radius}</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <ambient>0.15 0.15 0.15 1</ambient>
+          <diffuse>0.25 0.25 0.25 1</diffuse>
+        </material>
+      </visual>
+
+      <sensor name="caster_contact" type="contact">
+        <always_on>true</always_on>
+        <update_rate>$(arg contact_rate)</update_rate>
+        <contact>
+          <collision>caster_collision</collision>
+        </contact>
+      </sensor>
+    </link>
+
+    <joint name="caster_ball_joint" type="ball">
+      <parent>base_link</parent>
+      <child>caster_ball_link</child>
+    </joint>
+
+    <plugin filename="gz-sim-diff-drive-system"
+            name="gz::sim::systems::DiffDrive">
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>$(arg wheel_separation)</wheel_separation>
+      <wheel_radius>${wheel_radius}</wheel_radius>
+      <topic>/cmd_vel</topic>
+      <odom_topic>/model/climbot/odometry</odom_topic>
+      <tf_topic>/model/climbot/tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_link</child_frame_id>
+      <odom_publish_frequency>$(arg odom_frequency)</odom_publish_frequency>
+      <max_linear_velocity>$(arg max_linear_velocity)</max_linear_velocity>
+      <min_linear_velocity>${-1.0 * float("$(arg max_linear_velocity)")}</min_linear_velocity>
+      <max_angular_velocity>$(arg max_angular_velocity)</max_angular_velocity>
+      <min_angular_velocity>${-1.0 * float("$(arg max_angular_velocity)")}</min_angular_velocity>
+      <max_linear_acceleration>$(arg max_linear_acceleration)</max_linear_acceleration>
+      <min_linear_acceleration>${-1.0 * float("$(arg max_linear_acceleration)")}</min_linear_acceleration>
+      <max_angular_acceleration>$(arg max_angular_acceleration)</max_angular_acceleration>
+      <min_angular_acceleration>${-1.0 * float("$(arg max_angular_acceleration)")}</min_angular_acceleration>
+    </plugin>
+
+    <!-- Wheel angles for robot_state_publisher's TF tree. -->
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>/model/climbot/joint_state</topic>
+      <joint_name>left_wheel_joint</joint_name>
+      <joint_name>right_wheel_joint</joint_name>
+    </plugin>
+
+    <plugin filename="gz-sim-wheel-slip-system"
+            name="gz::sim::systems::WheelSlip">
+      <wheel link_name="left_wheel_link">
+        <wheel_radius>${wheel_radius}</wheel_radius>
+        <wheel_normal_force>$(arg nominal_normal_force)</wheel_normal_force>
+        <slip_compliance_lateral>$(arg slip_lateral)</slip_compliance_lateral>
+        <slip_compliance_longitudinal>$(arg slip_longitudinal)</slip_compliance_longitudinal>
+      </wheel>
+      <wheel link_name="right_wheel_link">
+        <wheel_radius>${wheel_radius}</wheel_radius>
+        <wheel_normal_force>$(arg nominal_normal_force)</wheel_normal_force>
+        <slip_compliance_lateral>$(arg slip_lateral)</slip_compliance_lateral>
+        <slip_compliance_longitudinal>$(arg slip_longitudinal)</slip_compliance_longitudinal>
+      </wheel>
+    </plugin>
+
+    <plugin filename="gz-sim-pose-publisher-system"
+            name="gz::sim::systems::PosePublisher">
+      <publish_model_pose>true</publish_model_pose>
+      <publish_link_pose>true</publish_link_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <update_frequency>$(arg odom_frequency)</update_frequency>
+    </plugin>
+
+    <!-- Physical world pose only: this is evaluation truth, not an EKF input. -->
+    <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>100</odom_publish_frequency>
+      <odom_topic>/model/climbot/ground_truth</odom_topic>
+      <odom_covariance_topic>/model/climbot/ground_truth_with_covariance</odom_covariance_topic>
+    </plugin>
+  </model>
+</sdf>

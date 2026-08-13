@@ -1,0 +1,161 @@
+<?xml version="1.0"?>
+<!--
+  TF and visualisation description for robot_state_publisher, rendered from
+  the same config/robot.yaml as the Gazebo model, so the published frames
+  always match the simulated body.
+-->
+<robot name="climbot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="base_length" default="0.52"/>
+  <xacro:arg name="base_width" default="0.44"/>
+  <xacro:arg name="base_thickness" default="0.10"/>
+  <xacro:arg name="base_mass" default="12.0"/>
+  <xacro:arg name="base_x" default="-0.03"/>
+  <xacro:arg name="base_y" default="0.0"/>
+  <xacro:arg name="base_z" default="0.15"/>
+  <xacro:arg name="wheel_radius" default="0.08"/>
+  <xacro:arg name="wheel_width" default="0.045"/>
+  <xacro:arg name="wheel_mass" default="1.0"/>
+  <xacro:arg name="wheel_axle_x" default="0.08"/>
+  <xacro:arg name="wheel_separation" default="0.43"/>
+  <xacro:arg name="caster_radius" default="0.05"/>
+  <xacro:arg name="caster_mass" default="0.5"/>
+  <xacro:arg name="caster_x" default="-0.25"/>
+
+  <xacro:property name="length" value="$(arg base_length)"/>
+  <xacro:property name="width" value="$(arg base_width)"/>
+  <xacro:property name="thickness" value="$(arg base_thickness)"/>
+  <xacro:property name="base_mass" value="$(arg base_mass)"/>
+  <xacro:property name="base_x" value="$(arg base_x)"/>
+  <xacro:property name="base_y" value="$(arg base_y)"/>
+  <xacro:property name="base_z" value="$(arg base_z)"/>
+  <xacro:property name="wheel_radius" value="$(arg wheel_radius)"/>
+  <xacro:property name="wheel_width" value="$(arg wheel_width)"/>
+  <xacro:property name="wheel_mass" value="$(arg wheel_mass)"/>
+  <xacro:property name="caster_radius" value="$(arg caster_radius)"/>
+  <xacro:property name="caster_mass" value="$(arg caster_mass)"/>
+  <xacro:property name="half_track" value="${$(arg wheel_separation) / 2.0}"/>
+
+  <!-- Link poses in the Gazebo model are relative to the model origin, while
+       URDF joints are relative to base_link, so the body centre is removed. -->
+  <xacro:property name="wheel_offset_x" value="${$(arg wheel_axle_x) - base_x}"/>
+  <xacro:property name="wheel_offset_z" value="${wheel_radius - base_z}"/>
+  <xacro:property name="caster_offset_x" value="${$(arg caster_x) - base_x}"/>
+  <xacro:property name="caster_offset_z" value="${caster_radius - base_z}"/>
+
+  <material name="body_blue">
+    <color rgba="0.10 0.32 0.80 1"/>
+  </material>
+  <material name="marker_orange">
+    <color rgba="1.0 0.32 0.05 1"/>
+  </material>
+  <material name="wheel_black">
+    <color rgba="0.08 0.08 0.08 1"/>
+  </material>
+  <material name="caster_grey">
+    <color rgba="0.25 0.25 0.25 1"/>
+  </material>
+
+  <xacro:macro name="drive_wheel" params="side sign">
+    <link name="${side}_wheel_link">
+      <inertial>
+        <mass value="${wheel_mass}"/>
+        <inertia
+          ixx="${wheel_mass * (3.0 * wheel_radius * wheel_radius + wheel_width * wheel_width) / 12.0}"
+          iyy="${wheel_mass * (3.0 * wheel_radius * wheel_radius + wheel_width * wheel_width) / 12.0}"
+          izz="${wheel_mass * wheel_radius * wheel_radius / 2.0}"
+          ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="wheel_black"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${side}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${side}_wheel_link"/>
+      <origin xyz="${wheel_offset_x} ${sign * half_track - base_y} ${wheel_offset_z}"
+              rpy="1.57079632679 0 0"/>
+      <!-- The roll above sends the wheel's local +Z along the model's -Y, so
+           the axle that the Gazebo model states as model +Y is -Z here. -->
+      <axis xyz="0 0 -1"/>
+    </joint>
+  </xacro:macro>
+
+  <link name="base_link">
+    <inertial>
+      <mass value="${base_mass}"/>
+      <inertia
+        ixx="${base_mass * (width * width + thickness * thickness) / 12.0}"
+        iyy="${base_mass * (length * length + thickness * thickness) / 12.0}"
+        izz="${base_mass * (length * length + width * width) / 12.0}"
+        ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="${length} ${width} ${thickness}"/>
+      </geometry>
+      <material name="body_blue"/>
+    </visual>
+    <visual>
+      <origin xyz="${length / 2.0 - 0.03} 0 ${thickness / 2.0 + 0.011}"/>
+      <geometry>
+        <box size="0.07 ${width * 0.41} 0.025"/>
+      </geometry>
+      <material name="marker_orange"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${length} ${width} ${thickness}"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- The IMU sits at the body origin, so this frame is coincident with
+       base_link. It exists so an offset mount only needs robot.yaml changed. -->
+  <link name="imu_link"/>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:drive_wheel side="left" sign="1"/>
+  <xacro:drive_wheel side="right" sign="-1"/>
+
+  <link name="caster_ball_link">
+    <inertial>
+      <mass value="${caster_mass}"/>
+      <inertia ixx="${0.4 * caster_mass * caster_radius * caster_radius}"
+               iyy="${0.4 * caster_mass * caster_radius * caster_radius}"
+               izz="${0.4 * caster_mass * caster_radius * caster_radius}"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="${caster_radius}"/>
+      </geometry>
+      <material name="caster_grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="${caster_radius}"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- URDF has no ball joint. The caster's own spin drives nothing further
+       down the tree, so a fixed frame at its centre is enough for TF. -->
+  <joint name="caster_ball_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_ball_link"/>
+    <origin xyz="${caster_offset_x} ${-base_y} ${caster_offset_z}" rpy="0 0 0"/>
+  </joint>
+</robot>

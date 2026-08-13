@@ -1,6 +1,7 @@
 """Launch the wall robot with ROS 2 command and odometry bridges."""
 
 import os
+import shutil
 import tempfile
 
 from ament_index_python.packages import get_package_share_directory
@@ -24,6 +25,7 @@ CONTACT_TOPIC_RIGHT = (
     _CONTACT_PREFIX + '/right_wheel_link/sensor/right_wheel_contact/contact')
 CONTACT_TOPIC_CASTER = (
     _CONTACT_PREFIX + '/caster_ball_link/sensor/caster_contact/contact')
+JOINT_STATE_TOPIC = '/model/climbot/joint_state'
 
 
 def running_on_wsl():
@@ -72,15 +74,84 @@ def render_world(package_share):
     return handle.name
 
 
+def robot_mappings(package_share):
+    """Flatten robot.yaml into the xacro arguments both templates accept."""
+    with open(os.path.join(package_share, 'config', 'robot.yaml')) as handle:
+        robot = yaml.safe_load(handle)['robot']
+    base = robot['base']
+    wheel = robot['drive_wheel']
+    caster = robot['caster']
+    drive = robot['drive']
+    imu = robot['imu']
+    return {
+        'base_length': repr(float(base['size_xyz'][0])),
+        'base_width': repr(float(base['size_xyz'][1])),
+        'base_thickness': repr(float(base['size_xyz'][2])),
+        'base_mass': repr(float(base['mass_kg'])),
+        'base_x': repr(float(base['centre_xyz'][0])),
+        'base_y': repr(float(base['centre_xyz'][1])),
+        'base_z': repr(float(base['centre_xyz'][2])),
+        'wheel_radius': repr(float(wheel['radius_m'])),
+        'wheel_width': repr(float(wheel['width_m'])),
+        'wheel_mass': repr(float(wheel['mass_kg'])),
+        'wheel_axle_x': repr(float(wheel['axle_x_m'])),
+        'wheel_separation': repr(float(wheel['separation_m'])),
+        'wheel_mu': repr(float(wheel['mu'])),
+        'slip_lateral': repr(float(wheel['slip_lateral'])),
+        'slip_longitudinal': repr(float(wheel['slip_longitudinal'])),
+        'nominal_normal_force': repr(float(wheel['nominal_normal_force_n'])),
+        'caster_radius': repr(float(caster['radius_m'])),
+        'caster_mass': repr(float(caster['mass_kg'])),
+        'caster_x': repr(float(caster['centre_x_m'])),
+        'caster_mu': repr(float(caster['mu'])),
+        'max_linear_velocity': repr(float(drive['max_linear_velocity_mps'])),
+        'max_angular_velocity': repr(float(drive['max_angular_velocity_rps'])),
+        'max_linear_acceleration': repr(
+            float(drive['max_linear_acceleration_mps2'])),
+        'max_angular_acceleration': repr(
+            float(drive['max_angular_acceleration_rps2'])),
+        'joint_effort': repr(float(drive['joint_effort_nm'])),
+        'joint_velocity': repr(float(drive['joint_velocity_rps'])),
+        'joint_damping': repr(float(drive['joint_damping'])),
+        'odom_frequency': repr(float(drive['odom_publish_frequency_hz'])),
+        'imu_rate': repr(float(imu['update_rate_hz'])),
+        'imu_gyro_stddev': repr(float(imu['angular_velocity_stddev'])),
+        'imu_accel_stddev': repr(float(imu['linear_acceleration_stddev'])),
+        'contact_rate': repr(float(robot['contact']['update_rate_hz'])),
+    }
+
+
+def render_robot(package_share):
+    """Render the Gazebo model and the URDF from one robot description."""
+    mappings = robot_mappings(package_share)
+    source_dir = os.path.join(package_share, 'models', 'climbot')
+    # Gazebo resolves model://climbot by directory name, so the rendered model
+    # is written into a matching directory alongside its unchanged manifest.
+    model_root = tempfile.mkdtemp(prefix='climbot_model_')
+    model_dir = os.path.join(model_root, 'climbot')
+    os.makedirs(model_dir)
+    shutil.copy(os.path.join(source_dir, 'model.config'), model_dir)
+    model = xacro.process_file(
+        os.path.join(source_dir, 'model.sdf.xacro'), mappings=mappings)
+    with open(os.path.join(model_dir, 'model.sdf'), 'w') as handle:
+        handle.write(model.toprettyxml(indent='  '))
+    urdf = xacro.process_file(
+        os.path.join(source_dir, 'climbot.urdf.xacro'), mappings=mappings)
+    return model_root, urdf.toxml()
+
+
 def launch_setup(context, *args, **kwargs):
     """Build the actions that depend on resolved launch configurations."""
     package_share = get_package_share_directory('climbot_gazebo')
     ros_gz_share = get_package_share_directory('ros_gz_sim')
     world = render_world(package_share)
+    model_path, robot_description = render_robot(package_share)
     wall_config = os.path.join(package_share, 'config', 'wall.yaml')
     ekf_config = os.path.join(package_share, 'config', 'ekf_wall.yaml')
-    model_path = os.path.join(package_share, 'models')
     existing_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+
+    with open(wall_config) as handle:
+        wall = yaml.safe_load(handle)['wall']
 
     actions = [
         SetEnvironmentVariable(
@@ -125,6 +196,7 @@ def launch_setup(context, *args, **kwargs):
             '/model/climbot/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/model/climbot/ground_truth@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/imu@sensor_msgs/msg/Imu@gz.msgs.IMU',
+            JOINT_STATE_TOPIC + '@sensor_msgs/msg/JointState[gz.msgs.Model',
             # Contact sensors ignore their <topic> tag, so the fully qualified
             # Gazebo names are bridged and remapped to short ROS topics below.
             CONTACT_TOPIC_LEFT + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
@@ -135,9 +207,52 @@ def launch_setup(context, *args, **kwargs):
             (CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
             (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
             (CONTACT_TOPIC_CASTER, '/contact/caster'),
+            (JOINT_STATE_TOPIC, '/joint_states'),
         ],
         parameters=[{
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
+        }],
+        output='screen',
+    ))
+
+    # world -> wall -> odom -> base_link -> {imu, wheels, caster}. The wall
+    # work frame and odom are the same frame by construction: the total
+    # station already reports wall coordinates, so the link is the identity.
+    actions.append(Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='world_to_wall',
+        arguments=[
+            '--x', str(wall['origin_xyz'][0]),
+            '--y', str(wall['origin_xyz'][1]),
+            '--z', str(wall['origin_xyz'][2]),
+            '--roll', str(wall['origin_rpy'][0]),
+            '--pitch', str(wall['origin_rpy'][1]),
+            '--yaw', str(wall['origin_rpy'][2]),
+            '--frame-id', 'world', '--child-frame-id', 'wall',
+        ],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+    ))
+
+    actions.append(Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='wall_to_odom',
+        arguments=[
+            '--x', '0', '--y', '0', '--z', '0',
+            '--roll', '0', '--pitch', '0', '--yaw', '0',
+            '--frame-id', 'wall', '--child-frame-id', 'odom',
+        ],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+    ))
+
+    actions.append(Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        parameters=[{
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'robot_description': robot_description,
         }],
         output='screen',
     ))
