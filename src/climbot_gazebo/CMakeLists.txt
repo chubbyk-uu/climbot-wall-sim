@@ -12,6 +12,7 @@ install(
   PROGRAMS
     scripts/evaluate_localization.py
     scripts/total_station_sim.py
+    scripts/wall_imu_adapter.py
     scripts/wall_wheel_odom_adapter.py
   DESTINATION lib/${PROJECT_NAME}
 )

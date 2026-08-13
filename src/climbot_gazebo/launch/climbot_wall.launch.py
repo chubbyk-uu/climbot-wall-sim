@@ -89,6 +89,18 @@ def generate_launch_description():
         output='screen',
     )
 
+    imu_adapter = Node(
+        package='climbot_gazebo',
+        executable='wall_imu_adapter.py',
+        name='wall_imu_adapter',
+        parameters=[{
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'orientation_stddev_rad': LaunchConfiguration(
+                'imu_orientation_stddev_rad'),
+        }],
+        output='screen',
+    )
+
     ekf = Node(
         package='robot_localization',
         executable='ekf_node',
@@ -131,6 +143,11 @@ def generate_launch_description():
             default_value='0.05',
             description='Wall-wheel yaw-rate one-sigma uncertainty.',
         ),
+        DeclareLaunchArgument(
+            'imu_orientation_stddev_rad',
+            default_value='0.00872664626',
+            description='IMU attitude one-sigma uncertainty in radians.',
+        ),
         gazebo_resources,
         d3d12_driver,
         d3d12_adapter,
@@ -138,5 +155,6 @@ def generate_launch_description():
         bridge,
         total_station,
         wheel_odom_adapter,
+        imu_adapter,
         ekf,
     ])
