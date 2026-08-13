@@ -12,6 +12,17 @@
 | `ros2 launch climbot_control line_tracker.launch.py` | 单段直线跟踪器；从共享描述注入轮距和轮缘硬限值 |
 | `ros2 launch climbot_control coverage_executor.launch.py` | 多段覆盖 Action 执行器；不接入 Nav2 |
 
+已提供两个参数式完整任务演示配置：
+
+| 配置 | 区域 | 路径 |
+| --- | ---: | --- |
+| `coverage_vertical_demo.yaml` | `3.30 × 4.50 m` | 8 条竖向扫描线、15 段 |
+| `coverage_horizontal_demo.yaml` | `4.30 × 1.70 m` | 5 条横向扫描线、9 段 |
+
+联合启动时通过 `config_file:=<配置绝对路径>` 选择演示；同时启动
+`coverage_executor.launch.py use_sim_time:=true`，再由 Action 客户端发送规划器发布的
+`/coverage/task`。
+
 `climbot_wall.launch.py` 的主要 launch 参数：
 
 | 参数 | 默认值 | 含义 |
@@ -57,6 +68,11 @@
 当前 EKF 以 `50 Hz` 发布 `/odometry/filtered`，阶段 E 控制器默认也以 `50 Hz`
 运行。全站仪 `12 Hz` 只表示绝对位置更新频率，控制器不得将每个 50 Hz EKF
 输出误认为新的独立绝对测量。
+
+`evaluate_coverage_execution.py` 的 `execution_timeout_s` 默认是 `120 s`，这是评价工具
+等待整个 Action 的墙钟超时，只适合紧凑回归用例，不是控制器的运动安全限制。上述
+大矩形演示应显式设置 `execution_timeout_s:=600.0`；若评价工具超时，它会主动取消
+Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停车判定。
 
 单段调试节点发布 `/control/segment_complete`（`std_msgs/msg/Bool`，reliable、
 transient local、depth 1）。启动时为 `false`，同时满足终点位置、补偿后航向和停车
