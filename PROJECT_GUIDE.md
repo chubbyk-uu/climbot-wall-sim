@@ -77,14 +77,17 @@
 当前工作区采用以下包结构：
 
 ```text
-climbot_description  共享机器人、墙面工作系和几何工具
-        ↑
-        ├── climbot_gazebo    Gazebo 仿真、传感器适配、EKF 和评估工具
-        ├── climbot_coverage  C++ 覆盖规划与 RViz 可视化
-        └── climbot_control   阶段 E 新建，轨迹跟踪、状态机和看门狗
+climbot_interfaces   阶段 E 新建，覆盖任务消息和执行 Action
+        ↑                          ↑
+climbot_coverage              climbot_control
+        │                          │
+        └──────> climbot_description <──────┘
+                         ↑
+                  climbot_gazebo
 ```
 
-依赖必须从下游指向 `climbot_description`，不得反向依赖。规划器和控制器不得
+`climbot_interfaces` 只定义 ROS 接口，不依赖描述、规划、控制或仿真包。依赖必须
+从下游指向公共接口和 `climbot_description`，不得反向依赖。规划器和控制器不得
 依赖 `climbot_gazebo`，不得读取 Gazebo 真值、WheelSlip、吸附施力或出生位姿。
 
 配置归属必须遵循：
@@ -455,9 +458,10 @@ EKF 实际位置重新生成当前 `TRANSITION` 的直线起点和方向；动�
 - `TRANSITION`：换道和转向下坠补偿段，采集关闭；
 - `RETURN`：任务结束后的返回段，采集关闭。
 
-现有 `nav_msgs/Path` 只表达几何和航向，不能编码线段语义。阶段 E 接入完整任务前，
-必须增加与路径段一一对应的类型元数据或自定义任务消息；不得把 RViz Marker 当作
-控制输入。
+现有 `nav_msgs/Path` 只用于通用显示。第一版权威任务接口冻结为
+`climbot_interfaces/msg/CoverageTask`，将路点、线段类型、覆盖区域、运动区域和
+检测足迹放在同一条消息中原子发布；不得把 RViz Marker 当作控制输入。具体字段、
+校验规则、QoS 和执行 Action 以 [docs/INTERFACES.md](docs/INTERFACES.md) 为准。
 
 ## 10. 自定义轨迹规划与跟踪控制
 

@@ -56,8 +56,9 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 
 ## 下一步顺序
 
-1. 新建 `climbot_control`；
-2. 优先实现 `/cmd_vel` 看门狗；
-3. 实现单段原地对准、直线跟踪和终点停车；
-4. 接入 `/coverage/path` 和完整任务状态机；
-5. 进入阶段 F 的完整覆盖验收。
+1. 新建 `climbot_interfaces` 并实现冻结的 `CoverageTask` 和 `ExecuteCoverage`；
+2. 让规划器原子发布 `/coverage/task` 及派生 `/coverage/path`；
+3. 新建 `climbot_control`，优先实现 `/cmd_vel` 看门狗；
+4. 实现单段原地对准、直线跟踪和终点停车；
+5. 接入 `/coverage/execute` 和完整任务状态机；
+6. 进入阶段 F 的完整覆盖验收。

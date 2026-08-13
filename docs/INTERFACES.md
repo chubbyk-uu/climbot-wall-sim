@@ -1,6 +1,6 @@
 # ROS 2 接口与配置索引
 
-本文档记录当前已实现接口。未来控制器接口尚未冻结，实施时必须同步更新。
+本文档记录当前已实现接口，以及已经冻结但尚未实现的阶段 E 第一版任务与控制接口。
 
 ## 启动入口
 
@@ -101,11 +101,7 @@ safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 矩形点选顺序为 A（左下）、B（右上）；等腰梯形为 A（左下）、B（右上）、
 C（右下）。A、C 的高度取平均值修正为水平底边。
 
-阶段 E 接入前需要补充与相邻 Path 位姿段一一对应的 `SCAN`、`TRANSITION`、
-`RETURN` 类型元数据。该接口尚未冻结；控制器不得从 Marker 的颜色或命名推断
-线段类型。
-
-完整任务接口还必须区分检测覆盖区域 `coverage_region` 和机器人中心安全运动区域
+完整任务接口区分检测覆盖区域 `coverage_region` 和机器人中心安全运动区域
 `motion_region`。以下参数和输出在阶段 E/F 实现，不属于当前规划器已完成接口：
 
 | 项目 | 含义 |
@@ -117,6 +113,130 @@ C（右下）。A、C 的高度取平均值修正为水平底边。
 竖向为主时，控制器以第一次转向后的实际位置为斜直线 `TRANSITION` 起点，第二次
 转向后直接从实际位置开始下一条竖直 `SCAN`，不得逐列倒车返回名义起点。覆盖率
 必须按二维检测足迹重新计算；低于 98% 时增加一条顶部水平收边扫描。
+
+## 阶段 E 冻结接口
+
+### 公共接口包
+
+新增 `climbot_interfaces`，只安装消息和 Action，不包含运行节点。规划器和控制器
+都依赖该包，控制器不得依赖 `climbot_coverage` 的实现库。
+
+### `CoverageTask.msg`
+
+第一版字段冻结为：
+
+```text
+uint8 SWEEP_HORIZONTAL=1
+uint8 SWEEP_VERTICAL=2
+
+uint8 SEGMENT_SCAN=1
+uint8 SEGMENT_TRANSITION=2
+uint8 SEGMENT_RETURN=3
+
+std_msgs/Header header
+string task_id
+uint32 revision
+uint8 sweep_direction
+
+geometry_msgs/Pose[] waypoints
+uint8[] segment_types
+
+geometry_msgs/Polygon coverage_region
+geometry_msgs/Polygon motion_region
+
+float64 detection_width
+float64 detection_length
+```
+
+`header.frame_id` 是所有路点和两个 Polygon 的共同坐标系，默认 `odom`；
+`header.stamp` 是该规划版本的生成时间。`N` 个 `waypoints` 必须对应 `N-1` 个
+`segment_types`，其中 `segment_types[i]` 描述 `waypoints[i] → waypoints[i+1]`。
+路点姿态指向下一段，最后一个姿态沿用到达航向。
+
+接收方必须拒绝以下任务：
+
+- `task_id` 为空、`revision` 为零或扫描方向非法；
+- 路点少于两个，或线段类型数量不是路点数量减一；
+- 坐标、四元数、检测尺寸包含非有限值，或检测尺寸不为正；
+- 存在零长度线段、未知线段类型或非法四元数；
+- Polygon 非法，或任一名义路点位于 `motion_region` 外；
+- `SCAN` 无法对 `coverage_region` 达到规划器声明的覆盖要求。
+
+`coverage_region`、`motion_region` 和 `waypoints` 不带各自 Header，统一继承任务
+Header，避免同一任务内部出现多个坐标系或时间戳。
+
+### 任务话题
+
+| 话题 | 类型 | QoS | 权责 |
+| --- | --- | --- | --- |
+| `/coverage/task` | `climbot_interfaces/msg/CoverageTask` | reliable、transient local、depth 1 | 最新完整任务预览，不直接热更新正在执行的任务 |
+| `/coverage/path` | `nav_msgs/msg/Path` | reliable、transient local、depth 1 | 从任务路点派生，仅用于 RViz 和通用工具 |
+| `/control/reference_path` | `nav_msgs/msg/Path` | reliable、transient local、depth 1 | 控制器动态生成的当前直线执行参考，仅用于显示和评价 |
+
+规划失败、清空或开始新区块时，规划器同时发布空 `/coverage/path` 和空路点的
+`/coverage/task`，并增加 revision，使旧预览失效。空任务永远不能作为执行 Goal。
+
+### `ExecuteCoverage.action`
+
+Action 名称冻结为 `/coverage/execute`。使用 ROS 2 Action 不表示接入 Nav2。
+
+Goal：
+
+```text
+climbot_interfaces/CoverageTask task
+```
+
+Result：
+
+```text
+uint16 SUCCESS=0
+uint16 CANCELED=1
+uint16 INVALID_TASK=2
+uint16 LOCALIZATION_TIMEOUT=3
+uint16 CONTROL_TIMEOUT=4
+uint16 OUT_OF_BOUNDS=5
+uint16 TRACKING_FAILED=6
+
+uint16 result_code
+string message
+uint32 completed_segments
+float64 elapsed_time_s
+```
+
+Feedback：
+
+```text
+uint8 WAITING=0
+uint8 ALIGN=1
+uint8 TURN_SETTLE=2
+uint8 TRACK_LINE=3
+uint8 FINAL_APPROACH=4
+uint8 STOPPED=5
+
+uint8 state
+int32 current_segment
+uint8 segment_type
+float64 along_track_error
+float64 cross_track_error
+float64 heading_error
+float64 remaining_distance
+float32 progress
+```
+
+`current_segment = -1` 表示尚未进入任何线段。误差单位分别为米、米、弧度和米；
+`progress` 范围为 `[0, 1]`，只用于显示，不作为任务完成判据。
+
+### 执行与版本规则
+
+1. `task_id` 标识一次用户任务；对同一任务重新规划时 revision 严格递增。
+2. Action Server 接受 Goal 时完整复制并再次校验任务，此后该执行版本不可变。
+3. `/coverage/task` 后续出现新 revision 只更新预览，不得热切换当前 Action。
+4. 同一时刻只允许一个执行 Goal；切换任务必须先取消当前 Goal并停车。
+5. Action 取消、异常终止或定位超时都必须先输出零速，再返回最终状态。
+6. 转向后的斜线 `TRANSITION` 只进入控制器内部执行参考和
+   `/control/reference_path`，不得反写冻结的 `CoverageTask`。
+7. 顶部收边扫描若按预计覆盖率需要，必须在发送 Goal 前作为 `SCAN` 写入任务；
+   第一版不在执行中热追加线段。实测覆盖率不足视为验收失败并调整下一版任务。
 
 ## 侧滑标定参数
 

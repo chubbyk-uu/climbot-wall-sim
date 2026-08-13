@@ -7,18 +7,21 @@
 ## 包依赖方向
 
 ```text
+                    climbot_interfaces
+                       ^          ^
+                       │          │
+              climbot_coverage  climbot_control（阶段 E）
+                       │          │
+                       v          v
                     climbot_description
-                    /                  \
-                   v                    v
-          climbot_gazebo         climbot_coverage
-          （仿真与定位）          （覆盖规划）
-
-未来：climbot_control ────────────────┘
-              └──────> climbot_description
+                            ^
+                            │
+                     climbot_gazebo
 ```
 
-`climbot_description` 是共享物理描述的唯一上游。规划器和未来控制器不得
-依赖 `climbot_gazebo`，也不得读取 Gazebo 真值或仿真专有参数。
+`climbot_interfaces` 是无业务实现的公共 ROS 接口包，不依赖其他项目包。
+`climbot_description` 是共享物理描述的唯一上游。规划器和未来控制器不得依赖
+`climbot_gazebo`，也不得读取 Gazebo 真值或仿真专有参数。
 
 `climbot_coverage/launch/coverage_sim.launch.py` 是当前阶段用于联合启动仿真
 和规划器的临时集成入口，会在运行时查找 `climbot_gazebo`。它不代表规划器
@@ -26,6 +29,15 @@
 `climbot_bringup` 统一承载组合 launch。
 
 ## 包职责
+
+### `climbot_interfaces`（阶段 E 新建）
+
+只包含跨包通信定义：
+
+- `msg/CoverageTask.msg`：不可分割的名义覆盖任务；
+- `action/ExecuteCoverage.action`：任务执行、取消、反馈和结果。
+
+该包不得读取 YAML，不包含几何规划、控制算法、Gazebo 代码或节点实现。
 
 ### `climbot_description`
 
@@ -90,9 +102,14 @@ Gazebo physics
                                                         v
                                                 /odometry/filtered
 
-区域参数或 RViz 点选 -> coverage planner -> /coverage/path
-                                              │
-                                              └─> 阶段 E 控制器（尚未实现）
+区域参数或 RViz 点选 -> coverage planner -> /coverage/task（权威任务预览）
+                                              ├─> /coverage/path（派生显示）
+                                              └─> ExecuteCoverage Action goal
+                                                            │
+                                                            v
+                                                     climbot_control
+                                                            ├─> /cmd_vel
+                                                            └─> /control/reference_path
 ```
 
 ## 坐标系
@@ -113,7 +130,8 @@ world
 
 ## 后续包边界
 
-阶段 E 计划新增 `climbot_control`，负责 50 Hz C++ 通用直线段跟踪、任务状态机、
+阶段 E 先新增 `climbot_interfaces`，再新增 `climbot_control`。控制包负责 50 Hz
+C++ 通用直线段跟踪、任务状态机、
 线段类型执行、转向下坠补偿、左右轮联合限幅和速度看门狗。横向为主与竖向为主
 的覆盖路径共用同一控制器，只由规划结果和段类型驱动。控制器保留名义覆盖路径，
 并在转向后根据 EKF 实际位置生成单独的直线执行参考；竖向换道接受转向下滑，
