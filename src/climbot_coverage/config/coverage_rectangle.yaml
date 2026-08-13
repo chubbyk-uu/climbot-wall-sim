@@ -7,6 +7,8 @@ coverage_planner:
     upper_right: [3.0, 6.5]
     lower_right: [3.0, 0.5]
     detection_width: 0.50
+    # Conservative provisional value; replace with the calibrated payload length.
+    detection_length: 0.01
     overlap_ratio: 0.20
     sweep_direction: horizontal
     start_corner: lower_left

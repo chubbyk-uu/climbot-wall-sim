@@ -84,6 +84,7 @@
 | `sweep_direction` | `horizontal` / `vertical` | 弓字扫描方向 |
 | `start_corner` | `lower_left` / `lower_right` / `upper_left` / `upper_right` | 起始角点 |
 | `detection_width` | m | 检测有效宽度 |
+| `detection_length` | m | 沿行进方向的检测有效长度；当前默认 `0.01`，待载荷标定 |
 | `overlap_ratio` | `[0, 1)` | 相邻扫描带重叠率 |
 | `robot_length`、`robot_width` | m | launch 从 `robot.yaml` 注入 |
 | `edge_clearance` | m | launch 从 `robot.yaml` 注入 |
@@ -169,16 +170,18 @@ Header，避免同一任务内部出现多个坐标系或时间戳。
 
 | 话题 | 类型 | QoS | 权责 |
 | --- | --- | --- | --- |
-| `/coverage/task` | `climbot_interfaces/msg/CoverageTask` | reliable、transient local、depth 1 | 最新完整任务预览，不直接热更新正在执行的任务 |
+| `/coverage/task` | `climbot_interfaces/msg/CoverageTask` | reliable、transient local、depth 1 | 已实现；最新完整任务预览，不直接热更新正在执行的任务 |
 | `/coverage/path` | `nav_msgs/msg/Path` | reliable、transient local、depth 1 | 从任务路点派生，仅用于 RViz 和通用工具 |
-| `/control/reference_path` | `nav_msgs/msg/Path` | reliable、transient local、depth 1 | 控制器动态生成的当前直线执行参考，仅用于显示和评价 |
+| `/control/reference_path` | `nav_msgs/msg/Path` | reliable、transient local、depth 1 | 阶段 E 后续实现；控制器动态生成的当前直线执行参考，仅用于显示和评价 |
 
 规划失败、清空或开始新区块时，规划器同时发布空 `/coverage/path` 和空路点的
 `/coverage/task`，并增加 revision，使旧预览失效。空任务永远不能作为执行 Goal。
+当前规划器以原始用户区域填充 `coverage_region`，以整面墙按机器人安全边距内缩的
+多边形填充 `motion_region`；阶段 E2 将在此基础上增加转向安全余量和覆盖足迹校验。
 
 ### `ExecuteCoverage.action`
 
-Action 名称冻结为 `/coverage/execute`。使用 ROS 2 Action 不表示接入 Nav2。
+Action 名称冻结为 `/coverage/execute`，将在 E7 实现。使用 ROS 2 Action 不表示接入 Nav2。
 
 Goal：
 

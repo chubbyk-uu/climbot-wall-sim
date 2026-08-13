@@ -4,6 +4,7 @@ from threading import Event
 from threading import Thread
 import unittest
 
+from climbot_interfaces.msg import CoverageTask
 import launch
 import launch_ros.actions
 import launch_testing.actions
@@ -41,9 +42,12 @@ class TestCoveragePlannerFailure(unittest.TestCase):
         rclpy.init()
         self.node = rclpy.create_node('coverage_planner_failure_test')
         self.path = None
+        self.task = None
         self.path_event = Event()
+        self.task_event = Event()
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.node.create_subscription(Path, '/coverage/path', self._callback, qos)
+        self.node.create_subscription(CoverageTask, '/coverage/task', self._task_callback, qos)
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
@@ -62,6 +66,13 @@ class TestCoveragePlannerFailure(unittest.TestCase):
         self.path = message
         self.path_event.set()
 
+    def _task_callback(self, message):
+        self.task = message
+        self.task_event.set()
+
     def test_failure_publishes_empty_path(self):
         self.assertTrue(self.path_event.wait(10.0), 'No clearing Path received.')
+        self.assertTrue(self.task_event.wait(10.0), 'No clearing task received.')
         self.assertEqual(len(self.path.poses), 0)
+        self.assertEqual(len(self.task.waypoints), 0)
+        self.assertGreater(self.task.revision, 0)

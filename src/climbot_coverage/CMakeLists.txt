@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(climbot_coverage)
 
 find_package(ament_cmake REQUIRED)
+find_package(climbot_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -19,7 +20,7 @@ add_executable(coverage_planner_node src/coverage_planner_node.cpp)
 target_compile_features(coverage_planner_node PUBLIC cxx_std_17)
 target_link_libraries(coverage_planner_node coverage_geometry)
 ament_target_dependencies(coverage_planner_node
-  geometry_msgs nav_msgs rclcpp std_msgs std_srvs visualization_msgs)
+  climbot_interfaces geometry_msgs nav_msgs rclcpp std_msgs std_srvs visualization_msgs)
 
 install(TARGETS coverage_geometry coverage_planner_node
   ARCHIVE DESTINATION lib

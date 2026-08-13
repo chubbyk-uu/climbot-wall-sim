@@ -5,6 +5,7 @@ from threading import Event
 from threading import Thread
 import unittest
 
+from climbot_interfaces.msg import CoverageTask
 import launch
 import launch_ros.actions
 import launch_testing.actions
@@ -50,11 +51,14 @@ class TestCoveragePlannerNode(unittest.TestCase):
         rclpy.init()
         self.node = rclpy.create_node('coverage_planner_node_test')
         self.path = None
+        self.task = None
         self.markers = None
         self.path_event = Event()
+        self.task_event = Event()
         self.marker_event = Event()
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.node.create_subscription(Path, '/coverage/path', self._path_callback, qos)
+        self.node.create_subscription(CoverageTask, '/coverage/task', self._task_callback, qos)
         self.node.create_subscription(
             MarkerArray, '/coverage/markers', self._marker_callback, qos)
         self.stop_spin = Event()
@@ -75,14 +79,37 @@ class TestCoveragePlannerNode(unittest.TestCase):
         self.path = message
         self.path_event.set()
 
+    def _task_callback(self, message):
+        self.task = message
+        self.task_event.set()
+
     def _marker_callback(self, message):
         self.markers = message
         self.marker_event.set()
 
     def test_path_has_segment_headings_and_configured_wall(self):
         self.assertTrue(self.path_event.wait(10.0), 'No coverage Path received.')
+        self.assertTrue(self.task_event.wait(10.0), 'No coverage task received.')
         self.assertTrue(self.marker_event.wait(10.0), 'No MarkerArray received.')
         self.assertGreater(len(self.path.poses), 2)
+        self.assertEqual(len(self.task.waypoints), len(self.path.poses))
+        self.assertEqual(len(self.task.segment_types), len(self.task.waypoints) - 1)
+        self.assertGreater(self.task.revision, 0)
+        self.assertEqual(self.task.header.frame_id, 'odom')
+        self.assertEqual(self.task.sweep_direction, CoverageTask.SWEEP_HORIZONTAL)
+        self.assertEqual(len(self.task.coverage_region.points), 4)
+        self.assertEqual(len(self.task.motion_region.points), 4)
+        self.assertLess(
+            self.task.motion_region.points[0].x,
+            self.task.coverage_region.points[0].x)
+        self.assertGreater(
+            self.task.motion_region.points[2].x,
+            self.task.coverage_region.points[2].x)
+        self.assertGreater(
+            self.task.motion_region.points[2].y,
+            self.task.coverage_region.points[2].y)
+        self.assertGreater(self.task.detection_width, 0.0)
+        self.assertGreater(self.task.detection_length, 0.0)
         for index in range(len(self.path.poses) - 1):
             current = self.path.poses[index].pose
             following = self.path.poses[index + 1].pose
@@ -93,6 +120,27 @@ class TestCoveragePlannerNode(unittest.TestCase):
             self.assertAlmostEqual(
                 math.atan2(math.sin(actual - expected), math.cos(actual - expected)),
                 0.0, places=9)
+            expected_type = (
+                CoverageTask.SEGMENT_SCAN if index % 2 == 0
+                else CoverageTask.SEGMENT_TRANSITION)
+            self.assertEqual(self.task.segment_types[index], expected_type)
+            self.assertAlmostEqual(
+                self.task.waypoints[index].position.x,
+                current.position.x,
+                places=9)
+            self.assertAlmostEqual(
+                self.task.waypoints[index].position.y,
+                current.position.y,
+                places=9)
+        for waypoint in self.task.waypoints:
+            self.assertGreaterEqual(
+                waypoint.position.x, self.task.motion_region.points[0].x)
+            self.assertLessEqual(
+                waypoint.position.x, self.task.motion_region.points[2].x)
+            self.assertGreaterEqual(
+                waypoint.position.y, self.task.motion_region.points[0].y)
+            self.assertLessEqual(
+                waypoint.position.y, self.task.motion_region.points[2].y)
         wall = next(marker for marker in self.markers.markers if marker.ns == 'wall')
         self.assertAlmostEqual(wall.scale.x, 12.0)
         self.assertAlmostEqual(wall.scale.y, 9.0)

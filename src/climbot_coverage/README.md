@@ -21,13 +21,16 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 
 ## 输出
 
-- `/coverage/path`：带逐段目标航向的 `nav_msgs/Path`；
+- `/coverage/task`：权威 `CoverageTask` 预览，包含路径、线段类型、区域和检测足迹；
+- `/coverage/path`：从任务派生、带逐段目标航向的 `nav_msgs/Path`，用于通用显示；
 - `/coverage/markers`：墙面、原始/有效区域、路径和方向；
 - `/coverage/status`：规划状态和错误原因；
 - `/coverage/clear_points`：清空 RViz 点选；
 - `/coverage/replan`：使用当前输入重新规划。
 
-规划失败、清空点选或开始输入新区域时会发布空 Path，避免下游执行旧任务。
+规划失败、清空点选或开始输入新区域时会同时发布空 Task 和空 Path，避免下游执行
+旧任务。每次发布的 Task revision 会递增；正在执行的任务由未来控制 Action 冻结，
+不会被此预览话题热切换。
 
 ## 几何约束
 
@@ -35,6 +38,9 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 row_spacing = detection_width × (1 - overlap_ratio)
 safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 ```
+
+`detection_length` 是沿行进方向的检测有效长度，当前默认 `0.01 m` 为保守临时值，
+后续必须按实际检测载荷标定。
 
 机器人轮廓和墙面尺寸由 `climbot_description` 注入。规划器只生成直线段和
 路点处原地转向，不生成圆角或切弯。

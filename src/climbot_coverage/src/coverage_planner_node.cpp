@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <sstream>
@@ -10,6 +11,7 @@
 #include <vector>
 
 #include "climbot_coverage/coverage_geometry.hpp"
+#include "climbot_interfaces/msg/coverage_task.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -31,6 +33,14 @@ geometry_msgs::msg::Point markerPoint(const Point2 & point, double height)
   output.x = point.x;
   output.y = point.y;
   output.z = height;
+  return output;
+}
+
+geometry_msgs::msg::Point32 polygonPoint(const Point2 & point)
+{
+  geometry_msgs::msg::Point32 output;
+  output.x = static_cast<float>(point.x);
+  output.y = static_cast<float>(point.y);
   return output;
 }
 
@@ -84,7 +94,9 @@ public:
     lower_left_ = pointParameter("lower_left", {-3.0, 0.5});
     upper_right_ = pointParameter("upper_right", {3.0, 6.5});
     lower_right_ = pointParameter("lower_right", {3.0, 0.5});
+    task_id_ = declare_parameter("task_id", "coverage-task");
     detection_width_ = declare_parameter("detection_width", 0.50);
+    detection_length_ = declare_parameter("detection_length", 0.01);
     overlap_ratio_ = declare_parameter("overlap_ratio", 0.20);
     robot_length_ = declare_parameter("robot_length", 0.53);
     robot_width_ = declare_parameter("robot_width", 0.475);
@@ -100,7 +112,9 @@ public:
     safety_margin_ = 0.5 * std::hypot(robot_length_, robot_width_) + edge_clearance_;
 
     path_publisher_ = create_publisher<nav_msgs::msg::Path>(
-      "/coverage/path", rclcpp::QoS(1).transient_local());
+      "/coverage/path", rclcpp::QoS(1).reliable().transient_local());
+    task_publisher_ = create_publisher<climbot_interfaces::msg::CoverageTask>(
+      "/coverage/task", rclcpp::QoS(1).reliable().transient_local());
     marker_publisher_ = create_publisher<visualization_msgs::msg::MarkerArray>(
       "/coverage/markers", rclcpp::QoS(1).transient_local());
     status_publisher_ = create_publisher<std_msgs::msg::String>(
@@ -124,6 +138,7 @@ public:
     } else {
       publishStatus("Waiting for RViz points: A=lower-left, B=upper-right" +
         std::string(region_type_ == "trapezoid" ? ", C=lower-right." : "."));
+      publishTask(emptyTask());
       publishMarkers({}, {}, {});
     }
   }
@@ -131,8 +146,11 @@ public:
 private:
   void validatePhysicalParameters() const
   {
-    if (detection_width_ <= 0.0) {
-      throw std::invalid_argument("detection_width must be positive.");
+    if (task_id_.empty()) {
+      throw std::invalid_argument("task_id cannot be empty.");
+    }
+    if (detection_width_ <= 0.0 || detection_length_ <= 0.0) {
+      throw std::invalid_argument("Detection footprint dimensions must be positive.");
     }
     if (overlap_ratio_ < 0.0 || overlap_ratio_ >= 1.0) {
       throw std::invalid_argument("overlap_ratio must be within [0, 1).");
@@ -143,6 +161,9 @@ private:
     }
     if (wall_width_ <= 0.0 || wall_height_ <= 0.0) {
       throw std::invalid_argument("Wall dimensions must be positive.");
+    }
+    if (sweep_direction_ != "horizontal" && sweep_direction_ != "vertical") {
+      throw std::invalid_argument("Sweep direction must be horizontal or vertical.");
     }
   }
 
@@ -179,7 +200,7 @@ private:
       clicked_points_.clear();
     }
     clicked_points_.push_back({message->point.x, message->point.y});
-    publishPath({});
+    publishTask(emptyTask());
     publishMarkers({}, {}, {});
     // The coordinates are logged so a mirrored or rotated RViz camera is
     // visible immediately instead of surfacing later as a geometry error.
@@ -204,7 +225,7 @@ private:
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
     clicked_points_.clear();
-    publishPath({});
+    publishTask(emptyTask());
     publishMarkers({}, {}, {});
     response->success = true;
     response->message = "Clicked points cleared.";
@@ -233,7 +254,7 @@ private:
       const auto effective = insetConvexPolygon(region.polygon, safety_margin_);
       const auto path = generateBoustrophedonPath(
         effective, row_spacing_, sweep_direction_, start_corner_);
-      publishPath(path);
+      publishTask(makeTask(region.polygon, effective, path));
       publishMarkers(region.polygon, effective, path);
       std::ostringstream status;
       status << "Generated " << sweep_direction_ << " " << region_type_ <<
@@ -248,36 +269,87 @@ private:
       return true;
     } catch (const std::exception & exception) {
       last_error_ = exception.what();
-      publishPath({});
+      publishTask(emptyTask());
       publishMarkers({}, {}, {});
       publishStatus("Planning failed: " + last_error_);
       return false;
     }
   }
 
-  void publishPath(const std::vector<Point2> & points)
+  climbot_interfaces::msg::CoverageTask emptyTask()
   {
-    nav_msgs::msg::Path path;
-    path.header.stamp = now();
-    path.header.frame_id = frame_id_;
+    climbot_interfaces::msg::CoverageTask task;
+    task.header.stamp = now();
+    task.header.frame_id = frame_id_;
+    task.task_id = task_id_;
+    task.revision = ++revision_;
+    task.sweep_direction = sweep_direction_ == "horizontal" ?
+      climbot_interfaces::msg::CoverageTask::SWEEP_HORIZONTAL :
+      climbot_interfaces::msg::CoverageTask::SWEEP_VERTICAL;
+    task.detection_width = detection_width_;
+    task.detection_length = detection_length_;
+    return task;
+  }
+
+  geometry_msgs::msg::Polygon polygonMessage(const Polygon & polygon) const
+  {
+    geometry_msgs::msg::Polygon message;
+    for (const auto & point : polygon) {
+      message.points.push_back(polygonPoint(point));
+    }
+    return message;
+  }
+
+  Polygon motionRegion() const
+  {
+    const RegionResult wall = makeRectangle(
+      {-0.5 * wall_width_, 0.0}, {0.5 * wall_width_, wall_height_});
+    return insetConvexPolygon(wall.polygon, safety_margin_);
+  }
+
+  climbot_interfaces::msg::CoverageTask makeTask(
+    const Polygon & original, const Polygon & effective,
+    const std::vector<Point2> & points)
+  {
+    auto task = emptyTask();
+    task.coverage_region = polygonMessage(original);
+    task.motion_region = polygonMessage(motionRegion());
     for (std::size_t index = 0; index < points.size(); ++index) {
       const auto & point = points[index];
-      geometry_msgs::msg::PoseStamped pose;
-      pose.header = path.header;
-      pose.pose.position.x = point.x;
-      pose.pose.position.y = point.y;
-      pose.pose.position.z = path_height_;
+      geometry_msgs::msg::Pose pose;
+      pose.position.x = point.x;
+      pose.position.y = point.y;
       if (points.size() > 1U) {
         const std::size_t other = index + 1U < points.size() ? index + 1U : index - 1U;
         const double direction = index + 1U < points.size() ? 1.0 : -1.0;
         const double delta_x = direction * (points[other].x - point.x);
         const double delta_y = direction * (points[other].y - point.y);
-        pose.pose.orientation = yawQuaternion(std::atan2(delta_y, delta_x));
+        pose.orientation = yawQuaternion(std::atan2(delta_y, delta_x));
       } else {
-        pose.pose.orientation.w = 1.0;
+        pose.orientation.w = 1.0;
       }
+      task.waypoints.push_back(pose);
+      if (index + 1U < points.size()) {
+        task.segment_types.push_back(index % 2U == 0U ?
+          climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN :
+          climbot_interfaces::msg::CoverageTask::SEGMENT_TRANSITION);
+      }
+    }
+    return task;
+  }
+
+  void publishTask(const climbot_interfaces::msg::CoverageTask & task)
+  {
+    nav_msgs::msg::Path path;
+    path.header = task.header;
+    for (const auto & waypoint : task.waypoints) {
+      geometry_msgs::msg::PoseStamped pose;
+      pose.header = path.header;
+      pose.pose = waypoint;
+      pose.pose.position.z = path_height_;
       path.poses.push_back(pose);
     }
+    task_publisher_->publish(task);
     path_publisher_->publish(path);
   }
 
@@ -396,6 +468,7 @@ private:
   }
 
   std::string frame_id_;
+  std::string task_id_;
   std::string region_type_;
   std::string input_mode_;
   std::string sweep_direction_;
@@ -404,6 +477,7 @@ private:
   Point2 upper_right_;
   Point2 lower_right_;
   double detection_width_;
+  double detection_length_;
   double overlap_ratio_;
   double robot_length_;
   double robot_width_;
@@ -414,9 +488,11 @@ private:
   double row_spacing_;
   double path_height_;
   double bottom_warning_tolerance_;
+  std::uint32_t revision_{0U};
   std::string last_error_;
   std::vector<Point2> clicked_points_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_publisher_;
+  rclcpp::Publisher<climbot_interfaces::msg::CoverageTask>::SharedPtr task_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr status_publisher_;
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr clicked_point_subscription_;
