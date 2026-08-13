@@ -8,3 +8,6 @@ log/
 __pycache__/
 *.py[cod]
 
+# Local design source documents are not published in this repository.
+*.doc
+*.docx

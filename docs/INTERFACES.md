@@ -97,6 +97,22 @@ safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 矩形点选顺序为 A（左下）、B（右上）；等腰梯形为 A（左下）、B（右上）、
 C（右下）。A、C 的高度取平均值修正为水平底边。
 
+## 侧滑标定参数
+
+`calibrate_wall_slip.py` 的主要参数：
+
+| 参数 | 默认值 | 含义 |
+| --- | ---: | --- |
+| `repetitions` | `3` | 水平、上行和下行重复次数 |
+| `static_duration_s` | `30.0` | 静止稳定性记录时长 |
+| `drive_duration_s` | `8.0` | 每个运动段的仿真时长 |
+| `linear_speed_mps` | `0.15` | 标定线速度指令 |
+| `heading_hold_gain` | `1.5` | 融合航向保持比例增益 |
+| `horizontal_repeatability_max_cv` | `0.05` | 水平下降比总体变异系数上限 |
+| `trajectory_csv` | 空 | 非空时保存真值相对轨迹和真值/融合航向 |
+
+水平段只做航向保持，不做横轨位置纠偏。正式运行必须使用全新启动的仿真世界。
+
 ## TF
 
 | 变换 | 发布者 | 说明 |

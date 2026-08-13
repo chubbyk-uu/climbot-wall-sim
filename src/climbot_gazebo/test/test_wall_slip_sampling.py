@@ -3,6 +3,8 @@
 import importlib.util
 import os
 
+import pytest
+
 _PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     'scripts', 'calibrate_wall_slip.py')
@@ -26,3 +28,20 @@ def test_next_truth_timestamp_is_recorded():
 def test_reset_truth_timestamp_is_recorded():
     """A simulation reset must not suppress the first new-world sample."""
     assert calibration.is_new_truth_sample(0, 1_000_000)
+
+
+def test_coefficient_of_variation_is_zero_for_identical_runs():
+    assert calibration.coefficient_of_variation(
+        [0.09, 0.09, 0.09]) == pytest.approx(0.0, abs=1e-15)
+
+
+def test_coefficient_of_variation_reports_relative_spread():
+    result = calibration.coefficient_of_variation([0.08, 0.10])
+    assert result == pytest.approx(1.0 / 9.0)
+
+
+def test_coefficient_of_variation_rejects_undefined_inputs():
+    with pytest.raises(ValueError):
+        calibration.coefficient_of_variation([])
+    with pytest.raises(ValueError):
+        calibration.coefficient_of_variation([-1.0, 1.0])
