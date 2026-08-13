@@ -1,0 +1,17 @@
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    input_mode: parameters
+    region_type: rectangle
+    # With a 0.50 m footprint, the first vertical centreline starts at x=0.
+    # The 0.01 m longitudinal extension places its first waypoint at y=2.0.
+    lower_left: [-0.25, 2.005]
+    upper_right: [1.45, 4.505]
+    lower_right: [1.45, 2.005]
+    detection_width: 0.50
+    detection_length: 0.01
+    overlap_ratio: 0.20
+    sweep_direction: vertical
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

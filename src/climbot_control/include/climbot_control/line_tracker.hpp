@@ -20,7 +20,7 @@ struct Pose2
 
 struct Limits
 {
-  double max_linear{0.15};
+  double max_linear{0.25};
   double max_angular{0.35};
   double max_heading_correction{0.209439510};
   double max_gravity_feedforward{0.139626340};
@@ -51,6 +51,10 @@ Command trackLine(
   const Point2 & start, const Point2 & end, const Pose2 & pose,
   double cruise_speed, double cross_gain, double heading_gain, const Limits & limits,
   double cross_integral_gain = 0.0, double cross_integral = 0.0);
+Command followArcEntry(
+  const Point2 & nominal_start, const Point2 & nominal_end, const Pose2 & pose,
+  double speed, double lookahead, double heading_gain,
+  double max_heading_correction, double max_angular_speed);
 Command rateLimit(
   const Command & desired, const Command & previous, double dt,
   double linear_acceleration, double linear_deceleration, double angular_acceleration,

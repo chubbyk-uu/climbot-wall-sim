@@ -32,7 +32,7 @@ public:
       declare_parameter("start_x", 0.0), declare_parameter("start_y", 0.0)};
     end_ = {
       declare_parameter("end_x", 1.0), declare_parameter("end_y", 0.0)};
-    cruise_speed_ = declare_parameter("cruise_speed", 0.15);
+    cruise_speed_ = declare_parameter("cruise_speed", 0.20);
     cross_gain_ = declare_parameter("cross_gain", 1.0);
     cross_integral_gain_ = declare_parameter("cross_integral_gain", 0.30);
     cross_integral_limit_ = declare_parameter("cross_integral_limit_m_s", 0.10);
@@ -44,7 +44,16 @@ public:
     segment_timeout_s_ = declare_parameter("segment_timeout_s", 120.0);
     motion_region_tolerance_ = declare_parameter("motion_region_tolerance_m", 0.02);
     turn_slip_per_degree_ = declare_parameter("turn_slip_per_degree_m", 0.0005);
-    scan_entry_tolerance_ = declare_parameter("scan_entry_tolerance_m", 0.03);
+    parallel_scan_offset_ = declare_parameter("parallel_scan_offset_m", 0.04);
+    maximum_scan_offset_ = declare_parameter("maximum_scan_offset_m", 0.12);
+    arc_entry_finish_offset_ = declare_parameter("arc_entry_finish_offset_m", 0.01);
+    arc_entry_speed_ = declare_parameter("arc_entry_speed_mps", 0.06);
+    arc_entry_lookahead_ = declare_parameter("arc_entry_lookahead_m", 0.20);
+    arc_entry_heading_gain_ = declare_parameter("arc_entry_heading_gain", 2.0);
+    arc_entry_max_heading_ = degreesToRadians(
+      declare_parameter("arc_entry_max_heading_deg", 20.0));
+    arc_entry_max_angular_ = declare_parameter("arc_entry_max_angular_speed", 0.25);
+    arc_entry_timeout_ = declare_parameter("arc_entry_timeout_s", 10.0);
     const int oscillation_reversals = declare_parameter("visible_oscillation_reversals", 4);
     if (oscillation_reversals < 0) {
       throw std::invalid_argument("visible_oscillation_reversals must be non-negative.");
@@ -54,7 +63,7 @@ public:
       declare_parameter("visible_oscillation_minimum_travel_m", 0.10),
       static_cast<unsigned int>(oscillation_reversals));
 
-    limits_.max_linear = declare_parameter("max_linear_speed", 0.15);
+    limits_.max_linear = declare_parameter("max_linear_speed", 0.25);
     limits_.max_angular = declare_parameter("max_angular_speed", 0.35);
     limits_.max_heading_correction = degreesToRadians(
       declare_parameter("max_heading_correction_deg", 12.0));
@@ -195,7 +204,24 @@ private:
     if (turn_slip_per_degree_ < 0.0) {
       throw std::invalid_argument("turn_slip_per_degree_m must be non-negative.");
     }
-    requirePositive("scan_entry_tolerance_m", scan_entry_tolerance_);
+    requirePositive("parallel_scan_offset_m", parallel_scan_offset_);
+    requirePositive("maximum_scan_offset_m", maximum_scan_offset_);
+    requirePositive("arc_entry_finish_offset_m", arc_entry_finish_offset_);
+    requirePositive("arc_entry_speed_mps", arc_entry_speed_);
+    requirePositive("arc_entry_lookahead_m", arc_entry_lookahead_);
+    requirePositive("arc_entry_heading_gain", arc_entry_heading_gain_);
+    requirePositive("arc_entry_max_heading_deg", arc_entry_max_heading_);
+    requirePositive("arc_entry_max_angular_speed", arc_entry_max_angular_);
+    requirePositive("arc_entry_timeout_s", arc_entry_timeout_);
+    if (arc_entry_finish_offset_ >= parallel_scan_offset_ ||
+      parallel_scan_offset_ >= maximum_scan_offset_)
+    {
+      throw std::invalid_argument(
+              "Arc finish, parallel, and maximum offsets must be strictly increasing.");
+    }
+    if (arc_entry_speed_ > cruise_speed_ || arc_entry_max_angular_ > limits_.max_angular) {
+      throw std::invalid_argument("Arc-entry limits cannot exceed normal motion limits.");
+    }
     requireFinite("motion_region_tolerance_m", motion_region_tolerance_);
     if (motion_region_tolerance_ < 0.0) {
       throw std::invalid_argument("motion_region_tolerance_m must be non-negative.");
@@ -320,6 +346,7 @@ private:
     goal_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     segment_start_time_ = now();
     alignment_origin_ = {pose_.x, pose_.y};
+    arc_entry_active_ = false;
     oscillation_monitor_->reset();
     oscillation_warning_emitted_ = false;
     const auto segment_type = active_task_->segment_types[index];
@@ -330,6 +357,82 @@ private:
       climbot_interfaces::msg::CoverageTask::SEGMENT_TRANSITION && !follows_transition;
     publishCompletion(false);
     publishReferencePath();
+  }
+
+  bool lockParallelScanLine(double cross, double along)
+  {
+    const double dx = nominal_scan_end_.x - nominal_scan_start_.x;
+    const double dy = nominal_scan_end_.y - nominal_scan_start_.y;
+    const double length = std::hypot(dx, dy);
+    const double tx = dx / length;
+    const double ty = dy / length;
+    const climbot_control::Point2 normal{-ty, tx};
+    const climbot_control::Point2 shifted_origin{
+      nominal_scan_start_.x + cross * normal.x,
+      nominal_scan_start_.y + cross * normal.y};
+    start_ = {
+      shifted_origin.x + std::max(0.0, along) * tx,
+      shifted_origin.y + std::max(0.0, along) * ty};
+    end_ = {
+      nominal_scan_end_.x + cross * normal.x,
+      nominal_scan_end_.y + cross * normal.y};
+    if (std::hypot(end_.x - start_.x, end_.y - start_.y) <= 1e-9) {
+      finishGoal(
+        ExecuteCoverage::Result::TRACKING_FAILED,
+        "Parallel scan line has no remaining length.");
+      return false;
+    }
+    if (!climbot_control::pointInPolygon(
+        end_.x, end_.y, active_task_->motion_region, 1e-6))
+    {
+      finishGoal(
+        ExecuteCoverage::Result::OUT_OF_BOUNDS,
+        "Parallel scan endpoint lies outside the motion region.");
+      return false;
+    }
+    arc_entry_active_ = false;
+    reference_prepared_ = true;
+    publishReferencePath();
+    RCLCPP_INFO(
+      get_logger(), "Locked a parallel scan line %.1f mm from nominal.",
+      cross * 1000.0);
+    return true;
+  }
+
+  bool preparePostTurnScan()
+  {
+    nominal_scan_start_ = start_;
+    nominal_scan_end_ = end_;
+    const double dx = end_.x - start_.x;
+    const double dy = end_.y - start_.y;
+    const double length = std::hypot(dx, dy);
+    if (length <= 1e-9) {
+      finishGoal(
+        ExecuteCoverage::Result::TRACKING_FAILED,
+        "Nominal scan line has no length.");
+      return false;
+    }
+    const double tx = dx / length;
+    const double ty = dy / length;
+    const double along = (pose_.x - start_.x) * tx + (pose_.y - start_.y) * ty;
+    const double cross = -(pose_.x - start_.x) * ty + (pose_.y - start_.y) * tx;
+    if (std::abs(cross) <= parallel_scan_offset_) {
+      return lockParallelScanLine(cross, along);
+    }
+    if (std::abs(cross) > maximum_scan_offset_) {
+      finishGoal(
+        ExecuteCoverage::Result::TRACKING_FAILED,
+        "Post-turn scan offset exceeds the maximum recoverable distance.");
+      return false;
+    }
+    arc_entry_active_ = true;
+    arc_entry_start_time_ = now();
+    reference_prepared_ = true;
+    RCLCPP_INFO(
+      get_logger(),
+      "Starting a single forward arc entry for %.1f mm post-turn scan offset.",
+      cross * 1000.0);
+    return true;
   }
 
   bool prepareDynamicReference()
@@ -360,26 +463,7 @@ private:
     } else if (segment_type == Task::SEGMENT_SCAN && current_segment_ > 0U &&
       active_task_->segment_types[current_segment_ - 1U] == Task::SEGMENT_TRANSITION)
     {
-      if (active_task_->sweep_direction == Task::SWEEP_VERTICAL) {
-        start_ = {pose_.x, pose_.y};
-      } else {
-        const double dx = end_.x - start_.x;
-        const double dy = end_.y - start_.y;
-        const double length = std::hypot(dx, dy);
-        const double cross = (-(pose_.x - start_.x) * dy +
-          (pose_.y - start_.y) * dx) / length;
-        if (std::abs(cross) > scan_entry_tolerance_) {
-          finishGoal(
-            ExecuteCoverage::Result::TRACKING_FAILED,
-            "Turn slip left the robot too far from the next horizontal scan line.");
-          return false;
-        }
-        RCLCPP_INFO(
-          get_logger(), "Horizontal scan entry cross-track error is %.1f mm.",
-          cross * 1000.0);
-        reference_prepared_ = true;
-        return true;
-      }
+      return preparePostTurnScan();
     }
 
     if (std::hypot(end_.x - start_.x, end_.y - start_.y) <= 1e-9) {
@@ -428,6 +512,7 @@ private:
       case MotionState::WAITING_FOR_ALIGNMENT:
       case MotionState::ALIGN_BRAKE:
       case MotionState::ALIGN_PROFILE:
+      case MotionState::ARC_ENTRY:
         return ExecuteCoverage::Feedback::ALIGN;
       case MotionState::ALIGN_SETTLE:
         return ExecuteCoverage::Feedback::TURN_SETTLE;
@@ -559,6 +644,41 @@ private:
         return;
       }
       configureSegment(current_segment_);
+    }
+
+    if (motion_state_ == MotionState::ARC_ENTRY) {
+      const auto arc_command = climbot_control::followArcEntry(
+        nominal_scan_start_, nominal_scan_end_, pose_, arc_entry_speed_,
+        arc_entry_lookahead_, arc_entry_heading_gain_, arc_entry_max_heading_,
+        arc_entry_max_angular_);
+      const double nominal_heading = std::atan2(
+        nominal_scan_end_.y - nominal_scan_start_.y,
+        nominal_scan_end_.x - nominal_scan_start_.x);
+      const double nominal_heading_error = climbot_control::wrapAngle(
+        nominal_heading - pose_.yaw);
+      if (std::abs(arc_command.cross) <= arc_entry_finish_offset_ &&
+        std::abs(nominal_heading_error) <= alignment_tolerance_)
+      {
+        if (!lockParallelScanLine(arc_command.cross, arc_command.along)) {
+          return;
+        }
+        motion_state_ = MotionState::TRACK_LINE;
+        previous_command_ = {};
+        cross_integral_ = 0.0;
+        publishFeedback(arc_command);
+        return;
+      }
+      if ((current_time - arc_entry_start_time_).seconds() > arc_entry_timeout_ ||
+        arc_command.remaining <= final_approach_distance_)
+      {
+        finishGoal(
+          ExecuteCoverage::Result::TRACKING_FAILED,
+          "Forward arc entry did not converge before its safety limit.");
+        return;
+      }
+      limitAndPublish(arc_command, dt, angular_acceleration_);
+      publishFeedback(arc_command);
+      return;
     }
 
     auto desired = climbot_control::trackLine(start_, end_, pose_, cruise_speed_,
@@ -716,7 +836,8 @@ private:
               {
                 return;
               }
-              motion_state_ = MotionState::TRACK_LINE;
+              motion_state_ = arc_entry_active_ ?
+                MotionState::ARC_ENTRY : MotionState::TRACK_LINE;
               cross_integral_ = 0.0;
             }
           }
@@ -724,6 +845,7 @@ private:
         }
       case MotionState::TRACK_LINE:
       case MotionState::FINAL_APPROACH:
+      case MotionState::ARC_ENTRY:
       case MotionState::SEGMENT_COMPLETE:
         return;
     }
@@ -762,13 +884,14 @@ private:
     ALIGN_BRAKE,
     ALIGN_PROFILE,
     ALIGN_SETTLE,
+    ARC_ENTRY,
     TRACK_LINE,
     FINAL_APPROACH,
     SEGMENT_COMPLETE,
   };
 
   bool have_pose_{false};
-  double cruise_speed_{0.15};
+  double cruise_speed_{0.20};
   double cross_gain_{1.0};
   double cross_integral_gain_{0.30};
   double cross_integral_limit_{0.10};
@@ -779,7 +902,15 @@ private:
   double segment_timeout_s_{120.0};
   double motion_region_tolerance_{0.02};
   double turn_slip_per_degree_{0.0005};
-  double scan_entry_tolerance_{0.03};
+  double parallel_scan_offset_{0.04};
+  double maximum_scan_offset_{0.12};
+  double arc_entry_finish_offset_{0.01};
+  double arc_entry_speed_{0.06};
+  double arc_entry_lookahead_{0.20};
+  double arc_entry_heading_gain_{2.0};
+  double arc_entry_max_heading_{0.349065850};
+  double arc_entry_max_angular_{0.25};
+  double arc_entry_timeout_{10.0};
   double alignment_reentry_threshold_{0.209439510};
   double alignment_tolerance_{0.034906585};
   double alignment_settle_duration_{0.50};
@@ -804,6 +935,7 @@ private:
   std::string frame_id_{"odom"};
   bool standalone_mode_{true};
   bool reference_prepared_{true};
+  bool arc_entry_active_{false};
   bool oscillation_warning_emitted_{false};
   uint32_t completed_segments_{0U};
   std::size_t current_segment_{0U};
@@ -811,6 +943,8 @@ private:
   climbot_control::Point2 start_{};
   climbot_control::Point2 end_{};
   climbot_control::Point2 alignment_origin_{};
+  climbot_control::Point2 nominal_scan_start_{};
+  climbot_control::Point2 nominal_scan_end_{};
   climbot_control::Pose2 pose_{};
   climbot_control::Command previous_command_;
   MotionState motion_state_{MotionState::WAITING_FOR_ALIGNMENT};
@@ -818,6 +952,7 @@ private:
   double alignment_start_yaw_{0.0};
   rclcpp::Time alignment_profile_start_{0, 0, RCL_ROS_TIME};
   rclcpp::Time alignment_settle_start_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time arc_entry_start_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time goal_settle_start_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_pose_received_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_control_time_{0, 0, RCL_ROS_TIME};

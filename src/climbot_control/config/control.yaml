@@ -1,6 +1,6 @@
 line_tracker:
   ros__parameters:
-    cruise_speed: 0.15
+    cruise_speed: 0.20
     cross_gain: 1.0
     cross_integral_gain: 0.30
     cross_integral_limit_m_s: 0.10
@@ -11,12 +11,20 @@ line_tracker:
     segment_timeout_s: 120.0
     motion_region_tolerance_m: 0.02
     turn_slip_per_degree_m: 0.0005
-    scan_entry_tolerance_m: 0.03
+    parallel_scan_offset_m: 0.04
+    maximum_scan_offset_m: 0.12
+    arc_entry_finish_offset_m: 0.01
+    arc_entry_speed_mps: 0.06
+    arc_entry_lookahead_m: 0.20
+    arc_entry_heading_gain: 2.0
+    arc_entry_max_heading_deg: 20.0
+    arc_entry_max_angular_speed: 0.25
+    arc_entry_timeout_s: 10.0
     # This is a diagnostic for visibly large oscillations, not a zero-crossing fault.
     visible_oscillation_amplitude_m: 0.03
     visible_oscillation_minimum_travel_m: 0.10
     visible_oscillation_reversals: 4
-    max_linear_speed: 0.15
+    max_linear_speed: 0.25
     max_angular_speed: 0.35
     max_heading_correction_deg: 12.0
     max_gravity_feedforward_deg: 8.0

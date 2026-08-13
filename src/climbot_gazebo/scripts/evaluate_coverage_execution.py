@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Execute compact coverage cases and evaluate each dynamic line with truth."""
 
+import copy
 import math
 import os
 import time
@@ -59,7 +60,9 @@ class CoverageExecutionEvaluator(Node):
             'config', 'wall.yaml')
         self.wall = WallFrame.from_yaml(wall_path)
         self.filtered = None
+        self.planned_task = None
         self.reference = None
+        self.executed_task = None
         self.segment = -1
         self.state = ExecuteCoverage.Feedback.WAITING
         self.samples = {}
@@ -74,11 +77,17 @@ class CoverageExecutionEvaluator(Node):
         self.create_subscription(
             Path, '/control/reference_path', self._reference_callback,
             reference_qos)
+        self.create_subscription(
+            CoverageTask, '/coverage/task', self._task_callback,
+            reference_qos)
         self.client = ActionClient(
             self, ExecuteCoverage, '/coverage/execute')
 
     def _filtered_callback(self, message):
         self.filtered = message
+
+    def _task_callback(self, message):
+        self.planned_task = message
 
     def _feedback_callback(self, message):
         self.segment = message.feedback.current_segment
@@ -94,6 +103,7 @@ class CoverageExecutionEvaluator(Node):
 
     def _truth_callback(self, message):
         if (self.reference is None or self.segment < 0 or
+                self.executed_task is None or
                 self.state not in (ExecuteCoverage.Feedback.TRACK_LINE,
                                    ExecuteCoverage.Feedback.FINAL_APPROACH)):
             return
@@ -108,6 +118,22 @@ class CoverageExecutionEvaluator(Node):
         delta_y = last_y - first_y
         length = math.hypot(delta_x, delta_y)
         if length <= 1e-9:
+            return
+        nominal_first = self.executed_task.waypoints[self.segment].position
+        nominal_last = self.executed_task.waypoints[self.segment + 1].position
+        nominal_heading = math.atan2(
+            nominal_last.y - nominal_first.y,
+            nominal_last.x - nominal_first.x)
+        reference_heading = math.atan2(delta_y, delta_x)
+        heading_difference = math.atan2(
+            math.sin(reference_heading - nominal_heading),
+            math.cos(reference_heading - nominal_heading))
+        # A scan-entry maneuver may be executed inside the scan segment, but it
+        # is transition motion rather than part of the accepted scan line.
+        # Score only references parallel to the nominal scan direction.
+        if (self.executed_task.segment_types[self.segment] ==
+                CoverageTask.SEGMENT_SCAN and
+                abs(heading_difference) > math.radians(2.0)):
             return
         cross_track = (
             -(x - first_x) * delta_y + (y - first_y) * delta_x
@@ -178,6 +204,10 @@ class CoverageExecutionEvaluator(Node):
 
     def _make_task(self):
         case_name = str(self.get_parameter('case').value)
+        if case_name == 'planned_task':
+            if self.planned_task is None:
+                raise RuntimeError('No latched /coverage/task is available.')
+            return copy.deepcopy(self.planned_task)
         position = self.filtered.pose.pose.position
         if case_name == 'vertical_rectangle':
             task = self._vertical_rectangle(position.x, position.y)
@@ -185,7 +215,7 @@ class CoverageExecutionEvaluator(Node):
             task = self._short_top_trapezoid(position.x, position.y)
         else:
             raise ValueError(
-                'case must be vertical_rectangle or short_top_trapezoid')
+                'case must be planned_task, vertical_rectangle, or short_top_trapezoid')
         task.header.frame_id = 'odom'
         task.header.stamp = self.get_clock().now().to_msg()
         task.revision = 1
@@ -224,14 +254,20 @@ class CoverageExecutionEvaluator(Node):
         """Execute the selected case and return true only if every line passes."""
         startup_timeout = float(self.get_parameter('startup_timeout_s').value)
         deadline = time.monotonic() + startup_timeout
-        while self.filtered is None and time.monotonic() < deadline:
+        case_name = str(self.get_parameter('case').value)
+        while (self.filtered is None or
+               (case_name == 'planned_task' and self.planned_task is None)) and \
+                time.monotonic() < deadline:
             rclpy.spin_once(self, timeout_sec=0.05)
-        if self.filtered is None or not self.client.wait_for_server(
-                timeout_sec=startup_timeout):
+        if (self.filtered is None or
+                (case_name == 'planned_task' and self.planned_task is None) or
+                not self.client.wait_for_server(
+                    timeout_sec=startup_timeout)):
             raise RuntimeError('Localization or /coverage/execute is unavailable.')
 
         goal = ExecuteCoverage.Goal()
         goal.task = self._make_task()
+        self.executed_task = goal.task
         self.samples = {
             index: [] for index in range(len(goal.task.segment_types))}
         future = self.client.send_goal_async(

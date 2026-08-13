@@ -95,6 +95,55 @@ TEST(LineTracker, WorksForVerticalAndDiagonalLines)
   EXPECT_GT(trackLine({0, 0}, {1, 1}, {.5, .5, 0}, .15, 1, 2, {}).angular, 0);
 }
 
+TEST(LineTracker, ArcEntrySteersMonotonicallyTowardTheNominalLine)
+{
+  Pose2 pose{0.0, 0.08, 0.0};
+  double previous_cross = pose.y;
+  for (int step = 0; step < 400 && std::abs(pose.y) > 0.005; ++step) {
+    const auto command = followArcEntry(
+      {0.0, 0.0}, {2.0, 0.0}, pose, 0.06, 0.20, 2.0,
+      std::acos(-1.0) / 9.0, 0.25);
+    EXPECT_LT(command.heading_correction, 0.0);
+    pose.yaw += command.angular * 0.02;
+    pose.x += command.linear * std::cos(pose.yaw) * 0.02;
+    pose.y += command.linear * std::sin(pose.yaw) * 0.02;
+    EXPECT_LE(pose.y, previous_cross + 1e-9);
+    EXPECT_GT(pose.y, 0.0);
+    previous_cross = pose.y;
+  }
+  EXPECT_LT(pose.y, 0.02);
+}
+
+TEST(LineTracker, ArcEntryCommandsNoTurnOnTheNominalLine)
+{
+  const auto command = followArcEntry(
+    {0.0, 0.0}, {0.0, -1.0}, {0.0, -0.2, -std::acos(-1.0) / 2.0},
+    0.06, 0.20, 2.0, std::acos(-1.0) / 9.0, 0.25);
+  EXPECT_NEAR(command.cross, 0.0, 1e-12);
+  EXPECT_NEAR(command.angular, 0.0, 1e-12);
+}
+
+TEST(LineTracker, ArcEntryApproachesFromEitherSideWithoutReversing)
+{
+  for (const double initial_cross : {-0.08, 0.08}) {
+    Pose2 pose{0.0, initial_cross, 0.0};
+    double previous_magnitude = std::abs(initial_cross);
+    for (int step = 0; step < 400 && std::abs(pose.y) > 0.005; ++step) {
+      const auto command = followArcEntry(
+        {0.0, 0.0}, {2.0, 0.0}, pose, 0.06, 0.20, 2.0,
+        std::acos(-1.0) / 9.0, 0.25);
+      EXPECT_GT(command.linear, 0.0);
+      pose.yaw += command.angular * 0.02;
+      pose.x += command.linear * std::cos(pose.yaw) * 0.02;
+      pose.y += command.linear * std::sin(pose.yaw) * 0.02;
+      EXPECT_LE(std::abs(pose.y), previous_magnitude + 1e-9);
+      EXPECT_GT(pose.y * initial_cross, 0.0);
+      previous_magnitude = std::abs(pose.y);
+    }
+    EXPECT_LT(std::abs(pose.y), 0.02);
+  }
+}
+
 TEST(LineTracker, JointWheelSaturationPreservesCurvature)
 {
   Command desired{.3, 1.2};

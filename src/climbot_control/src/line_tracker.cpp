@@ -66,6 +66,37 @@ Command trackLine(
     heading_correction, correction_saturated};
 }
 
+Command followArcEntry(
+  const Point2 & nominal_start, const Point2 & nominal_end, const Pose2 & pose,
+  double speed, double lookahead, double heading_gain,
+  double max_heading_correction, double max_angular_speed)
+{
+  const double dx = nominal_end.x - nominal_start.x;
+  const double dy = nominal_end.y - nominal_start.y;
+  const double length = std::hypot(dx, dy);
+  if (length <= 1e-9 || speed <= 0.0 || lookahead <= 0.0 || heading_gain <= 0.0 ||
+    max_heading_correction <= 0.0 || max_angular_speed <= 0.0)
+  {
+    throw std::invalid_argument("Invalid arc-entry geometry or limits.");
+  }
+  const double tx = dx / length;
+  const double ty = dy / length;
+  const double along = (pose.x - nominal_start.x) * tx +
+    (pose.y - nominal_start.y) * ty;
+  const double cross = -(pose.x - nominal_start.x) * ty +
+    (pose.y - nominal_start.y) * tx;
+  const double heading_correction = std::clamp(
+    std::atan2(-cross, lookahead),
+    -max_heading_correction, max_heading_correction);
+  const double target_yaw = std::atan2(ty, tx) + heading_correction;
+  const double heading_error = wrapAngle(target_yaw - pose.yaw);
+  return {
+    speed,
+    std::clamp(heading_gain * heading_error, -max_angular_speed, max_angular_speed),
+    along, cross, length - along, heading_error, 0.0, 0.0,
+    heading_correction, std::abs(heading_correction) >= max_heading_correction};
+}
+
 Command rateLimit(
   const Command & desired, const Command & previous, double dt,
   double linear_acceleration, double linear_deceleration, double angular_acceleration,
