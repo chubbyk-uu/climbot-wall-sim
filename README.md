@@ -31,7 +31,9 @@ source install/setup.bash
 - 速度相关的横向 WheelSlip；
 - ROS 2 `cmd_vel` 和里程计桥接。
 
-本项目运行于 WSL2，launch 会设置 `GALLIUM_DRIVER=d3d12` 并选择 NVIDIA 适配器，使 Gazebo OGRE2 通过 Mesa D3D12 使用 GPU 渲染。
+墙体尺寸位姿和机器人几何分别由 `config/wall.yaml` 和 `config/robot.yaml` 单一描述，Gazebo 世界、机器人模型和 `robot_state_publisher` 用的 URDF 都在启动时由它们渲染，两侧不会不同步。
+
+渲染后端由 `gpu_backend` 参数选择，默认 `auto`：检测到 WSL 时设置 `GALLIUM_DRIVER=d3d12` 并选择 NVIDIA 适配器，让 Gazebo OGRE2 通过 Mesa D3D12 使用 GPU；原生 Linux 上不设置这些变量。可用 `gpu_backend:=native` 或 `wsl_d3d12` 强制指定。
 
 ## 阶段 4：传感器与定位融合
 
@@ -45,7 +47,9 @@ source install/setup.bash
 - `/total_station/pose`：从真值派生的模拟全站仪位置，默认 **12 Hz**、5 mm 一倍标准差噪声和 50 ms 固定延迟；
 - `/odometry/filtered`：`robot_localization/ekf_node` 的融合输出和 `odom -> base_link` TF。
 
-融合坐标系 `odom` 固定在墙面上：`+X` 为初始前进方向，`+Y` 向上，`+Z` 为离墙法向。全站仪适配节点会将 Gazebo 世界坐标转换到该坐标系；Gazebo 真值话题仍保持原始世界坐标，便于独立评估。
+融合坐标系 `odom` 固定在墙面上：`+X` 沿墙水平，`+Y` 向上，`+Z` 为离墙法向，由 `config/wall.yaml` 定义。全站仪适配节点按该描述把 Gazebo 世界坐标转换过来；Gazebo 真值话题仍保持原始世界坐标，便于独立评估。
+
+TF 树为 `world → wall → odom → base_link → {imu_link, 两个主动轮, 后球轮}`。**`base_link` 的原点是两个主动轮轴的中点**（见 guide §4.3）：差分驱动绕该点旋转，原地转向不会在运动学上移动它，轮式里程计推算的也正是该点。
 
 全站仪参数均可在启动时修改，例如：
 
@@ -188,3 +192,44 @@ ros2 service call /coverage/clear_points std_srvs/srv/Trigger '{}'
 ```
 
 规划器发布 `/coverage/path`、`/coverage/markers` 和 `/coverage/status`，并提供 `/coverage/replan` 服务。扫描线位于均匀覆盖带中心，实际道间距不会超过 `track_spacing`；所有路径段均为直线，不生成圆角。
+
+## 测量与评估工具
+
+全部按仿真时间计时，被 `SIGINT`/`SIGTERM` 终止时会先发布停车指令。真值只用于记录和评估，不进入控制回路。
+
+| 脚本 | 用途 | 输出 |
+| --- | --- | --- |
+| `measure_normal_loads.py` | 七工况三点轮墙法向载荷（guide §15 测试 2） | `results/normal_loads_*.csv` |
+| `measure_turn_slip.py` | 原地转向下滑，多转角 × 多转速（guide §15 测试 6） | `results/turn_slip.csv` |
+| `calibrate_wall_slip.py` | 静止、水平侧滑、上下行速度标定 | `results/wall_slip_trajectory.csv` |
+| `plot_wall_slip.py` | 离线绘图，等比例墙面轨迹 | `results/wall_slip.png` |
+| `evaluate_localization.py` | 右/上/左/下四方向定位精度对比 | 日志 |
+
+自动化运行时用 `headless:=true` 关闭 Gazebo GUI。
+
+### 法向载荷分配
+
+质心 `base_link` z = `0.085` 时的实测值（`results/normal_loads_after_base_link_move.csv`）：
+
+| 工况 | 左轮 | 右轮 | 后球轮 |
+| --- | ---: | ---: | ---: |
+| 静止 | 45.8 N | 100.9 N | 73.3 N |
+| 水平行驶 | 45.6 / 100.7 N | 100.7 / 45.6 N | 73.7 N |
+| 上行 | 55.5 N | 55.3 N | 109.2 N |
+| 下行 | 91.2 N | 91.2 N | 37.6 N |
+| 下行制动 | 91.4 N | 91.4 N | 37.2 N（最低 35.9） |
+| 原地转向 | 66.1 N | 61.2 N | 92.8 N |
+
+最恶劣工况（下行制动）后球轮为 `16.3% F_s`，满足 guide §6.3 放宽后的 `≥ 0.15 F_s`。单个主动轮的载荷跨度是 `40.3 ~ 105.0 N`，而 WheelSlip 用的是单一标称值 `77 N`。
+
+### 定位精度
+
+四方向测试（每段 8 秒、0.15 m/s）中 EKF 相对 Gazebo 真值的误差：起点 3.0 mm，右行 10.8 mm，上行 7.8 mm，左行 11.8 mm，下行 9.8 mm。同一时刻轮式里程计的航向误差最大 9.7°，体现了 guide §8.4 要求的侧滑不可观测性。
+
+## 已知问题与未决事项
+
+- **转向后后球轮间歇脱离。** 连续原地转向后，后球轮接触传感器的发布率由 1000 Hz 降至约 700 Hz，即约 30% 的物理步处于脱离状态；连续四次 90° 转向后曾完全脱离，机体低头俯仰约 0.22°。这与 guide §14.1「原地转向时三个接触点均保持正法向载荷」冲突。`measure_normal_loads.py` 按 `contact_timeout_s = 0.15` 判定失接触，捕捉不到这种毫秒级抖动，需要提高时间分辨率后重新定位原因。
+- **侧滑标定重复性偏弱。** 三次水平试验的下降比为 `7.03% / 9.30% / 9.71%`，相对均值 ±19%，且第一次系统性偏低。guide §12 要求测试可重复，当前离散度使均值作为回归基线偏弱。
+- **速度指令看门狗尚未实现。** 见 guide §11。目前只有各脚本自身的终止时停车，系统级看门狗要在阶段 E 随状态机一并实现。
+- **WheelSlip 对法向载荷不敏感。** 滑移柔度按配置的 `wheel_normal_force` 缩放而非实际接触载荷，属于模型保真度限制，真实爬壁机器人在轮子卸载时滑移会加剧。
+- **规划器接口未补齐。** 缺 `detection_width` / `overlap_ratio` 与机器人轮廓参数，`/coverage/path` 的位姿航向未填充，规划失败时旧路径仍处于 latch 状态。
