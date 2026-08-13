@@ -39,6 +39,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
   ament_add_pytest_test(test_turn_profile test/test_turn_profile.py)
+  ament_add_pytest_test(
+    test_wall_slip_sampling test/test_wall_slip_sampling.py)
 endif()
 
 ament_package()

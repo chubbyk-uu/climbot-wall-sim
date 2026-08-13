@@ -31,6 +31,11 @@ def stamp_nanoseconds(message):
     return message.header.stamp.sec * 1_000_000_000 + message.header.stamp.nanosec
 
 
+def is_new_truth_sample(current_stamp_ns, previous_stamp_ns):
+    """Return whether a truth message has not yet been recorded in this phase."""
+    return previous_stamp_ns is None or current_stamp_ns != previous_stamp_ns
+
+
 class WallSlipCalibrator(Node):
     """Run repeatable truth-based tests without feeding truth to control."""
 
@@ -109,6 +114,7 @@ class WallSlipCalibrator(Node):
         target_ns = stamp_nanoseconds(start) + int(duration_s * 1e9)
         start_ns = stamp_nanoseconds(start)
         start_position = self._wall_position(start)
+        last_recorded_stamp_ns = None
         while rclpy.ok() and stamp_nanoseconds(self._truth) < target_ns:
             rclpy.spin_once(self, timeout_sec=0.02)
             angular = 0.0
@@ -120,15 +126,19 @@ class WallSlipCalibrator(Node):
                         * error))
             self._publish(linear=linear, angular=angular)
             if label is not None:
-                # Truth path relative to where the phase began, so every
-                # repetition can be overlaid on one plot.
-                position = self._wall_position(self._truth)
-                self._trajectory.append((
-                    label,
-                    (stamp_nanoseconds(self._truth) - start_ns) * 1e-9,
-                    position[0] - start_position[0],
-                    position[1] - start_position[1],
-                    math.degrees(self._truth_yaw())))
+                truth_stamp_ns = stamp_nanoseconds(self._truth)
+                if is_new_truth_sample(
+                        truth_stamp_ns, last_recorded_stamp_ns):
+                    # Truth path relative to where the phase began, so every
+                    # repetition can be overlaid on one plot.
+                    position = self._wall_position(self._truth)
+                    self._trajectory.append((
+                        label,
+                        (truth_stamp_ns - start_ns) * 1e-9,
+                        position[0] - start_position[0],
+                        position[1] - start_position[1],
+                        math.degrees(self._truth_yaw())))
+                    last_recorded_stamp_ns = truth_stamp_ns
         end = self._truth
         self._publish()
         return start, end
