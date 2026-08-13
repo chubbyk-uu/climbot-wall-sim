@@ -55,6 +55,12 @@ ros2 launch climbot_gazebo climbot_wall.launch.py \
 
 全站仪只发布绝对位置，不伪造航向或速度；其原始 Gazebo 真值不会送入 EKF 或控制器。
 
+可在仿真运行时执行以下可重复的四方向定位评估。脚本使用 EKF 融合航向闭环转到 `0°`、`90°`、`180°`、`-90°`，每段默认前进 8 秒；它会同时输出 Gazebo 实际航向、EKF 融合航向、轮式里程计航向和位置误差：
+
+```bash
+ros2 run climbot_gazebo evaluate_localization.py
+```
+
 启动仿真：
 
 ```bash

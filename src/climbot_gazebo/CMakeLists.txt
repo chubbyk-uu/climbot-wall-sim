@@ -9,7 +9,9 @@ install(
 )
 
 install(
-  PROGRAMS scripts/total_station_sim.py
+  PROGRAMS
+    scripts/evaluate_localization.py
+    scripts/total_station_sim.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
