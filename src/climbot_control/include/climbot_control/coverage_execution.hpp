@@ -1,0 +1,39 @@
+#ifndef CLIMBOT_CONTROL__COVERAGE_EXECUTION_HPP_
+#define CLIMBOT_CONTROL__COVERAGE_EXECUTION_HPP_
+
+#include <optional>
+#include <string>
+
+#include "climbot_interfaces/msg/coverage_task.hpp"
+#include "geometry_msgs/msg/polygon.hpp"
+
+namespace climbot_control
+{
+std::optional<std::string> validateCoverageTask(
+  const climbot_interfaces::msg::CoverageTask & task,
+  const std::string & expected_frame);
+
+bool pointInPolygon(
+  double x, double y, const geometry_msgs::msg::Polygon & polygon,
+  double tolerance = 1e-9);
+
+class CrossTrackOscillationMonitor
+{
+public:
+  CrossTrackOscillationMonitor(
+    double deadband, double minimum_reversal_travel, unsigned int maximum_reversals);
+
+  bool update(double cross_track, double along_track);
+  void reset() noexcept;
+  unsigned int reversalCount() const noexcept {return reversal_count_;}
+
+private:
+  double deadband_;
+  double minimum_reversal_travel_;
+  unsigned int maximum_reversals_;
+  int sign_{0};
+  double last_reversal_along_{0.0};
+  unsigned int reversal_count_{0};
+};
+}  // namespace climbot_control
+#endif

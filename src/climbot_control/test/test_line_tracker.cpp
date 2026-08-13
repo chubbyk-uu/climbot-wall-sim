@@ -1,10 +1,44 @@
 #include "climbot_control/line_tracker.hpp"
 #include "climbot_control/command_watchdog.hpp"
+#include "climbot_control/coverage_execution.hpp"
 #include "climbot_control/turn_profile.hpp"
 #include <cmath>
 #include <limits>
 #include "gtest/gtest.h"
 using namespace climbot_control;
+
+namespace
+{
+climbot_interfaces::msg::CoverageTask validTask()
+{
+  using Task = climbot_interfaces::msg::CoverageTask;
+  Task task;
+  task.header.frame_id = "odom";
+  task.task_id = "test-task";
+  task.revision = 1U;
+  task.sweep_direction = Task::SWEEP_HORIZONTAL;
+  task.detection_width = 0.5;
+  task.detection_length = 0.4;
+  for (const auto & coordinates :
+    {std::pair{-1.0F, -1.0F}, std::pair{2.0F, -1.0F},
+      std::pair{2.0F, 2.0F}, std::pair{-1.0F, 2.0F}})
+  {
+    geometry_msgs::msg::Point32 point;
+    point.x = coordinates.first;
+    point.y = coordinates.second;
+    task.coverage_region.points.push_back(point);
+    task.motion_region.points.push_back(point);
+  }
+  geometry_msgs::msg::Pose first;
+  first.orientation.w = 1.0;
+  geometry_msgs::msg::Pose second = first;
+  second.position.x = 1.0;
+  task.waypoints = {first, second};
+  task.segment_types = {Task::SEGMENT_SCAN};
+  return task;
+}
+}  // namespace
+
 TEST(LineTracker, CorrectsDownwardCrossTrackWithUpwardHeading)
 {
   const auto command = trackLine({0, 0}, {1, 0}, {0, -0.1, 0}, .15, 1, 2, {});
@@ -142,6 +176,49 @@ TEST(TurnProfile, RejectsInvalidLimits)
   EXPECT_THROW(
     sampleTurn(planTurn(1.0, 0.6, 1.0), std::numeric_limits<double>::infinity()),
     std::invalid_argument);
+}
+
+TEST(CoverageExecution, ValidatesImmutableTaskStructureAndBounds)
+{
+  auto task = validTask();
+  EXPECT_FALSE(validateCoverageTask(task, "odom").has_value());
+  task.revision = 0U;
+  EXPECT_TRUE(validateCoverageTask(task, "odom").has_value());
+  task = validTask();
+  task.waypoints.back().position.x = 3.0;
+  EXPECT_TRUE(validateCoverageTask(task, "odom").has_value());
+  task = validTask();
+  task.segment_types.clear();
+  EXPECT_TRUE(validateCoverageTask(task, "odom").has_value());
+}
+
+TEST(CoverageExecution, IncludesPolygonBoundaryButRejectsOutsidePoint)
+{
+  const auto polygon = validTask().motion_region;
+  EXPECT_TRUE(pointInPolygon(-1.0, 0.0, polygon));
+  EXPECT_TRUE(pointInPolygon(0.0, 0.0, polygon));
+  EXPECT_FALSE(pointInPolygon(2.1, 0.0, polygon));
+}
+
+TEST(CoverageExecution, DetectsSustainedCrossTrackReversalsNotSensorNoise)
+{
+  // Repeated zero crossings inside a small error envelope are acceptable.
+  CrossTrackOscillationMonitor monitor(0.020, 0.10, 3U);
+  EXPECT_FALSE(monitor.update(0.006, 0.0));
+  EXPECT_FALSE(monitor.update(-0.006, 0.11));
+  EXPECT_FALSE(monitor.update(0.008, 0.22));
+  EXPECT_FALSE(monitor.update(-0.009, 0.33));
+  EXPECT_EQ(monitor.reversalCount(), 0U);
+
+  EXPECT_FALSE(monitor.update(0.030, 0.44));
+  EXPECT_FALSE(monitor.update(-0.030, 0.55));
+  EXPECT_FALSE(monitor.update(0.030, 0.66));
+  EXPECT_FALSE(monitor.update(-0.030, 0.77));
+  EXPECT_TRUE(monitor.update(0.030, 0.88));
+  EXPECT_EQ(monitor.reversalCount(), 4U);
+  monitor.reset();
+  EXPECT_FALSE(monitor.update(0.004, 0.50));
+  EXPECT_EQ(monitor.reversalCount(), 0U);
 }
 
 TEST(CommandWatchdog, StopsBeforeFirstCommandAndAfterTimeout)

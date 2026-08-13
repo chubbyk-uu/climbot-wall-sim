@@ -26,6 +26,7 @@ def generate_launch_description():
         name='line_tracker',
         parameters=[LaunchConfiguration('config_file'), {
             'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'standalone_mode': LaunchConfiguration('standalone_mode'),
             'wheel_separation': float(wheel['separation_m']),
             'wheel_speed_limit': float(drive['max_linear_velocity_mps']),
             'wheel_acceleration_limit': float(
@@ -36,6 +37,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
+        DeclareLaunchArgument('standalone_mode', default_value='true'),
         DeclareLaunchArgument('config_file', default_value=default_config),
         tracker,
     ])

@@ -1,16 +1,20 @@
 #include <chrono>
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
+#include "climbot_control/coverage_execution.hpp"
 #include "climbot_control/line_tracker.hpp"
 #include "climbot_control/turn_profile.hpp"
+#include "climbot_interfaces/action/execute_coverage.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/create_timer.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 #include "std_msgs/msg/bool.hpp"
 
 using namespace std::chrono_literals;
@@ -18,6 +22,9 @@ using namespace std::chrono_literals;
 class LineTrackerNode : public rclcpp::Node
 {
 public:
+  using ExecuteCoverage = climbot_interfaces::action::ExecuteCoverage;
+  using GoalHandle = rclcpp_action::ServerGoalHandle<ExecuteCoverage>;
+
   LineTrackerNode()
   : Node("line_tracker")
   {
@@ -33,6 +40,17 @@ public:
     control_frequency_hz_ = declare_parameter("control_frequency_hz", 50.0);
     odometry_timeout_s_ = declare_parameter("odometry_timeout_s", 0.25);
     frame_id_ = declare_parameter("frame_id", "odom");
+    standalone_mode_ = declare_parameter("standalone_mode", true);
+    segment_timeout_s_ = declare_parameter("segment_timeout_s", 120.0);
+    motion_region_tolerance_ = declare_parameter("motion_region_tolerance_m", 0.02);
+    const int oscillation_reversals = declare_parameter("visible_oscillation_reversals", 4);
+    if (oscillation_reversals < 0) {
+      throw std::invalid_argument("visible_oscillation_reversals must be non-negative.");
+    }
+    oscillation_monitor_ = std::make_unique<climbot_control::CrossTrackOscillationMonitor>(
+      declare_parameter("visible_oscillation_amplitude_m", 0.03),
+      declare_parameter("visible_oscillation_minimum_travel_m", 0.10),
+      static_cast<unsigned int>(oscillation_reversals));
 
     limits_.max_linear = declare_parameter("max_linear_speed", 0.15);
     limits_.max_angular = declare_parameter("max_angular_speed", 0.35);
@@ -110,7 +128,16 @@ public:
         have_pose_ = true;
       });
 
-    publishReferencePath();
+    action_server_ = rclcpp_action::create_server<ExecuteCoverage>(
+      this, "/coverage/execute",
+      std::bind(&LineTrackerNode::handleGoal, this, std::placeholders::_1,
+        std::placeholders::_2),
+      std::bind(&LineTrackerNode::handleCancel, this, std::placeholders::_1),
+      std::bind(&LineTrackerNode::handleAccepted, this, std::placeholders::_1));
+
+    if (standalone_mode_) {
+      publishReferencePath();
+    }
     publishCompletion(false);
     const auto period = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::duration<double>(1.0 / control_frequency_hz_));
@@ -161,6 +188,11 @@ private:
     requirePositive("heading_gain", heading_gain_);
     requirePositive("control_frequency_hz", control_frequency_hz_);
     requirePositive("odometry_timeout_s", odometry_timeout_s_);
+    requirePositive("segment_timeout_s", segment_timeout_s_);
+    requireFinite("motion_region_tolerance_m", motion_region_tolerance_);
+    if (motion_region_tolerance_ < 0.0) {
+      throw std::invalid_argument("motion_region_tolerance_m must be non-negative.");
+    }
     requirePositive("max_linear_speed", limits_.max_linear);
     requirePositive("max_angular_speed", limits_.max_angular);
     requirePositive("max_heading_correction_deg", limits_.max_heading_correction);
@@ -229,6 +261,130 @@ private:
     }
   }
 
+  rclcpp_action::GoalResponse handleGoal(
+    const rclcpp_action::GoalUUID &,
+    std::shared_ptr<const ExecuteCoverage::Goal> goal)
+  {
+    if (standalone_mode_) {
+      RCLCPP_WARN(get_logger(), "Rejected coverage goal while standalone_mode is enabled.");
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+    if (active_goal_) {
+      RCLCPP_WARN(get_logger(), "Rejected coverage goal because another task is active.");
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+    if (const auto error = climbot_control::validateCoverageTask(goal->task, frame_id_)) {
+      RCLCPP_WARN(get_logger(), "Rejected invalid coverage task: %s", error->c_str());
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+  }
+
+  rclcpp_action::CancelResponse handleCancel(const std::shared_ptr<GoalHandle> goal)
+  {
+    return goal == active_goal_ ? rclcpp_action::CancelResponse::ACCEPT :
+           rclcpp_action::CancelResponse::REJECT;
+  }
+
+  void handleAccepted(const std::shared_ptr<GoalHandle> goal)
+  {
+    active_goal_ = goal;
+    active_task_ = goal->get_goal()->task;
+    completed_segments_ = 0U;
+    current_segment_ = 0U;
+    task_start_time_ = now();
+    configureSegment(current_segment_);
+    RCLCPP_INFO(
+      get_logger(), "Accepted coverage task '%s' revision %u with %zu segments.",
+      active_task_->task_id.c_str(), active_task_->revision,
+      active_task_->segment_types.size());
+  }
+
+  void configureSegment(std::size_t index)
+  {
+    const auto & first = active_task_->waypoints[index].position;
+    const auto & second = active_task_->waypoints[index + 1U].position;
+    start_ = {first.x, first.y};
+    end_ = {second.x, second.y};
+    motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
+    previous_command_ = {};
+    cross_integral_ = 0.0;
+    alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    goal_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    segment_start_time_ = now();
+    oscillation_monitor_->reset();
+    oscillation_warning_emitted_ = false;
+    publishCompletion(false);
+    publishReferencePath();
+  }
+
+  void finishGoal(uint16_t code, const std::string & message)
+  {
+    if (!active_goal_) {
+      return;
+    }
+    geometry_msgs::msg::Twist stop;
+    command_publisher_->publish(stop);
+    previous_command_ = {};
+    auto result = std::make_shared<ExecuteCoverage::Result>();
+    result->result_code = code;
+    result->message = message;
+    result->completed_segments = completed_segments_;
+    result->elapsed_time_s = std::max(0.0, (now() - task_start_time_).seconds());
+    if (code == ExecuteCoverage::Result::SUCCESS) {
+      active_goal_->succeed(result);
+    } else if (code == ExecuteCoverage::Result::CANCELED) {
+      active_goal_->canceled(result);
+    } else {
+      active_goal_->abort(result);
+    }
+    RCLCPP_INFO(get_logger(), "Coverage execution stopped: %s", message.c_str());
+    active_goal_.reset();
+    active_task_.reset();
+    motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
+  }
+
+  uint8_t feedbackState() const
+  {
+    switch (motion_state_) {
+      case MotionState::WAITING_FOR_ALIGNMENT:
+      case MotionState::ALIGN_BRAKE:
+      case MotionState::ALIGN_PROFILE:
+        return ExecuteCoverage::Feedback::ALIGN;
+      case MotionState::ALIGN_SETTLE:
+        return ExecuteCoverage::Feedback::TURN_SETTLE;
+      case MotionState::TRACK_LINE:
+        return ExecuteCoverage::Feedback::TRACK_LINE;
+      case MotionState::FINAL_APPROACH:
+        return ExecuteCoverage::Feedback::FINAL_APPROACH;
+      case MotionState::SEGMENT_COMPLETE:
+        return ExecuteCoverage::Feedback::STOPPED;
+    }
+    return ExecuteCoverage::Feedback::WAITING;
+  }
+
+  void publishFeedback(const climbot_control::Command & command)
+  {
+    if (!active_goal_) {
+      return;
+    }
+    auto feedback = std::make_shared<ExecuteCoverage::Feedback>();
+    feedback->state = feedbackState();
+    feedback->current_segment = static_cast<int32_t>(current_segment_);
+    feedback->segment_type = active_task_->segment_types[current_segment_];
+    feedback->along_track_error = command.along;
+    feedback->cross_track_error = command.cross;
+    feedback->heading_error = command.heading_error;
+    feedback->remaining_distance = command.remaining;
+    const double length = std::hypot(end_.x - start_.x, end_.y - start_.y);
+    const double segment_progress = length > 0.0 ?
+      std::clamp(command.along / length, 0.0, 1.0) : 0.0;
+    feedback->progress = static_cast<float>(
+      (static_cast<double>(completed_segments_) + segment_progress) /
+      static_cast<double>(active_task_->segment_types.size()));
+    active_goal_->publish_feedback(feedback);
+  }
+
   void publishReferencePath()
   {
     nav_msgs::msg::Path path;
@@ -257,6 +413,23 @@ private:
   void onTimer()
   {
     const auto current_time = now();
+    if (!standalone_mode_) {
+      if (!active_goal_) {
+        previous_command_ = {};
+        geometry_msgs::msg::Twist stop;
+        command_publisher_->publish(stop);
+        last_control_time_ = current_time;
+        return;
+      }
+      if (active_goal_->is_canceling()) {
+        finishGoal(ExecuteCoverage::Result::CANCELED, "Coverage task canceled.");
+        return;
+      }
+      if ((current_time - segment_start_time_).seconds() > segment_timeout_s_) {
+        finishGoal(ExecuteCoverage::Result::CONTROL_TIMEOUT, "Segment execution timed out.");
+        return;
+      }
+    }
     if (!have_pose_ || current_time < last_pose_received_time_ ||
       (current_time - last_pose_received_time_).seconds() > odometry_timeout_s_)
     {
@@ -272,6 +445,25 @@ private:
       command_publisher_->publish(stop);
       RCLCPP_WARN_THROTTLE(
         get_logger(), *get_clock(), 2000, "Filtered odometry is unavailable or stale; stopping.");
+      if (!standalone_mode_) {
+        if (!have_pose_ &&
+          (current_time - task_start_time_).seconds() <= odometry_timeout_s_)
+        {
+          publishFeedback({});
+          return;
+        }
+        finishGoal(
+          ExecuteCoverage::Result::LOCALIZATION_TIMEOUT,
+          "Filtered odometry is unavailable or stale.");
+      }
+      return;
+    }
+    if (!standalone_mode_ && !climbot_control::pointInPolygon(
+        pose_.x, pose_.y, active_task_->motion_region, motion_region_tolerance_))
+    {
+      finishGoal(
+        ExecuteCoverage::Result::OUT_OF_BOUNDS,
+        "Fused robot position left the task motion region.");
       return;
     }
     const double dt = last_control_time_.nanoseconds() == 0 ?
@@ -279,6 +471,16 @@ private:
     last_control_time_ = current_time;
     if (dt <= 0.0) {
       return;
+    }
+
+    if (!standalone_mode_ && motion_state_ == MotionState::SEGMENT_COMPLETE) {
+      ++completed_segments_;
+      ++current_segment_;
+      if (current_segment_ >= active_task_->segment_types.size()) {
+        finishGoal(ExecuteCoverage::Result::SUCCESS, "Coverage task completed.");
+        return;
+      }
+      configureSegment(current_segment_);
     }
 
     auto desired = climbot_control::trackLine(start_, end_, pose_, cruise_speed_,
@@ -291,12 +493,14 @@ private:
       motion_state_ != MotionState::FINAL_APPROACH)
     {
       updateAlignment(current_time, dt, desired);
+      publishFeedback(desired);
       return;
     }
     if (std::abs(desired.heading_error) >= alignment_reentry_threshold_) {
       cross_integral_ = 0.0;
       motion_state_ = MotionState::ALIGN_BRAKE;
       updateAlignment(current_time, dt, desired);
+      publishFeedback(desired);
       return;
     }
     if (motion_state_ == MotionState::TRACK_LINE &&
@@ -308,6 +512,7 @@ private:
       desired.linear = std::min(desired.linear, final_approach_speed_);
       if (updateGoalCompletion(current_time, desired)) {
         limitAndPublish({}, dt, angular_acceleration_);
+        publishFeedback(desired);
         return;
       }
     }
@@ -333,7 +538,17 @@ private:
         desired = candidate;
       }
     }
+    if (oscillation_monitor_->update(desired.cross, desired.along) &&
+      !oscillation_warning_emitted_)
+    {
+      oscillation_warning_emitted_ = true;
+      RCLCPP_WARN(
+        get_logger(),
+        "Visible cross-track oscillation detected on segment %zu; continuing while recording it for trajectory acceptance.",
+        current_segment_);
+    }
     limitAndPublish(desired, dt, angular_acceleration_);
+    publishFeedback(desired);
   }
 
   bool updateGoalCompletion(
@@ -478,6 +693,8 @@ private:
   double heading_gain_{2.0};
   double control_frequency_hz_{50.0};
   double odometry_timeout_s_{0.25};
+  double segment_timeout_s_{120.0};
+  double motion_region_tolerance_{0.02};
   double alignment_reentry_threshold_{0.209439510};
   double alignment_tolerance_{0.034906585};
   double alignment_settle_duration_{0.50};
@@ -500,6 +717,10 @@ private:
   double wheel_speed_limit_{0.30};
   double wheel_acceleration_limit_{0.40};
   std::string frame_id_{"odom"};
+  bool standalone_mode_{true};
+  bool oscillation_warning_emitted_{false};
+  uint32_t completed_segments_{0U};
+  std::size_t current_segment_{0U};
   climbot_control::Limits limits_;
   climbot_control::Point2 start_{};
   climbot_control::Point2 end_{};
@@ -513,10 +734,16 @@ private:
   rclcpp::Time goal_settle_start_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_pose_received_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_control_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time task_start_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time segment_start_time_{0, 0, RCL_ROS_TIME};
+  std::optional<climbot_interfaces::msg::CoverageTask> active_task_;
+  std::shared_ptr<GoalHandle> active_goal_;
+  std::unique_ptr<climbot_control::CrossTrackOscillationMonitor> oscillation_monitor_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr command_publisher_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr reference_publisher_;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr completion_publisher_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
+  rclcpp_action::Server<ExecuteCoverage>::SharedPtr action_server_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 

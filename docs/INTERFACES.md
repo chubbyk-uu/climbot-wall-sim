@@ -10,6 +10,7 @@
 | `ros2 launch climbot_coverage coverage_planner.launch.py` | 独立覆盖规划器和可选 RViz |
 | `ros2 launch climbot_coverage coverage_sim.launch.py` | 当前阶段联合启动仿真、规划器和 RViz |
 | `ros2 launch climbot_control line_tracker.launch.py` | 单段直线跟踪器；从共享描述注入轮距和轮缘硬限值 |
+| `ros2 launch climbot_control coverage_executor.launch.py` | 多段覆盖 Action 执行器；不接入 Nav2 |
 
 `climbot_wall.launch.py` 的主要 launch 参数：
 
@@ -67,6 +68,10 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | 节点 | 参数 | 默认值 | 行为 |
 | --- | --- | ---: | --- |
 | `line_tracker` | `odometry_timeout_s` | `0.25 s` | 超过该时间未收到有效融合位姿时持续发布零速，并清空上一控制指令 |
+| `line_tracker` | `standalone_mode` | `true` | `true` 执行参数单段；Action launch 将其设为 `false` |
+| `line_tracker` | `segment_timeout_s` | `120 s` | 单段超过该时间则停车并以 `CONTROL_TIMEOUT` 终止任务 |
+| `line_tracker` | `motion_region_tolerance_m` | `0.02 m` | 融合位置越出安全运动区域的数值容差 |
+| `line_tracker` | `visible_oscillation_amplitude_m` | `0.03 m` | 仅记录肉眼可见幅度的横轨往复；小误差反复过零不算故障 |
 | `line_tracker` | `control_frequency_hz` | `50 Hz` | 直线跟踪控制频率 |
 | `line_tracker` | `cross_gain` | `1.0 rad/m` | 横轨比例反馈增益 |
 | `line_tracker` | `cross_integral_gain` | `0.30 rad/(m·s)` | 横轨积分反馈增益 |
@@ -239,7 +244,7 @@ Header，避免同一任务内部出现多个坐标系或时间戳。
 
 ### `ExecuteCoverage.action`
 
-Action 名称冻结为 `/coverage/execute`，将在 E7 实现。使用 ROS 2 Action 不表示接入 Nav2。
+Action 名称为 `/coverage/execute`，E7 已实现。使用 ROS 2 Action 不表示接入 Nav2。
 
 Goal：
 
@@ -286,6 +291,17 @@ float32 progress
 
 `current_segment = -1` 表示尚未进入任何线段。误差单位分别为米、米、弧度和米；
 `progress` 范围为 `[0, 1]`，只用于显示，不作为任务完成判据。
+当前实现中 `along_track_error` 表示机器人相对本段起点的有符号沿轨坐标；
+`remaining_distance` 才是到本段终点的沿轨剩余量。
+
+执行器完整复制并校验 Goal，一次只执行一个任务。每段都经过
+`制动 → 原地 ALIGN → 航向稳定 → 直线跟踪 → 空间到达并停车`，不会用运行时间替代
+到达判据；取消、定位超时、单段超时或越界均先发布零速。当前 E7 使用任务中的标称
+端点；转向下坠后的动态直线换道参考属于下一项实现。
+
+“不出现明显蛇形”的判断不使用横轨误差过零次数作为单独故障条件：默认只对横向
+幅度超过 `0.03 m` 且沿轨持续出现的往复做诊断告警。最终接受与否还要同时检查真值
+横轨包络、航向摆幅和整段曲率；厘米级以内的小误差反复过零允许存在。
 
 ### 执行与版本规则
 

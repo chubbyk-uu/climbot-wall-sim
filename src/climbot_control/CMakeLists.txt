@@ -2,20 +2,25 @@ cmake_minimum_required(VERSION 3.16)
 project(climbot_control)
 
 find_package(ament_cmake REQUIRED)
+find_package(climbot_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 
-add_library(line_tracker src/line_tracker.cpp src/command_watchdog.cpp src/turn_profile.cpp)
+add_library(line_tracker src/line_tracker.cpp src/command_watchdog.cpp src/coverage_execution.cpp
+  src/turn_profile.cpp)
 target_compile_features(line_tracker PUBLIC cxx_std_17)
 target_include_directories(line_tracker PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+ament_target_dependencies(line_tracker climbot_interfaces geometry_msgs)
 
 add_executable(line_tracker_node src/line_tracker_node.cpp)
 target_compile_features(line_tracker_node PUBLIC cxx_std_17)
 target_link_libraries(line_tracker_node line_tracker)
-ament_target_dependencies(line_tracker_node geometry_msgs nav_msgs rclcpp std_msgs)
+ament_target_dependencies(line_tracker_node
+  climbot_interfaces geometry_msgs nav_msgs rclcpp rclcpp_action std_msgs)
 
 add_executable(cmd_vel_watchdog_node src/cmd_vel_watchdog_node.cpp)
 target_compile_features(cmd_vel_watchdog_node PUBLIC cxx_std_17)
@@ -41,6 +46,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_line_tracker_alignment.py TIMEOUT 30)
   add_launch_test(test/test_line_tracker_completion.py TIMEOUT 30)
   add_launch_test(test/test_line_tracker_node.py TIMEOUT 30)
+  add_launch_test(test/test_coverage_executor.py TIMEOUT 30)
 endif()
 
 ament_export_include_directories(include)
