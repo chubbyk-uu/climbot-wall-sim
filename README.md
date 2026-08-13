@@ -76,6 +76,19 @@ ros2 launch climbot_gazebo climbot_wall.launch.py imu_orientation_stddev_rad:=0.
 ros2 run climbot_gazebo evaluate_localization.py
 ```
 
+墙面滑移标定工具会以 Gazebo 真值独立评估静止、无纠偏水平行驶，以及融合航向保持下的上/下行；真值不会进入控制回路。默认执行一次 30 秒静止测试和三组 8 秒运动测试：
+
+```bash
+ros2 run climbot_gazebo calibrate_wall_slip.py
+```
+
+可缩短试运行或增加重复次数，例如：
+
+```bash
+ros2 run climbot_gazebo calibrate_wall_slip.py --ros-args \
+  -p repetitions:=3 -p static_duration_s:=30.0 -p drive_duration_s:=8.0
+```
+
 启动仿真：
 
 ```bash
@@ -117,6 +130,6 @@ m  ,  .
 ros2 topic echo /model/climbot/odometry
 ```
 
-当前标定条件下，机器人以 `0.15 m/s` 水平行驶时，约每行驶 `0.30 m` 下降 `0.05 m`。该侧滑由真实重力驱动，WheelSlip 只描述运动轮胎的横向蠕滑，不施加额外向下力。
+当前 WheelSlip 参数应以 `calibrate_wall_slip.py` 的重复实验结果为准。该侧滑由真实重力驱动，WheelSlip 只描述运动轮胎的运动蠕滑，不施加额外向下力。
 
-当机器人转为竖直方向并保持相同的 `0.15 m/s` 指令时，重力和纵向 WheelSlip 会导致上下行实际速度不对称。分别持续行驶 `15 s`，并对中间 `9.979 s` 的 Gazebo 世界位姿做线性拟合后，上行速度为 `0.14302 m/s`，下行速度为 `0.15698 m/s`，下行比上行快约 `9.75%`。
+当前参数（横向 `0.12`、纵向 `0.04`）的三重复标定基线为：静止 30 秒无可见下滑；水平下降/前进比均值 `8.18%`；上行 `0.14077 m/s`，下行 `0.15177 m/s`，下行快 `7.81%`。该数值用于后续回归对比，改变质量、吸附力或 WheelSlip 参数后必须重新标定。
