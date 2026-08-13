@@ -16,6 +16,7 @@ install(
     scripts/calibrate_wall_slip.py
     scripts/evaluate_localization.py
     scripts/measure_normal_loads.py
+    scripts/plot_wall_slip.py
     scripts/total_station_sim.py
     scripts/wall_imu_adapter.py
     scripts/wall_wheel_odom_adapter.py

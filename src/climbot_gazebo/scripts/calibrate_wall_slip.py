@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Measure static, lateral, and longitudinal wall-slip characteristics."""
 
+import csv
 import math
 import os
 import time
@@ -42,8 +43,10 @@ class WallSlipCalibrator(Node):
         self.declare_parameter('heading_hold_gain', 1.5)
         self.declare_parameter('turn_timeout_s', 25.0)
         self.declare_parameter('wall_config', default_wall_config())
+        self.declare_parameter('trajectory_csv', '')
         self._wall_frame = WallFrame.from_yaml(
             str(self.get_parameter('wall_config').value))
+        self._trajectory = []
         self._truth = None
         self._filtered = None
         self._command = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -101,9 +104,11 @@ class WallSlipCalibrator(Node):
         self._publish()
         raise RuntimeError('Timed out turning to requested heading.')
 
-    def _run_for_sim_time(self, duration_s, linear, target_yaw=None):
+    def _run_for_sim_time(self, duration_s, linear, target_yaw=None, label=None):
         start = self._truth
         target_ns = stamp_nanoseconds(start) + int(duration_s * 1e9)
+        start_ns = stamp_nanoseconds(start)
+        start_position = self._wall_position(start)
         while rclpy.ok() and stamp_nanoseconds(self._truth) < target_ns:
             rclpy.spin_once(self, timeout_sec=0.02)
             angular = 0.0
@@ -114,9 +119,39 @@ class WallSlipCalibrator(Node):
                     min(0.35, float(self.get_parameter('heading_hold_gain').value)
                         * error))
             self._publish(linear=linear, angular=angular)
+            if label is not None:
+                # Truth path relative to where the phase began, so every
+                # repetition can be overlaid on one plot.
+                position = self._wall_position(self._truth)
+                self._trajectory.append((
+                    label,
+                    (stamp_nanoseconds(self._truth) - start_ns) * 1e-9,
+                    position[0] - start_position[0],
+                    position[1] - start_position[1],
+                    math.degrees(self._truth_yaw())))
         end = self._truth
         self._publish()
         return start, end
+
+    def _truth_yaw(self):
+        """Return the Gazebo truth heading in wall coordinates."""
+        return yaw_from_quaternion(self._wall_frame.orientation_from_world(
+            quaternion_tuple(self._truth.pose.pose.orientation)))
+
+    def _write_trajectory(self):
+        path = str(self.get_parameter('trajectory_csv').value)
+        if not path or not self._trajectory:
+            return
+        directory = os.path.dirname(path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        with open(path, 'w', newline='') as handle:
+            writer = csv.writer(handle)
+            writer.writerow(['phase', 'time_s', 'forward_m', 'up_m', 'yaw_deg'])
+            for row in self._trajectory:
+                writer.writerow(
+                    [row[0]] + ['%.6f' % value for value in row[1:]])
+        self.get_logger().info('Wrote %s' % os.path.abspath(path))
 
     def _delta(self, start, end):
         start_position = self._wall_position(start)
@@ -126,7 +161,8 @@ class WallSlipCalibrator(Node):
 
     def _report_static(self):
         start, end = self._run_for_sim_time(
-            float(self.get_parameter('static_duration_s').value), 0.0)
+            float(self.get_parameter('static_duration_s').value), 0.0,
+            label='static')
         delta, elapsed = self._delta(start, end)
         self.get_logger().info(
             'static: duration=%.3fs forward=%.4fm up=%.4fm normal=%.4fm' % (
@@ -136,7 +172,8 @@ class WallSlipCalibrator(Node):
         self._turn_to(0.0)
         start, end = self._run_for_sim_time(
             float(self.get_parameter('drive_duration_s').value),
-            float(self.get_parameter('linear_speed_mps').value))
+            float(self.get_parameter('linear_speed_mps').value),
+            label='horizontal_%d' % repetition)
         delta, elapsed = self._delta(start, end)
         descent_ratio = -delta[1] / delta[0] if delta[0] > 1e-6 else math.nan
         self.get_logger().info(
@@ -149,7 +186,8 @@ class WallSlipCalibrator(Node):
         self._turn_to(target_yaw)
         start, end = self._run_for_sim_time(
             float(self.get_parameter('drive_duration_s').value),
-            float(self.get_parameter('linear_speed_mps').value), target_yaw)
+            float(self.get_parameter('linear_speed_mps').value), target_yaw,
+            label='%s_%d' % (label, repetition))
         delta, elapsed = self._delta(start, end)
         speed = delta[1] / elapsed
         self.get_logger().info(
@@ -178,6 +216,7 @@ class WallSlipCalibrator(Node):
             'mean_down_speed=%.5fm/s down_faster=%.2f%%' % (
                 100.0 * mean_lateral, mean_up, mean_down,
                 100.0 * (mean_down / mean_up - 1.0)))
+        self._write_trajectory()
 
 
 def main():
