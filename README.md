@@ -46,7 +46,7 @@ climbot_sim/
 climbot_interfaces
       ^        ^
       │        │
-climbot_coverage  （未来 climbot_control）
+climbot_coverage  climbot_control（单段直线跟踪核心已实现）
       │        │
       └──> climbot_description <── climbot_gazebo
 ```
@@ -111,7 +111,7 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 - 阶段 B：运动侧滑——完成；
 - 阶段 C：传感器与定位融合——完成；
 - 阶段 D：覆盖路径规划——完成；
-- 阶段 E：自定义轨迹跟踪——进行中（任务接口与规划器预览已完成）；
+- 阶段 E：自定义轨迹跟踪——进行中（任务接口、二维足迹规划和单段直线跟踪核心已完成）；
 - 阶段 F：系统测试与数据评价——未开始。
 
 详细证据和待办见 [docs/STATUS.md](docs/STATUS.md)。

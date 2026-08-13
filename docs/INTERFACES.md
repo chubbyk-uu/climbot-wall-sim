@@ -172,7 +172,7 @@ Header，避免同一任务内部出现多个坐标系或时间戳。
 | --- | --- | --- | --- |
 | `/coverage/task` | `climbot_interfaces/msg/CoverageTask` | reliable、transient local、depth 1 | 已实现；最新完整任务预览，不直接热更新正在执行的任务 |
 | `/coverage/path` | `nav_msgs/msg/Path` | reliable、transient local、depth 1 | 从任务路点派生，仅用于 RViz 和通用工具 |
-| `/control/reference_path` | `nav_msgs/msg/Path` | reliable、transient local、depth 1 | 阶段 E 后续实现；控制器动态生成的当前直线执行参考，仅用于显示和评价 |
+| `/control/reference_path` | `nav_msgs/msg/Path` | reliable、transient local、depth 1 | E3 已实现单段直线参考预览；后续状态机在转向后以 EKF 实测起点更新动态参考，仅用于显示和评价 |
 
 规划失败、清空或开始新区块时，规划器同时发布空 `/coverage/path` 和空路点的
 `/coverage/task`，并增加 revision，使旧预览失效。空任务永远不能作为执行 Goal。
