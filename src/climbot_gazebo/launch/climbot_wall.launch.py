@@ -1,17 +1,21 @@
 """Launch the wall robot with ROS 2 command and odometry bridges."""
 
 import os
+import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
+    OpaqueFunction,
     SetEnvironmentVariable,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+import xacro
+import yaml
 
 _CONTACT_PREFIX = '/world/climbot_wall/model/climbot/link'
 CONTACT_TOPIC_LEFT = (
@@ -22,29 +26,83 @@ CONTACT_TOPIC_CASTER = (
     _CONTACT_PREFIX + '/caster_ball_link/sensor/caster_contact/contact')
 
 
-def generate_launch_description():
-    """Build the wall simulation launch description."""
+def running_on_wsl():
+    """Report whether this is WSL, which needs Mesa's D3D12 driver for the GPU."""
+    try:
+        with open('/proc/version') as handle:
+            return 'microsoft' in handle.read().lower()
+    except OSError:
+        return False
+
+
+def render_world(package_share):
+    """Render the Gazebo world from wall.yaml and return the generated path."""
+    # Both the world and the ROS nodes read the same description, so the wall
+    # is never restated as a literal on either side.
+    with open(os.path.join(package_share, 'config', 'wall.yaml')) as handle:
+        description = yaml.safe_load(handle)
+    wall = description['wall']
+    surface = wall['surface']
+    spawn = wall['spawn']
+    centre = surface['centre_xyz']
+    roll, pitch, yaw = wall['origin_rpy']
+    mappings = {
+        'centre_x': repr(float(centre[0])),
+        'centre_y': repr(float(centre[1])),
+        'centre_z': repr(float(centre[2])),
+        'thickness': repr(float(surface['thickness_m'])),
+        'width': repr(float(surface['width_m'])),
+        'height': repr(float(surface['height_m'])),
+        'mu': repr(float(surface['mu'])),
+        'grid_spacing': repr(float(surface['grid_spacing_m'])),
+        'suction_force': repr(float(description['suction']['force_n'])),
+        'spawn_gap': repr(float(spawn['surface_gap_m'])),
+        'spawn_lateral': repr(float(spawn['lateral_m'])),
+        'spawn_height': repr(float(spawn['height_m'])),
+        'spawn_roll': repr(float(roll)),
+        'spawn_pitch': repr(float(pitch)),
+        'spawn_yaw': repr(float(yaw)),
+    }
+    source = os.path.join(package_share, 'worlds', 'climbot_wall.sdf.xacro')
+    document = xacro.process_file(source, mappings=mappings)
+    handle = tempfile.NamedTemporaryFile(
+        mode='w', prefix='climbot_wall_', suffix='.sdf', delete=False)
+    handle.write(document.toprettyxml(indent='  '))
+    handle.close()
+    return handle.name
+
+
+def launch_setup(context, *args, **kwargs):
+    """Build the actions that depend on resolved launch configurations."""
     package_share = get_package_share_directory('climbot_gazebo')
     ros_gz_share = get_package_share_directory('ros_gz_sim')
-    world = os.path.join(package_share, 'worlds', 'climbot_wall.sdf')
+    world = render_world(package_share)
+    wall_config = os.path.join(package_share, 'config', 'wall.yaml')
     ekf_config = os.path.join(package_share, 'config', 'ekf_wall.yaml')
     model_path = os.path.join(package_share, 'models')
     existing_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
 
-    gazebo_resources = SetEnvironmentVariable(
-        name='GZ_SIM_RESOURCE_PATH',
-        value=model_path + os.pathsep + existing_resource_path,
-    )
-    d3d12_driver = SetEnvironmentVariable(
-        name='GALLIUM_DRIVER',
-        value='d3d12',
-    )
-    d3d12_adapter = SetEnvironmentVariable(
-        name='MESA_D3D12_DEFAULT_ADAPTER_NAME',
-        value='NVIDIA',
-    )
+    actions = [
+        SetEnvironmentVariable(
+            name='GZ_SIM_RESOURCE_PATH',
+            value=model_path + os.pathsep + existing_resource_path,
+        ),
+    ]
 
-    gazebo = IncludeLaunchDescription(
+    backend = LaunchConfiguration('gpu_backend').perform(context)
+    if backend == 'auto':
+        backend = 'wsl_d3d12' if running_on_wsl() else 'native'
+    if backend == 'wsl_d3d12':
+        # Route OGRE2 through Mesa's D3D12 driver so it reaches the host GPU.
+        actions.append(SetEnvironmentVariable(
+            name='GALLIUM_DRIVER', value='d3d12'))
+        actions.append(SetEnvironmentVariable(
+            name='MESA_D3D12_DEFAULT_ADAPTER_NAME', value='NVIDIA'))
+    elif backend != 'native':
+        raise ValueError(
+            'gpu_backend must be auto, wsl_d3d12, or native, not ' + backend)
+
+    actions.append(IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(ros_gz_share, 'launch', 'gz_sim.launch.py')
         ),
@@ -56,9 +114,9 @@ def generate_launch_description():
                 '-r -v 3 ', world],
             'on_exit_shutdown': 'true',
         }.items(),
-    )
+    ))
 
-    bridge = Node(
+    actions.append(Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=[
@@ -82,22 +140,23 @@ def generate_launch_description():
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
         }],
         output='screen',
-    )
+    ))
 
-    total_station = Node(
+    actions.append(Node(
         package='climbot_gazebo',
         executable='total_station_sim.py',
         name='total_station_sim',
         parameters=[{
             'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'wall_config': wall_config,
             'publish_rate_hz': LaunchConfiguration('total_station_rate_hz'),
             'position_stddev_m': LaunchConfiguration('total_station_stddev_m'),
             'fixed_delay_s': LaunchConfiguration('total_station_delay_s'),
         }],
         output='screen',
-    )
+    ))
 
-    wheel_odom_adapter = Node(
+    actions.append(Node(
         package='climbot_gazebo',
         executable='wall_wheel_odom_adapter.py',
         name='wall_wheel_odom_adapter',
@@ -109,9 +168,9 @@ def generate_launch_description():
                 'wheel_yaw_rate_stddev_rps'),
         }],
         output='screen',
-    )
+    ))
 
-    imu_adapter = Node(
+    actions.append(Node(
         package='climbot_gazebo',
         executable='wall_imu_adapter.py',
         name='wall_imu_adapter',
@@ -121,9 +180,9 @@ def generate_launch_description():
                 'imu_orientation_stddev_rad'),
         }],
         output='screen',
-    )
+    ))
 
-    ekf = Node(
+    actions.append(Node(
         package='robot_localization',
         executable='ekf_node',
         name='ekf_filter_node',
@@ -132,8 +191,13 @@ def generate_launch_description():
         }],
         remappings=[('odometry/filtered', '/odometry/filtered')],
         output='screen',
-    )
+    ))
 
+    return actions
+
+
+def generate_launch_description():
+    """Build the wall simulation launch description."""
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
@@ -144,6 +208,11 @@ def generate_launch_description():
             'headless',
             default_value='false',
             description='Run Gazebo without its GUI, for automated tests.',
+        ),
+        DeclareLaunchArgument(
+            'gpu_backend',
+            default_value='auto',
+            description='Rendering backend: auto, wsl_d3d12, or native.',
         ),
         DeclareLaunchArgument(
             'total_station_rate_hz',
@@ -175,13 +244,5 @@ def generate_launch_description():
             default_value='0.00872664626',
             description='IMU attitude one-sigma uncertainty in radians.',
         ),
-        gazebo_resources,
-        d3d12_driver,
-        d3d12_adapter,
-        gazebo,
-        bridge,
-        total_station,
-        wheel_odom_adapter,
-        imu_adapter,
-        ekf,
+        OpaqueFunction(function=launch_setup),
     ])

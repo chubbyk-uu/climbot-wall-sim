@@ -1,5 +1,69 @@
 <?xml version="1.0"?>
-<sdf version="1.10">
+<!--
+  Rendered at launch time from config/wall.yaml, which is the single source
+  of truth for the wall slab and the wall work frame. Nothing here may
+  restate a wall dimension as a literal.
+-->
+<sdf version="1.10" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="centre_x" default="0.0"/>
+  <xacro:arg name="centre_y" default="0.0"/>
+  <xacro:arg name="centre_z" default="4.0"/>
+  <xacro:arg name="thickness" default="0.10"/>
+  <xacro:arg name="width" default="10.0"/>
+  <xacro:arg name="height" default="8.0"/>
+  <xacro:arg name="mu" default="1.1"/>
+  <xacro:arg name="grid_spacing" default="1.0"/>
+  <xacro:arg name="suction_force" default="220.0"/>
+  <xacro:arg name="spawn_gap" default="0.001"/>
+  <xacro:arg name="spawn_lateral" default="0.0"/>
+  <xacro:arg name="spawn_height" default="2.0"/>
+  <xacro:arg name="spawn_roll" default="1.5707963267948966"/>
+  <xacro:arg name="spawn_pitch" default="0.0"/>
+  <xacro:arg name="spawn_yaw" default="1.5707963267948966"/>
+
+  <xacro:property name="centre_x" value="$(arg centre_x)"/>
+  <xacro:property name="centre_y" value="$(arg centre_y)"/>
+  <xacro:property name="centre_z" value="$(arg centre_z)"/>
+  <xacro:property name="thickness" value="$(arg thickness)"/>
+  <xacro:property name="width" value="$(arg width)"/>
+  <xacro:property name="height" value="$(arg height)"/>
+  <xacro:property name="grid_spacing" value="$(arg grid_spacing)"/>
+  <!-- Wall face, the plane the wheels roll on, and the grid overlay just
+       in front of it so the decals never fight the collision surface. -->
+  <xacro:property name="face_x" value="${centre_x + thickness / 2.0}"/>
+  <xacro:property name="decal_x" value="${thickness / 2.0 + 0.003}"/>
+  <!-- Outermost grid line sits one spacing inside each edge. -->
+  <xacro:property name="columns" value="${int(width / (2.0 * grid_spacing)) - 1}"/>
+  <xacro:property name="rows" value="${int(height / (2.0 * grid_spacing)) - 1}"/>
+
+  <xacro:macro name="grid_line" params="axis index count">
+    <xacro:if value="${index &lt;= 2 * count}">
+      <visual name="grid_${axis}_${index}">
+        <xacro:if value="${axis == 'column'}">
+          <pose>${decal_x} ${(index - count) * grid_spacing} 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.006 ${0.035 if index == count else 0.025} ${height}</size>
+            </box>
+          </geometry>
+        </xacro:if>
+        <xacro:unless value="${axis == 'column'}">
+          <pose>${decal_x} 0 ${(index - count) * grid_spacing} 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.006 ${width} ${0.035 if index == count else 0.025}</size>
+            </box>
+          </geometry>
+        </xacro:unless>
+        <material>
+          <ambient>${'0.10 0.12 0.16' if index == count else '0.18 0.20 0.24'} 1</ambient>
+          <diffuse>${'0.10 0.12 0.16' if index == count else '0.18 0.20 0.24'} 1</diffuse>
+        </material>
+      </visual>
+      <xacro:grid_line axis="${axis}" index="${index + 1}" count="${count}"/>
+    </xacro:if>
+  </xacro:macro>
+
   <world name="climbot_wall">
     <gravity>0 0 -9.81</gravity>
     <physics name="physics" type="ignored">
@@ -27,7 +91,8 @@
       <persistent>
         <entity_name>climbot</entity_name>
         <entity_type>model</entity_type>
-        <force>-220 0 0</force>
+        <!-- Along the inward wall normal, which is world -X for this wall. -->
+        <force>${-1.0 * float("$(arg suction_force)")} 0 0</force>
         <torque>0 0 0</torque>
       </persistent>
     </plugin>
@@ -43,18 +108,18 @@
     <model name="wall">
       <static>true</static>
       <link name="wall_link">
-        <pose>0 0 4 0 0 0</pose>
+        <pose>${centre_x} ${centre_y} ${centre_z} 0 0 0</pose>
         <collision name="wall_collision">
           <geometry>
             <box>
-              <size>0.10 10.0 8.0</size>
+              <size>${thickness} ${width} ${height}</size>
             </box>
           </geometry>
           <surface>
             <friction>
               <ode>
-                <mu>1.1</mu>
-                <mu2>1.1</mu2>
+                <mu>$(arg mu)</mu>
+                <mu2>$(arg mu)</mu2>
               </ode>
             </friction>
           </surface>
@@ -62,7 +127,7 @@
         <visual name="wall_visual">
           <geometry>
             <box>
-              <size>0.10 10.0 8.0</size>
+              <size>${thickness} ${width} ${height}</size>
             </box>
           </geometry>
           <material>
@@ -71,94 +136,18 @@
             <specular>0.12 0.12 0.12 1</specular>
           </material>
         </visual>
-        <!-- High-contrast one-metre grid on the 10 m x 8 m wall front face. -->
-        <visual name="grid_vertical_m4">
-          <pose>0.053 -4 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_vertical_m3">
-          <pose>0.053 -3 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_vertical_m2">
-          <pose>0.053 -2 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_vertical_m1">
-          <pose>0.053 -1 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_vertical_0">
-          <pose>0.053 0 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.035 8.0</size></box></geometry>
-          <material><ambient>0.10 0.12 0.16 1</ambient><diffuse>0.10 0.12 0.16 1</diffuse></material>
-        </visual>
-        <visual name="grid_vertical_p1">
-          <pose>0.053 1 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_vertical_p2">
-          <pose>0.053 2 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_vertical_p3">
-          <pose>0.053 3 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_vertical_p4">
-          <pose>0.053 4 0 0 0 0</pose>
-          <geometry><box><size>0.006 0.025 8.0</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_horizontal_m3">
-          <pose>0.053 0 -3 0 0 0</pose>
-          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_horizontal_m2">
-          <pose>0.053 0 -2 0 0 0</pose>
-          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_horizontal_m1">
-          <pose>0.053 0 -1 0 0 0</pose>
-          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_horizontal_0">
-          <pose>0.053 0 0 0 0 0</pose>
-          <geometry><box><size>0.006 10.0 0.035</size></box></geometry>
-          <material><ambient>0.10 0.12 0.16 1</ambient><diffuse>0.10 0.12 0.16 1</diffuse></material>
-        </visual>
-        <visual name="grid_horizontal_p1">
-          <pose>0.053 0 1 0 0 0</pose>
-          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_horizontal_p2">
-          <pose>0.053 0 2 0 0 0</pose>
-          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
-        <visual name="grid_horizontal_p3">
-          <pose>0.053 0 3 0 0 0</pose>
-          <geometry><box><size>0.006 10.0 0.025</size></box></geometry>
-          <material><ambient>0.18 0.20 0.24 1</ambient><diffuse>0.18 0.20 0.24 1</diffuse></material>
-        </visual>
+        <!-- High-contrast reference grid on the wall front face. -->
+        <xacro:grid_line axis="column" index="0" count="${columns}"/>
+        <xacro:grid_line axis="row" index="0" count="${rows}"/>
       </link>
     </model>
 
     <include>
       <uri>model://climbot</uri>
-      <!-- local +X -> world +Y, local +Y -> world +Z, local +Z -> world +X -->
-      <pose>0.051 0 2.0 1.57079632679 0 1.57079632679</pose>
+      <!-- On the wall face, oriented so the robot's axes match the wall
+           work frame: local +X -> wall +X, +Y -> wall +Y, +Z -> wall normal. -->
+      <pose>${face_x + float("$(arg spawn_gap)")} $(arg spawn_lateral) $(arg spawn_height)
+            $(arg spawn_roll) $(arg spawn_pitch) $(arg spawn_yaw)</pose>
     </include>
 
     <gui fullscreen="false">
@@ -173,7 +162,7 @@
         <ambient_light>0.5 0.5 0.5</ambient_light>
         <background_color>0.12 0.14 0.18</background_color>
         <!-- Front-on view centred on the robot's initial pose. -->
-        <camera_pose>2.8 0 2.0 0 0 3.14159265359</camera_pose>
+        <camera_pose>${face_x + 2.75} $(arg spawn_lateral) $(arg spawn_height) 0 0 3.14159265359</camera_pose>
       </plugin>
       <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
         <gz-gui>

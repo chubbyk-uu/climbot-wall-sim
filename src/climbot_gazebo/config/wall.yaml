@@ -22,3 +22,14 @@ wall:
     mu: 1.1
     # Spacing of the visual reference grid drawn on the wall face.
     grid_spacing_m: 1.0
+
+  # Where the robot is placed on the wall face at the start of a run.
+  spawn:
+    surface_gap_m: 0.001
+    lateral_m: 0.0
+    height_m: 2.0
+
+# Constant normal suction holding the robot against the wall, in newtons.
+# The world applies it along the inward wall normal.
+suction:
+  force_n: 220.0
