@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "climbot_control/line_tracker.hpp"
 #include "climbot_interfaces/msg/coverage_task.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
 
@@ -16,6 +17,17 @@ std::optional<std::string> validateCoverageTask(
 bool pointInPolygon(
   double x, double y, const geometry_msgs::msg::Polygon & polygon,
   double tolerance = 1e-9);
+
+struct ExecutionSegment
+{
+  Point2 start;
+  Point2 end;
+};
+
+ExecutionSegment dynamicTransitionSegment(
+  const climbot_interfaces::msg::CoverageTask & task, std::size_t segment_index,
+  const Point2 & actual_start, double turn_slip_per_degree,
+  const Point2 & gravity_down);
 
 class CrossTrackOscillationMonitor
 {

@@ -75,6 +75,50 @@ bool pointInPolygon(
   return true;
 }
 
+ExecutionSegment dynamicTransitionSegment(
+  const climbot_interfaces::msg::CoverageTask & task, std::size_t segment_index,
+  const Point2 & actual_start, double turn_slip_per_degree,
+  const Point2 & gravity_down)
+{
+  using Task = climbot_interfaces::msg::CoverageTask;
+  if (segment_index >= task.segment_types.size() ||
+    task.segment_types[segment_index] != Task::SEGMENT_TRANSITION)
+  {
+    throw std::invalid_argument("Dynamic reference requires a TRANSITION segment.");
+  }
+  if (!std::isfinite(actual_start.x) || !std::isfinite(actual_start.y) ||
+    !std::isfinite(turn_slip_per_degree) || turn_slip_per_degree < 0.0 ||
+    !std::isfinite(gravity_down.x) || !std::isfinite(gravity_down.y))
+  {
+    throw std::invalid_argument("Dynamic transition inputs must be finite and valid.");
+  }
+  const double gravity_norm = std::hypot(gravity_down.x, gravity_down.y);
+  if (gravity_norm <= 1e-9) {
+    throw std::invalid_argument("Gravity direction must be non-zero.");
+  }
+  const auto & nominal_end = task.waypoints[segment_index + 1U].position;
+  ExecutionSegment segment{actual_start, {nominal_end.x, nominal_end.y}};
+  if (task.sweep_direction != Task::SWEEP_HORIZONTAL ||
+    segment_index + 1U >= task.segment_types.size())
+  {
+    return segment;
+  }
+
+  const auto & nominal_start = task.waypoints[segment_index].position;
+  const auto & next_end = task.waypoints[segment_index + 2U].position;
+  const double transition_yaw = std::atan2(
+    nominal_end.y - nominal_start.y, nominal_end.x - nominal_start.x);
+  const double next_scan_yaw = std::atan2(
+    next_end.y - nominal_end.y, next_end.x - nominal_end.x);
+  const double turn_degrees = std::abs(std::atan2(
+      std::sin(next_scan_yaw - transition_yaw),
+      std::cos(next_scan_yaw - transition_yaw))) * 180.0 / std::acos(-1.0);
+  const double predicted_drop = turn_slip_per_degree * turn_degrees;
+  segment.end.x -= gravity_down.x / gravity_norm * predicted_drop;
+  segment.end.y -= gravity_down.y / gravity_norm * predicted_drop;
+  return segment;
+}
+
 std::optional<std::string> validateCoverageTask(
   const climbot_interfaces::msg::CoverageTask & task,
   const std::string & expected_frame)

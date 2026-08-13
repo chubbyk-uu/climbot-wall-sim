@@ -10,6 +10,8 @@ line_tracker:
     standalone_mode: true
     segment_timeout_s: 120.0
     motion_region_tolerance_m: 0.02
+    turn_slip_per_degree_m: 0.0005
+    scan_entry_tolerance_m: 0.03
     # This is a diagnostic for visibly large oscillations, not a zero-crossing fault.
     visible_oscillation_amplitude_m: 0.03
     visible_oscillation_minimum_travel_m: 0.10

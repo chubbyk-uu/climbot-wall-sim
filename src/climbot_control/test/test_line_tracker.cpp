@@ -221,6 +221,51 @@ TEST(CoverageExecution, DetectsSustainedCrossTrackReversalsNotSensorNoise)
   EXPECT_EQ(monitor.reversalCount(), 0U);
 }
 
+TEST(CoverageExecution, HorizontalTransitionPreloadsTheSecondTurnDrop)
+{
+  auto task = validTask();
+  using Task = climbot_interfaces::msg::CoverageTask;
+  geometry_msgs::msg::Pose third = task.waypoints.back();
+  third.position.y = 0.20;
+  geometry_msgs::msg::Pose fourth = third;
+  fourth.position.x = 0.0;
+  task.waypoints.push_back(third);
+  task.waypoints.push_back(fourth);
+  task.segment_types = {
+    Task::SEGMENT_SCAN, Task::SEGMENT_TRANSITION, Task::SEGMENT_SCAN};
+
+  const auto segment = dynamicTransitionSegment(
+    task, 1U, {1.0, -0.045}, 0.0005, {0.0, -1.0});
+  EXPECT_DOUBLE_EQ(segment.start.x, 1.0);
+  EXPECT_DOUBLE_EQ(segment.start.y, -0.045);
+  EXPECT_NEAR(segment.end.x, 1.0, 1e-12);
+  EXPECT_NEAR(segment.end.y, 0.245, 1e-12);
+}
+
+TEST(CoverageExecution, VerticalTransitionUsesActualStartWithoutPreload)
+{
+  auto task = validTask();
+  using Task = climbot_interfaces::msg::CoverageTask;
+  task.sweep_direction = Task::SWEEP_VERTICAL;
+  task.waypoints[1].position.x = 0.0;
+  task.waypoints[1].position.y = 1.0;
+  geometry_msgs::msg::Pose third = task.waypoints.back();
+  third.position.x = 0.20;
+  geometry_msgs::msg::Pose fourth = third;
+  fourth.position.y = 0.0;
+  task.waypoints.push_back(third);
+  task.waypoints.push_back(fourth);
+  task.segment_types = {
+    Task::SEGMENT_SCAN, Task::SEGMENT_TRANSITION, Task::SEGMENT_SCAN};
+
+  const auto segment = dynamicTransitionSegment(
+    task, 1U, {0.0, 0.955}, 0.0005, {0.0, -1.0});
+  EXPECT_DOUBLE_EQ(segment.start.x, 0.0);
+  EXPECT_DOUBLE_EQ(segment.start.y, 0.955);
+  EXPECT_DOUBLE_EQ(segment.end.x, 0.20);
+  EXPECT_DOUBLE_EQ(segment.end.y, 1.0);
+}
+
 TEST(CommandWatchdog, StopsBeforeFirstCommandAndAfterTimeout)
 {
   CommandWatchdog watchdog(.4);

@@ -71,6 +71,8 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `standalone_mode` | `true` | `true` 执行参数单段；Action launch 将其设为 `false` |
 | `line_tracker` | `segment_timeout_s` | `120 s` | 单段超过该时间则停车并以 `CONTROL_TIMEOUT` 终止任务 |
 | `line_tracker` | `motion_region_tolerance_m` | `0.02 m` | 融合位置越出安全运动区域的数值容差 |
+| `line_tracker` | `turn_slip_per_degree_m` | `0.0005 m/°` | 横向换道终点为第二次转向预留的标定下滑系数 |
+| `line_tracker` | `scan_entry_tolerance_m` | `0.03 m` | 横向第二次转向后允许进入下一扫描线的最大横轨偏差 |
 | `line_tracker` | `visible_oscillation_amplitude_m` | `0.03 m` | 仅记录肉眼可见幅度的横轨往复；小误差反复过零不算故障 |
 | `line_tracker` | `control_frequency_hz` | `50 Hz` | 直线跟踪控制频率 |
 | `line_tracker` | `cross_gain` | `1.0 rad/m` | 横轨比例反馈增益 |
@@ -296,8 +298,11 @@ float32 progress
 
 执行器完整复制并校验 Goal，一次只执行一个任务。每段都经过
 `制动 → 原地 ALIGN → 航向稳定 → 直线跟踪 → 空间到达并停车`，不会用运行时间替代
-到达判据；取消、定位超时、单段超时或越界均先发布零速。当前 E7 使用任务中的标称
-端点；转向下坠后的动态直线换道参考属于下一项实现。
+到达判据；取消、定位超时、单段超时或越界均先发布零速。执行时 `CoverageTask`
+保持不变，但转向稳定后更新动态执行参考：横向换道采用实测起点，并在换道终点上方
+预留第二次转向的预计下滑量；竖向换道采用实测起点到名义终点的斜直线，第二次转向
+后再以实测位置直接开始下一条竖直扫描，不倒车返回名义点。动态端点越界或横向扫描
+入口偏差超过 `0.03 m` 时停车并终止任务。
 
 “不出现明显蛇形”的判断不使用横轨误差过零次数作为单独故障条件：默认只对横向
 幅度超过 `0.03 m` 且沿轨持续出现的往复做诊断告警。最终接受与否还要同时检查真值

@@ -43,6 +43,8 @@ public:
     standalone_mode_ = declare_parameter("standalone_mode", true);
     segment_timeout_s_ = declare_parameter("segment_timeout_s", 120.0);
     motion_region_tolerance_ = declare_parameter("motion_region_tolerance_m", 0.02);
+    turn_slip_per_degree_ = declare_parameter("turn_slip_per_degree_m", 0.0005);
+    scan_entry_tolerance_ = declare_parameter("scan_entry_tolerance_m", 0.03);
     const int oscillation_reversals = declare_parameter("visible_oscillation_reversals", 4);
     if (oscillation_reversals < 0) {
       throw std::invalid_argument("visible_oscillation_reversals must be non-negative.");
@@ -189,6 +191,11 @@ private:
     requirePositive("control_frequency_hz", control_frequency_hz_);
     requirePositive("odometry_timeout_s", odometry_timeout_s_);
     requirePositive("segment_timeout_s", segment_timeout_s_);
+    requireFinite("turn_slip_per_degree_m", turn_slip_per_degree_);
+    if (turn_slip_per_degree_ < 0.0) {
+      throw std::invalid_argument("turn_slip_per_degree_m must be non-negative.");
+    }
+    requirePositive("scan_entry_tolerance_m", scan_entry_tolerance_);
     requireFinite("motion_region_tolerance_m", motion_region_tolerance_);
     if (motion_region_tolerance_ < 0.0) {
       throw std::invalid_argument("motion_region_tolerance_m must be non-negative.");
@@ -314,8 +321,68 @@ private:
     segment_start_time_ = now();
     oscillation_monitor_->reset();
     oscillation_warning_emitted_ = false;
+    const auto segment_type = active_task_->segment_types[index];
+    const bool follows_transition = index > 0U &&
+      active_task_->segment_types[index - 1U] ==
+      climbot_interfaces::msg::CoverageTask::SEGMENT_TRANSITION;
+    reference_prepared_ = segment_type !=
+      climbot_interfaces::msg::CoverageTask::SEGMENT_TRANSITION && !follows_transition;
     publishCompletion(false);
     publishReferencePath();
+  }
+
+  bool prepareDynamicReference()
+  {
+    using Task = climbot_interfaces::msg::CoverageTask;
+    const auto segment_type = active_task_->segment_types[current_segment_];
+    if (segment_type == Task::SEGMENT_TRANSITION) {
+      const auto dynamic = climbot_control::dynamicTransitionSegment(
+        *active_task_, current_segment_, {pose_.x, pose_.y},
+        turn_slip_per_degree_, limits_.gravity_direction);
+      if (!climbot_control::pointInPolygon(
+          dynamic.end.x, dynamic.end.y, active_task_->motion_region, 1e-6))
+      {
+        finishGoal(
+          ExecuteCoverage::Result::OUT_OF_BOUNDS,
+          "Dynamic transition endpoint lies outside the motion region.");
+        return false;
+      }
+      start_ = dynamic.start;
+      end_ = dynamic.end;
+    } else if (segment_type == Task::SEGMENT_SCAN && current_segment_ > 0U &&
+      active_task_->segment_types[current_segment_ - 1U] == Task::SEGMENT_TRANSITION)
+    {
+      if (active_task_->sweep_direction == Task::SWEEP_VERTICAL) {
+        start_ = {pose_.x, pose_.y};
+      } else {
+        const double dx = end_.x - start_.x;
+        const double dy = end_.y - start_.y;
+        const double length = std::hypot(dx, dy);
+        const double cross = (-(pose_.x - start_.x) * dy +
+          (pose_.y - start_.y) * dx) / length;
+        if (std::abs(cross) > scan_entry_tolerance_) {
+          finishGoal(
+            ExecuteCoverage::Result::TRACKING_FAILED,
+            "Turn slip left the robot too far from the next horizontal scan line.");
+          return false;
+        }
+        reference_prepared_ = true;
+        return true;
+      }
+    }
+
+    if (std::hypot(end_.x - start_.x, end_.y - start_.y) <= 1e-9) {
+      finishGoal(
+        ExecuteCoverage::Result::TRACKING_FAILED,
+        "Dynamic execution segment collapsed to zero length.");
+      return false;
+    }
+    reference_prepared_ = true;
+    motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
+    alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    cross_integral_ = 0.0;
+    publishReferencePath();
+    return false;
   }
 
   void finishGoal(uint16_t code, const std::string & message)
@@ -633,6 +700,11 @@ private:
             } else if ((current_time - alignment_settle_start_).seconds() >=
               alignment_settle_duration_)
             {
+              if (!standalone_mode_ && !reference_prepared_ &&
+                !prepareDynamicReference())
+              {
+                return;
+              }
               motion_state_ = MotionState::TRACK_LINE;
               cross_integral_ = 0.0;
             }
@@ -695,6 +767,8 @@ private:
   double odometry_timeout_s_{0.25};
   double segment_timeout_s_{120.0};
   double motion_region_tolerance_{0.02};
+  double turn_slip_per_degree_{0.0005};
+  double scan_entry_tolerance_{0.03};
   double alignment_reentry_threshold_{0.209439510};
   double alignment_tolerance_{0.034906585};
   double alignment_settle_duration_{0.50};
@@ -718,6 +792,7 @@ private:
   double wheel_acceleration_limit_{0.40};
   std::string frame_id_{"odom"};
   bool standalone_mode_{true};
+  bool reference_prepared_{true};
   bool oscillation_warning_emitted_{false};
   uint32_t completed_segments_{0U};
   std::size_t current_segment_{0U};
