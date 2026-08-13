@@ -36,6 +36,17 @@ def is_new_truth_sample(current_stamp_ns, previous_stamp_ns):
     return previous_stamp_ns is None or current_stamp_ns != previous_stamp_ns
 
 
+def coefficient_of_variation(values):
+    """Return population standard deviation divided by the absolute mean."""
+    if not values:
+        raise ValueError('At least one value is required.')
+    mean = sum(values) / len(values)
+    if abs(mean) <= 1e-12:
+        raise ValueError('Coefficient of variation requires a non-zero mean.')
+    variance = sum((value - mean) ** 2 for value in values) / len(values)
+    return math.sqrt(variance) / abs(mean)
+
+
 class WallSlipCalibrator(Node):
     """Run repeatable truth-based tests without feeding truth to control."""
 
@@ -47,6 +58,7 @@ class WallSlipCalibrator(Node):
         self.declare_parameter('linear_speed_mps', 0.15)
         self.declare_parameter('heading_hold_gain', 1.5)
         self.declare_parameter('turn_timeout_s', 25.0)
+        self.declare_parameter('horizontal_repeatability_max_cv', 0.05)
         self.declare_parameter('wall_config', default_wall_config())
         self.declare_parameter('trajectory_csv', '')
         self._wall_frame = WallFrame.from_yaml(
@@ -137,7 +149,8 @@ class WallSlipCalibrator(Node):
                         (truth_stamp_ns - start_ns) * 1e-9,
                         position[0] - start_position[0],
                         position[1] - start_position[1],
-                        math.degrees(self._truth_yaw())))
+                        math.degrees(self._truth_yaw()),
+                        math.degrees(self._filtered_yaw())))
                     last_recorded_stamp_ns = truth_stamp_ns
         end = self._truth
         self._publish()
@@ -156,8 +169,10 @@ class WallSlipCalibrator(Node):
         if directory:
             os.makedirs(directory, exist_ok=True)
         with open(path, 'w', newline='') as handle:
-            writer = csv.writer(handle)
-            writer.writerow(['phase', 'time_s', 'forward_m', 'up_m', 'yaw_deg'])
+            writer = csv.writer(handle, lineterminator='\n')
+            writer.writerow([
+                'phase', 'time_s', 'forward_m', 'up_m', 'yaw_deg',
+                'filtered_yaw_deg'])
             for row in self._trajectory:
                 writer.writerow(
                     [row[0]] + ['%.6f' % value for value in row[1:]])
@@ -183,6 +198,7 @@ class WallSlipCalibrator(Node):
         start, end = self._run_for_sim_time(
             float(self.get_parameter('drive_duration_s').value),
             float(self.get_parameter('linear_speed_mps').value),
+            target_yaw=0.0,
             label='horizontal_%d' % repetition)
         delta, elapsed = self._delta(start, end)
         descent_ratio = -delta[1] / delta[0] if delta[0] > 1e-6 else math.nan
@@ -209,6 +225,12 @@ class WallSlipCalibrator(Node):
         self._wait_for_data()
         self._report_static()
         repetitions = int(self.get_parameter('repetitions').value)
+        if repetitions <= 0:
+            raise ValueError('repetitions must be positive.')
+        repeatability_limit = float(
+            self.get_parameter('horizontal_repeatability_max_cv').value)
+        if repeatability_limit < 0.0:
+            raise ValueError('horizontal_repeatability_max_cv cannot be negative.')
         lateral_ratios = []
         up_speeds = []
         down_speeds = []
@@ -219,14 +241,19 @@ class WallSlipCalibrator(Node):
             down_speeds.append(-self._report_vertical(
                 repetition, -math.pi / 2.0, 'down'))
         mean_lateral = sum(lateral_ratios) / len(lateral_ratios)
+        lateral_cv = coefficient_of_variation(lateral_ratios)
         mean_up = sum(up_speeds) / len(up_speeds)
         mean_down = sum(down_speeds) / len(down_speeds)
         self.get_logger().info(
-            'summary: mean_horizontal_descent_ratio=%.2f%% mean_up_speed=%.5fm/s '
-            'mean_down_speed=%.5fm/s down_faster=%.2f%%' % (
-                100.0 * mean_lateral, mean_up, mean_down,
+            'summary: mean_horizontal_descent_ratio=%.2f%% horizontal_cv=%.2f%% '
+            'mean_up_speed=%.5fm/s mean_down_speed=%.5fm/s down_faster=%.2f%%' % (
+                100.0 * mean_lateral, 100.0 * lateral_cv, mean_up, mean_down,
                 100.0 * (mean_down / mean_up - 1.0)))
         self._write_trajectory()
+        if lateral_cv > repeatability_limit:
+            raise RuntimeError(
+                'Horizontal descent-ratio CV %.2f%% exceeds %.2f%%.' % (
+                    100.0 * lateral_cv, 100.0 * repeatability_limit))
 
 
 def main():
