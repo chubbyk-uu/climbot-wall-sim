@@ -319,6 +319,7 @@ private:
     alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     goal_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     segment_start_time_ = now();
+    alignment_origin_ = {pose_.x, pose_.y};
     oscillation_monitor_->reset();
     oscillation_warning_emitted_ = false;
     const auto segment_type = active_task_->segment_types[index];
@@ -335,10 +336,17 @@ private:
   {
     using Task = climbot_interfaces::msg::CoverageTask;
     const auto segment_type = active_task_->segment_types[current_segment_];
+    const double observed_turn_drop = std::max(0.0,
+        (pose_.x - alignment_origin_.x) * limits_.gravity_direction.x +
+        (pose_.y - alignment_origin_.y) * limits_.gravity_direction.y);
     if (segment_type == Task::SEGMENT_TRANSITION) {
       const auto dynamic = climbot_control::dynamicTransitionSegment(
         *active_task_, current_segment_, {pose_.x, pose_.y},
-        turn_slip_per_degree_, limits_.gravity_direction);
+        turn_slip_per_degree_, limits_.gravity_direction, observed_turn_drop);
+      RCLCPP_INFO(
+        get_logger(),
+        "Prepared dynamic transition after observing %.1f mm downward motion during alignment.",
+        observed_turn_drop * 1000.0);
       if (!climbot_control::pointInPolygon(
           dynamic.end.x, dynamic.end.y, active_task_->motion_region, 1e-6))
       {
@@ -366,6 +374,9 @@ private:
             "Turn slip left the robot too far from the next horizontal scan line.");
           return false;
         }
+        RCLCPP_INFO(
+          get_logger(), "Horizontal scan entry cross-track error is %.1f mm.",
+          cross * 1000.0);
         reference_prepared_ = true;
         return true;
       }
@@ -799,6 +810,7 @@ private:
   climbot_control::Limits limits_;
   climbot_control::Point2 start_{};
   climbot_control::Point2 end_{};
+  climbot_control::Point2 alignment_origin_{};
   climbot_control::Pose2 pose_{};
   climbot_control::Command previous_command_;
   MotionState motion_state_{MotionState::WAITING_FOR_ALIGNMENT};

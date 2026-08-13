@@ -240,6 +240,10 @@ TEST(CoverageExecution, HorizontalTransitionPreloadsTheSecondTurnDrop)
   EXPECT_DOUBLE_EQ(segment.start.y, -0.045);
   EXPECT_NEAR(segment.end.x, 1.0, 1e-12);
   EXPECT_NEAR(segment.end.y, 0.245, 1e-12);
+
+  const auto observed_larger_drop = dynamicTransitionSegment(
+    task, 1U, {1.0, -0.070}, 0.0005, {0.0, -1.0}, 0.070);
+  EXPECT_NEAR(observed_larger_drop.end.y, 0.270, 1e-12);
 }
 
 TEST(CoverageExecution, VerticalTransitionUsesActualStartWithoutPreload)

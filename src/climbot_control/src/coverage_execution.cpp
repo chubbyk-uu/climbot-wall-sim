@@ -78,7 +78,7 @@ bool pointInPolygon(
 ExecutionSegment dynamicTransitionSegment(
   const climbot_interfaces::msg::CoverageTask & task, std::size_t segment_index,
   const Point2 & actual_start, double turn_slip_per_degree,
-  const Point2 & gravity_down)
+  const Point2 & gravity_down, double observed_previous_turn_drop)
 {
   using Task = climbot_interfaces::msg::CoverageTask;
   if (segment_index >= task.segment_types.size() ||
@@ -88,7 +88,8 @@ ExecutionSegment dynamicTransitionSegment(
   }
   if (!std::isfinite(actual_start.x) || !std::isfinite(actual_start.y) ||
     !std::isfinite(turn_slip_per_degree) || turn_slip_per_degree < 0.0 ||
-    !std::isfinite(gravity_down.x) || !std::isfinite(gravity_down.y))
+    !std::isfinite(gravity_down.x) || !std::isfinite(gravity_down.y) ||
+    !std::isfinite(observed_previous_turn_drop) || observed_previous_turn_drop < 0.0)
   {
     throw std::invalid_argument("Dynamic transition inputs must be finite and valid.");
   }
@@ -113,7 +114,8 @@ ExecutionSegment dynamicTransitionSegment(
   const double turn_degrees = std::abs(std::atan2(
       std::sin(next_scan_yaw - transition_yaw),
       std::cos(next_scan_yaw - transition_yaw))) * 180.0 / std::acos(-1.0);
-  const double predicted_drop = turn_slip_per_degree * turn_degrees;
+  const double predicted_drop = std::max(
+    turn_slip_per_degree * turn_degrees, observed_previous_turn_drop);
   segment.end.x -= gravity_down.x / gravity_norm * predicted_drop;
   segment.end.y -= gravity_down.y / gravity_norm * predicted_drop;
   return segment;

@@ -22,6 +22,7 @@ install(
   PROGRAMS
     scripts/calibrate_wall_slip.py
     scripts/evaluate_localization.py
+    scripts/evaluate_coverage_execution.py
     scripts/measure_normal_loads.py
     scripts/measure_turn_slip.py
     scripts/plot_wall_slip.py

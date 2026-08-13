@@ -4,7 +4,9 @@ coverage_planner:
     input_mode: parameters
     region_type: trapezoid
     lower_left: [-3.0, 0.50]
-    upper_right: [2.4, 6.5]
+    # Top width is 3.0 m versus the 6.0 m bottom, producing clear diagonal
+    # transitions for controller validation.
+    upper_right: [1.5, 6.5]
     lower_right: [3.0, 0.54]
     detection_width: 0.50
     # Conservative provisional value; replace with the calibrated payload length.

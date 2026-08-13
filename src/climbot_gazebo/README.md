@@ -27,6 +27,7 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 - `scripts/calibrate_wall_slip.py`：静止、水平和上下行侧滑标定；
 - `scripts/measure_normal_loads.py`：三点法向载荷与接触率；
 - `scripts/measure_turn_slip.py`：多角度原地转向下滑；
+- `scripts/evaluate_coverage_execution.py`：执行竖向矩形或短上底梯形任务，按动态直线参考统计 Gazebo 真值横轨误差、可见往复和航向摆幅；
 - `scripts/evaluate_localization.py`：四方向定位误差评价。
 
 ## 侧滑标定

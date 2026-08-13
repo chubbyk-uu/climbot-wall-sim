@@ -27,7 +27,7 @@ struct ExecutionSegment
 ExecutionSegment dynamicTransitionSegment(
   const climbot_interfaces::msg::CoverageTask & task, std::size_t segment_index,
   const Point2 & actual_start, double turn_slip_per_degree,
-  const Point2 & gravity_down);
+  const Point2 & gravity_down, double observed_previous_turn_drop = 0.0);
 
 class CrossTrackOscillationMonitor
 {
