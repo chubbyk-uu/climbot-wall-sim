@@ -1,4 +1,5 @@
 #include "climbot_control/line_tracker.hpp"
+#include "climbot_control/command_watchdog.hpp"
 #include <cmath>
 #include "gtest/gtest.h"
 using namespace climbot_control;
@@ -48,4 +49,16 @@ TEST(LineTracker, JointWheelAccelerationIsLimited)
   const double right = command.linear + command.angular * .43 / 2;
   EXPECT_LE(std::abs(left), .04 + 1e-9);
   EXPECT_LE(std::abs(right), .04 + 1e-9);
+}
+
+TEST(CommandWatchdog, StopsBeforeFirstCommandAndAfterTimeout)
+{
+  CommandWatchdog watchdog(.4);
+  EXPECT_TRUE(watchdog.timedOut(0.0));
+  watchdog.accept({.1, -.2}, 1.0);
+  EXPECT_FALSE(watchdog.timedOut(1.4));
+  EXPECT_NEAR(watchdog.commandAt(1.4).linear, .1, 1e-9);
+  EXPECT_TRUE(watchdog.timedOut(1.401));
+  EXPECT_DOUBLE_EQ(watchdog.commandAt(1.401).linear, 0.0);
+  EXPECT_DOUBLE_EQ(watchdog.commandAt(.5).angular, 0.0);
 }

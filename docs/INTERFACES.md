@@ -28,7 +28,8 @@
 
 | 话题 | 类型 | 生产者 | 消费者/用途 |
 | --- | --- | --- | --- |
-| `/cmd_vel` | `geometry_msgs/msg/Twist` | 键盘、实验脚本、未来控制器 | Gazebo DiffDrive |
+| `/control/cmd_vel` | `geometry_msgs/msg/Twist` | E3 直线控制器、未来任务状态机 | E4 速度看门狗；控制层唯一入口 |
+| `/cmd_vel` | `geometry_msgs/msg/Twist` | E4 速度看门狗 | Gazebo DiffDrive；每 `20 ms` 重发 |
 | `/model/climbot/ground_truth` | `nav_msgs/msg/Odometry` | Gazebo | 仅模拟传感器和评价 |
 | `/model/climbot/odometry` | `nav_msgs/msg/Odometry` | Gazebo DiffDrive | 诊断、轮式协方差适配 |
 | `/wheel_odom` | `nav_msgs/msg/Odometry` | `wall_wheel_odom_adapter` | EKF 的前向速度和偏航角速度 |
@@ -44,8 +45,11 @@
 `/model/climbot/ground_truth` 不得成为轨迹控制器输入。模拟全站仪可以由它派生，
 但必须经过频率、噪声、延迟和坐标变换模型。
 
-同一时刻只能有一个任务级 `/cmd_vel` 发布者。阶段 E 必须加入独立速度看门狗，
-在指令超时后发布零速。
+`cmd_vel_watchdog_node` 已实现为唯一的自动控制输出者：它以 `50 Hz` 从
+`/control/cmd_vel` 转发到 Gazebo `/cmd_vel`，在未收到首条指令、仿真时钟倒退，或
+距最后一条指令超过 `command_timeout_s`（默认 `0.40 s`）时发布零速。键盘与实验脚本
+若直接使用 `/cmd_vel`，仍须遵守自己的退出停车规则；完整系统 launch 将在后续阶段把
+它们统一接入 `/control/cmd_vel`。
 
 当前 EKF 以 `50 Hz` 发布 `/odometry/filtered`，阶段 E 控制器默认也以 `50 Hz`
 运行。全站仪 `12 Hz` 只表示绝对位置更新频率，控制器不得将每个 50 Hz EKF

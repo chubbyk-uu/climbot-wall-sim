@@ -38,17 +38,12 @@
 
 ## 当前未决事项
 
-### 1. 速度指令看门狗
-
-Gazebo DiffDrive 会无限期锁存最后一条 `/cmd_vel`。阶段 E 必须先实现独立、
-可配置的超时停车看门狗，再运行自动轨迹控制。
-
-### 2. WheelSlip 法向载荷局限
+### 1. WheelSlip 法向载荷局限
 
 Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点的瞬时载荷变化。
 这是已知模型保真度限制；第一阶段接受该限制，但真机参数解释时必须保留差异。
 
-### 3. 集成 launch 和定位配置归属
+### 2. 集成 launch 和定位配置归属
 
 `coverage_sim.launch.py` 和 `ekf_wall.yaml` 目前仍放在各自阶段包中。待阶段 E 的
 控制器和完整系统入口出现后，再决定是否新增 `climbot_bringup` 并统一外移，
@@ -58,9 +53,9 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 
 1. 新建 `climbot_interfaces` 并实现冻结的 `CoverageTask` 和 `ExecuteCoverage`；
 2. 让规划器原子发布 `/coverage/task` 及派生 `/coverage/path`；
-3. `climbot_control` 已完成 E3 单段直线跟踪核心：50 Hz 仿真时钟、横轨与航向闭环、
-   重力侧滑前馈、终点制动、左右轮联合速度/加速度限幅，以及
-   `/control/reference_path` 单段预览。下一步优先实现独立 `/cmd_vel` 看门狗，之后再接入任务状态机；
+3. `climbot_control` 已完成 E3 单段直线跟踪核心及 E4 独立速度看门狗；后者以
+   `50 Hz` 转发 `/control/cmd_vel`，在 `0.40 s` 超时或仿真时钟倒退时持续输出零速，
+   并已有节点级通信测试；
 4. 实现单段原地对准、直线跟踪和终点停车；
 5. 接入 `/coverage/execute` 和完整任务状态机；
 6. 进入阶段 F 的完整覆盖验收。

@@ -6,7 +6,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
-add_library(line_tracker src/line_tracker.cpp)
+add_library(line_tracker src/line_tracker.cpp src/command_watchdog.cpp)
 target_compile_features(line_tracker PUBLIC cxx_std_17)
 target_include_directories(line_tracker PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -16,7 +16,12 @@ target_compile_features(line_tracker_node PUBLIC cxx_std_17)
 target_link_libraries(line_tracker_node line_tracker)
 ament_target_dependencies(line_tracker_node geometry_msgs nav_msgs rclcpp)
 
-install(TARGETS line_tracker line_tracker_node ARCHIVE DESTINATION lib LIBRARY DESTINATION lib
+add_executable(cmd_vel_watchdog_node src/cmd_vel_watchdog_node.cpp)
+target_compile_features(cmd_vel_watchdog_node PUBLIC cxx_std_17)
+target_link_libraries(cmd_vel_watchdog_node line_tracker)
+ament_target_dependencies(cmd_vel_watchdog_node geometry_msgs rclcpp)
+
+install(TARGETS line_tracker line_tracker_node cmd_vel_watchdog_node ARCHIVE DESTINATION lib LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
@@ -24,12 +29,14 @@ install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   ament_add_gtest(test_line_tracker test/test_line_tracker.cpp)
   target_link_libraries(test_line_tracker line_tracker)
   target_include_directories(test_line_tracker PRIVATE include)
+  add_launch_test(test/test_cmd_vel_watchdog_node.py TIMEOUT 30)
 endif()
 
 ament_export_include_directories(include)

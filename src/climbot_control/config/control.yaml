@@ -17,3 +17,8 @@ line_tracker:
     gravity_slip_ratio: 0.1056
     gravity_down_x: 0.0
     gravity_down_y: -1.0
+
+cmd_vel_watchdog:
+  ros__parameters:
+    command_timeout_s: 0.40
+    publish_rate_hz: 50.0
