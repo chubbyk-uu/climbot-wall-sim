@@ -29,6 +29,7 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(test_wall_frame test/test_wall_frame.py)
+  ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
 endif()
 
 ament_package()

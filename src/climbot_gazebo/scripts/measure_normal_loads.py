@@ -11,6 +11,7 @@ from climbot_gazebo.geometry import (
     wrap_angle,
     yaw_from_quaternion,
 )
+from climbot_gazebo.safe_stop import install_stop_on_termination
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import rclpy
@@ -88,6 +89,10 @@ class NormalLoadMeasurement(Node):
         self._loads[name] = contact_normal_load(message)
         self._load_stamps[name] = stamp_nanoseconds(message)
 
+    def stop(self):
+        """Command zero velocity, used on normal and abnormal exit."""
+        self._publish()
+
     def _publish(self, linear=0.0, angular=0.0):
         command = Twist()
         command.linear.x = linear
@@ -115,9 +120,15 @@ class NormalLoadMeasurement(Node):
         deadline = time.monotonic() + 30.0
         while rclpy.ok() and time.monotonic() < deadline:
             rclpy.spin_once(self, timeout_sec=0.05)
-            if self._truth is not None and self._filtered is not None:
-                if all(stamp is not None for stamp in self._load_stamps.values()):
-                    return
+            if self._truth is None or self._filtered is None:
+                continue
+            if any(stamp is None for stamp in self._load_stamps.values()):
+                continue
+            # Also wait for the contact stream to catch up with the truth
+            # clock. Sampling before that reports the startup lag as a
+            # spurious lift-off in the first manoeuvre's minimum.
+            if all(load > 0.0 for load in self._current_loads().values()):
+                return
         raise RuntimeError('Timed out waiting for truth, EKF, and contact sensors.')
 
     def _turn_to(self, target_yaw):
@@ -224,10 +235,12 @@ class NormalLoadMeasurement(Node):
 def main():
     rclpy.init()
     measurement = NormalLoadMeasurement()
+    # DiffDrive latches the last command, so a killed run must stop first.
+    install_stop_on_termination(measurement.stop)
     try:
         measurement.run()
     finally:
-        measurement._publish()
+        measurement.stop()
         measurement.destroy_node()
         rclpy.shutdown()
 

@@ -11,6 +11,7 @@ from climbot_gazebo.geometry import (
     wrap_angle,
     yaw_from_quaternion,
 )
+from climbot_gazebo.safe_stop import install_stop_on_termination
 from climbot_gazebo.wall_frame import WallFrame
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -56,6 +57,10 @@ class WallSlipCalibrator(Node):
 
     def _filtered_callback(self, message):
         self._filtered = message
+
+    def stop(self):
+        """Command zero velocity, used on normal and abnormal exit."""
+        self._publish()
 
     def _publish(self, linear=0.0, angular=0.0):
         command = Twist()
@@ -178,10 +183,12 @@ class WallSlipCalibrator(Node):
 def main():
     rclpy.init()
     calibrator = WallSlipCalibrator()
+    # DiffDrive latches the last command, so a killed run must stop first.
+    install_stop_on_termination(calibrator.stop)
     try:
         calibrator.run()
     finally:
-        calibrator._publish()
+        calibrator.stop()
         calibrator.destroy_node()
         rclpy.shutdown()
 
