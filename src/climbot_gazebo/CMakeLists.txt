@@ -16,6 +16,7 @@ install(
     scripts/calibrate_wall_slip.py
     scripts/evaluate_localization.py
     scripts/measure_normal_loads.py
+    scripts/measure_turn_slip.py
     scripts/plot_wall_slip.py
     scripts/total_station_sim.py
     scripts/wall_imu_adapter.py
@@ -31,6 +32,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(test_wall_frame test/test_wall_frame.py)
   ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
+  ament_add_pytest_test(test_turn_profile test/test_turn_profile.py)
 endif()
 
 ament_package()
