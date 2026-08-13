@@ -15,7 +15,7 @@ class WallImuAdapter(Node):
 
     def __init__(self):
         super().__init__('wall_imu_adapter')
-        self.declare_parameter('orientation_stddev_rad', math.radians(0.5))
+        self.declare_parameter('orientation_stddev_rad', math.radians(0.1))
         self.declare_parameter('random_seed', 17)
         self._orientation_stddev = float(
             self.get_parameter('orientation_stddev_rad').value)

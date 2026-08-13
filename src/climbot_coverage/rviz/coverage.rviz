@@ -20,6 +20,17 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Length: 1
       Radius: 0.04
+    - Class: rviz_default_plugins/RobotModel
+      Name: Climbot
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1
     - Class: rviz_default_plugins/MarkerArray
       Name: Coverage Regions
       Enabled: true
@@ -37,6 +48,16 @@ Visualization Manager:
       Line Style: Lines
       Line Width: 0.03
       Color: 25; 150; 255
+    - Class: rviz_default_plugins/Path
+      Name: Dynamic Execution Line
+      Enabled: true
+      Topic:
+        Value: /control/reference_path
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+      Line Style: Lines
+      Line Width: 0.05
+      Color: 255; 90; 30
   Global Options:
     Fixed Frame: odom
     Background Color: 36; 39; 46

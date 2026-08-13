@@ -360,7 +360,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'total_station_stddev_m',
-            default_value='0.005',
+            default_value='0.001',
             description='One-sigma total-station position noise in metres.',
         ),
         DeclareLaunchArgument(
@@ -380,7 +380,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'imu_orientation_stddev_rad',
-            default_value='0.00872664626',
+            default_value='0.00174532925',
             description='IMU attitude one-sigma uncertainty in radians.',
         ),
         OpaqueFunction(function=launch_setup),

@@ -25,7 +25,7 @@ class TotalStationSimulator(Node):
     def __init__(self):
         super().__init__('total_station_sim')
         self.declare_parameter('publish_rate_hz', 12.0)
-        self.declare_parameter('position_stddev_m', 0.005)
+        self.declare_parameter('position_stddev_m', 0.001)
         self.declare_parameter('fixed_delay_s', 0.05)
         self.declare_parameter('drop_probability', 0.0)
         self.declare_parameter('random_seed', 42)
