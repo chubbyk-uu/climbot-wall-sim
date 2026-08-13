@@ -206,14 +206,14 @@ std::vector<Point2> generateBoustrophedonPath(
   if (!horizontal && sweep_direction != "vertical") {
     throw std::invalid_argument("Sweep direction must be horizontal or vertical.");
   }
-  const bool start_low = start_corner.rfind("lower_", 0) == 0;
-  const bool start_left = start_corner.size() >= 5 &&
-    start_corner.substr(start_corner.size() - 4) == "left";
   if (start_corner != "lower_left" && start_corner != "lower_right" &&
     start_corner != "upper_left" && start_corner != "upper_right")
   {
     throw std::invalid_argument("Unsupported start corner.");
   }
+  // Safe to decompose only now that the value is known to be one of the four.
+  const bool start_low = start_corner.rfind("lower_", 0) == 0;
+  const bool start_left = start_corner.compare(start_corner.size() - 4, 4, "left") == 0;
 
   const auto [minimum, maximum] = bounds(polygon, horizontal);
   const double span = maximum - minimum;
