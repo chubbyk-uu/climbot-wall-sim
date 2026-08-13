@@ -63,6 +63,12 @@
 | --- | --- | ---: | --- |
 | `line_tracker` | `odometry_timeout_s` | `0.25 s` | 超过该时间未收到有效融合位姿时持续发布零速，并清空上一控制指令 |
 | `line_tracker` | `control_frequency_hz` | `50 Hz` | 直线跟踪控制频率 |
+| `line_tracker` | `cross_gain` | `1.0 rad/m` | 横轨比例反馈增益 |
+| `line_tracker` | `cross_integral_gain` | `0.30 rad/(m·s)` | 横轨积分反馈增益 |
+| `line_tracker` | `cross_integral_limit_m_s` | `0.10 m·s` | 横轨积分状态绝对限值 |
+| `line_tracker` | `max_gravity_feedforward_deg` | `8°` | 重力前馈独立限幅 |
+| `line_tracker` | `max_cross_feedback_deg` | `8°` | 横轨 PI 反馈独立限幅 |
+| `line_tracker` | `max_heading_correction_deg` | `12°` | 前馈与反馈相加后的总航向硬限幅 |
 | `cmd_vel_watchdog` | `command_timeout_s` | `0.40 s` | 上游速度指令超时后持续发布零速 |
 | `cmd_vel_watchdog` | `publish_rate_hz` | `50 Hz` | 向执行器重发安全速度的频率 |
 
@@ -70,6 +76,9 @@
 轮距、重力方向和坐标系参数；非法配置直接启动失败，不进入周期回调。轮距、轮缘
 速度硬限值和轮缘加速度硬限值不存放在 `control.yaml`，由标准 launch 从
 `climbot_description/config/robot.yaml` 注入。
+
+横轨积分只在直线前进时更新；定位超时会清零。反馈或总航向修正达到限幅时采用
+条件积分抗饱和，但重力前馈达到自身独立限幅不会阻止 PI 修正剩余误差。
 
 ## 覆盖规划接口
 

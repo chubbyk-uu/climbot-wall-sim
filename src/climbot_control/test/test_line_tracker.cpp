@@ -21,6 +21,32 @@ TEST(LineTracker, GravityFeedforwardRaisesHorizontalMotionButNotVerticalMotion)
   EXPECT_NEAR(vertical.angular, 0.0, 1e-9);
 }
 
+TEST(LineTracker, CombinesSeparateFeedforwardAndFeedbackBudgets)
+{
+  Limits limits;
+  limits.gravity_slip_ratio = 0.1056;
+  const auto command = trackLine(
+    {0, 0}, {1, 0}, {0, -0.05, 0}, .15, 1, 2, limits);
+  EXPECT_NEAR(command.gravity_feedforward, std::atan(0.1056), 1e-9);
+  EXPECT_NEAR(command.cross_feedback, 0.05, 1e-9);
+  EXPECT_NEAR(
+    command.heading_correction, std::atan(0.1056) + 0.05, 1e-9);
+  EXPECT_FALSE(command.correction_saturated);
+}
+
+TEST(LineTracker, IntegralCorrectsResidualWithoutBypassingTotalLimit)
+{
+  Limits limits;
+  limits.gravity_slip_ratio = 0.1056;
+  const auto residual = trackLine(
+    {0, 0}, {1, 0}, {0, -0.01, 0}, .15, 1, 2, limits, 0.3, -0.1);
+  EXPECT_NEAR(residual.cross_feedback, 0.04, 1e-9);
+  const auto saturated = trackLine(
+    {0, 0}, {1, 0}, {0, -1.0, 0}, .15, 1, 2, limits, 0.3, -1.0);
+  EXPECT_NEAR(saturated.heading_correction, limits.max_heading_correction, 1e-9);
+  EXPECT_TRUE(saturated.correction_saturated);
+}
+
 TEST(LineTracker, StopsForwardMotionUntilHeadingIsAligned)
 {
   const auto command = trackLine({0, 0}, {1, 0}, {0, 0, .3}, .15, 1, 2, {});

@@ -25,6 +25,8 @@ public:
       declare_parameter("end_x", 1.0), declare_parameter("end_y", 0.0)};
     cruise_speed_ = declare_parameter("cruise_speed", 0.15);
     cross_gain_ = declare_parameter("cross_gain", 1.0);
+    cross_integral_gain_ = declare_parameter("cross_integral_gain", 0.30);
+    cross_integral_limit_ = declare_parameter("cross_integral_limit_m_s", 0.10);
     heading_gain_ = declare_parameter("heading_gain", 2.0);
     control_frequency_hz_ = declare_parameter("control_frequency_hz", 50.0);
     odometry_timeout_s_ = declare_parameter("odometry_timeout_s", 0.25);
@@ -33,7 +35,11 @@ public:
     limits_.max_linear = declare_parameter("max_linear_speed", 0.15);
     limits_.max_angular = declare_parameter("max_angular_speed", 0.35);
     limits_.max_heading_correction = degreesToRadians(
-      declare_parameter("max_heading_correction_deg", 10.0));
+      declare_parameter("max_heading_correction_deg", 12.0));
+    limits_.max_gravity_feedforward = degreesToRadians(
+      declare_parameter("max_gravity_feedforward_deg", 8.0));
+    limits_.max_cross_feedback = degreesToRadians(
+      declare_parameter("max_cross_feedback_deg", 8.0));
     limits_.alignment_threshold = degreesToRadians(
       declare_parameter("alignment_threshold_deg", 10.0));
     limits_.max_deceleration = declare_parameter("max_linear_deceleration", 0.25);
@@ -113,12 +119,19 @@ private:
     if (cross_gain_ < 0.0) {
       throw std::invalid_argument("cross_gain must be non-negative.");
     }
+    requireFinite("cross_integral_gain", cross_integral_gain_);
+    if (cross_integral_gain_ < 0.0) {
+      throw std::invalid_argument("cross_integral_gain must be non-negative.");
+    }
+    requirePositive("cross_integral_limit_m_s", cross_integral_limit_);
     requirePositive("heading_gain", heading_gain_);
     requirePositive("control_frequency_hz", control_frequency_hz_);
     requirePositive("odometry_timeout_s", odometry_timeout_s_);
     requirePositive("max_linear_speed", limits_.max_linear);
     requirePositive("max_angular_speed", limits_.max_angular);
     requirePositive("max_heading_correction_deg", limits_.max_heading_correction);
+    requirePositive("max_gravity_feedforward_deg", limits_.max_gravity_feedforward);
+    requirePositive("max_cross_feedback_deg", limits_.max_cross_feedback);
     requirePositive("alignment_threshold_deg", limits_.alignment_threshold);
     requirePositive("max_linear_deceleration", limits_.max_deceleration);
     requireFinite("gravity_slip_ratio", limits_.gravity_slip_ratio);
@@ -169,6 +182,7 @@ private:
       (current_time - last_pose_received_time_).seconds() > odometry_timeout_s_)
     {
       previous_command_ = {};
+      cross_integral_ = 0.0;
       last_control_time_ = current_time;
       geometry_msgs::msg::Twist stop;
       command_publisher_->publish(stop);
@@ -183,8 +197,30 @@ private:
       return;
     }
 
-    const auto desired = climbot_control::trackLine(start_, end_, pose_, cruise_speed_,
-        cross_gain_, heading_gain_, limits_);
+    auto desired = climbot_control::trackLine(start_, end_, pose_, cruise_speed_,
+        cross_gain_, heading_gain_, limits_, cross_integral_gain_, cross_integral_);
+    if (desired.linear > 0.0 && cross_integral_gain_ > 0.0) {
+      const double candidate_integral = std::clamp(
+        cross_integral_ + desired.cross * dt, -cross_integral_limit_, cross_integral_limit_);
+      const auto candidate = climbot_control::trackLine(start_, end_, pose_, cruise_speed_,
+          cross_gain_, heading_gain_, limits_, cross_integral_gain_, candidate_integral);
+      const double integral_drive = -cross_integral_gain_ *
+        (candidate_integral - cross_integral_);
+      constexpr double saturation_tolerance = 1e-12;
+      const bool feedback_at_limit =
+        std::abs(candidate.cross_feedback) >=
+        limits_.max_cross_feedback - saturation_tolerance;
+      const bool total_at_limit =
+        std::abs(candidate.heading_correction) >=
+        limits_.max_heading_correction - saturation_tolerance;
+      const bool drives_further_into_saturation =
+        (feedback_at_limit && candidate.cross_feedback * integral_drive > 0.0) ||
+        (total_at_limit && candidate.heading_correction * integral_drive > 0.0);
+      if (!drives_further_into_saturation) {
+        cross_integral_ = candidate_integral;
+        desired = candidate;
+      }
+    }
     previous_command_ = climbot_control::rateLimit(desired, previous_command_, dt,
         linear_acceleration_, limits_.max_deceleration, angular_acceleration_,
         wheel_separation_, wheel_speed_limit_, wheel_acceleration_limit_);
@@ -198,6 +234,9 @@ private:
   bool have_pose_{false};
   double cruise_speed_{0.15};
   double cross_gain_{1.0};
+  double cross_integral_gain_{0.30};
+  double cross_integral_limit_{0.10};
+  double cross_integral_{0.0};
   double heading_gain_{2.0};
   double control_frequency_hz_{50.0};
   double odometry_timeout_s_{0.25};

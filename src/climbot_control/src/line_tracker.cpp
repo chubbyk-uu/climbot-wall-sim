@@ -25,7 +25,8 @@ std::optional<double> yawFromQuaternion(double x, double y, double z, double w) 
 
 Command trackLine(
   const Point2 & start, const Point2 & end, const Pose2 & pose,
-  double cruise_speed, double cross_gain, double heading_gain, const Limits & limits)
+  double cruise_speed, double cross_gain, double heading_gain, const Limits & limits,
+  double cross_integral_gain, double cross_integral)
 {
   const double dx = end.x - start.x, dy = end.y - start.y, length = std::hypot(dx, dy);
   if (length <= 1e-9) {throw std::invalid_argument("Line segment must be non-zero.");}
@@ -35,9 +36,17 @@ Command trackLine(
   const Point2 normal{-ty, tx};
   const double gravity_normal = limits.gravity_direction.x * normal.x +
     limits.gravity_direction.y * normal.y;
-  const double gravity_feedforward = -std::atan(limits.gravity_slip_ratio * gravity_normal);
-  const double heading_correction = std::clamp(
-    gravity_feedforward - cross_gain * cross,
+  const double raw_gravity_feedforward = -std::atan(
+    limits.gravity_slip_ratio * gravity_normal);
+  const double gravity_feedforward = std::clamp(
+    raw_gravity_feedforward,
+    -limits.max_gravity_feedforward, limits.max_gravity_feedforward);
+  const double raw_cross_feedback = -cross_gain * cross -
+    cross_integral_gain * cross_integral;
+  const double cross_feedback = std::clamp(
+    raw_cross_feedback, -limits.max_cross_feedback, limits.max_cross_feedback);
+  const double raw_heading_correction = gravity_feedforward + cross_feedback;
+  const double heading_correction = std::clamp(raw_heading_correction,
     -limits.max_heading_correction, limits.max_heading_correction);
   const double target_yaw = std::atan2(ty, tx) + heading_correction;
   const double heading_error = wrapAngle(target_yaw - pose.yaw);
@@ -49,8 +58,12 @@ Command trackLine(
   if (std::abs(heading_error) > limits.alignment_threshold) {
     linear = 0.0;
   }
+  const bool correction_saturated =
+    gravity_feedforward != raw_gravity_feedforward || cross_feedback != raw_cross_feedback ||
+    heading_correction != raw_heading_correction;
   return {linear, std::clamp(heading_gain * heading_error, -limits.max_angular, limits.max_angular),
-    along, cross, remaining, heading_error};
+    along, cross, remaining, heading_error, gravity_feedforward, cross_feedback,
+    heading_correction, correction_saturated};
 }
 
 Command rateLimit(
