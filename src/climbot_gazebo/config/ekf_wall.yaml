@@ -1,0 +1,55 @@
+ekf_filter_node:
+  ros__parameters:
+    frequency: 50.0
+    sensor_timeout: 0.25
+    two_d_mode: false
+    print_diagnostics: true
+    publish_tf: true
+    publish_acceleration: false
+
+    # odom is the fixed wall-work coordinate system: +X along the initial
+    # forward direction, +Y up the wall and +Z wall-normal. The total-station
+    # adapter converts Gazebo world XYZ into this frame.
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_link
+    world_frame: odom
+
+    # Wheel odometry is deliberately velocity-only. Its pose would hide the
+    # wall-slip error that this simulation is intended to study.
+    odom0: /model/climbot/odometry
+    odom0_config: [false, false, false,
+                   false, false, false,
+                   true,  false, false,
+                   false, false, true,
+                   false, false, false]
+    odom0_queue_size: 10
+    odom0_differential: false
+    odom0_relative: false
+
+    # The IMU supplies absolute attitude and angular velocity. Linear
+    # acceleration is published and recorded, but is not fused in this first
+    # configuration until the vertical-wall gravity convention is validated.
+    imu0: /imu
+    imu0_config: [false, false, false,
+                  true,  true,  true,
+                  false, false, false,
+                  true,  true,  true,
+                  false, false, false]
+    imu0_queue_size: 20
+    imu0_differential: false
+    imu0_relative: false
+    imu0_remove_gravitational_acceleration: false
+
+    # Simulated total station measures position only. It never supplies a
+    # synthetic heading or velocity.
+    pose0: /total_station/pose
+    pose0_config: [true,  true,  true,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
+    pose0_queue_size: 10
+    pose0_differential: false
+    pose0_relative: false
+    pose0_rejection_threshold: 5.0

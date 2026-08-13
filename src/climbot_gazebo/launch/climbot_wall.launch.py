@@ -10,6 +10,7 @@ from launch.actions import (
     SetEnvironmentVariable,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
@@ -18,6 +19,7 @@ def generate_launch_description():
     package_share = get_package_share_directory('climbot_gazebo')
     ros_gz_share = get_package_share_directory('ros_gz_sim')
     world = os.path.join(package_share, 'worlds', 'climbot_wall.sdf')
+    ekf_config = os.path.join(package_share, 'config', 'ekf_wall.yaml')
     model_path = os.path.join(package_share, 'models')
     existing_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
 
@@ -48,12 +50,39 @@ def generate_launch_description():
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=[
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
             '/model/climbot/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry',
+            '/model/climbot/ground_truth@nav_msgs/msg/Odometry@gz.msgs.Odometry',
+            '/imu@sensor_msgs/msg/Imu@gz.msgs.IMU',
         ],
         parameters=[{
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
         }],
+        output='screen',
+    )
+
+    total_station = Node(
+        package='climbot_gazebo',
+        executable='total_station_sim.py',
+        name='total_station_sim',
+        parameters=[{
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'publish_rate_hz': LaunchConfiguration('total_station_rate_hz'),
+            'position_stddev_m': LaunchConfiguration('total_station_stddev_m'),
+            'fixed_delay_s': LaunchConfiguration('total_station_delay_s'),
+        }],
+        output='screen',
+    )
+
+    ekf = Node(
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        parameters=[ekf_config, {
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+        }],
+        remappings=[('odometry/filtered', '/odometry/filtered')],
         output='screen',
     )
 
@@ -63,9 +92,26 @@ def generate_launch_description():
             default_value='true',
             description='Use Gazebo simulation time.',
         ),
+        DeclareLaunchArgument(
+            'total_station_rate_hz',
+            default_value='12.0',
+            description='Simulated total-station observation frequency.',
+        ),
+        DeclareLaunchArgument(
+            'total_station_stddev_m',
+            default_value='0.005',
+            description='One-sigma total-station position noise in metres.',
+        ),
+        DeclareLaunchArgument(
+            'total_station_delay_s',
+            default_value='0.05',
+            description='Fixed total-station delivery delay in seconds.',
+        ),
         gazebo_resources,
         d3d12_driver,
         d3d12_adapter,
         gazebo,
         bridge,
+        total_station,
+        ekf,
     ])

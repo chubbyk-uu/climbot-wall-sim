@@ -33,6 +33,28 @@ source install/setup.bash
 
 本项目运行于 WSL2，launch 会设置 `GALLIUM_DRIVER=d3d12` 并选择 NVIDIA 适配器，使 Gazebo OGRE2 通过 Mesa D3D12 使用 GPU 渲染。
 
+## 阶段 4：传感器与定位融合
+
+启动仿真后，ROS 2 可获得以下定位链路：
+
+- `/model/climbot/ground_truth`：Gazebo 物理真值，仅用于记录与评估；
+- `/model/climbot/odometry`：轮式里程计，EKF 仅融合其前向速度和绕墙面法向的角速度；
+- `/imu`：100 Hz 带噪声的 Gazebo IMU；
+- `/total_station/pose`：从真值派生的模拟全站仪位置，默认 **12 Hz**、5 mm 一倍标准差噪声和 50 ms 固定延迟；
+- `/odometry/filtered`：`robot_localization/ekf_node` 的融合输出和 `odom -> base_link` TF。
+
+融合坐标系 `odom` 固定在墙面上：`+X` 为初始前进方向，`+Y` 向上，`+Z` 为离墙法向。全站仪适配节点会将 Gazebo 世界坐标转换到该坐标系；Gazebo 真值话题仍保持原始世界坐标，便于独立评估。
+
+全站仪参数均可在启动时修改，例如：
+
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  total_station_rate_hz:=12.0 total_station_stddev_m:=0.005 \
+  total_station_delay_s:=0.05
+```
+
+全站仪只发布绝对位置，不伪造航向或速度；其原始 Gazebo 真值不会送入 EKF 或控制器。
+
 启动仿真：
 
 ```bash
