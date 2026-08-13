@@ -275,14 +275,14 @@
       <wheel link_name="left_wheel_link">
         <wheel_radius>0.08</wheel_radius>
         <wheel_normal_force>77.0</wheel_normal_force>
-        <slip_compliance_lateral>0.20</slip_compliance_lateral>
-        <slip_compliance_longitudinal>0.05</slip_compliance_longitudinal>
+        <slip_compliance_lateral>0.12</slip_compliance_lateral>
+        <slip_compliance_longitudinal>0.04</slip_compliance_longitudinal>
       </wheel>
       <wheel link_name="right_wheel_link">
         <wheel_radius>0.08</wheel_radius>
         <wheel_normal_force>77.0</wheel_normal_force>
-        <slip_compliance_lateral>0.20</slip_compliance_lateral>
-        <slip_compliance_longitudinal>0.05</slip_compliance_longitudinal>
+        <slip_compliance_lateral>0.12</slip_compliance_lateral>
+        <slip_compliance_longitudinal>0.04</slip_compliance_longitudinal>
       </wheel>
     </plugin>
 
