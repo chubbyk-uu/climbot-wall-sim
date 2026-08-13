@@ -116,6 +116,16 @@
           <diffuse>0.08 0.08 0.08 1</diffuse>
         </material>
       </visual>
+
+      <!-- Wall-contact normal load, recorded for the load-distribution test.
+           Evaluation only: no control loop consumes this. -->
+      <sensor name="left_wheel_contact" type="contact">
+        <always_on>true</always_on>
+        <update_rate>50</update_rate>
+        <contact>
+          <collision>left_wheel_collision</collision>
+        </contact>
+      </sensor>
     </link>
 
     <link name="right_wheel_link">
@@ -160,6 +170,14 @@
           <diffuse>0.08 0.08 0.08 1</diffuse>
         </material>
       </visual>
+
+      <sensor name="right_wheel_contact" type="contact">
+        <always_on>true</always_on>
+        <update_rate>50</update_rate>
+        <contact>
+          <collision>right_wheel_collision</collision>
+        </contact>
+      </sensor>
     </link>
 
     <link name="caster_ball_link">
@@ -201,6 +219,14 @@
           <diffuse>0.25 0.25 0.25 1</diffuse>
         </material>
       </visual>
+
+      <sensor name="caster_contact" type="contact">
+        <always_on>true</always_on>
+        <update_rate>50</update_rate>
+        <contact>
+          <collision>caster_collision</collision>
+        </contact>
+      </sensor>
     </link>
 
     <joint name="left_wheel_joint" type="revolute">

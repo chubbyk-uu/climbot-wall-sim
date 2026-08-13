@@ -13,6 +13,14 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+_CONTACT_PREFIX = '/world/climbot_wall/model/climbot/link'
+CONTACT_TOPIC_LEFT = (
+    _CONTACT_PREFIX + '/left_wheel_link/sensor/left_wheel_contact/contact')
+CONTACT_TOPIC_RIGHT = (
+    _CONTACT_PREFIX + '/right_wheel_link/sensor/right_wheel_contact/contact')
+CONTACT_TOPIC_CASTER = (
+    _CONTACT_PREFIX + '/caster_ball_link/sensor/caster_contact/contact')
+
 
 def generate_launch_description():
     """Build the wall simulation launch description."""
@@ -55,6 +63,16 @@ def generate_launch_description():
             '/model/climbot/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/model/climbot/ground_truth@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/imu@sensor_msgs/msg/Imu@gz.msgs.IMU',
+            # Contact sensors ignore their <topic> tag, so the fully qualified
+            # Gazebo names are bridged and remapped to short ROS topics below.
+            CONTACT_TOPIC_LEFT + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            CONTACT_TOPIC_RIGHT + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            CONTACT_TOPIC_CASTER + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+        ],
+        remappings=[
+            (CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
+            (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
+            (CONTACT_TOPIC_CASTER, '/contact/caster'),
         ],
         parameters=[{
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
