@@ -1,0 +1,33 @@
+# Goal: a fully validated, immutable CoverageTask.
+CoverageTask task
+---
+# Result codes.
+uint16 SUCCESS=0
+uint16 CANCELED=1
+uint16 INVALID_TASK=2
+uint16 LOCALIZATION_TIMEOUT=3
+uint16 CONTROL_TIMEOUT=4
+uint16 OUT_OF_BOUNDS=5
+uint16 TRACKING_FAILED=6
+
+uint16 result_code
+string message
+uint32 completed_segments
+float64 elapsed_time_s
+---
+# Execution state values.
+uint8 WAITING=0
+uint8 ALIGN=1
+uint8 TURN_SETTLE=2
+uint8 TRACK_LINE=3
+uint8 FINAL_APPROACH=4
+uint8 STOPPED=5
+
+uint8 state
+int32 current_segment
+uint8 segment_type
+float64 along_track_error
+float64 cross_track_error
+float64 heading_error
+float64 remaining_distance
+float32 progress

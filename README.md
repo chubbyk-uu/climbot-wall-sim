@@ -36,15 +36,19 @@ climbot_sim/
 └── src/
     ├── climbot_description/     共享机器人与墙面描述
     ├── climbot_gazebo/          仿真、定位与评估工具
+    ├── climbot_interfaces/      覆盖任务消息与执行 Action
     └── climbot_coverage/        C++ 覆盖规划与 RViz
 ```
 
 依赖方向为：
 
 ```text
-climbot_description <── climbot_gazebo
-        ^
-        └──────────── climbot_coverage
+climbot_interfaces
+      ^        ^
+      │        │
+climbot_coverage  （未来 climbot_control）
+      │        │
+      └──> climbot_description <── climbot_gazebo
 ```
 
 规划器不读取 Gazebo 真值或仿真专有参数。
