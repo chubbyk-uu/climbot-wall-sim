@@ -35,12 +35,13 @@
   <xacro:property name="caster_mass" value="$(arg caster_mass)"/>
   <xacro:property name="half_track" value="${$(arg wheel_separation) / 2.0}"/>
 
-  <!-- Link poses in the Gazebo model are relative to the model origin, while
-       URDF joints are relative to base_link, so the body centre is removed. -->
-  <xacro:property name="wheel_offset_x" value="${$(arg wheel_axle_x) - base_x}"/>
-  <xacro:property name="wheel_offset_z" value="${wheel_radius - base_z}"/>
-  <xacro:property name="caster_offset_x" value="${$(arg caster_x) - base_x}"/>
-  <xacro:property name="caster_offset_z" value="${caster_radius - base_z}"/>
+  <!-- base_link is the drive axle midpoint at the wall contact plane, the same
+       origin the Gazebo model uses, so link coordinates carry over unchanged
+       and the body is an offset on base_link rather than its origin. -->
+  <xacro:property name="wheel_offset_x" value="$(arg wheel_axle_x)"/>
+  <xacro:property name="wheel_offset_z" value="${wheel_radius}"/>
+  <xacro:property name="caster_offset_x" value="$(arg caster_x)"/>
+  <xacro:property name="caster_offset_z" value="${caster_radius}"/>
 
   <material name="body_blue">
     <color rgba="0.10 0.32 0.80 1"/>
@@ -81,7 +82,7 @@
     <joint name="${side}_wheel_joint" type="continuous">
       <parent link="base_link"/>
       <child link="${side}_wheel_link"/>
-      <origin xyz="${wheel_offset_x} ${sign * half_track - base_y} ${wheel_offset_z}"
+      <origin xyz="${wheel_offset_x} ${sign * half_track} ${wheel_offset_z}"
               rpy="1.57079632679 0 0"/>
       <!-- The roll above sends the wheel's local +Z along the model's -Y, so
            the axle that the Gazebo model states as model +Y is -Z here. -->
@@ -91,6 +92,7 @@
 
   <link name="base_link">
     <inertial>
+      <origin xyz="${base_x} ${base_y} ${base_z}"/>
       <mass value="${base_mass}"/>
       <inertia
         ixx="${base_mass * (width * width + thickness * thickness) / 12.0}"
@@ -99,27 +101,30 @@
         ixy="0" ixz="0" iyz="0"/>
     </inertial>
     <visual>
+      <origin xyz="${base_x} ${base_y} ${base_z}"/>
       <geometry>
         <box size="${length} ${width} ${thickness}"/>
       </geometry>
       <material name="body_blue"/>
     </visual>
     <visual>
-      <origin xyz="${length / 2.0 - 0.03} 0 ${thickness / 2.0 + 0.011}"/>
+      <origin xyz="${base_x + length / 2.0 - 0.03} ${base_y}
+                   ${base_z + thickness / 2.0 + 0.011}"/>
       <geometry>
         <box size="0.07 ${width * 0.41} 0.025"/>
       </geometry>
       <material name="marker_orange"/>
     </visual>
     <collision>
+      <origin xyz="${base_x} ${base_y} ${base_z}"/>
       <geometry>
         <box size="${length} ${width} ${thickness}"/>
       </geometry>
     </collision>
   </link>
 
-  <!-- The IMU sits at the body origin, so this frame is coincident with
-       base_link. It exists so an offset mount only needs robot.yaml changed. -->
+  <!-- The IMU is co-located with base_link, so this frame is coincident
+       with it. It exists so an offset mount only needs robot.yaml changed. -->
   <link name="imu_link"/>
   <joint name="imu_joint" type="fixed">
     <parent link="base_link"/>
@@ -156,6 +161,6 @@
   <joint name="caster_ball_joint" type="fixed">
     <parent link="base_link"/>
     <child link="caster_ball_link"/>
-    <origin xyz="${caster_offset_x} ${-base_y} ${caster_offset_z}" rpy="0 0 0"/>
+    <origin xyz="${caster_offset_x} 0 ${caster_offset_z}" rpy="0 0 0"/>
   </joint>
 </robot>

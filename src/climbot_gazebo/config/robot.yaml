@@ -7,18 +7,20 @@ robot:
   base:
     size_xyz: [0.52, 0.44, 0.10]
     mass_kg: 12.0
-    # Body centre in the model frame. The z value is the centre-of-mass
-    # standoff from the wall: gravity acting on it transfers normal load
-    # between the drive wheels and the rear caster whenever the robot moves
-    # up or down the wall, so it directly sets the anti-tip margin.
-    centre_xyz: [-0.03, 0.0, 0.085]
+    # Body centre relative to base_link, which sits at the drive axle
+    # midpoint. The z value is the centre-of-mass standoff from the wall:
+    # gravity acting on it transfers normal load between the drive wheels
+    # and the rear caster whenever the robot moves up or down the wall, so
+    # it directly sets the anti-tip margin.
+    centre_xyz: [-0.11, 0.0, 0.085]
 
   drive_wheel:
     radius_m: 0.08
     width_m: 0.045
     mass_kg: 1.0
-    # Distance ahead of the model origin, and left-right track width.
-    axle_x_m: 0.08
+    # Zero by definition: base_link is the axle midpoint, so a differential
+    # drive rotates about the origin and an in-place turn does not move it.
+    axle_x_m: 0.0
     separation_m: 0.43
     mu: 1.1
     # Lateral compliance is deliberately non-zero: WheelSlip scales
@@ -33,7 +35,7 @@ robot:
   caster:
     radius_m: 0.05
     mass_kg: 0.5
-    centre_x_m: -0.25
+    centre_x_m: -0.33
     mu: 0.35
 
   drive:

@@ -41,6 +41,9 @@
   <xacro:property name="width" value="$(arg base_width)"/>
   <xacro:property name="thickness" value="$(arg base_thickness)"/>
   <xacro:property name="base_mass" value="$(arg base_mass)"/>
+  <xacro:property name="base_x" value="$(arg base_x)"/>
+  <xacro:property name="base_y" value="$(arg base_y)"/>
+  <xacro:property name="base_z" value="$(arg base_z)"/>
   <xacro:property name="wheel_radius" value="$(arg wheel_radius)"/>
   <xacro:property name="wheel_width" value="$(arg wheel_width)"/>
   <xacro:property name="wheel_mass" value="$(arg wheel_mass)"/>
@@ -113,7 +116,7 @@
     </link>
 
     <joint name="${side}_wheel_joint" type="revolute">
-      <parent>base_link</parent>
+      <parent>chassis_link</parent>
       <child>${side}_wheel_link</child>
       <axis>
         <xyz expressed_in="__model__">0 1 0</xyz>
@@ -130,15 +133,25 @@
     </joint>
   </xacro:macro>
 
-  <model name="climbot" canonical_link="base_link">
+  <model name="climbot" canonical_link="chassis_link">
     <self_collide>false</self_collide>
 
     <!--
       Robot frame follows REP 103: +X forward, +Y left, +Z away from
       the driving surface. The world rotates this model onto the wall.
     -->
-    <link name="base_link">
-      <pose>$(arg base_x) $(arg base_y) $(arg base_z) 0 0 0</pose>
+    <!--
+      The model origin is the drive axle midpoint at the wall contact plane, so
+      the pose Gazebo reports is the point a differential drive rotates about
+      and an in-place turn no longer swings it.
+
+      This chassis link keeps its origin at the body centre because
+      ApplyLinkWrench applies the suction at the canonical link's ORIGIN, not
+      at its centre of mass. Moving this origin moves the suction, and putting
+      it on the axle drops the rear caster to zero normal load.
+    -->
+    <link name="chassis_link">
+      <pose>${base_x} ${base_y} ${base_z} 0 0 0</pose>
       <inertial>
         <mass>${base_mass}</mass>
         <inertia>
@@ -182,9 +195,8 @@
         </material>
       </visual>
 
-      <!-- The IMU is rigidly mounted at the body origin, so imu_link and
-           base_link differ only by the identity transform published by
-           robot_state_publisher. -->
+      <!-- Mounted on the chassis; the ROS-side frame is base_link, which
+           robot_state_publisher places at the model origin. -->
       <sensor name="imu" type="imu">
         <always_on>true</always_on>
         <update_rate>$(arg imu_rate)</update_rate>
@@ -258,7 +270,7 @@
     </link>
 
     <joint name="caster_ball_joint" type="ball">
-      <parent>base_link</parent>
+      <parent>chassis_link</parent>
       <child>caster_ball_link</child>
     </joint>
 
