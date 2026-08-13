@@ -10,7 +10,7 @@ from launch.actions import (
     SetEnvironmentVariable,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 _CONTACT_PREFIX = '/world/climbot_wall/model/climbot/link'
@@ -49,7 +49,11 @@ def generate_launch_description():
             os.path.join(ros_gz_share, 'launch', 'gz_sim.launch.py')
         ),
         launch_arguments={
-            'gz_args': ['-r -v 3 ', world],
+            'gz_args': [
+                PythonExpression(
+                    ["'-s ' if '", LaunchConfiguration('headless'),
+                     "' == 'true' else ''"]),
+                '-r -v 3 ', world],
             'on_exit_shutdown': 'true',
         }.items(),
     )
@@ -135,6 +139,11 @@ def generate_launch_description():
             'use_sim_time',
             default_value='true',
             description='Use Gazebo simulation time.',
+        ),
+        DeclareLaunchArgument(
+            'headless',
+            default_value='false',
+            description='Run Gazebo without its GUI, for automated tests.',
         ),
         DeclareLaunchArgument(
             'total_station_rate_hz',
