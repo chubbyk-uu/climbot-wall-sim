@@ -26,10 +26,11 @@ robot:
     joint_effort_nm: 80.0
     joint_velocity_rps: 30.0
 
-  # Conservative wall-plane envelope used by the coverage planner. It includes
-  # the body, protruding wheels, and rear caster. edge_clearance is additional
-  # clearance between that envelope and the requested work-region boundary.
+  # Conservative envelope centred on base_link for planning. The physical
+  # footprint runs from x=-0.38 m to x=+0.15 m; because base_link is the drive
+  # axle rather than its centre, length_m is twice the larger 0.38 m overhang.
+  # edge_clearance is additional clearance from the requested region boundary.
   footprint:
-    length_m: 0.53
+    length_m: 0.76
     width_m: 0.475
     edge_clearance_m: 0.10

@@ -191,7 +191,9 @@ ros2 launch climbot_coverage coverage_sim.launch.py \
 ros2 service call /coverage/clear_points std_srvs/srv/Trigger '{}'
 ```
 
-规划器发布 `/coverage/path`、`/coverage/markers` 和 `/coverage/status`，并提供 `/coverage/replan` 服务。扫描线位于均匀覆盖带中心，实际道间距不会超过 `track_spacing`；所有路径段均为直线，不生成圆角。
+规划器发布 `/coverage/path`、`/coverage/markers` 和 `/coverage/status`，并提供 `/coverage/replan` 服务。道间距由 `detection_width × (1 - overlap_ratio)` 得到，扫描线位于均匀覆盖带中心；机器人轮廓和墙面尺寸从 `climbot_description` 读取。所有路径段均为直线，不生成圆角。
+
+每个 Path 位姿的航向指向下一段直线，最后一个位姿沿用到达航向。规划失败、清除点选或开始输入新区块时都会发布空 Path，防止 transient-local 订阅者继续执行旧路径。
 
 ## 测量与评估工具
 
@@ -232,4 +234,3 @@ ros2 service call /coverage/clear_points std_srvs/srv/Trigger '{}'
 - **侧滑标定重复性偏弱。** 三次水平试验的下降比为 `7.03% / 9.30% / 9.71%`，相对均值 ±19%，且第一次系统性偏低。guide §12 要求测试可重复，当前离散度使均值作为回归基线偏弱。
 - **速度指令看门狗尚未实现。** 见 guide §11。目前只有各脚本自身的终止时停车，系统级看门狗要在阶段 E 随状态机一并实现。
 - **WheelSlip 对法向载荷不敏感。** 滑移柔度按配置的 `wheel_normal_force` 缩放而非实际接触载荷，属于模型保真度限制，真实爬壁机器人在轮子卸载时滑移会加剧。
-- **规划器接口未补齐。** 缺 `detection_width` / `overlap_ratio` 与机器人轮廓参数，`/coverage/path` 的位姿航向未填充，规划失败时旧路径仍处于 latch 状态。

@@ -34,6 +34,14 @@ geometry_msgs::msg::Point markerPoint(const Point2 & point, double height)
   return output;
 }
 
+geometry_msgs::msg::Quaternion yawQuaternion(double yaw)
+{
+  geometry_msgs::msg::Quaternion output;
+  output.z = std::sin(0.5 * yaw);
+  output.w = std::cos(0.5 * yaw);
+  return output;
+}
+
 visualization_msgs::msg::Marker lineMarker(
   const Polygon & polygon, const std_msgs::msg::Header & header, int id,
   const std::string & marker_namespace, float red, float green, float blue,
@@ -76,10 +84,20 @@ public:
     lower_left_ = pointParameter("lower_left", {-3.0, 0.5});
     upper_right_ = pointParameter("upper_right", {3.0, 6.5});
     lower_right_ = pointParameter("lower_right", {3.0, 0.5});
-    safety_margin_ = declare_parameter("safety_margin", 0.35);
-    track_spacing_ = declare_parameter("track_spacing", 0.40);
+    detection_width_ = declare_parameter("detection_width", 0.50);
+    overlap_ratio_ = declare_parameter("overlap_ratio", 0.20);
+    robot_length_ = declare_parameter("robot_length", 0.53);
+    robot_width_ = declare_parameter("robot_width", 0.475);
+    edge_clearance_ = declare_parameter("edge_clearance", 0.10);
+    wall_width_ = declare_parameter("wall_width", 10.0);
+    wall_height_ = declare_parameter("wall_height", 8.0);
     path_height_ = declare_parameter("path_height", 0.06);
     bottom_warning_tolerance_ = declare_parameter("bottom_warning_tolerance", 0.05);
+    validatePhysicalParameters();
+    row_spacing_ = detection_width_ * (1.0 - overlap_ratio_);
+    // The robot turns in place at waypoints, so the inset must contain its
+    // footprint at every yaw, not only while aligned with a scan line.
+    safety_margin_ = 0.5 * std::hypot(robot_length_, robot_width_) + edge_clearance_;
 
     path_publisher_ = create_publisher<nav_msgs::msg::Path>(
       "/coverage/path", rclcpp::QoS(1).transient_local());
@@ -111,6 +129,23 @@ public:
   }
 
 private:
+  void validatePhysicalParameters() const
+  {
+    if (detection_width_ <= 0.0) {
+      throw std::invalid_argument("detection_width must be positive.");
+    }
+    if (overlap_ratio_ < 0.0 || overlap_ratio_ >= 1.0) {
+      throw std::invalid_argument("overlap_ratio must be within [0, 1).");
+    }
+    if (robot_length_ <= 0.0 || robot_width_ <= 0.0 || edge_clearance_ < 0.0) {
+      throw std::invalid_argument(
+              "Robot dimensions must be positive and edge_clearance non-negative.");
+    }
+    if (wall_width_ <= 0.0 || wall_height_ <= 0.0) {
+      throw std::invalid_argument("Wall dimensions must be positive.");
+    }
+  }
+
   Point2 pointParameter(const std::string & name, const std::vector<double> & default_value)
   {
     const auto values = declare_parameter(name, default_value);
@@ -144,6 +179,7 @@ private:
       clicked_points_.clear();
     }
     clicked_points_.push_back({message->point.x, message->point.y});
+    publishPath({});
     publishMarkers({}, {}, {});
     // The coordinates are logged so a mirrored or rotated RViz camera is
     // visible immediately instead of surfacing later as a geometry error.
@@ -168,6 +204,7 @@ private:
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
     clicked_points_.clear();
+    publishPath({});
     publishMarkers({}, {}, {});
     response->success = true;
     response->message = "Clicked points cleared.";
@@ -195,12 +232,13 @@ private:
       }
       const auto effective = insetConvexPolygon(region.polygon, safety_margin_);
       const auto path = generateBoustrophedonPath(
-        effective, track_spacing_, sweep_direction_, start_corner_);
+        effective, row_spacing_, sweep_direction_, start_corner_);
       publishPath(path);
       publishMarkers(region.polygon, effective, path);
       std::ostringstream status;
       status << "Generated " << sweep_direction_ << " " << region_type_ <<
-        " coverage path with " << path.size() << " waypoints.";
+        " coverage path with " << path.size() << " waypoints; row spacing <= " <<
+        row_spacing_ << " m and safety margin " << safety_margin_ << " m.";
       if (region.bottom_height_correction > bottom_warning_tolerance_) {
         status << " Bottom clicks differed by " << region.bottom_height_correction <<
           " m and were corrected to their mean height.";
@@ -210,6 +248,8 @@ private:
       return true;
     } catch (const std::exception & exception) {
       last_error_ = exception.what();
+      publishPath({});
+      publishMarkers({}, {}, {});
       publishStatus("Planning failed: " + last_error_);
       return false;
     }
@@ -220,13 +260,22 @@ private:
     nav_msgs::msg::Path path;
     path.header.stamp = now();
     path.header.frame_id = frame_id_;
-    for (const auto & point : points) {
+    for (std::size_t index = 0; index < points.size(); ++index) {
+      const auto & point = points[index];
       geometry_msgs::msg::PoseStamped pose;
       pose.header = path.header;
       pose.pose.position.x = point.x;
       pose.pose.position.y = point.y;
       pose.pose.position.z = path_height_;
-      pose.pose.orientation.w = 1.0;
+      if (points.size() > 1U) {
+        const std::size_t other = index + 1U < points.size() ? index + 1U : index - 1U;
+        const double direction = index + 1U < points.size() ? 1.0 : -1.0;
+        const double delta_x = direction * (points[other].x - point.x);
+        const double delta_y = direction * (points[other].y - point.y);
+        pose.pose.orientation = yawQuaternion(std::atan2(delta_y, delta_x));
+      } else {
+        pose.pose.orientation.w = 1.0;
+      }
       path.poses.push_back(pose);
     }
     path_publisher_->publish(path);
@@ -250,11 +299,11 @@ private:
     wall.id = 0;
     wall.type = visualization_msgs::msg::Marker::CUBE;
     wall.action = visualization_msgs::msg::Marker::ADD;
-    wall.pose.position.y = 4.0;
+    wall.pose.position.y = 0.5 * wall_height_;
     wall.pose.position.z = -0.02;
     wall.pose.orientation.w = 1.0;
-    wall.scale.x = 10.0;
-    wall.scale.y = 8.0;
+    wall.scale.x = wall_width_;
+    wall.scale.y = wall_height_;
     wall.scale.z = 0.02;
     wall.color.r = 0.45F;
     wall.color.g = 0.48F;
@@ -354,8 +403,15 @@ private:
   Point2 lower_left_;
   Point2 upper_right_;
   Point2 lower_right_;
+  double detection_width_;
+  double overlap_ratio_;
+  double robot_length_;
+  double robot_width_;
+  double edge_clearance_;
+  double wall_width_;
+  double wall_height_;
   double safety_margin_;
-  double track_spacing_;
+  double row_spacing_;
   double path_height_;
   double bottom_warning_tolerance_;
   std::string last_error_;

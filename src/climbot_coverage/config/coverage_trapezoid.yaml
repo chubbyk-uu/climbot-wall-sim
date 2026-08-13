@@ -6,8 +6,8 @@ coverage_planner:
     lower_left: [-3.0, 0.50]
     upper_right: [2.4, 6.5]
     lower_right: [3.0, 0.54]
-    safety_margin: 0.35
-    track_spacing: 0.40
+    detection_width: 0.50
+    overlap_ratio: 0.20
     sweep_direction: horizontal
     start_corner: lower_left
     path_height: 0.06
