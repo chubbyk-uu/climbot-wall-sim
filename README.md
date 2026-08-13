@@ -38,7 +38,8 @@ source install/setup.bash
 启动仿真后，ROS 2 可获得以下定位链路：
 
 - `/model/climbot/ground_truth`：Gazebo 物理真值，仅用于记录与评估；
-- `/model/climbot/odometry`：轮式里程计，EKF 仅融合其前向速度和绕墙面法向的角速度；
+- `/model/climbot/odometry`：原始轮式里程计，仅用于诊断；
+- `/wheel_odom`：协方差适配后的爬壁轮式里程计，EKF 仅融合其前向速度和绕墙面法向的角速度。默认一倍标准差为 0.03 m/s、0.05 rad/s，显式表达轮墙滑移的不确定性；
 - `/imu`：100 Hz 带噪声的 Gazebo IMU；
 - `/total_station/pose`：从真值派生的模拟全站仪位置，默认 **12 Hz**、5 mm 一倍标准差噪声和 50 ms 固定延迟；
 - `/odometry/filtered`：`robot_localization/ekf_node` 的融合输出和 `odom -> base_link` TF。
@@ -54,6 +55,13 @@ ros2 launch climbot_gazebo climbot_wall.launch.py \
 ```
 
 全站仪只发布绝对位置，不伪造航向或速度；其原始 Gazebo 真值不会送入 EKF 或控制器。
+
+轮式里程计的不确定度可独立调整，例如：
+
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  wheel_forward_velocity_stddev_mps:=0.03 wheel_yaw_rate_stddev_rps:=0.05
+```
 
 可在仿真运行时执行以下可重复的四方向定位评估。脚本使用 EKF 融合航向闭环转到 `0°`、`90°`、`180°`、`-90°`，每段默认前进 8 秒；它会同时输出 Gazebo 实际航向、EKF 融合航向、轮式里程计航向和位置误差：
 

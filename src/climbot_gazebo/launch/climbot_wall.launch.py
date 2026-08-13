@@ -75,6 +75,20 @@ def generate_launch_description():
         output='screen',
     )
 
+    wheel_odom_adapter = Node(
+        package='climbot_gazebo',
+        executable='wall_wheel_odom_adapter.py',
+        name='wall_wheel_odom_adapter',
+        parameters=[{
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'forward_velocity_stddev_mps': LaunchConfiguration(
+                'wheel_forward_velocity_stddev_mps'),
+            'yaw_rate_stddev_rps': LaunchConfiguration(
+                'wheel_yaw_rate_stddev_rps'),
+        }],
+        output='screen',
+    )
+
     ekf = Node(
         package='robot_localization',
         executable='ekf_node',
@@ -107,11 +121,22 @@ def generate_launch_description():
             default_value='0.05',
             description='Fixed total-station delivery delay in seconds.',
         ),
+        DeclareLaunchArgument(
+            'wheel_forward_velocity_stddev_mps',
+            default_value='0.03',
+            description='Wall-wheel forward velocity one-sigma uncertainty.',
+        ),
+        DeclareLaunchArgument(
+            'wheel_yaw_rate_stddev_rps',
+            default_value='0.05',
+            description='Wall-wheel yaw-rate one-sigma uncertainty.',
+        ),
         gazebo_resources,
         d3d12_driver,
         d3d12_adapter,
         gazebo,
         bridge,
         total_station,
+        wheel_odom_adapter,
         ekf,
     ])

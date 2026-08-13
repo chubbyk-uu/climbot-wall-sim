@@ -17,7 +17,7 @@ ekf_filter_node:
 
     # Wheel odometry is deliberately velocity-only. Its pose would hide the
     # wall-slip error that this simulation is intended to study.
-    odom0: /model/climbot/odometry
+    odom0: /wheel_odom
     odom0_config: [false, false, false,
                    false, false, false,
                    true,  false, false,
