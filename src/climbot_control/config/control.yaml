@@ -19,6 +19,14 @@ line_tracker:
     turn_heading_gain: 2.0
     max_turn_angular_speed: 0.60
     max_turn_angular_acceleration: 1.00
+    final_approach_distance_m: 0.10
+    final_approach_speed_mps: 0.03
+    goal_position_tolerance_m: 0.03
+    goal_position_exit_tolerance_m: 0.04
+    goal_heading_exit_tolerance_deg: 3.0
+    stopped_linear_speed_mps: 0.01
+    stopped_angular_speed_rps: 0.02
+    goal_settle_duration_s: 0.30
     max_linear_acceleration: 0.20
     max_linear_deceleration: 0.25
     max_angular_acceleration: 0.80

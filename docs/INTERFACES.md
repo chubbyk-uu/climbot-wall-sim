@@ -57,6 +57,11 @@
 运行。全站仪 `12 Hz` 只表示绝对位置更新频率，控制器不得将每个 50 Hz EKF
 输出误认为新的独立绝对测量。
 
+单段调试节点发布 `/control/segment_complete`（`std_msgs/msg/Bool`，reliable、
+transient local、depth 1）。启动时为 `false`，同时满足终点位置、补偿后航向和停车
+速度判据后锁存为 `true`。这是接入 Action 前的单段诊断接口；完整任务以
+`/coverage/execute` 的 Result/Feedback 为权威。
+
 ### 控制安全参数
 
 | 节点 | 参数 | 默认值 | 行为 |
@@ -76,6 +81,14 @@
 | `line_tracker` | `max_turn_angular_speed` | `0.60 rad/s` | 原地转向曲线峰值角速度 |
 | `line_tracker` | `max_turn_angular_acceleration` | `1.00 rad/s²` | 原地转向曲线角加速度 |
 | `line_tracker` | `turn_heading_gain` | `2.0` | 转向参考航向闭环增益 |
+| `line_tracker` | `final_approach_distance_m` | `0.10 m` | 进入终点低速收敛的剩余沿轨距离 |
+| `line_tracker` | `final_approach_speed_mps` | `0.03 m/s` | 终点收敛线速度上限 |
+| `line_tracker` | `goal_position_tolerance_m` | `0.03 m` | 完成时二维终点距离严格门限 |
+| `line_tracker` | `goal_position_exit_tolerance_m` | `0.04 m` | 终点候选状态退出门限 |
+| `line_tracker` | `goal_heading_exit_tolerance_deg` | `3°` | 航向候选状态退出门限；严格门限沿用 `2°` |
+| `line_tracker` | `stopped_linear_speed_mps` | `0.01 m/s` | 完成时融合线速度上限 |
+| `line_tracker` | `stopped_angular_speed_rps` | `0.02 rad/s` | 完成时融合角速度上限 |
+| `line_tracker` | `goal_settle_duration_s` | `0.30 s` | 位置、航向和停车状态稳定时间 |
 | `cmd_vel_watchdog` | `command_timeout_s` | `0.40 s` | 上游速度指令超时后持续发布零速 |
 | `cmd_vel_watchdog` | `publish_rate_hz` | `50 Hz` | 向执行器重发安全速度的频率 |
 
@@ -89,6 +102,8 @@
 
 `ALIGN` 先制动到线速度为零，再跟踪自动选择的三角形/梯形角速度曲线；曲线结束后
 在 `2°` 航向容差内稳定 `0.50 s` 才允许直行。`10°/12°` 的退出/重入门限提供迟滞。
+终点低速段只在空间剩余距离触发；完成判据同时使用二维位置、补偿后航向和
+`/odometry/filtered` 的融合速度，不使用预定运行时间。完成后状态和零速输出锁存。
 
 ## 覆盖规划接口
 
