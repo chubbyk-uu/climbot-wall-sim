@@ -69,6 +69,13 @@
 | `line_tracker` | `max_gravity_feedforward_deg` | `8°` | 重力前馈独立限幅 |
 | `line_tracker` | `max_cross_feedback_deg` | `8°` | 横轨 PI 反馈独立限幅 |
 | `line_tracker` | `max_heading_correction_deg` | `12°` | 前馈与反馈相加后的总航向硬限幅 |
+| `line_tracker` | `alignment_tolerance_deg` | `2°` | 进入直线跟踪前的航向稳定误差 |
+| `line_tracker` | `alignment_settle_duration_s` | `0.50 s` | 航向和角速度连续稳定时间 |
+| `line_tracker` | `alignment_threshold_deg` | `10°` | 直线前进许可门限 |
+| `line_tracker` | `alignment_reentry_threshold_deg` | `12°` | 超过时停车并重新进入 `ALIGN` |
+| `line_tracker` | `max_turn_angular_speed` | `0.60 rad/s` | 原地转向曲线峰值角速度 |
+| `line_tracker` | `max_turn_angular_acceleration` | `1.00 rad/s²` | 原地转向曲线角加速度 |
+| `line_tracker` | `turn_heading_gain` | `2.0` | 转向参考航向闭环增益 |
 | `cmd_vel_watchdog` | `command_timeout_s` | `0.40 s` | 上游速度指令超时后持续发布零速 |
 | `cmd_vel_watchdog` | `publish_rate_hz` | `50 Hz` | 向执行器重发安全速度的频率 |
 
@@ -79,6 +86,9 @@
 
 横轨积分只在直线前进时更新；定位超时会清零。反馈或总航向修正达到限幅时采用
 条件积分抗饱和，但重力前馈达到自身独立限幅不会阻止 PI 修正剩余误差。
+
+`ALIGN` 先制动到线速度为零，再跟踪自动选择的三角形/梯形角速度曲线；曲线结束后
+在 `2°` 航向容差内稳定 `0.50 s` 才允许直行。`10°/12°` 的退出/重入门限提供迟滞。
 
 ## 覆盖规划接口
 

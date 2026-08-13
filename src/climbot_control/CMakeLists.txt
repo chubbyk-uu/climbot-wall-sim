@@ -6,7 +6,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
-add_library(line_tracker src/line_tracker.cpp src/command_watchdog.cpp)
+add_library(line_tracker src/line_tracker.cpp src/command_watchdog.cpp src/turn_profile.cpp)
 target_compile_features(line_tracker PUBLIC cxx_std_17)
 target_include_directories(line_tracker PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -37,6 +37,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_line_tracker line_tracker)
   target_include_directories(test_line_tracker PRIVATE include)
   add_launch_test(test/test_cmd_vel_watchdog_node.py TIMEOUT 30)
+  add_launch_test(test/test_line_tracker_alignment.py TIMEOUT 30)
   add_launch_test(test/test_line_tracker_node.py TIMEOUT 30)
 endif()
 

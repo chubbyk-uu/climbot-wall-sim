@@ -1,5 +1,6 @@
 #include "climbot_control/line_tracker.hpp"
 #include "climbot_control/command_watchdog.hpp"
+#include "climbot_control/turn_profile.hpp"
 #include <cmath>
 #include <limits>
 #include "gtest/gtest.h"
@@ -94,6 +95,53 @@ TEST(LineTracker, ExtractsYawFromGeneralNormalizedQuaternion)
   EXPECT_FALSE(yawFromQuaternion(0.0, 0.0, 0.0, 0.0).has_value());
   EXPECT_FALSE(yawFromQuaternion(
       0.0, 0.0, std::numeric_limits<double>::quiet_NaN(), 1.0).has_value());
+}
+
+TEST(TurnProfile, SelectsTriangleOrTrapezoid)
+{
+  const auto small = planTurn(10.0 * std::acos(-1.0) / 180.0, 0.6, 1.0);
+  const auto large = planTurn(std::acos(-1.0), 0.6, 1.0);
+  EXPECT_FALSE(small.isTrapezoidal());
+  EXPECT_LT(small.peak_rate, 0.6);
+  EXPECT_TRUE(large.isTrapezoidal());
+  EXPECT_DOUBLE_EQ(large.peak_rate, 0.6);
+}
+
+TEST(TurnProfile, FinishesAtRequestedAngleAndMirrorsNegativeTurns)
+{
+  for (const double angle : {0.0, 0.1, 0.5, 1.5707963267948966, 3.141592653589793}) {
+    const auto positive = planTurn(angle, 0.6, 1.0);
+    const auto negative = planTurn(-angle, 0.6, 1.0);
+    const auto positive_end = sampleTurn(positive, positive.duration);
+    const auto negative_end = sampleTurn(negative, negative.duration);
+    EXPECT_NEAR(positive_end.angle, angle, 1e-12);
+    EXPECT_NEAR(negative_end.angle, -angle, 1e-12);
+    EXPECT_DOUBLE_EQ(positive_end.angular_rate, 0.0);
+    EXPECT_DOUBLE_EQ(negative_end.angular_rate, 0.0);
+    EXPECT_NEAR(positive.duration, negative.duration, 1e-12);
+  }
+}
+
+TEST(TurnProfile, RespectsRateAndAccelerationLimits)
+{
+  const auto profile = planTurn(2.4, 0.6, 1.0);
+  double previous_rate = 0.0;
+  constexpr double step = 0.001;
+  for (double elapsed = 0.0; elapsed <= profile.duration; elapsed += step) {
+    const double rate = sampleTurn(profile, elapsed).angular_rate;
+    EXPECT_LE(std::abs(rate), 0.6 + 1e-12);
+    EXPECT_LE(std::abs(rate - previous_rate), 1.0 * step + 1e-12);
+    previous_rate = rate;
+  }
+}
+
+TEST(TurnProfile, RejectsInvalidLimits)
+{
+  EXPECT_THROW(planTurn(1.0, 0.0, 1.0), std::invalid_argument);
+  EXPECT_THROW(planTurn(1.0, 0.6, -1.0), std::invalid_argument);
+  EXPECT_THROW(
+    sampleTurn(planTurn(1.0, 0.6, 1.0), std::numeric_limits<double>::infinity()),
+    std::invalid_argument);
 }
 
 TEST(CommandWatchdog, StopsBeforeFirstCommandAndAfterTimeout)

@@ -5,6 +5,7 @@
 #include <string>
 
 #include "climbot_control/line_tracker.hpp"
+#include "climbot_control/turn_profile.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -42,6 +43,15 @@ public:
       declare_parameter("max_cross_feedback_deg", 8.0));
     limits_.alignment_threshold = degreesToRadians(
       declare_parameter("alignment_threshold_deg", 10.0));
+    alignment_reentry_threshold_ = degreesToRadians(
+      declare_parameter("alignment_reentry_threshold_deg", 12.0));
+    alignment_tolerance_ = degreesToRadians(
+      declare_parameter("alignment_tolerance_deg", 2.0));
+    alignment_settle_duration_ = declare_parameter("alignment_settle_duration_s", 0.50);
+    turn_heading_gain_ = declare_parameter("turn_heading_gain", 2.0);
+    max_turn_angular_speed_ = declare_parameter("max_turn_angular_speed", 0.60);
+    max_turn_angular_acceleration_ = declare_parameter(
+      "max_turn_angular_acceleration", 1.00);
     limits_.max_deceleration = declare_parameter("max_linear_deceleration", 0.25);
     limits_.gravity_slip_ratio = declare_parameter("gravity_slip_ratio", 0.0);
     limits_.gravity_direction = {
@@ -133,6 +143,20 @@ private:
     requirePositive("max_gravity_feedforward_deg", limits_.max_gravity_feedforward);
     requirePositive("max_cross_feedback_deg", limits_.max_cross_feedback);
     requirePositive("alignment_threshold_deg", limits_.alignment_threshold);
+    requirePositive("alignment_reentry_threshold_deg", alignment_reentry_threshold_);
+    requirePositive("alignment_tolerance_deg", alignment_tolerance_);
+    requirePositive("alignment_settle_duration_s", alignment_settle_duration_);
+    requirePositive("turn_heading_gain", turn_heading_gain_);
+    requirePositive("max_turn_angular_speed", max_turn_angular_speed_);
+    requirePositive("max_turn_angular_acceleration", max_turn_angular_acceleration_);
+    if (alignment_tolerance_ >= limits_.alignment_threshold) {
+      throw std::invalid_argument(
+              "alignment_tolerance_deg must be below alignment_threshold_deg.");
+    }
+    if (alignment_reentry_threshold_ <= limits_.alignment_threshold) {
+      throw std::invalid_argument(
+              "alignment_reentry_threshold_deg must exceed alignment_threshold_deg.");
+    }
     requirePositive("max_linear_deceleration", limits_.max_deceleration);
     requireFinite("gravity_slip_ratio", limits_.gravity_slip_ratio);
     if (limits_.gravity_slip_ratio < 0.0) {
@@ -183,6 +207,8 @@ private:
     {
       previous_command_ = {};
       cross_integral_ = 0.0;
+      motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
+      alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
       last_control_time_ = current_time;
       geometry_msgs::msg::Twist stop;
       command_publisher_->publish(stop);
@@ -199,6 +225,16 @@ private:
 
     auto desired = climbot_control::trackLine(start_, end_, pose_, cruise_speed_,
         cross_gain_, heading_gain_, limits_, cross_integral_gain_, cross_integral_);
+    if (motion_state_ != MotionState::TRACK_LINE) {
+      updateAlignment(current_time, dt, desired);
+      return;
+    }
+    if (std::abs(desired.heading_error) >= alignment_reentry_threshold_) {
+      cross_integral_ = 0.0;
+      motion_state_ = MotionState::ALIGN_BRAKE;
+      updateAlignment(current_time, dt, desired);
+      return;
+    }
     if (desired.linear > 0.0 && cross_integral_gain_ > 0.0) {
       const double candidate_integral = std::clamp(
         cross_integral_ + desired.cross * dt, -cross_integral_limit_, cross_integral_limit_);
@@ -221,15 +257,101 @@ private:
         desired = candidate;
       }
     }
-    previous_command_ = climbot_control::rateLimit(desired, previous_command_, dt,
-        linear_acceleration_, limits_.max_deceleration, angular_acceleration_,
-        wheel_separation_, wheel_speed_limit_, wheel_acceleration_limit_);
+    limitAndPublish(desired, dt, angular_acceleration_);
+  }
 
+  void updateAlignment(
+    const rclcpp::Time & current_time, double dt,
+    const climbot_control::Command & line_command)
+  {
+    climbot_control::Command command;
+    switch (motion_state_) {
+      case MotionState::WAITING_FOR_ALIGNMENT:
+        motion_state_ = MotionState::ALIGN_BRAKE;
+        break;
+      case MotionState::ALIGN_BRAKE:
+        break;
+      case MotionState::ALIGN_PROFILE:
+        {
+          const double elapsed = (current_time - alignment_profile_start_).seconds();
+          const auto sample = climbot_control::sampleTurn(alignment_profile_, elapsed);
+          const double reference_yaw = alignment_start_yaw_ + sample.angle;
+          const double error = climbot_control::wrapAngle(reference_yaw - pose_.yaw);
+          command.angular = std::clamp(
+          sample.angular_rate + turn_heading_gain_ * error,
+          -max_turn_angular_speed_, max_turn_angular_speed_);
+          limitAndPublish(command, dt, max_turn_angular_acceleration_);
+          if (elapsed >= alignment_profile_.duration) {
+            motion_state_ = MotionState::ALIGN_SETTLE;
+            alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+          }
+          return;
+        }
+      case MotionState::ALIGN_SETTLE:
+        {
+          if (std::abs(line_command.heading_error) <= alignment_tolerance_) {
+            command.angular = 0.0;
+          } else {
+            alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+            command.angular = std::clamp(
+            turn_heading_gain_ * line_command.heading_error,
+            -max_turn_angular_speed_, max_turn_angular_speed_);
+          }
+          limitAndPublish(command, dt, max_turn_angular_acceleration_);
+          if (std::abs(line_command.heading_error) <= alignment_tolerance_ &&
+            std::abs(previous_command_.angular) <= 1e-3)
+          {
+            if (alignment_settle_start_.nanoseconds() == 0) {
+              alignment_settle_start_ = current_time;
+            } else if ((current_time - alignment_settle_start_).seconds() >=
+              alignment_settle_duration_)
+            {
+              motion_state_ = MotionState::TRACK_LINE;
+              cross_integral_ = 0.0;
+            }
+          }
+          return;
+        }
+      case MotionState::TRACK_LINE:
+        return;
+    }
+
+    limitAndPublish(command, dt, max_turn_angular_acceleration_);
+    if (std::abs(previous_command_.linear) <= 1e-4 &&
+      std::abs(previous_command_.angular) <= 1e-3)
+    {
+      alignment_start_yaw_ = pose_.yaw;
+      alignment_profile_ = climbot_control::planTurn(
+        line_command.heading_error, max_turn_angular_speed_,
+        max_turn_angular_acceleration_);
+      alignment_profile_start_ = current_time;
+      alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+      motion_state_ = alignment_profile_.duration > 0.0 ?
+        MotionState::ALIGN_PROFILE : MotionState::ALIGN_SETTLE;
+    }
+  }
+
+  void limitAndPublish(
+    const climbot_control::Command & desired, double dt, double angular_acceleration)
+  {
+    previous_command_ = climbot_control::rateLimit(
+      desired, previous_command_, dt, linear_acceleration_, limits_.max_deceleration,
+      angular_acceleration, wheel_separation_, wheel_speed_limit_,
+      wheel_acceleration_limit_);
     geometry_msgs::msg::Twist command;
     command.linear.x = previous_command_.linear;
     command.angular.z = previous_command_.angular;
     command_publisher_->publish(command);
   }
+
+  enum class MotionState
+  {
+    WAITING_FOR_ALIGNMENT,
+    ALIGN_BRAKE,
+    ALIGN_PROFILE,
+    ALIGN_SETTLE,
+    TRACK_LINE,
+  };
 
   bool have_pose_{false};
   double cruise_speed_{0.15};
@@ -240,6 +362,12 @@ private:
   double heading_gain_{2.0};
   double control_frequency_hz_{50.0};
   double odometry_timeout_s_{0.25};
+  double alignment_reentry_threshold_{0.209439510};
+  double alignment_tolerance_{0.034906585};
+  double alignment_settle_duration_{0.50};
+  double turn_heading_gain_{2.0};
+  double max_turn_angular_speed_{0.60};
+  double max_turn_angular_acceleration_{1.00};
   double linear_acceleration_{0.20};
   double angular_acceleration_{0.80};
   double wheel_separation_{0.43};
@@ -251,6 +379,11 @@ private:
   climbot_control::Point2 end_{};
   climbot_control::Pose2 pose_{};
   climbot_control::Command previous_command_;
+  MotionState motion_state_{MotionState::WAITING_FOR_ALIGNMENT};
+  climbot_control::TurnProfile alignment_profile_;
+  double alignment_start_yaw_{0.0};
+  rclcpp::Time alignment_profile_start_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time alignment_settle_start_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_pose_received_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_control_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr command_publisher_;

@@ -13,6 +13,12 @@ line_tracker:
     max_gravity_feedforward_deg: 8.0
     max_cross_feedback_deg: 8.0
     alignment_threshold_deg: 10.0
+    alignment_reentry_threshold_deg: 12.0
+    alignment_tolerance_deg: 2.0
+    alignment_settle_duration_s: 0.50
+    turn_heading_gain: 2.0
+    max_turn_angular_speed: 0.60
+    max_turn_angular_acceleration: 1.00
     max_linear_acceleration: 0.20
     max_linear_deceleration: 0.25
     max_angular_acceleration: 0.80
