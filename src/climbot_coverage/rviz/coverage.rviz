@@ -14,6 +14,12 @@ Visualization Manager:
       Plane Cell Count: 10
       Color: 100; 100; 105
       Alpha: 0.5
+    - Class: rviz_default_plugins/Axes
+      Name: Wall Frame
+      Enabled: true
+      Reference Frame: <Fixed Frame>
+      Length: 1
+      Radius: 0.04
     - Class: rviz_default_plugins/MarkerArray
       Name: Coverage Regions
       Enabled: true
@@ -51,8 +57,12 @@ Visualization Manager:
         X: 0
         Y: 4
         Z: 0
-      Pitch: 1.5707
-      Yaw: 1.5707
+      # Look at the wall face-on from +Z. Yaw must place the camera on the
+      # -Y side, otherwise Ogre's fixed +Z yaw axis resolves screen-right to
+      # odom -X and the whole view appears rotated by 180 degrees. Pitch stays
+      # just below pi/2 so the up vector is never the degenerate solution.
+      Pitch: 1.5
+      Yaw: -1.5707
 Window Geometry:
   Width: 1200
   Height: 850

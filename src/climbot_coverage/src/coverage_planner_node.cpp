@@ -145,6 +145,14 @@ private:
     }
     clicked_points_.push_back({message->point.x, message->point.y});
     publishMarkers({}, {}, {});
+    // The coordinates are logged so a mirrored or rotated RViz camera is
+    // visible immediately instead of surfacing later as a geometry error.
+    const std::vector<std::string> roles{"A lower-left", "B upper-right", "C lower-right"};
+    std::ostringstream accepted;
+    accepted << "Accepted point " << clicked_points_.size() << " of " << required_points <<
+      " (" << roles[clicked_points_.size() - 1U] << ") at " << frame_id_ << " (" <<
+      message->point.x << ", " << message->point.y << ").";
+    publishStatus(accepted.str());
     if (clicked_points_.size() == required_points) {
       lower_left_ = clicked_points_[0];
       upper_right_ = clicked_points_[1];
@@ -152,9 +160,6 @@ private:
         lower_right_ = clicked_points_[2];
       }
       planFromPoints();
-    } else {
-      publishStatus("Accepted point " + std::to_string(clicked_points_.size()) +
-        " of " + std::to_string(required_points) + ".");
     }
   }
 
