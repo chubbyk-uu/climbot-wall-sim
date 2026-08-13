@@ -11,7 +11,7 @@ robot:
     # standoff from the wall: gravity acting on it transfers normal load
     # between the drive wheels and the rear caster whenever the robot moves
     # up or down the wall, so it directly sets the anti-tip margin.
-    centre_xyz: [-0.03, 0.0, 0.15]
+    centre_xyz: [-0.03, 0.0, 0.085]
 
   drive_wheel:
     radius_m: 0.08
@@ -27,7 +27,7 @@ robot:
     slip_lateral: 0.12
     slip_longitudinal: 0.04
     # Nominal load used to scale the slip compliance. The measured load varies
-    # widely with attitude, see results/normal_loads_before_p2.csv.
+    # widely with attitude, see the results/ measurements.
     nominal_normal_force_n: 77.0
 
   caster:
