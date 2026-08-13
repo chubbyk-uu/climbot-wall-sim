@@ -17,6 +17,8 @@ if(BUILD_TESTING)
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  ament_add_pytest_test(
+    test_robot_description_defaults test/test_robot_description_defaults.py)
   ament_add_pytest_test(test_wall_frame test/test_wall_frame.py)
 endif()
 

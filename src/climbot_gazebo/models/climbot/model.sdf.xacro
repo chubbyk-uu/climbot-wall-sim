@@ -8,13 +8,13 @@
   <xacro:arg name="base_width" default="0.44"/>
   <xacro:arg name="base_thickness" default="0.10"/>
   <xacro:arg name="base_mass" default="12.0"/>
-  <xacro:arg name="base_x" default="-0.03"/>
+  <xacro:arg name="base_x" default="-0.11"/>
   <xacro:arg name="base_y" default="0.0"/>
-  <xacro:arg name="base_z" default="0.15"/>
+  <xacro:arg name="base_z" default="0.085"/>
   <xacro:arg name="wheel_radius" default="0.08"/>
   <xacro:arg name="wheel_width" default="0.045"/>
   <xacro:arg name="wheel_mass" default="1.0"/>
-  <xacro:arg name="wheel_axle_x" default="0.08"/>
+  <xacro:arg name="wheel_axle_x" default="0.0"/>
   <xacro:arg name="wheel_separation" default="0.43"/>
   <xacro:arg name="wheel_mu" default="1.1"/>
   <xacro:arg name="slip_lateral" default="0.12"/>
@@ -22,7 +22,7 @@
   <xacro:arg name="nominal_normal_force" default="77.0"/>
   <xacro:arg name="caster_radius" default="0.05"/>
   <xacro:arg name="caster_mass" default="0.5"/>
-  <xacro:arg name="caster_x" default="-0.25"/>
+  <xacro:arg name="caster_x" default="-0.33"/>
   <xacro:arg name="caster_mu" default="0.35"/>
   <xacro:arg name="max_linear_velocity" default="0.30"/>
   <xacro:arg name="max_angular_velocity" default="1.20"/>
@@ -35,7 +35,7 @@
   <xacro:arg name="imu_rate" default="100.0"/>
   <xacro:arg name="imu_gyro_stddev" default="0.0002"/>
   <xacro:arg name="imu_accel_stddev" default="0.017"/>
-  <xacro:arg name="contact_rate" default="50.0"/>
+  <xacro:arg name="contact_rate" default="1000.0"/>
 
   <xacro:property name="length" value="$(arg base_length)"/>
   <xacro:property name="width" value="$(arg base_width)"/>

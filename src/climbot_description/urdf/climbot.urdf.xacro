@@ -9,17 +9,17 @@
   <xacro:arg name="base_width" default="0.44"/>
   <xacro:arg name="base_thickness" default="0.10"/>
   <xacro:arg name="base_mass" default="12.0"/>
-  <xacro:arg name="base_x" default="-0.03"/>
+  <xacro:arg name="base_x" default="-0.11"/>
   <xacro:arg name="base_y" default="0.0"/>
-  <xacro:arg name="base_z" default="0.15"/>
+  <xacro:arg name="base_z" default="0.085"/>
   <xacro:arg name="wheel_radius" default="0.08"/>
   <xacro:arg name="wheel_width" default="0.045"/>
   <xacro:arg name="wheel_mass" default="1.0"/>
-  <xacro:arg name="wheel_axle_x" default="0.08"/>
+  <xacro:arg name="wheel_axle_x" default="0.0"/>
   <xacro:arg name="wheel_separation" default="0.43"/>
   <xacro:arg name="caster_radius" default="0.05"/>
   <xacro:arg name="caster_mass" default="0.5"/>
-  <xacro:arg name="caster_x" default="-0.25"/>
+  <xacro:arg name="caster_x" default="-0.33"/>
 
   <xacro:property name="length" value="$(arg base_length)"/>
   <xacro:property name="width" value="$(arg base_width)"/>

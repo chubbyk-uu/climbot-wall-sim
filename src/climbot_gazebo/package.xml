@@ -3,7 +3,7 @@
   <name>climbot_gazebo</name>
   <version>0.1.0</version>
   <description>Gazebo simulation environment for a differential-drive wall-climbing robot.</description>
-  <maintainer email="maintainer@example.com">Climbot Sim Maintainer</maintainer>
+  <maintainer email="dk.illidan@gmail.com">jerry</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -320,7 +320,7 @@ private:
   {
     auto task = emptyTask();
     task.coverage_region = polygonMessage(original);
-    task.motion_region = polygonMessage(motionRegion());
+    task.motion_region = polygonMessage(effective);
     for (std::size_t index = 0; index < points.size(); ++index) {
       const auto & point = points[index];
       geometry_msgs::msg::Pose pose;
