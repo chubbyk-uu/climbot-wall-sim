@@ -2,35 +2,31 @@
 """Measure static, lateral, and longitudinal wall-slip characteristics."""
 
 import math
+import os
 import time
 
+from ament_index_python.packages import get_package_share_directory
+from climbot_gazebo.geometry import (
+    quaternion_tuple,
+    wrap_angle,
+    yaw_from_quaternion,
+)
+from climbot_gazebo.wall_frame import WallFrame
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
 
 
-def wall_position(message):
-    """Convert Gazebo world position into (forward, up, normal) wall axes."""
-    position = message.pose.pose.position
-    return (position.y, position.z, position.x)
+def default_wall_config():
+    """Return the installed wall description, so no path is hardcoded."""
+    return os.path.join(
+        get_package_share_directory('climbot_gazebo'), 'config', 'wall.yaml')
 
 
 def stamp_nanoseconds(message):
     """Return a ROS message timestamp in nanoseconds."""
     return message.header.stamp.sec * 1_000_000_000 + message.header.stamp.nanosec
-
-
-def wrap_angle(angle):
-    """Wrap an angle to [-pi, pi]."""
-    return math.atan2(math.sin(angle), math.cos(angle))
-
-
-def yaw_from_quaternion(quaternion):
-    """Return a ROS yaw angle from a unit quaternion."""
-    return math.atan2(
-        2.0 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y),
-        1.0 - 2.0 * (quaternion.y ** 2 + quaternion.z ** 2))
 
 
 class WallSlipCalibrator(Node):
@@ -43,6 +39,10 @@ class WallSlipCalibrator(Node):
         self.declare_parameter('drive_duration_s', 8.0)
         self.declare_parameter('linear_speed_mps', 0.15)
         self.declare_parameter('heading_hold_gain', 1.5)
+        self.declare_parameter('turn_timeout_s', 25.0)
+        self.declare_parameter('wall_config', default_wall_config())
+        self._wall_frame = WallFrame.from_yaml(
+            str(self.get_parameter('wall_config').value))
         self._truth = None
         self._filtered = None
         self._command = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -63,8 +63,19 @@ class WallSlipCalibrator(Node):
         command.angular.z = angular
         self._command.publish(command)
 
+    def _wall_position(self, message):
+        """Return a truth message position in (forward, up, normal) wall axes."""
+        position = message.pose.pose.position
+        return self._wall_frame.position_from_world(
+            (position.x, position.y, position.z))
+
+    def _filtered_yaw(self):
+        return yaw_from_quaternion(
+            quaternion_tuple(self._filtered.pose.pose.orientation))
+
     def _wait_for_data(self):
-        deadline = time.monotonic() + 10.0
+        # Wall clock is the only option before the first simulated stamp.
+        deadline = time.monotonic() + 30.0
         while rclpy.ok() and time.monotonic() < deadline:
             rclpy.spin_once(self, timeout_sec=0.1)
             if self._truth is not None and self._filtered is not None:
@@ -73,11 +84,11 @@ class WallSlipCalibrator(Node):
 
     def _turn_to(self, target_yaw):
         tolerance = math.radians(1.0)
-        deadline = time.monotonic() + 12.0
-        while rclpy.ok() and time.monotonic() < deadline:
+        deadline_ns = stamp_nanoseconds(self._truth) + int(
+            float(self.get_parameter('turn_timeout_s').value) * 1e9)
+        while rclpy.ok() and stamp_nanoseconds(self._truth) < deadline_ns:
             rclpy.spin_once(self, timeout_sec=0.02)
-            current = yaw_from_quaternion(self._filtered.pose.pose.orientation)
-            error = wrap_angle(target_yaw - current)
+            error = wrap_angle(target_yaw - self._filtered_yaw())
             if abs(error) <= tolerance:
                 self._publish()
                 return
@@ -92,8 +103,7 @@ class WallSlipCalibrator(Node):
             rclpy.spin_once(self, timeout_sec=0.02)
             angular = 0.0
             if target_yaw is not None:
-                current = yaw_from_quaternion(self._filtered.pose.pose.orientation)
-                error = wrap_angle(target_yaw - current)
+                error = wrap_angle(target_yaw - self._filtered_yaw())
                 angular = max(
                     -0.35,
                     min(0.35, float(self.get_parameter('heading_hold_gain').value)
@@ -103,10 +113,9 @@ class WallSlipCalibrator(Node):
         self._publish()
         return start, end
 
-    @staticmethod
-    def _delta(start, end):
-        start_position = wall_position(start)
-        end_position = wall_position(end)
+    def _delta(self, start, end):
+        start_position = self._wall_position(start)
+        end_position = self._wall_position(end)
         elapsed = (stamp_nanoseconds(end) - stamp_nanoseconds(start)) * 1e-9
         return tuple(end_position[index] - start_position[index] for index in range(3)), elapsed
 

@@ -2,12 +2,21 @@
 """Derive a delayed, noisy total-station position from Gazebo truth."""
 
 from collections import deque
+import os
 import random
 
+from ament_index_python.packages import get_package_share_directory
+from climbot_gazebo.wall_frame import WallFrame
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
+
+
+def default_wall_config():
+    """Return the installed wall description, so no path is hardcoded."""
+    return os.path.join(
+        get_package_share_directory('climbot_gazebo'), 'config', 'wall.yaml')
 
 
 class TotalStationSimulator(Node):
@@ -21,16 +30,23 @@ class TotalStationSimulator(Node):
         self.declare_parameter('drop_probability', 0.0)
         self.declare_parameter('random_seed', 42)
         self.declare_parameter('frame_id', 'odom')
+        self.declare_parameter('wall_config', default_wall_config())
 
         self._rate = float(self.get_parameter('publish_rate_hz').value)
         self._stddev = float(self.get_parameter('position_stddev_m').value)
-        self._delay_ns = int(float(
-            self.get_parameter('fixed_delay_s').value) * 1e9)
+        delay_s = float(self.get_parameter('fixed_delay_s').value)
         self._drop_probability = float(
             self.get_parameter('drop_probability').value)
         self._frame_id = str(self.get_parameter('frame_id').value)
+        self._validate(delay_s)
+
+        self._delay_ns = int(delay_s * 1e9)
         self._random = random.Random(
             int(self.get_parameter('random_seed').value))
+        # The Gazebo-world to wall-frame conversion comes from the shared wall
+        # description, so moving the wall never means editing this node.
+        self._wall_frame = WallFrame.from_yaml(
+            str(self.get_parameter('wall_config').value))
         self._latest_truth = None
         self._pending = deque()
 
@@ -41,6 +57,17 @@ class TotalStationSimulator(Node):
         self.create_timer(1.0 / self._rate, self._sample_truth)
         self.create_timer(0.005, self._publish_due_measurements)
 
+    def _validate(self, delay_s):
+        """Reject parameter values that would silently corrupt measurements."""
+        if self._rate <= 0.0:
+            raise ValueError('publish_rate_hz must be positive.')
+        if self._stddev < 0.0:
+            raise ValueError('position_stddev_m cannot be negative.')
+        if delay_s < 0.0:
+            raise ValueError('fixed_delay_s cannot be negative.')
+        if not 0.0 <= self._drop_probability <= 1.0:
+            raise ValueError('drop_probability must be within [0, 1].')
+
     def _truth_callback(self, message):
         self._latest_truth = message
 
@@ -50,20 +77,20 @@ class TotalStationSimulator(Node):
         if self._random.random() < self._drop_probability:
             return
 
+        source = self._latest_truth
         observation = PoseWithCovarianceStamped()
-        observation.header = self._latest_truth.header
+        # The stamp is copied rather than aliased: sharing the truth message's
+        # header would let this node mutate the message it was handed.
+        observation.header.stamp = source.header.stamp
         observation.header.frame_id = self._frame_id
-        # The wall work frame is right-handed: +X is robot-forward along the
-        # wall (Gazebo +Y), +Y is wall-up (Gazebo +Z), and +Z is wall-normal
-        # away from the wall (Gazebo +X). This agrees with the IMU's initial
-        # identity orientation, unlike the Gazebo world frame.
-        truth_position = self._latest_truth.pose.pose.position
-        observation.pose.pose.position.x = (
-            truth_position.y + self._random.gauss(0.0, self._stddev))
-        observation.pose.pose.position.y = (
-            truth_position.z + self._random.gauss(0.0, self._stddev))
-        observation.pose.pose.position.z = (
-            truth_position.x + self._random.gauss(0.0, self._stddev))
+
+        truth = source.pose.pose.position
+        wall = self._wall_frame.position_from_world((truth.x, truth.y, truth.z))
+        observation.pose.pose.position.x = wall[0] + self._random.gauss(0.0, self._stddev)
+        observation.pose.pose.position.y = wall[1] + self._random.gauss(0.0, self._stddev)
+        observation.pose.pose.position.z = wall[2] + self._random.gauss(0.0, self._stddev)
+        # Identity rather than an all-zero quaternion, which is not a rotation.
+        observation.pose.pose.orientation.w = 1.0
 
         variance = self._stddev * self._stddev
         observation.pose.covariance = [0.0] * 36

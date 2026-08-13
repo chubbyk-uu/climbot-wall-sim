@@ -1,0 +1,24 @@
+# Single source of truth for the wall slab and the wall work frame.
+#
+# Both the Gazebo world (rendered from climbot_wall.sdf.xacro) and the ROS
+# nodes that convert Gazebo truth into wall coordinates read this file, so the
+# wall can be moved, resized or re-oriented without editing either side.
+wall:
+  # Pose of the wall work frame expressed in the Gazebo world frame.
+  # The work frame is right-handed: +X runs horizontally along the wall,
+  # +Y points up the wall and +Z points out along the wall normal.
+  # rpy (pi/2, 0, pi/2) maps world +Y -> wall +X, world +Z -> wall +Y and
+  # world +X -> wall +Z, which is also the robot's spawn orientation.
+  origin_xyz: [0.0, 0.0, 0.0]
+  origin_rpy: [1.5707963267948966, 0.0, 1.5707963267948966]
+
+  surface:
+    # Slab geometry in the Gazebo world frame, in metres.
+    centre_xyz: [0.0, 0.0, 4.0]
+    thickness_m: 0.10
+    width_m: 10.0
+    height_m: 8.0
+    # Friction of the wall face against the wheels.
+    mu: 1.1
+    # Spacing of the visual reference grid drawn on the wall face.
+    grid_spacing_m: 1.0

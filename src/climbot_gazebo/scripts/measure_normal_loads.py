@@ -6,6 +6,11 @@ import math
 import os
 import time
 
+from climbot_gazebo.geometry import (
+    quaternion_tuple,
+    wrap_angle,
+    yaw_from_quaternion,
+)
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import rclpy
@@ -24,24 +29,10 @@ def stamp_nanoseconds(message):
     return message.header.stamp.sec * 1_000_000_000 + message.header.stamp.nanosec
 
 
-def wrap_angle(angle):
-    """Wrap an angle to [-pi, pi]."""
-    return math.atan2(math.sin(angle), math.cos(angle))
-
-
-def yaw_from_quaternion(quaternion):
-    """Return a ROS yaw angle from a unit quaternion."""
-    return math.atan2(
-        2.0 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y),
-        1.0 - 2.0 * (quaternion.y ** 2 + quaternion.z ** 2))
-
-
 def contact_normal_load(message):
-    """Sum the force pressing body 1 along each reported contact normal.
-
-    Projecting onto the reported normal keeps this independent of how the
-    wall happens to be oriented in the Gazebo world frame.
-    """
+    """Sum the force pressing body 1 along each reported contact normal."""
+    # Projecting onto the reported normal keeps this independent of how the
+    # wall happens to be oriented in the Gazebo world frame.
     total = 0.0
     for contact in message.contacts:
         for index, wrench in enumerate(contact.wrenches):
@@ -103,6 +94,10 @@ class NormalLoadMeasurement(Node):
         command.angular.z = angular
         self._command.publish(command)
 
+    def _filtered_yaw(self):
+        return yaw_from_quaternion(
+            quaternion_tuple(self._filtered.pose.pose.orientation))
+
     def _current_loads(self):
         """Return the three loads, treating a stale sensor as no contact."""
         timeout_ns = int(
@@ -132,7 +127,7 @@ class NormalLoadMeasurement(Node):
             float(self.get_parameter('turn_timeout_s').value) * 1e9)
         while rclpy.ok() and stamp_nanoseconds(self._truth) < deadline_ns:
             rclpy.spin_once(self, timeout_sec=0.02)
-            current = yaw_from_quaternion(self._filtered.pose.pose.orientation)
+            current = self._filtered_yaw()
             error = wrap_angle(target_yaw - current)
             if abs(error) <= tolerance:
                 self._publish()
@@ -149,7 +144,7 @@ class NormalLoadMeasurement(Node):
             rclpy.spin_once(self, timeout_sec=0.02)
             correction = angular
             if target_yaw is not None:
-                current = yaw_from_quaternion(self._filtered.pose.pose.orientation)
+                current = self._filtered_yaw()
                 error = wrap_angle(target_yaw - current)
                 correction = max(
                     -0.35,

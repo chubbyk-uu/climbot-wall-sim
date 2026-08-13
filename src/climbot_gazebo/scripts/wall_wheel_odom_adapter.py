@@ -15,12 +15,17 @@ class WallWheelOdomAdapter(Node):
         self.declare_parameter('yaw_rate_stddev_rps', 0.05)
         self.declare_parameter('unobserved_variance', 1e6)
 
-        self._forward_variance = float(
-            self.get_parameter('forward_velocity_stddev_mps').value) ** 2
-        self._yaw_rate_variance = float(
-            self.get_parameter('yaw_rate_stddev_rps').value) ** 2
+        forward_stddev = float(
+            self.get_parameter('forward_velocity_stddev_mps').value)
+        yaw_rate_stddev = float(self.get_parameter('yaw_rate_stddev_rps').value)
         self._unobserved_variance = float(
             self.get_parameter('unobserved_variance').value)
+        if forward_stddev < 0.0 or yaw_rate_stddev < 0.0:
+            raise ValueError('Wheel odometry standard deviations cannot be negative.')
+        if self._unobserved_variance <= 0.0:
+            raise ValueError('unobserved_variance must be positive.')
+        self._forward_variance = forward_stddev ** 2
+        self._yaw_rate_variance = yaw_rate_stddev ** 2
 
         self._publisher = self.create_publisher(Odometry, '/wheel_odom', 20)
         self.create_subscription(
@@ -29,11 +34,14 @@ class WallWheelOdomAdapter(Node):
     def _callback(self, message):
         # DiffDrive's pose is intentionally retained for diagnostic comparison,
         # but EKF only selects twist.x and twist.angular.z from this message.
+        # Fields are copied rather than aliased so the incoming message keeps
+        # the covariance it arrived with.
         adapted = Odometry()
-        adapted.header = message.header
+        adapted.header.stamp = message.header.stamp
+        adapted.header.frame_id = message.header.frame_id
         adapted.child_frame_id = message.child_frame_id
-        adapted.pose = message.pose
-        adapted.twist = message.twist
+        adapted.pose.pose = message.pose.pose
+        adapted.twist.twist = message.twist.twist
 
         adapted.pose.covariance = [0.0] * 36
         for index in (0, 7, 14, 21, 28, 35):
