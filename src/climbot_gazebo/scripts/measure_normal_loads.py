@@ -6,7 +6,7 @@ import math
 import os
 import time
 
-from climbot_gazebo.geometry import (
+from climbot_description.geometry import (
     quaternion_tuple,
     wrap_angle,
     yaw_from_quaternion,

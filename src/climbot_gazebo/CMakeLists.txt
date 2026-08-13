@@ -7,8 +7,15 @@ find_package(ament_cmake_python REQUIRED)
 ament_python_install_package(${PROJECT_NAME})
 
 install(
-  DIRECTORY config launch models worlds
+  DIRECTORY config launch worlds
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  FILES
+    models/climbot/model.config
+    models/climbot/model.sdf.xacro
+  DESTINATION share/${PROJECT_NAME}/models/climbot
 )
 
 install(
@@ -30,7 +37,6 @@ if(BUILD_TESTING)
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
-  ament_add_pytest_test(test_wall_frame test/test_wall_frame.py)
   ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
   ament_add_pytest_test(test_turn_profile test/test_turn_profile.py)
 endif()

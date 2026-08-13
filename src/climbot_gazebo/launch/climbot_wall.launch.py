@@ -37,27 +37,27 @@ def running_on_wsl():
         return False
 
 
-def render_world(package_share):
-    """Render the Gazebo world from wall.yaml and return the generated path."""
-    # Both the world and the ROS nodes read the same description, so the wall
-    # is never restated as a literal on either side.
-    with open(os.path.join(package_share, 'config', 'wall.yaml')) as handle:
-        description = yaml.safe_load(handle)
-    wall = description['wall']
+def render_world(gazebo_share, description_share):
+    """Render the Gazebo world from shared and simulation-only settings."""
+    with open(os.path.join(description_share, 'config', 'wall.yaml')) as handle:
+        wall = yaml.safe_load(handle)['wall']
+    with open(os.path.join(gazebo_share, 'config', 'simulation.yaml')) as handle:
+        simulation = yaml.safe_load(handle)['simulation']
     surface = wall['surface']
-    spawn = wall['spawn']
-    centre = surface['centre_xyz']
+    simulated_wall = simulation['wall']
+    spawn = simulation['spawn']
+    centre = simulated_wall['centre_xyz']
     roll, pitch, yaw = wall['origin_rpy']
     mappings = {
         'centre_x': repr(float(centre[0])),
         'centre_y': repr(float(centre[1])),
         'centre_z': repr(float(centre[2])),
-        'thickness': repr(float(surface['thickness_m'])),
+        'thickness': repr(float(simulated_wall['thickness_m'])),
         'width': repr(float(surface['width_m'])),
         'height': repr(float(surface['height_m'])),
-        'mu': repr(float(surface['mu'])),
-        'grid_spacing': repr(float(surface['grid_spacing_m'])),
-        'suction_force': repr(float(description['suction']['force_n'])),
+        'mu': repr(float(simulated_wall['mu'])),
+        'grid_spacing': repr(float(simulated_wall['grid_spacing_m'])),
+        'suction_force': repr(float(simulation['suction']['force_n'])),
         'spawn_gap': repr(float(spawn['surface_gap_m'])),
         'spawn_lateral': repr(float(spawn['lateral_m'])),
         'spawn_height': repr(float(spawn['height_m'])),
@@ -65,7 +65,7 @@ def render_world(package_share):
         'spawn_pitch': repr(float(pitch)),
         'spawn_yaw': repr(float(yaw)),
     }
-    source = os.path.join(package_share, 'worlds', 'climbot_wall.sdf.xacro')
+    source = os.path.join(gazebo_share, 'worlds', 'climbot_wall.sdf.xacro')
     document = xacro.process_file(source, mappings=mappings)
     handle = tempfile.NamedTemporaryFile(
         mode='w', prefix='climbot_wall_', suffix='.sdf', delete=False)
@@ -74,15 +74,19 @@ def render_world(package_share):
     return handle.name
 
 
-def robot_mappings(package_share):
-    """Flatten robot.yaml into the xacro arguments both templates accept."""
-    with open(os.path.join(package_share, 'config', 'robot.yaml')) as handle:
+def robot_mappings(gazebo_share, description_share):
+    """Flatten shared robot and Gazebo-only settings for the xacro files."""
+    with open(os.path.join(description_share, 'config', 'robot.yaml')) as handle:
         robot = yaml.safe_load(handle)['robot']
+    with open(os.path.join(gazebo_share, 'config', 'simulation.yaml')) as handle:
+        simulation = yaml.safe_load(handle)['simulation']
     base = robot['base']
     wheel = robot['drive_wheel']
     caster = robot['caster']
     drive = robot['drive']
-    imu = robot['imu']
+    simulated_wheel = simulation['drive_wheel']
+    simulated_drive = simulation['drive']
+    imu = simulation['imu']
     return {
         'base_length': repr(float(base['size_xyz'][0])),
         'base_width': repr(float(base['size_xyz'][1])),
@@ -96,14 +100,15 @@ def robot_mappings(package_share):
         'wheel_mass': repr(float(wheel['mass_kg'])),
         'wheel_axle_x': repr(float(wheel['axle_x_m'])),
         'wheel_separation': repr(float(wheel['separation_m'])),
-        'wheel_mu': repr(float(wheel['mu'])),
-        'slip_lateral': repr(float(wheel['slip_lateral'])),
-        'slip_longitudinal': repr(float(wheel['slip_longitudinal'])),
-        'nominal_normal_force': repr(float(wheel['nominal_normal_force_n'])),
+        'wheel_mu': repr(float(simulated_wheel['mu'])),
+        'slip_lateral': repr(float(simulated_wheel['slip_lateral'])),
+        'slip_longitudinal': repr(float(simulated_wheel['slip_longitudinal'])),
+        'nominal_normal_force': repr(
+            float(simulated_wheel['nominal_normal_force_n'])),
         'caster_radius': repr(float(caster['radius_m'])),
         'caster_mass': repr(float(caster['mass_kg'])),
         'caster_x': repr(float(caster['centre_x_m'])),
-        'caster_mu': repr(float(caster['mu'])),
+        'caster_mu': repr(float(simulation['caster']['mu'])),
         'max_linear_velocity': repr(float(drive['max_linear_velocity_mps'])),
         'max_angular_velocity': repr(float(drive['max_angular_velocity_rps'])),
         'max_linear_acceleration': repr(
@@ -112,19 +117,20 @@ def robot_mappings(package_share):
             float(drive['max_angular_acceleration_rps2'])),
         'joint_effort': repr(float(drive['joint_effort_nm'])),
         'joint_velocity': repr(float(drive['joint_velocity_rps'])),
-        'joint_damping': repr(float(drive['joint_damping'])),
-        'odom_frequency': repr(float(drive['odom_publish_frequency_hz'])),
+        'joint_damping': repr(float(simulated_drive['joint_damping'])),
+        'odom_frequency': repr(
+            float(simulated_drive['odom_publish_frequency_hz'])),
         'imu_rate': repr(float(imu['update_rate_hz'])),
         'imu_gyro_stddev': repr(float(imu['angular_velocity_stddev'])),
         'imu_accel_stddev': repr(float(imu['linear_acceleration_stddev'])),
-        'contact_rate': repr(float(robot['contact']['update_rate_hz'])),
+        'contact_rate': repr(float(simulation['contact']['update_rate_hz'])),
     }
 
 
-def render_robot(package_share):
+def render_robot(gazebo_share, description_share):
     """Render the Gazebo model and the URDF from one robot description."""
-    mappings = robot_mappings(package_share)
-    source_dir = os.path.join(package_share, 'models', 'climbot')
+    mappings = robot_mappings(gazebo_share, description_share)
+    source_dir = os.path.join(gazebo_share, 'models', 'climbot')
     # Gazebo resolves model://climbot by directory name, so the rendered model
     # is written into a matching directory alongside its unchanged manifest.
     model_root = tempfile.mkdtemp(prefix='climbot_model_')
@@ -135,18 +141,20 @@ def render_robot(package_share):
         os.path.join(source_dir, 'model.sdf.xacro'), mappings=mappings)
     with open(os.path.join(model_dir, 'model.sdf'), 'w') as handle:
         handle.write(model.toprettyxml(indent='  '))
-    urdf = xacro.process_file(
-        os.path.join(source_dir, 'climbot.urdf.xacro'), mappings=mappings)
+    urdf = xacro.process_file(os.path.join(
+        description_share, 'urdf', 'climbot.urdf.xacro'), mappings=mappings)
     return model_root, urdf.toxml()
 
 
 def launch_setup(context, *args, **kwargs):
     """Build the actions that depend on resolved launch configurations."""
     package_share = get_package_share_directory('climbot_gazebo')
+    description_share = get_package_share_directory('climbot_description')
     ros_gz_share = get_package_share_directory('ros_gz_sim')
-    world = render_world(package_share)
-    model_path, robot_description = render_robot(package_share)
-    wall_config = os.path.join(package_share, 'config', 'wall.yaml')
+    world = render_world(package_share, description_share)
+    model_path, robot_description = render_robot(
+        package_share, description_share)
+    wall_config = os.path.join(description_share, 'config', 'wall.yaml')
     ekf_config = os.path.join(package_share, 'config', 'ekf_wall.yaml')
     existing_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
 

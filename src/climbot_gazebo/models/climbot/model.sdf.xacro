@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
-  Rendered at launch time from config/robot.yaml, which is shared with the
-  URDF that robot_state_publisher uses. No dimension may be restated here.
+  Rendered at launch time from climbot_description/config/robot.yaml and the
+  Gazebo-only config/simulation.yaml. No dimension may be restated here.
 -->
 <sdf version="1.10" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:arg name="base_length" default="0.52"/>

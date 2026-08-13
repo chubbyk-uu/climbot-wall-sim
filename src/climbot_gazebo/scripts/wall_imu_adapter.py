@@ -4,7 +4,7 @@
 import math
 import random
 
-from climbot_gazebo.geometry import quaternion_from_rpy, quaternion_multiply
+from climbot_description.geometry import quaternion_from_rpy, quaternion_multiply
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu

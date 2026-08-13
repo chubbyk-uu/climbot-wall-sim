@@ -7,13 +7,13 @@ import os
 import time
 
 from ament_index_python.packages import get_package_share_directory
-from climbot_gazebo.geometry import (
+from climbot_description.geometry import (
     quaternion_tuple,
     wrap_angle,
     yaw_from_quaternion,
 )
+from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.safe_stop import install_stop_on_termination
-from climbot_gazebo.wall_frame import WallFrame
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import rclpy
@@ -23,7 +23,7 @@ from rclpy.node import Node
 def default_wall_config():
     """Return the installed wall description, so no path is hardcoded."""
     return os.path.join(
-        get_package_share_directory('climbot_gazebo'), 'config', 'wall.yaml')
+        get_package_share_directory('climbot_description'), 'config', 'wall.yaml')
 
 
 def stamp_nanoseconds(message):

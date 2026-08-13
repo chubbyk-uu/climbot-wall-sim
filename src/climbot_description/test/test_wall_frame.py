@@ -3,8 +3,8 @@
 import math
 import os
 
-from climbot_gazebo.geometry import quaternion_from_rpy
-from climbot_gazebo.wall_frame import WallFrame
+from climbot_description.geometry import quaternion_from_rpy
+from climbot_description.wall_frame import WallFrame
 import pytest
 
 CONFIG = os.path.join(

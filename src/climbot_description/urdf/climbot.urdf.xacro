@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!--
   TF and visualisation description for robot_state_publisher, rendered from
-  the same config/robot.yaml as the Gazebo model, so the published frames
-  always match the simulated body.
+  climbot_description/config/robot.yaml, the same physical description used
+  by the Gazebo model, planner, controller, and real robot.
 -->
 <robot name="climbot" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:arg name="base_length" default="0.52"/>

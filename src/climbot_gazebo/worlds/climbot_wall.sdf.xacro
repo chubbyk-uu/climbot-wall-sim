@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!--
-  Rendered at launch time from config/wall.yaml, which is the single source
-  of truth for the wall slab and the wall work frame. Nothing here may
-  restate a wall dimension as a literal.
+  Rendered at launch time from climbot_description/config/wall.yaml and the
+  Gazebo-only config/simulation.yaml. Nothing here may restate a wall
+  dimension as a literal.
 -->
 <sdf version="1.10" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:arg name="centre_x" default="0.0"/>

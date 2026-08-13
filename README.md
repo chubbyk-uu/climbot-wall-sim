@@ -31,7 +31,7 @@ source install/setup.bash
 - 速度相关的横向 WheelSlip；
 - ROS 2 `cmd_vel` 和里程计桥接。
 
-墙体尺寸位姿和机器人几何分别由 `config/wall.yaml` 和 `config/robot.yaml` 单一描述，Gazebo 世界、机器人模型和 `robot_state_publisher` 用的 URDF 都在启动时由它们渲染，两侧不会不同步。
+墙体尺寸位姿和机器人几何分别由 `climbot_description/config/wall.yaml` 和 `climbot_description/config/robot.yaml` 单一描述，供仿真、规划、控制和实机共同使用。Gazebo 专有的摩擦、WheelSlip、吸附、出生位姿及仿真传感器参数位于 `climbot_gazebo/config/simulation.yaml`。
 
 渲染后端由 `gpu_backend` 参数选择，默认 `auto`：检测到 WSL 时设置 `GALLIUM_DRIVER=d3d12` 并选择 NVIDIA 适配器，让 Gazebo OGRE2 通过 Mesa D3D12 使用 GPU；原生 Linux 上不设置这些变量。可用 `gpu_backend:=native` 或 `wsl_d3d12` 强制指定。
 
@@ -47,7 +47,7 @@ source install/setup.bash
 - `/total_station/pose`：从真值派生的模拟全站仪位置，默认 **12 Hz**、5 mm 一倍标准差噪声和 50 ms 固定延迟；
 - `/odometry/filtered`：`robot_localization/ekf_node` 的融合输出和 `odom -> base_link` TF。
 
-融合坐标系 `odom` 固定在墙面上：`+X` 沿墙水平，`+Y` 向上，`+Z` 为离墙法向，由 `config/wall.yaml` 定义。全站仪适配节点按该描述把 Gazebo 世界坐标转换过来；Gazebo 真值话题仍保持原始世界坐标，便于独立评估。
+融合坐标系 `odom` 固定在墙面上：`+X` 沿墙水平，`+Y` 向上，`+Z` 为离墙法向，由 `climbot_description/config/wall.yaml` 定义。全站仪适配节点按该描述把 Gazebo 世界坐标转换过来；Gazebo 真值话题仍保持原始世界坐标，便于独立评估。
 
 TF 树为 `world → wall → odom → base_link → {imu_link, 两个主动轮, 后球轮}`。**`base_link` 的原点是两个主动轮轴的中点**（见 guide §4.3）：差分驱动绕该点旋转，原地转向不会在运动学上移动它，轮式里程计推算的也正是该点。
 

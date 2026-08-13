@@ -1,0 +1,10 @@
+# Work-surface description shared by simulation, planning, and the real robot.
+wall:
+  # Pose of the wall work frame expressed in the external world frame.
+  # The right-handed work frame is +X horizontal, +Y up, and +Z outward.
+  origin_xyz: [0.0, 0.0, 0.0]
+  origin_rpy: [1.5707963267948966, 0.0, 1.5707963267948966]
+
+  surface:
+    width_m: 10.0
+    height_m: 8.0

@@ -1,0 +1,35 @@
+# Robot properties shared by simulation, planning, control, and the real robot.
+robot:
+  base:
+    size_xyz: [0.52, 0.44, 0.10]
+    mass_kg: 12.0
+    # Relative to base_link at the drive-axle midpoint on the wall plane.
+    centre_xyz: [-0.11, 0.0, 0.085]
+
+  drive_wheel:
+    radius_m: 0.08
+    width_m: 0.045
+    mass_kg: 1.0
+    axle_x_m: 0.0
+    separation_m: 0.43
+
+  caster:
+    radius_m: 0.05
+    mass_kg: 0.5
+    centre_x_m: -0.33
+
+  drive:
+    max_linear_velocity_mps: 0.30
+    max_angular_velocity_rps: 1.20
+    max_linear_acceleration_mps2: 0.40
+    max_angular_acceleration_rps2: 1.50
+    joint_effort_nm: 80.0
+    joint_velocity_rps: 30.0
+
+  # Conservative wall-plane envelope used by the coverage planner. It includes
+  # the body, protruding wheels, and rear caster. edge_clearance is additional
+  # clearance between that envelope and the requested work-region boundary.
+  footprint:
+    length_m: 0.53
+    width_m: 0.475
+    edge_clearance_m: 0.10

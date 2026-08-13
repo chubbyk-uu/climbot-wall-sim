@@ -3,7 +3,7 @@
 # Every node that converts Gazebo truth into wall coordinates loads the same
 # description, so the wall can be moved or re-oriented without editing code.
 
-from climbot_gazebo.geometry import (
+from climbot_description.geometry import (
     quaternion_conjugate,
     quaternion_from_rpy,
     quaternion_multiply,

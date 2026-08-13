@@ -1,0 +1,36 @@
+# Gazebo-only contact, rendering, sensor, and initialization parameters.
+simulation:
+  wall:
+    centre_xyz: [0.0, 0.0, 4.0]
+    thickness_m: 0.10
+    mu: 1.1
+    grid_spacing_m: 1.0
+
+  spawn:
+    surface_gap_m: 0.001
+    lateral_m: 0.0
+    height_m: 2.0
+
+  suction:
+    force_n: 220.0
+
+  drive_wheel:
+    mu: 1.1
+    slip_lateral: 0.12
+    slip_longitudinal: 0.04
+    nominal_normal_force_n: 77.0
+
+  caster:
+    mu: 0.35
+
+  drive:
+    joint_damping: 0.05
+    odom_publish_frequency_hz: 50.0
+
+  imu:
+    update_rate_hz: 100.0
+    angular_velocity_stddev: 0.0002
+    linear_acceleration_stddev: 0.017
+
+  contact:
+    update_rate_hz: 50.0
