@@ -133,3 +133,36 @@ ros2 topic echo /model/climbot/odometry
 当前 WheelSlip 参数应以 `calibrate_wall_slip.py` 的重复实验结果为准。该侧滑由真实重力驱动，WheelSlip 只描述运动轮胎的运动蠕滑，不施加额外向下力。
 
 当前参数（横向 `0.12`、纵向 `0.04`）的三重复标定基线为：静止 30 秒无可见下滑；水平下降/前进比均值 `8.18%`；上行 `0.14077 m/s`，下行 `0.15177 m/s`，下行快 `7.81%`。该数值用于后续回归对比，改变质量、吸附力或 WheelSlip 参数后必须重新标定。
+
+## 阶段 5：覆盖路径规划与 RViz
+
+一条命令启动墙面仿真、覆盖规划器和 RViz2：
+
+```bash
+ros2 launch climbot_coverage coverage_sim.launch.py
+```
+
+RViz 显示半透明墙面、原始区域（橙色）、内缩有效区域（绿色）、弓字路径与方向箭头（蓝色）。默认矩形通过 YAML 中的左下角 A 和右上角 B 定义。等腰梯形增加右下角 C，左上角 D 关于底边中心自动镜像；A、C 高度存在偏差时自动取平均值作为修正底边。
+
+使用等腰梯形和纵向扫描：
+
+```bash
+ros2 launch climbot_coverage coverage_sim.launch.py \
+  config_file:=$(ros2 pkg prefix climbot_coverage)/share/climbot_coverage/config/coverage_trapezoid.yaml \
+  region_type:=trapezoid sweep_direction:=vertical
+```
+
+使用 RViz 鼠标点选时，先选择工具栏的 `Publish Point`：矩形依次点击 A（左下）、B（右上）；等腰梯形依次点击 A（左下）、B（右上）、C（右下）。每收齐一组点会自动重新规划；重新点击会开始下一组。也可以手动清空：
+
+```bash
+ros2 launch climbot_coverage coverage_sim.launch.py \
+  input_mode:=rviz region_type:=trapezoid sweep_direction:=horizontal
+```
+
+另一个终端中可手动清空已点击的点：
+
+```bash
+ros2 service call /coverage/clear_points std_srvs/srv/Trigger '{}'
+```
+
+规划器发布 `/coverage/path`、`/coverage/markers` 和 `/coverage/status`，并提供 `/coverage/replan` 服务。扫描线位于均匀覆盖带中心，实际道间距不会超过 `track_spacing`；所有路径段均为直线，不生成圆角。

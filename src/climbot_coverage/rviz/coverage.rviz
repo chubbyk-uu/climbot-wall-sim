@@ -1,0 +1,58 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Tool Properties
+    Name: Tool Properties
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Wall Grid
+      Enabled: true
+      Plane: XY
+      Cell Size: 1
+      Plane Cell Count: 10
+      Color: 100; 100; 105
+      Alpha: 0.5
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Coverage Regions
+      Enabled: true
+      Topic:
+        Value: /coverage/markers
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+    - Class: rviz_default_plugins/Path
+      Name: Coverage Path
+      Enabled: true
+      Topic:
+        Value: /coverage/path
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+      Line Style: Lines
+      Line Width: 0.03
+      Color: 25; 150; 255
+  Global Options:
+    Fixed Frame: odom
+    Background Color: 36; 39; 46
+    Frame Rate: 30
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/SetInitialPose
+    - Class: rviz_default_plugins/PublishPoint
+      Topic: /clicked_point
+      Single click: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 9
+      Focal Point:
+        X: 0
+        Y: 4
+        Z: 0
+      Pitch: 1.5707
+      Yaw: 1.5707
+Window Geometry:
+  Width: 1200
+  Height: 850
