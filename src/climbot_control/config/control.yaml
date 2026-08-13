@@ -1,0 +1,5 @@
+line_tracker:
+  ros__parameters:
+    cruise_speed: 0.15
+    cross_gain: 1.0
+    heading_gain: 2.0
