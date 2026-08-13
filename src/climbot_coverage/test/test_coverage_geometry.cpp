@@ -175,6 +175,33 @@ TEST(CoverageGeometry, CoversAtLeastNinetyEightPercentInBothDirections)
   }
 }
 
+TEST(CoverageGeometry, FootprintAwarePathCoversRequestedRegionInsideMotionRegion)
+{
+  constexpr double detection_width = 0.50;
+  constexpr double detection_length = 0.10;
+  const auto coverage = makeRectangle({-3.0, 0.75}, {3.0, 6.5}).polygon;
+  const auto motion = makeRectangle({-4.0, 0.55}, {4.0, 7.2}).polygon;
+  for (const auto & direction : {std::string("horizontal"), std::string("vertical")}) {
+    const auto path = generateFootprintAwareBoustrophedonPath(
+      coverage, motion, detection_width, detection_length, 0.4, direction, "lower_left");
+    EXPECT_GE(sampledCoverageRatio(coverage, path, detection_width, detection_length), 0.98)
+      << "direction=" << direction;
+    for (const auto & waypoint : path) {
+      EXPECT_TRUE(insideConvex(motion, waypoint));
+    }
+  }
+}
+
+TEST(CoverageGeometry, RejectsFootprintThatCannotRemainInsideMotionRegion)
+{
+  const auto coverage = makeRectangle({0.0, 0.0}, {2.0, 2.0}).polygon;
+  const auto motion = makeRectangle({0.1, 0.1}, {1.9, 1.9}).polygon;
+  EXPECT_THROW(
+    generateFootprintAwareBoustrophedonPath(
+      coverage, motion, 0.5, 0.1, 0.4, "horizontal", "lower_left"),
+    std::invalid_argument);
+}
+
 TEST(CoverageGeometry, IsExactlyDeterministicForIdenticalInput)
 {
   const auto region = insetConvexPolygon(

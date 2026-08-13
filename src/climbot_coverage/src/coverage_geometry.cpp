@@ -99,6 +99,35 @@ std::pair<Point2, Point2> clipScanLine(
   return {{coordinate, intersections.front()}, {coordinate, intersections.back()}};
 }
 
+bool insideConvex(const Polygon & polygon, const Point2 & point)
+{
+  for (std::size_t index = 0; index < polygon.size(); ++index) {
+    const Point2 & first = polygon[index];
+    const Point2 & second = polygon[(index + 1) % polygon.size()];
+    if (cross(subtract(second, first), subtract(point, first)) < -kEpsilon) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool coveredByFootprint(
+  const Point2 & sample, const Point2 & first, const Point2 & second,
+  double detection_width, double detection_length)
+{
+  const Point2 direction = subtract(second, first);
+  const double segment_length = std::hypot(direction.x, direction.y);
+  if (segment_length < kEpsilon) {
+    return false;
+  }
+  const Point2 relative = subtract(sample, first);
+  const double along = (relative.x * direction.x + relative.y * direction.y) / segment_length;
+  const double cross_track = std::abs(cross(relative, direction)) / segment_length;
+  return along >= -0.5 * detection_length - kEpsilon &&
+         along <= segment_length + 0.5 * detection_length + kEpsilon &&
+         cross_track <= 0.5 * detection_width + kEpsilon;
+}
+
 }  // namespace
 
 bool approximatelyEqual(double first, double second, double tolerance)
@@ -245,6 +274,100 @@ std::vector<Point2> generateBoustrophedonPath(
     path.push_back(segment.second);
   }
   return path;
+}
+
+std::vector<Point2> generateFootprintAwareBoustrophedonPath(
+  const Polygon & coverage_region, const Polygon & motion_region,
+  double detection_width, double detection_length, double maximum_spacing,
+  const std::string & sweep_direction, const std::string & start_corner)
+{
+  if (detection_width <= 0.0 || detection_length <= 0.0) {
+    throw std::invalid_argument("Detection footprint dimensions must be positive.");
+  }
+  const bool horizontal = sweep_direction == "horizontal";
+  if (!horizontal && sweep_direction != "vertical") {
+    throw std::invalid_argument("Sweep direction must be horizontal or vertical.");
+  }
+  const auto [minimum, maximum] = bounds(coverage_region, horizontal);
+  const double span = maximum - minimum;
+  if (span <= kEpsilon) {
+    throw std::invalid_argument("Coverage region has no sweep span.");
+  }
+  const double usable_span = std::max(0.0, span - detection_width);
+  const int line_count = std::max(
+    1, static_cast<int>(std::ceil(usable_span / maximum_spacing)) + 1);
+  const double spacing = line_count == 1 ? 0.0 : usable_span / static_cast<double>(line_count - 1);
+  const bool start_low = start_corner.rfind("lower_", 0) == 0;
+  const bool start_left = start_corner.compare(start_corner.size() - 4, 4, "left") == 0;
+  const bool reverse_order = horizontal ? !start_low : !start_left;
+
+  std::vector<Point2> path;
+  path.reserve(static_cast<std::size_t>(2 * line_count));
+  for (int line_index = 0; line_index < line_count; ++line_index) {
+    const int ordered_index = reverse_order ? line_count - 1 - line_index : line_index;
+    const double coordinate = span <= detection_width ?
+      0.5 * (minimum + maximum) :
+      minimum + 0.5 * detection_width + spacing * static_cast<double>(ordered_index);
+    auto segment = clipScanLine(coverage_region, coordinate, horizontal);
+    const Point2 extension = horizontal ?
+      Point2{0.5 * detection_length, 0.0} : Point2{0.0, 0.5 * detection_length};
+    segment.first = subtract(segment.first, extension);
+    segment.second = add(segment.second, extension);
+    if (!insideConvex(motion_region, segment.first) || !insideConvex(motion_region,
+        segment.second))
+    {
+      throw std::invalid_argument(
+              "Detection footprint requires a robot-centre waypoint outside motion_region.");
+    }
+    bool forward_along_line = horizontal ? start_left : start_low;
+    if (line_index % 2 == 1) {
+      forward_along_line = !forward_along_line;
+    }
+    if (!forward_along_line) {
+      std::swap(segment.first, segment.second);
+    }
+    path.push_back(segment.first);
+    path.push_back(segment.second);
+  }
+  return path;
+}
+
+double sampledCoverageRatio(
+  const Polygon & coverage_region, const std::vector<Point2> & scan_path,
+  double detection_width, double detection_length, int samples_per_axis)
+{
+  if (scan_path.size() % 2 != 0 || detection_width <= 0.0 || detection_length <= 0.0 ||
+    samples_per_axis <= 0)
+  {
+    throw std::invalid_argument("Coverage evaluation received invalid input.");
+  }
+  const auto [minimum_x, maximum_x] = bounds(coverage_region, false);
+  const auto [minimum_y, maximum_y] = bounds(coverage_region, true);
+  std::size_t inside_count = 0U;
+  std::size_t covered_count = 0U;
+  for (int row = 0; row < samples_per_axis; ++row) {
+    for (int column = 0; column < samples_per_axis; ++column) {
+      const Point2 sample{
+        minimum_x + (maximum_x - minimum_x) * (static_cast<double>(column) + 0.5) /
+        static_cast<double>(samples_per_axis),
+        minimum_y + (maximum_y - minimum_y) * (static_cast<double>(row) + 0.5) /
+        static_cast<double>(samples_per_axis)};
+      if (!insideConvex(coverage_region, sample)) {
+        continue;
+      }
+      ++inside_count;
+      for (std::size_t index = 0; index < scan_path.size(); index += 2U) {
+        if (coveredByFootprint(
+            sample, scan_path[index], scan_path[index + 1U], detection_width, detection_length))
+        {
+          ++covered_count;
+          break;
+        }
+      }
+    }
+  }
+  return inside_count == 0U ? 0.0 :
+         static_cast<double>(covered_count) / static_cast<double>(inside_count);
 }
 
 }  // namespace climbot_coverage

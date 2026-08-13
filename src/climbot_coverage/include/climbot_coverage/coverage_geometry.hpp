@@ -33,6 +33,19 @@ std::vector<Point2> generateBoustrophedonPath(
   const Polygon & polygon, double maximum_spacing,
   const std::string & sweep_direction, const std::string & start_corner);
 
+// Generates SCAN line pairs whose rectangular swept detection footprint covers
+// coverage_region.  Every robot-centre waypoint must lie in motion_region.
+std::vector<Point2> generateFootprintAwareBoustrophedonPath(
+  const Polygon & coverage_region, const Polygon & motion_region,
+  double detection_width, double detection_length, double maximum_spacing,
+  const std::string & sweep_direction, const std::string & start_corner);
+
+// Estimates the fraction of coverage_region swept by SCAN line pairs.  Each
+// pair is interpreted as a straight segment with a rectangular footprint.
+double sampledCoverageRatio(
+  const Polygon & coverage_region, const std::vector<Point2> & scan_path,
+  double detection_width, double detection_length, int samples_per_axis = 300);
+
 double polygonArea(const Polygon & polygon);
 
 bool approximatelyEqual(double first, double second, double tolerance = 1e-9);

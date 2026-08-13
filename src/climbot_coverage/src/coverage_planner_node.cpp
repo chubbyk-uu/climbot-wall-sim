@@ -251,15 +251,22 @@ private:
       } else {
         throw std::invalid_argument("region_type must be rectangle or trapezoid.");
       }
-      const auto effective = insetConvexPolygon(region.polygon, safety_margin_);
-      const auto path = generateBoustrophedonPath(
-        effective, row_spacing_, sweep_direction_, start_corner_);
-      publishTask(makeTask(region.polygon, effective, path));
-      publishMarkers(region.polygon, effective, path);
+      const auto motion = motionRegion();
+      const auto path = generateFootprintAwareBoustrophedonPath(
+        region.polygon, motion, detection_width_, detection_length_, row_spacing_,
+        sweep_direction_, start_corner_);
+      const double coverage_ratio = sampledCoverageRatio(
+        region.polygon, path, detection_width_, detection_length_);
+      if (coverage_ratio < 0.98) {
+        throw std::invalid_argument("Nominal detection footprint covers less than 98 percent.");
+      }
+      publishTask(makeTask(region.polygon, motion, path));
+      publishMarkers(region.polygon, motion, path);
       std::ostringstream status;
       status << "Generated " << sweep_direction_ << " " << region_type_ <<
         " coverage path with " << path.size() << " waypoints; row spacing <= " <<
-        row_spacing_ << " m and safety margin " << safety_margin_ << " m.";
+        row_spacing_ << " m, nominal footprint coverage " << coverage_ratio * 100.0 <<
+        "% and safety margin " << safety_margin_ << " m.";
       if (region.bottom_height_correction > bottom_warning_tolerance_) {
         status << " Bottom clicks differed by " << region.bottom_height_correction <<
           " m and were corrected to their mean height.";

@@ -177,7 +177,11 @@ Header，避免同一任务内部出现多个坐标系或时间戳。
 规划失败、清空或开始新区块时，规划器同时发布空 `/coverage/path` 和空路点的
 `/coverage/task`，并增加 revision，使旧预览失效。空任务永远不能作为执行 Goal。
 当前规划器以原始用户区域填充 `coverage_region`，以整面墙按机器人安全边距内缩的
-多边形填充 `motion_region`；阶段 E2 将在此基础上增加转向安全余量和覆盖足迹校验。
+多边形填充 `motion_region`。E2 已按 `detection_width × detection_length` 的矩形足迹
+布置标称 `SCAN`：中心线覆盖目标区域，端点沿行进方向按半个检测长度外延；每个中心
+路点必须位于 `motion_region`，否则拒绝规划。标称覆盖率低于 98% 也会拒绝规划。
+竖向执行中的转向下滑属于实际轨迹问题，E9 将用同一足迹评估实际轨迹，并在需要时追加
+一条顶部水平收边扫描。
 
 ### `ExecuteCoverage.action`
 
