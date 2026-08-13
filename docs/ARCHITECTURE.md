@@ -10,7 +10,7 @@
                     climbot_interfaces
                        ^          ^
                        │          │
-              climbot_coverage  climbot_control（阶段 E）
+              climbot_coverage  climbot_control
                        │          │
                        v          v
                     climbot_description
@@ -20,13 +20,14 @@
 ```
 
 `climbot_interfaces` 是无业务实现的公共 ROS 接口包，不依赖其他项目包。
-`climbot_description` 是共享物理描述的唯一上游。规划器和未来控制器不得依赖
+`climbot_description` 是共享物理描述的唯一上游。规划器和控制器不得依赖
 `climbot_gazebo`，也不得读取 Gazebo 真值或仿真专有参数。
 
 `climbot_coverage/launch/coverage_sim.launch.py` 是当前阶段用于联合启动仿真
 和规划器的临时集成入口，会在运行时查找 `climbot_gazebo`。它不代表规划器
-算法依赖 Gazebo。阶段 E 建立 `climbot_control` 后，再评估是否抽出独立的
-`climbot_bringup` 统一承载组合 launch。
+算法依赖 Gazebo。`climbot_gazebo` 为启动速度看门狗而运行时依赖
+`climbot_control`，该依赖仅属于仿真编排；控制包不反向依赖 Gazebo。完整任务
+状态机出现后，再评估是否抽出独立的 `climbot_bringup` 统一承载组合 launch。
 
 ## 包职责
 
@@ -78,6 +79,18 @@ C++ 覆盖规划器和 RViz 可视化：
 规划器读取 `climbot_description` 的墙面尺寸和机器人轮廓，不读取任何
 Gazebo 接触参数。
 
+### `climbot_control`
+
+C++ 轨迹控制和速度安全：
+
+- `line_tracker`：任意二维直线的沿轨、横轨和航向闭环及联合轮速限幅；
+- `line_tracker_node`：融合位姿输入、定位超时停车和单段参考显示；
+- `cmd_vel_watchdog_node`：`/control/cmd_vel` 到 `/cmd_vel` 的唯一安全出口；
+- `config/control.yaml`：正常作业限幅、控制增益和超时；
+- `launch/line_tracker.launch.py`：从共享机器人描述注入轮距和轮缘硬限值。
+
+控制包不得读取 Gazebo 真值、WheelSlip 或吸附参数。
+
 ## 配置归属
 
 | 配置 | 所有者 | 消费者 | 说明 |
@@ -109,8 +122,14 @@ Gazebo physics
                                                             │
                                                             v
                                                      climbot_control
-                                                            ├─> /cmd_vel
-                                                            └─> /control/reference_path
+                                                            ├─> /control/reference_path
+                                                            └─> /control/cmd_vel ─┐
+键盘或单个实验脚本 ────────────────────────────────────────> /control/cmd_vel ─┤
+                                                                                v
+                                                                    cmd_vel_watchdog
+                                                                                │
+                                                                                v
+                                                                            /cmd_vel
 ```
 
 ## 坐标系
@@ -131,7 +150,7 @@ world
 
 ## 后续包边界
 
-阶段 E 先新增 `climbot_interfaces`，再新增 `climbot_control`。控制包负责 50 Hz
+`climbot_interfaces` 和 `climbot_control` 已建立。控制包最终负责 50 Hz
 C++ 通用直线段跟踪、任务状态机、
 线段类型执行、转向下坠补偿、左右轮联合限幅和速度看门狗。横向为主与竖向为主
 的覆盖路径共用同一控制器，只由规划结果和段类型驱动。控制器保留名义覆盖路径，

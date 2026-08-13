@@ -4,8 +4,8 @@
 保留真实重力，通过持续法向吸附力贴墙，以前置差分主动轮和后球形随动轮运动，
 并模拟运动时受重力影响的侧滑。
 
-当前已经完成物理仿真、定位融合和覆盖路径规划；自定义直线轨迹跟踪尚未开始，
-不使用 Nav2。
+当前已经完成物理仿真、定位融合、覆盖路径规划、单段直线跟踪核心和速度安全链；
+完整覆盖任务状态机仍在实施，不使用 Nav2。
 
 ## 文档导航
 
@@ -22,7 +22,7 @@
 - ROS 2 Jazzy；
 - Gazebo Harmonic / gz-sim 8；
 - `robot_localization`；
-- C++17 用于核心规划和未来控制；
+- C++17 用于核心规划和控制；
 - Python 用于 launch、传感器适配、实验和数据分析。
 
 ## 工作区结构
@@ -37,7 +37,8 @@ climbot_sim/
     ├── climbot_description/     共享机器人与墙面描述
     ├── climbot_gazebo/          仿真、定位与评估工具
     ├── climbot_interfaces/      覆盖任务消息与执行 Action
-    └── climbot_coverage/        C++ 覆盖规划与 RViz
+    ├── climbot_coverage/        C++ 覆盖规划与 RViz
+    └── climbot_control/         C++ 轨迹跟踪和速度安全
 ```
 
 依赖方向为：
@@ -51,7 +52,8 @@ climbot_coverage  climbot_control（单段直线跟踪核心已实现）
       └──> climbot_description <── climbot_gazebo
 ```
 
-规划器不读取 Gazebo 真值或仿真专有参数。
+规划器和控制器都不读取 Gazebo 真值或仿真专有参数；Gazebo 包仅因仿真组合 launch
+依赖控制包。
 
 ## 构建与测试
 

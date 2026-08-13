@@ -77,7 +77,7 @@
 当前工作区采用以下包结构：
 
 ```text
-climbot_interfaces   阶段 E 新建，覆盖任务消息和执行 Action
+climbot_interfaces   覆盖任务消息和执行 Action
         ↑                          ↑
 climbot_coverage              climbot_control
         │                          │
@@ -96,7 +96,7 @@ climbot_coverage              climbot_control
 - 墙面工作坐标系、可作业宽高属于 `climbot_description`；
 - 摩擦、WheelSlip、吸附力、出生位姿和仿真传感器属于 `climbot_gazebo`；
 - 覆盖区域和扫描参数属于 `climbot_coverage`；
-- 轨迹跟踪、状态机、安全超时和控制增益属于未来 `climbot_control`。
+- 轨迹跟踪、状态机、安全超时和控制增益属于 `climbot_control`。
 
 第一阶段暂不单独建立 `climbot_bringup`。阶段 E 出现控制器和完整系统组合入口后，
 再统一评估 launch 与 `ekf_wall.yaml` 的归属。
