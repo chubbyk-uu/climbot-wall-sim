@@ -27,7 +27,7 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 - `scripts/calibrate_wall_slip.py`：静止、水平和上下行侧滑标定；
 - `scripts/measure_normal_loads.py`：三点法向载荷与接触率；
 - `scripts/measure_turn_slip.py`：多角度原地转向下滑；
-- `scripts/evaluate_coverage_execution.py`：执行竖向矩形或短上底梯形任务，按动态直线参考统计 Gazebo 真值横轨误差、可见往复和航向摆幅；
+- `scripts/evaluate_coverage_execution.py`：执行内置紧凑任务，或用 `case:=planned_task` 执行规划器发布的完整任务，按动态直线参考统计 Gazebo 真值横轨误差、可见往复和航向摆幅；
 - `scripts/evaluate_localization.py`：四方向定位误差评价。
 
 ## 侧滑标定
@@ -38,10 +38,14 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 超过阈值时脚本会在保存诊断 CSV 后返回失败。正式标定必须从全新启动的仿真
 开始，完整命令和当前结果见 [results/README.md](../../results/README.md)。
 
+完整大区域覆盖评价应将 `execution_timeout_s` 从默认 `120 s` 显式提高，例如
+`600 s`。该参数是评价工具等待整个 Action 的墙钟超时；超时后工具会主动取消任务，
+它不是控制器的单段安全超时。
+
 ## 边界
 
 机器人和墙面共享属性来自 `climbot_description`。Gazebo 真值只能用于模拟
-测量和评价，不得直接进入未来控制器。
+测量和评价，不得直接进入控制器。
 
 话题、launch 参数和 TF 见 [接口文档](../../docs/INTERFACES.md)，结果有效性见
 [results/README.md](../../results/README.md)。

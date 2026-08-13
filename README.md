@@ -4,8 +4,9 @@
 保留真实重力，通过持续法向吸附力贴墙，以前置差分主动轮和后球形随动轮运动，
 并模拟运动时受重力影响的侧滑。
 
-当前已经完成物理仿真、定位融合、覆盖路径规划、单段直线跟踪核心和速度安全链；
-完整覆盖任务状态机仍在实施，不使用 Nav2。
+当前已经完成物理仿真、定位融合、覆盖路径规划、多段覆盖 Action、自定义直线跟踪、
+转向下坠处理和速度安全链，不使用 Nav2。横向与竖向弓字任务共用控制器：转后小
+偏差冻结为平行扫描线，较大偏差先执行一次前进小弧线，正式扫描段始终保持直线。
 
 ## 文档导航
 
@@ -47,7 +48,7 @@ climbot_sim/
 climbot_interfaces
       ^        ^
       │        │
-climbot_coverage  climbot_control（单段直线跟踪核心已实现）
+climbot_coverage  climbot_control（多段覆盖 Action 与直线跟踪）
       │        │
       └──> climbot_description <── climbot_gazebo
 ```
@@ -108,13 +109,52 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 使用独立规划器或等腰梯形/RViz 点选的命令见
 [climbot_coverage/README.md](src/climbot_coverage/README.md)。
 
+### 完整覆盖任务演示
+
+仓库提供两个从机器人出生位置附近开始的参数式演示：
+
+- `coverage_vertical_demo.yaml`：`3.30 × 4.50 m`，8 条竖向扫描线；
+- `coverage_horizontal_demo.yaml`：`4.30 × 1.70 m`，5 条横向扫描线。
+
+以下示例运行横向长扁矩形。终端 1 启动仿真、规划器和 RViz：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch climbot_coverage coverage_sim.launch.py \
+  config_file:="$(pwd)/src/climbot_coverage/config/coverage_horizontal_demo.yaml" \
+  input_mode:=parameters region_type:=rectangle sweep_direction:=horizontal
+```
+
+终端 2 启动覆盖执行器：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch climbot_control coverage_executor.launch.py use_sim_time:=true
+```
+
+终端 3 将规划器发布的任务发送给 Action，并用 Gazebo 真值评价轨迹：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
+  -p use_sim_time:=true -p case:=planned_task \
+  -p startup_timeout_s:=20.0 -p execution_timeout_s:=600.0
+```
+
+竖向演示只需在终端 1 改用 `coverage_vertical_demo.yaml`，并把
+`sweep_direction` 改为 `vertical`。评价工具默认的 `120 s` 是整任务等待时间，
+大区域演示必须显式提高；它与控制器每段的安全超时不是同一个参数。
+
 ## 当前状态
 
 - 阶段 A：基础物理与机器人模型——完成；
 - 阶段 B：运动侧滑——完成；
 - 阶段 C：传感器与定位融合——完成；
 - 阶段 D：覆盖路径规划——完成；
-- 阶段 E：自定义轨迹跟踪——进行中（任务接口、二维足迹规划和单段直线跟踪核心已完成）；
+- 阶段 E：自定义轨迹跟踪——进行中（多段 Action、动态换道、转后平行扫描和小弧线入轨已完成，最终系统评价待完成）；
 - 阶段 F：系统测试与数据评价——未开始。
 
 详细证据和待办见 [docs/STATUS.md](docs/STATUS.md)。

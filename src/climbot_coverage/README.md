@@ -17,6 +17,15 @@ ros2 launch climbot_coverage coverage_planner.launch.py
 ros2 launch climbot_coverage coverage_sim.launch.py
 ```
 
+大区域参数式演示配置：
+
+- `config/coverage_vertical_demo.yaml`：`3.30 × 4.50 m` 竖向任务；
+- `config/coverage_horizontal_demo.yaml`：`4.30 × 1.70 m` 横向任务。
+
+通过 `coverage_sim.launch.py config_file:=<配置绝对路径>` 选择配置。完整自动执行还需
+启动 `climbot_control/coverage_executor.launch.py`，再向 `/coverage/execute` 发送
+规划器发布的任务；完整命令见仓库根目录 [README](../../README.md)。
+
 等腰梯形点选顺序为 A（左下）、B（右上）、C（右下）；矩形只使用 A、B。
 
 ## 输出
@@ -29,7 +38,7 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 - `/coverage/replan`：使用当前输入重新规划。
 
 规划失败、清空点选或开始输入新区域时会同时发布空 Task 和空 Path，避免下游执行
-旧任务。每次发布的 Task revision 会递增；正在执行的任务由未来控制 Action 冻结，
+旧任务。每次发布的 Task revision 会递增；正在执行的任务由控制 Action 冻结，
 不会被此预览话题热切换。
 
 ## 几何约束
@@ -43,7 +52,8 @@ safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 后续必须按实际检测载荷标定。
 
 机器人轮廓和墙面尺寸由 `climbot_description` 注入。规划器只生成直线段和
-路点处原地转向，不生成圆角或切弯。
+路点处原地转向，不生成圆角或切弯。控制器可能在转后偏差较大时执行一次采集关闭的
+前进小弧线，但正式 `SCAN` 仍为冻结的直线。
 
 ## 测试
 
