@@ -45,11 +45,12 @@
 `/model/climbot/ground_truth` 不得成为轨迹控制器输入。模拟全站仪可以由它派生，
 但必须经过频率、噪声、延迟和坐标变换模型。
 
-`cmd_vel_watchdog_node` 已实现为唯一的自动控制输出者：它以 `50 Hz` 从
+`climbot_wall.launch.py` 始终启动 `cmd_vel_watchdog_node`，它是唯一的执行器控制
+输出者：以 `50 Hz` 从
 `/control/cmd_vel` 转发到 Gazebo `/cmd_vel`，在未收到首条指令、仿真时钟倒退，或
-距最后一条指令超过 `command_timeout_s`（默认 `0.40 s`）时发布零速。键盘与实验脚本
-若直接使用 `/cmd_vel`，仍须遵守自己的退出停车规则；完整系统 launch 将在后续阶段把
-它们统一接入 `/control/cmd_vel`。
+距最后一条指令超过 `command_timeout_s`（默认 `0.40 s`）时发布零速。键盘、四个实验
+脚本和自动控制器均发布 `/control/cmd_vel`。当前采用单一上游来源规则；需要遥控抢占
+自动任务时再增加带明确优先级的仲裁器。
 
 当前 EKF 以 `50 Hz` 发布 `/odometry/filtered`，阶段 E 控制器默认也以 `50 Hz`
 运行。全站仪 `12 Hz` 只表示绝对位置更新频率，控制器不得将每个 50 Hz EKF

@@ -149,12 +149,14 @@ def render_robot(gazebo_share, description_share):
 def launch_setup(context, *args, **kwargs):
     """Build the actions that depend on resolved launch configurations."""
     package_share = get_package_share_directory('climbot_gazebo')
+    control_share = get_package_share_directory('climbot_control')
     description_share = get_package_share_directory('climbot_description')
     ros_gz_share = get_package_share_directory('ros_gz_sim')
     world = render_world(package_share, description_share)
     model_path, robot_description = render_robot(
         package_share, description_share)
     wall_config = os.path.join(description_share, 'config', 'wall.yaml')
+    control_config = os.path.join(control_share, 'config', 'control.yaml')
     ekf_config = os.path.join(package_share, 'config', 'ekf_wall.yaml')
     existing_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
 
@@ -200,10 +202,10 @@ def launch_setup(context, *args, **kwargs):
         executable='parameter_bridge',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
-            '/model/climbot/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry',
-            '/model/climbot/ground_truth@nav_msgs/msg/Odometry@gz.msgs.Odometry',
-            '/imu@sensor_msgs/msg/Imu@gz.msgs.IMU',
+            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            '/model/climbot/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/model/climbot/ground_truth@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             JOINT_STATE_TOPIC + '@sensor_msgs/msg/JointState[gz.msgs.Model',
             # Contact sensors ignore their <topic> tag, so the fully qualified
             # Gazebo names are bridged and remapped to short ROS topics below.
@@ -220,6 +222,20 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
         }],
+        output='screen',
+    ))
+
+    # This is the only publisher allowed on the actuator-facing /cmd_vel.
+    # Teleoperation, experiments, and autonomous control all feed the guarded
+    # /control/cmd_vel input instead.
+    actions.append(Node(
+        package='climbot_control',
+        executable='cmd_vel_watchdog_node',
+        name='cmd_vel_watchdog',
+        parameters=[
+            control_config,
+            {'use_sim_time': LaunchConfiguration('use_sim_time')},
+        ],
         output='screen',
     ))
 

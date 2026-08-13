@@ -47,7 +47,7 @@ class LocalizationEvaluator(Node):
         self._truth = None
         self._wheel_odom = None
         self._filtered = None
-        self._command = self.create_publisher(Twist, '/cmd_vel', 10)
+        self._command = self.create_publisher(Twist, '/control/cmd_vel', 10)
         self.create_subscription(
             Odometry, '/model/climbot/ground_truth', self._truth_callback, 10)
         self.create_subscription(

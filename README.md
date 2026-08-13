@@ -90,6 +90,7 @@ ros2 launch climbot_gazebo climbot_wall.launch.py gpu_backend:=wsl_d3d12
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args \
+  -r /cmd_vel:=/control/cmd_vel \
   -p speed:=0.15 -p turn:=0.8
 ```
 
@@ -118,6 +119,6 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 
 ## 安全提示
 
-Gazebo DiffDrive 会持续执行最后收到的 `/cmd_vel`。在阶段 E 的系统级速度看门狗
-完成前，结束键盘或实验脚本时必须确认机器人已收到零速；不要同时运行多个
-任务级 `/cmd_vel` 发布者。
+Gazebo DiffDrive 会持续执行最后收到的 `/cmd_vel`，因此仿真 launch 始终启动速度
+看门狗，并由它作为 `/cmd_vel` 的唯一发布者。键盘、实验脚本和自动控制统一发布到
+`/control/cmd_vel`；当前一次只能运行一个上游控制源，不要同时启动键盘和自动任务。

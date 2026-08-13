@@ -86,7 +86,7 @@ class NormalLoadMeasurement(Node):
         self._active_samples = None
         self._recorded_stamps = {name: None for name in CONTACT_TOPICS}
 
-        self._command = self.create_publisher(Twist, '/cmd_vel', 10)
+        self._command = self.create_publisher(Twist, '/control/cmd_vel', 10)
         self.create_subscription(
             Odometry, '/model/climbot/ground_truth', self._truth_callback, 10)
         self.create_subscription(
