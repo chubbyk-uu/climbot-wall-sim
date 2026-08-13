@@ -33,4 +33,5 @@ simulation:
     linear_acceleration_stddev: 0.017
 
   contact:
-    update_rate_hz: 50.0
+    # Match the 1 ms physics step so millisecond caster lift-off is observable.
+    update_rate_hz: 1000.0

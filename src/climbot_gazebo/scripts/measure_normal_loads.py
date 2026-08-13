@@ -45,6 +45,21 @@ def contact_normal_load(message):
     return total
 
 
+def load_statistics(values):
+    """Summarise event-based contact samples, including lift-off steps."""
+    if not values:
+        return None
+    loaded = sum(value > 0.0 for value in values)
+    return {
+        'mean': sum(values) / len(values),
+        'min': min(values),
+        'max': max(values),
+        'samples': len(values),
+        'zero_samples': len(values) - loaded,
+        'contact_ratio': loaded / len(values),
+    }
+
+
 class NormalLoadMeasurement(Node):
     """Run the load-distribution test and report per-manoeuvre contact loads."""
 
@@ -68,6 +83,8 @@ class NormalLoadMeasurement(Node):
         self._loads = {name: 0.0 for name in CONTACT_TOPICS}
         self._load_stamps = {name: None for name in CONTACT_TOPICS}
         self._samples = {}
+        self._active_samples = None
+        self._recorded_stamps = {name: None for name in CONTACT_TOPICS}
 
         self._command = self.create_publisher(Twist, '/cmd_vel', 10)
         self.create_subscription(
@@ -77,7 +94,8 @@ class NormalLoadMeasurement(Node):
         for name, topic in CONTACT_TOPICS.items():
             self.create_subscription(
                 Contacts, topic,
-                lambda message, key=name: self._contact_callback(key, message), 20)
+                lambda message, key=name: self._contact_callback(key, message),
+                1000)
 
     def _truth_callback(self, message):
         self._truth = message
@@ -86,8 +104,16 @@ class NormalLoadMeasurement(Node):
         self._filtered = message
 
     def _contact_callback(self, name, message):
-        self._loads[name] = contact_normal_load(message)
-        self._load_stamps[name] = stamp_nanoseconds(message)
+        load = contact_normal_load(message)
+        stamp = stamp_nanoseconds(message)
+        self._loads[name] = load
+        self._load_stamps[name] = stamp
+        if self._active_samples is None:
+            return
+        if stamp == self._recorded_stamps[name]:
+            return
+        self._active_samples[name].append(load)
+        self._recorded_stamps[name] = stamp
 
     def stop(self):
         """Command zero velocity, used on normal and abnormal exit."""
@@ -148,35 +174,39 @@ class NormalLoadMeasurement(Node):
         raise RuntimeError('Timed out turning to requested heading.')
 
     def _record(self, label, duration_s, linear, angular=0.0, target_yaw=None):
-        """Drive for a simulated duration while sampling the contact loads."""
+        """Drive while recording each contact-sensor message exactly once."""
         target_ns = stamp_nanoseconds(self._truth) + int(duration_s * 1e9)
         samples = {name: [] for name in CONTACT_TOPICS}
-        while rclpy.ok() and stamp_nanoseconds(self._truth) < target_ns:
-            rclpy.spin_once(self, timeout_sec=0.02)
-            correction = angular
-            if target_yaw is not None:
-                current = self._filtered_yaw()
-                error = wrap_angle(target_yaw - current)
-                correction = max(
-                    -0.35,
-                    min(0.35, float(self.get_parameter('heading_hold_gain').value)
-                        * error))
-            self._publish(linear=linear, angular=correction)
-            for name, load in self._current_loads().items():
-                samples[name].append(load)
-        self._publish()
+        self._recorded_stamps = {name: None for name in CONTACT_TOPICS}
+        self._active_samples = samples
+        try:
+            while rclpy.ok() and stamp_nanoseconds(self._truth) < target_ns:
+                rclpy.spin_once(self, timeout_sec=0.02)
+                correction = angular
+                if target_yaw is not None:
+                    current = self._filtered_yaw()
+                    error = wrap_angle(target_yaw - current)
+                    correction = max(
+                        -0.35,
+                        min(0.35, float(self.get_parameter(
+                            'heading_hold_gain').value) * error))
+                self._publish(linear=linear, angular=correction)
+        finally:
+            self._active_samples = None
+            self._publish()
         self._samples[label] = samples
         self._report(label, samples)
 
     def _report(self, label, samples):
         parts = []
         for name in ('left_wheel', 'right_wheel', 'caster'):
-            values = samples[name]
-            if not values:
+            statistics = load_statistics(samples[name])
+            if statistics is None:
                 parts.append('%s=no-data' % name)
                 continue
-            parts.append('%s mean=%.1f min=%.1f max=%.1f' % (
-                name, sum(values) / len(values), min(values), max(values)))
+            parts.append('%s mean=%.1f min=%.1f max=%.1f contact=%.2f%%' % (
+                name, statistics['mean'], statistics['min'], statistics['max'],
+                100.0 * statistics['contact_ratio']))
         self.get_logger().info('%-16s %s' % (label + ':', '  '.join(parts)))
 
     def _write_csv(self):
@@ -189,16 +219,20 @@ class NormalLoadMeasurement(Node):
         with open(path, 'w', newline='') as handle:
             writer = csv.writer(handle)
             writer.writerow([
-                'manoeuvre', 'contact', 'mean_n', 'min_n', 'max_n', 'samples'])
+                'manoeuvre', 'contact', 'mean_n', 'min_n', 'max_n', 'samples',
+                'zero_samples', 'contact_ratio_percent'])
             for label, samples in self._samples.items():
                 for name in ('left_wheel', 'right_wheel', 'caster'):
-                    values = samples[name]
-                    if not values:
+                    statistics = load_statistics(samples[name])
+                    if statistics is None:
                         continue
                     writer.writerow([
                         label, name,
-                        '%.3f' % (sum(values) / len(values)),
-                        '%.3f' % min(values), '%.3f' % max(values), len(values)])
+                        '%.3f' % statistics['mean'],
+                        '%.3f' % statistics['min'],
+                        '%.3f' % statistics['max'], statistics['samples'],
+                        statistics['zero_samples'],
+                        '%.3f' % (100.0 * statistics['contact_ratio'])])
         self.get_logger().info('Wrote %s' % os.path.abspath(path))
 
     def run(self):
