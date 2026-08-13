@@ -9,6 +9,7 @@
 | `ros2 launch climbot_gazebo climbot_wall.launch.py` | Gazebo、桥接、TF、传感器适配和 EKF |
 | `ros2 launch climbot_coverage coverage_planner.launch.py` | 独立覆盖规划器和可选 RViz |
 | `ros2 launch climbot_coverage coverage_sim.launch.py` | 当前阶段联合启动仿真、规划器和 RViz |
+| `ros2 launch climbot_control line_tracker.launch.py` | 单段直线跟踪器；从共享描述注入轮距和轮缘硬限值 |
 
 `climbot_wall.launch.py` 的主要 launch 参数：
 
@@ -66,7 +67,9 @@
 | `cmd_vel_watchdog` | `publish_rate_hz` | `50 Hz` | 向执行器重发安全速度的频率 |
 
 两个节点都拒绝非有限输入。直线跟踪器在启动时校验线段、增益、速度、加速度、
-轮距、重力方向和坐标系参数；非法配置直接启动失败，不进入周期回调。
+轮距、重力方向和坐标系参数；非法配置直接启动失败，不进入周期回调。轮距、轮缘
+速度硬限值和轮缘加速度硬限值不存放在 `control.yaml`，由标准 launch 从
+`climbot_description/config/robot.yaml` 注入。
 
 ## 覆盖规划接口
 

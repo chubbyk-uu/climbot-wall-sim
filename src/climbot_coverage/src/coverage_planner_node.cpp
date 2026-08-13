@@ -98,11 +98,11 @@ public:
     detection_width_ = declare_parameter("detection_width", 0.50);
     detection_length_ = declare_parameter("detection_length", 0.01);
     overlap_ratio_ = declare_parameter("overlap_ratio", 0.20);
-    robot_length_ = declare_parameter("robot_length", 0.53);
-    robot_width_ = declare_parameter("robot_width", 0.475);
-    edge_clearance_ = declare_parameter("edge_clearance", 0.10);
-    wall_width_ = declare_parameter("wall_width", 10.0);
-    wall_height_ = declare_parameter("wall_height", 8.0);
+    robot_length_ = declare_parameter("robot_length", -1.0);
+    robot_width_ = declare_parameter("robot_width", -1.0);
+    edge_clearance_ = declare_parameter("edge_clearance", -1.0);
+    wall_width_ = declare_parameter("wall_width", -1.0);
+    wall_height_ = declare_parameter("wall_height", -1.0);
     path_height_ = declare_parameter("path_height", 0.06);
     bottom_warning_tolerance_ = declare_parameter("bottom_warning_tolerance", 0.05);
     validatePhysicalParameters();
@@ -512,7 +512,14 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<climbot_coverage::CoveragePlannerNode>());
+  try {
+    rclcpp::spin(std::make_shared<climbot_coverage::CoveragePlannerNode>());
+  } catch (const std::exception & exception) {
+    RCLCPP_FATAL(
+      rclcpp::get_logger("coverage_planner"), "Failed to start: %s", exception.what());
+    rclcpp::shutdown();
+    return 1;
+  }
   rclcpp::shutdown();
   return 0;
 }

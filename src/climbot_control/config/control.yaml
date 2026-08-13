@@ -12,9 +12,6 @@ line_tracker:
     max_linear_acceleration: 0.20
     max_linear_deceleration: 0.25
     max_angular_acceleration: 0.80
-    wheel_separation: 0.43
-    wheel_speed_limit: 0.30
-    wheel_acceleration_limit: 0.40
     gravity_slip_ratio: 0.1056
     gravity_down_x: 0.0
     gravity_down_y: -1.0

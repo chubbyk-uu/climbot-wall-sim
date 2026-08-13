@@ -12,6 +12,15 @@ namespace climbot_coverage
 namespace
 {
 
+void validateStartCorner(const std::string & start_corner)
+{
+  if (start_corner != "lower_left" && start_corner != "lower_right" &&
+    start_corner != "upper_left" && start_corner != "upper_right")
+  {
+    throw std::invalid_argument("Unsupported start corner.");
+  }
+}
+
 constexpr double kEpsilon = 1e-9;
 
 Point2 subtract(const Point2 & first, const Point2 & second)
@@ -235,11 +244,7 @@ std::vector<Point2> generateBoustrophedonPath(
   if (!horizontal && sweep_direction != "vertical") {
     throw std::invalid_argument("Sweep direction must be horizontal or vertical.");
   }
-  if (start_corner != "lower_left" && start_corner != "lower_right" &&
-    start_corner != "upper_left" && start_corner != "upper_right")
-  {
-    throw std::invalid_argument("Unsupported start corner.");
-  }
+  validateStartCorner(start_corner);
   // Safe to decompose only now that the value is known to be one of the four.
   const bool start_low = start_corner.rfind("lower_", 0) == 0;
   const bool start_left = start_corner.compare(start_corner.size() - 4, 4, "left") == 0;
@@ -284,10 +289,14 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   if (detection_width <= 0.0 || detection_length <= 0.0) {
     throw std::invalid_argument("Detection footprint dimensions must be positive.");
   }
+  if (maximum_spacing <= 0.0) {
+    throw std::invalid_argument("Track spacing must be positive.");
+  }
   const bool horizontal = sweep_direction == "horizontal";
   if (!horizontal && sweep_direction != "vertical") {
     throw std::invalid_argument("Sweep direction must be horizontal or vertical.");
   }
+  validateStartCorner(start_corner);
   const auto [minimum, maximum] = bounds(coverage_region, horizontal);
   const double span = maximum - minimum;
   if (span <= kEpsilon) {

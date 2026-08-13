@@ -24,7 +24,7 @@ ament_target_dependencies(cmd_vel_watchdog_node geometry_msgs rclcpp)
 install(TARGETS line_tracker line_tracker_node cmd_vel_watchdog_node ARCHIVE DESTINATION lib LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/ DESTINATION include)
-install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)

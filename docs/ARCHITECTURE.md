@@ -87,6 +87,7 @@ Gazebo 接触参数。
 | `simulation.yaml` | gazebo | 仅 Gazebo | 吸附、摩擦、WheelSlip、出生位姿、仿真噪声 |
 | `ekf_wall.yaml` | gazebo（暂定） | `robot_localization` | 随未来 bringup 一并评估外移 |
 | `coverage_*.yaml` | coverage | 覆盖规划器 | 区域输入和扫描参数 |
+| `control.yaml` | control | 直线跟踪器、速度看门狗 | 作业速度、控制增益、软件限幅和超时；不复制机器人硬件属性 |
 
 同一物理量只能有一个权威来源。launch 可以把共享 YAML 展开为节点参数或
 xacro 映射，但不得在第二个文件中复制同一数值作为长期配置。

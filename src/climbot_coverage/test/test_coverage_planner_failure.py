@@ -27,6 +27,11 @@ def generate_test_description():
             'region_type': 'rectangle',
             'lower_left': [1.0, 1.0],
             'upper_right': [0.0, 2.0],
+            'robot_length': 0.76,
+            'robot_width': 0.475,
+            'edge_clearance': 0.1,
+            'wall_width': 10.0,
+            'wall_height': 8.0,
         }],
     )
     return launch.LaunchDescription([

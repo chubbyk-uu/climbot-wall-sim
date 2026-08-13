@@ -44,9 +44,9 @@ public:
 
     linear_acceleration_ = declare_parameter("max_linear_acceleration", 0.20);
     angular_acceleration_ = declare_parameter("max_angular_acceleration", 0.80);
-    wheel_separation_ = declare_parameter("wheel_separation", 0.43);
-    wheel_speed_limit_ = declare_parameter("wheel_speed_limit", 0.30);
-    wheel_acceleration_limit_ = declare_parameter("wheel_acceleration_limit", 0.40);
+    wheel_separation_ = declare_parameter("wheel_separation", -1.0);
+    wheel_speed_limit_ = declare_parameter("wheel_speed_limit", -1.0);
+    wheel_acceleration_limit_ = declare_parameter("wheel_acceleration_limit", -1.0);
     validateParameters();
 
     command_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/control/cmd_vel", 10);

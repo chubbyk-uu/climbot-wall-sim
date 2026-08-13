@@ -202,6 +202,23 @@ TEST(CoverageGeometry, RejectsFootprintThatCannotRemainInsideMotionRegion)
     std::invalid_argument);
 }
 
+TEST(CoverageGeometry, RejectsInvalidFootprintPathOptions)
+{
+  const auto region = makeRectangle({0.0, 0.0}, {2.0, 2.0}).polygon;
+  EXPECT_THROW(
+    generateFootprintAwareBoustrophedonPath(
+      region, region, 0.5, 0.1, 0.4, "horizontal", "banana"),
+    std::invalid_argument);
+  EXPECT_THROW(
+    generateFootprintAwareBoustrophedonPath(
+      region, region, 0.5, 0.1, 0.4, "horizontal", "ab"),
+    std::invalid_argument);
+  EXPECT_THROW(
+    generateFootprintAwareBoustrophedonPath(
+      region, region, 0.5, 0.1, 0.0, "horizontal", "lower_left"),
+    std::invalid_argument);
+}
+
 TEST(CoverageGeometry, IsExactlyDeterministicForIdenticalInput)
 {
   const auto region = insetConvexPolygon(
