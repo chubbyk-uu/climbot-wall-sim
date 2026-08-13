@@ -1,5 +1,6 @@
 #include "climbot_control/command_watchdog.hpp"
 
+#include <cmath>
 #include <stdexcept>
 
 namespace climbot_control
@@ -13,16 +14,25 @@ CommandWatchdog::CommandWatchdog(double timeout_s)
   }
 }
 
-void CommandWatchdog::accept(const Command & command, double received_time_s)
+bool CommandWatchdog::accept(const Command & command, double received_time_s)
 {
+  if (!std::isfinite(command.linear) || !std::isfinite(command.angular) ||
+    !std::isfinite(received_time_s))
+  {
+    command_ = {};
+    have_command_ = false;
+    return false;
+  }
   command_ = command;
   received_time_s_ = received_time_s;
   have_command_ = true;
+  return true;
 }
 
 bool CommandWatchdog::timedOut(double current_time_s) const
 {
-  return !have_command_ || current_time_s < received_time_s_ ||
+  return !std::isfinite(current_time_s) || !have_command_ ||
+         current_time_s < received_time_s_ ||
          current_time_s - received_time_s_ > timeout_s_;
 }
 

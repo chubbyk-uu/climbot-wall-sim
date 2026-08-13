@@ -2,6 +2,7 @@
 #include <cmath>
 #include <memory>
 #include <stdexcept>
+#include <string>
 
 #include "climbot_control/line_tracker.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -26,6 +27,7 @@ public:
     cross_gain_ = declare_parameter("cross_gain", 1.0);
     heading_gain_ = declare_parameter("heading_gain", 2.0);
     control_frequency_hz_ = declare_parameter("control_frequency_hz", 50.0);
+    odometry_timeout_s_ = declare_parameter("odometry_timeout_s", 0.25);
     frame_id_ = declare_parameter("frame_id", "odom");
 
     limits_.max_linear = declare_parameter("max_linear_speed", 0.15);
@@ -45,9 +47,7 @@ public:
     wheel_separation_ = declare_parameter("wheel_separation", 0.43);
     wheel_speed_limit_ = declare_parameter("wheel_speed_limit", 0.30);
     wheel_acceleration_limit_ = declare_parameter("wheel_acceleration_limit", 0.40);
-    if (control_frequency_hz_ <= 0.0) {
-      throw std::invalid_argument("control_frequency_hz must be positive.");
-    }
+    validateParameters();
 
     command_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/control/cmd_vel", 10);
     reference_publisher_ = create_publisher<nav_msgs::msg::Path>("/control/reference_path",
@@ -55,11 +55,19 @@ public:
     odometry_subscription_ = create_subscription<nav_msgs::msg::Odometry>(
       "/odometry/filtered", 10,
       [this](const nav_msgs::msg::Odometry::SharedPtr message) {
+        const auto & position = message->pose.pose.position;
+        const auto & orientation = message->pose.pose.orientation;
+        const auto yaw = climbot_control::yawFromQuaternion(
+          orientation.x, orientation.y, orientation.z, orientation.w);
+        if (!std::isfinite(position.x) || !std::isfinite(position.y) || !yaw) {
+          RCLCPP_ERROR(get_logger(), "Rejected invalid filtered odometry pose.");
+          return;
+        }
         pose_ = {
-          message->pose.pose.position.x,
-          message->pose.pose.position.y,
-          2.0 * std::atan2(message->pose.pose.orientation.z,
-            message->pose.pose.orientation.w)};
+          position.x,
+          position.y,
+          *yaw};
+        last_pose_received_time_ = now();
         have_pose_ = true;
       });
 
@@ -71,9 +79,69 @@ public:
   }
 
 private:
+  static void requireFinite(const std::string & name, double value)
+  {
+    if (!std::isfinite(value)) {
+      throw std::invalid_argument(name + " must be finite.");
+    }
+  }
+
+  static void requirePositive(const std::string & name, double value)
+  {
+    requireFinite(name, value);
+    if (value <= 0.0) {
+      throw std::invalid_argument(name + " must be positive.");
+    }
+  }
+
   static double degreesToRadians(double degrees)
   {
     return degrees * std::acos(-1.0) / 180.0;
+  }
+
+  void validateParameters()
+  {
+    requireFinite("start_x", start_.x);
+    requireFinite("start_y", start_.y);
+    requireFinite("end_x", end_.x);
+    requireFinite("end_y", end_.y);
+    if (std::hypot(end_.x - start_.x, end_.y - start_.y) <= 1e-9) {
+      throw std::invalid_argument("The line segment must have non-zero length.");
+    }
+    requirePositive("cruise_speed", cruise_speed_);
+    requireFinite("cross_gain", cross_gain_);
+    if (cross_gain_ < 0.0) {
+      throw std::invalid_argument("cross_gain must be non-negative.");
+    }
+    requirePositive("heading_gain", heading_gain_);
+    requirePositive("control_frequency_hz", control_frequency_hz_);
+    requirePositive("odometry_timeout_s", odometry_timeout_s_);
+    requirePositive("max_linear_speed", limits_.max_linear);
+    requirePositive("max_angular_speed", limits_.max_angular);
+    requirePositive("max_heading_correction_deg", limits_.max_heading_correction);
+    requirePositive("alignment_threshold_deg", limits_.alignment_threshold);
+    requirePositive("max_linear_deceleration", limits_.max_deceleration);
+    requireFinite("gravity_slip_ratio", limits_.gravity_slip_ratio);
+    if (limits_.gravity_slip_ratio < 0.0) {
+      throw std::invalid_argument("gravity_slip_ratio must be non-negative.");
+    }
+    requireFinite("gravity_down_x", limits_.gravity_direction.x);
+    requireFinite("gravity_down_y", limits_.gravity_direction.y);
+    const double gravity_norm = std::hypot(
+      limits_.gravity_direction.x, limits_.gravity_direction.y);
+    if (gravity_norm <= 1e-9) {
+      throw std::invalid_argument("The gravity direction must be non-zero.");
+    }
+    limits_.gravity_direction.x /= gravity_norm;
+    limits_.gravity_direction.y /= gravity_norm;
+    requirePositive("max_linear_acceleration", linear_acceleration_);
+    requirePositive("max_angular_acceleration", angular_acceleration_);
+    requirePositive("wheel_separation", wheel_separation_);
+    requirePositive("wheel_speed_limit", wheel_speed_limit_);
+    requirePositive("wheel_acceleration_limit", wheel_acceleration_limit_);
+    if (frame_id_.empty()) {
+      throw std::invalid_argument("frame_id cannot be empty.");
+    }
   }
 
   void publishReferencePath()
@@ -96,10 +164,18 @@ private:
 
   void onTimer()
   {
-    if (!have_pose_) {
+    const auto current_time = now();
+    if (!have_pose_ || current_time < last_pose_received_time_ ||
+      (current_time - last_pose_received_time_).seconds() > odometry_timeout_s_)
+    {
+      previous_command_ = {};
+      last_control_time_ = current_time;
+      geometry_msgs::msg::Twist stop;
+      command_publisher_->publish(stop);
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 2000, "Filtered odometry is unavailable or stale; stopping.");
       return;
     }
-    const auto current_time = now();
     const double dt = last_control_time_.nanoseconds() == 0 ?
       1.0 / control_frequency_hz_ : (current_time - last_control_time_).seconds();
     last_control_time_ = current_time;
@@ -124,6 +200,7 @@ private:
   double cross_gain_{1.0};
   double heading_gain_{2.0};
   double control_frequency_hz_{50.0};
+  double odometry_timeout_s_{0.25};
   double linear_acceleration_{0.20};
   double angular_acceleration_{0.80};
   double wheel_separation_{0.43};
@@ -135,6 +212,7 @@ private:
   climbot_control::Point2 end_{};
   climbot_control::Pose2 pose_{};
   climbot_control::Command previous_command_;
+  rclcpp::Time last_pose_received_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_control_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr command_publisher_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr reference_publisher_;
@@ -145,7 +223,13 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<LineTrackerNode>());
+  try {
+    rclcpp::spin(std::make_shared<LineTrackerNode>());
+  } catch (const std::exception & exception) {
+    RCLCPP_FATAL(rclcpp::get_logger("line_tracker"), "Failed to start: %s", exception.what());
+    rclcpp::shutdown();
+    return 1;
+  }
   rclcpp::shutdown();
   return 0;
 }

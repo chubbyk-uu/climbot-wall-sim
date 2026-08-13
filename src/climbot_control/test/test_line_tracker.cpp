@@ -1,6 +1,7 @@
 #include "climbot_control/line_tracker.hpp"
 #include "climbot_control/command_watchdog.hpp"
 #include <cmath>
+#include <limits>
 #include "gtest/gtest.h"
 using namespace climbot_control;
 TEST(LineTracker, CorrectsDownwardCrossTrackWithUpwardHeading)
@@ -51,6 +52,24 @@ TEST(LineTracker, JointWheelAccelerationIsLimited)
   EXPECT_LE(std::abs(right), .04 + 1e-9);
 }
 
+TEST(LineTracker, ExtractsYawFromGeneralNormalizedQuaternion)
+{
+  const double roll = 0.2, pitch = -0.3, yaw = 0.7;
+  const double cr = std::cos(roll / 2.0), sr = std::sin(roll / 2.0);
+  const double cp = std::cos(pitch / 2.0), sp = std::sin(pitch / 2.0);
+  const double cy = std::cos(yaw / 2.0), sy = std::sin(yaw / 2.0);
+  const double x = sr * cp * cy - cr * sp * sy;
+  const double y = cr * sp * cy + sr * cp * sy;
+  const double z = cr * cp * sy - sr * sp * cy;
+  const double w = cr * cp * cy + sr * sp * sy;
+  const auto extracted = yawFromQuaternion(2.0 * x, 2.0 * y, 2.0 * z, 2.0 * w);
+  ASSERT_TRUE(extracted.has_value());
+  EXPECT_NEAR(*extracted, yaw, 1e-12);
+  EXPECT_FALSE(yawFromQuaternion(0.0, 0.0, 0.0, 0.0).has_value());
+  EXPECT_FALSE(yawFromQuaternion(
+      0.0, 0.0, std::numeric_limits<double>::quiet_NaN(), 1.0).has_value());
+}
+
 TEST(CommandWatchdog, StopsBeforeFirstCommandAndAfterTimeout)
 {
   CommandWatchdog watchdog(.4);
@@ -61,4 +80,15 @@ TEST(CommandWatchdog, StopsBeforeFirstCommandAndAfterTimeout)
   EXPECT_TRUE(watchdog.timedOut(1.401));
   EXPECT_DOUBLE_EQ(watchdog.commandAt(1.401).linear, 0.0);
   EXPECT_DOUBLE_EQ(watchdog.commandAt(.5).angular, 0.0);
+}
+
+TEST(CommandWatchdog, RejectsNonFiniteCommandsAndTimes)
+{
+  CommandWatchdog watchdog(.4);
+  EXPECT_TRUE(watchdog.accept({.1, .2}, 1.0));
+  EXPECT_FALSE(watchdog.accept(
+      {std::numeric_limits<double>::infinity(), 0.0}, 1.1));
+  EXPECT_TRUE(watchdog.timedOut(1.1));
+  EXPECT_FALSE(watchdog.accept({.1, .2}, std::numeric_limits<double>::quiet_NaN()));
+  EXPECT_TRUE(watchdog.timedOut(1.2));
 }

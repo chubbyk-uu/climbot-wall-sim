@@ -37,6 +37,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_line_tracker line_tracker)
   target_include_directories(test_line_tracker PRIVATE include)
   add_launch_test(test/test_cmd_vel_watchdog_node.py TIMEOUT 30)
+  add_launch_test(test/test_line_tracker_node.py TIMEOUT 30)
 endif()
 
 ament_export_include_directories(include)

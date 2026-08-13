@@ -22,8 +22,11 @@ public:
     input_subscription_ = create_subscription<geometry_msgs::msg::Twist>(
       "/control/cmd_vel", 10,
       [this](const geometry_msgs::msg::Twist::SharedPtr message) {
-        watchdog_.accept(
-          {message->linear.x, message->angular.z}, now().seconds());
+        if (!watchdog_.accept(
+          {message->linear.x, message->angular.z}, now().seconds()))
+        {
+          RCLCPP_ERROR(get_logger(), "Rejected non-finite velocity command; stopping.");
+        }
       });
     const auto period = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::duration<double>(1.0 / publish_rate_hz));

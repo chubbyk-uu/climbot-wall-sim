@@ -11,7 +11,7 @@ class CommandWatchdog
 public:
   explicit CommandWatchdog(double timeout_s);
 
-  void accept(const Command & command, double received_time_s);
+  bool accept(const Command & command, double received_time_s);
   Command commandAt(double current_time_s) const;
   bool timedOut(double current_time_s) const;
 

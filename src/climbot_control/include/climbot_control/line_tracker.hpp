@@ -1,6 +1,8 @@
 #ifndef CLIMBOT_CONTROL__LINE_TRACKER_HPP_
 #define CLIMBOT_CONTROL__LINE_TRACKER_HPP_
 
+#include <optional>
+
 namespace climbot_control
 {
 struct Point2
@@ -38,6 +40,7 @@ struct Command
 };
 
 double wrapAngle(double angle);
+std::optional<double> yawFromQuaternion(double x, double y, double z, double w) noexcept;
 Command trackLine(
   const Point2 & start, const Point2 & end, const Pose2 & pose,
   double cruise_speed, double cross_gain, double heading_gain, const Limits & limits);

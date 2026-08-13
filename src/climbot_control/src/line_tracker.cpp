@@ -7,6 +7,22 @@ namespace climbot_control
 {
 double wrapAngle(double angle) {return std::atan2(std::sin(angle), std::cos(angle));}
 
+std::optional<double> yawFromQuaternion(double x, double y, double z, double w) noexcept
+{
+  if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z) || !std::isfinite(w)) {
+    return std::nullopt;
+  }
+  const double norm = std::hypot(std::hypot(x, y), std::hypot(z, w));
+  if (norm <= 1e-12) {
+    return std::nullopt;
+  }
+  x /= norm;
+  y /= norm;
+  z /= norm;
+  w /= norm;
+  return std::atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z));
+}
+
 Command trackLine(
   const Point2 & start, const Point2 & end, const Pose2 & pose,
   double cruise_speed, double cross_gain, double heading_gain, const Limits & limits)
