@@ -2,6 +2,7 @@
 #include <cmath>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -408,23 +409,101 @@ private:
       const double dx = second.x - first.x;
       const double dy = second.y - first.y;
       const double length = std::hypot(dx, dy);
-      const climbot_control::Point2 staging{
-        first.x - start_approach_runway_ * dx / length,
-        first.y - start_approach_runway_ * dy / length};
-      if (climbot_control::pointInPolygon(
-          staging.x, staging.y, active_task_->motion_region, motion_region_tolerance_) &&
-        std::hypot(staging.x - pose_.x, staging.y - pose_.y) > goal_position_tolerance_)
-      {
-        target = staging;
-        start_approach_final_leg_ = false;
+      // Shorten the runway rather than abandon it. Even a short straight entry
+      // along the scan direction removes almost all of the first alignment
+      // turn, and that turn is what drops the robot off the first scan line.
+      constexpr int kRunwayAttempts = 8;
+      for (int attempt = 0; attempt < kRunwayAttempts; ++attempt) {
+        const double runway = start_approach_runway_ *
+          (1.0 - static_cast<double>(attempt) / kRunwayAttempts);
+        if (runway < final_approach_distance_) {
+          break;
+        }
+        const climbot_control::Point2 staging{
+          first.x - runway * dx / length, first.y - runway * dy / length};
+        if (climbot_control::pointInPolygon(
+            staging.x, staging.y, active_task_->motion_region, motion_region_tolerance_) &&
+          std::hypot(staging.x - pose_.x, staging.y - pose_.y) > goal_position_tolerance_)
+        {
+          target = staging;
+          start_approach_final_leg_ = false;
+          if (attempt > 0) {
+            RCLCPP_INFO(
+              get_logger(), "Shortened the first-scan runway to %.2f m to stay in bounds.",
+              runway);
+          }
+          break;
+        }
+      }
+      if (start_approach_final_leg_ && !firstScanEntryFits(first, second)) {
+        return;
       }
     }
     configureApproachLine(target);
   }
 
+  /// Check that entering the first scan line without a runway still fits the
+  /// post-turn offset budget, and fail here rather than after driving there.
+  /// Only the component normal to the scan line matters: turn slip is along
+  /// gravity, so it shifts a horizontal scan line but runs along a vertical
+  /// one. Returns false and finishes the goal when the budget is exceeded.
+  bool firstScanEntryFits(
+    const geometry_msgs::msg::Point & first, const geometry_msgs::msg::Point & second)
+  {
+    const double approach_heading = std::atan2(first.y - pose_.y, first.x - pose_.x);
+    const double scan_heading = std::atan2(second.y - first.y, second.x - first.x);
+    const double turn = std::abs(
+      std::atan2(
+        std::sin(scan_heading - approach_heading),
+        std::cos(scan_heading - approach_heading)));
+    const double drop = turn_slip_per_degree_ * turn * 180.0 / std::acos(-1.0);
+    const double gravity_norm = std::hypot(
+      limits_.gravity_direction.x, limits_.gravity_direction.y);
+    const double normal_share = gravity_norm <= 1e-9 ? 0.0 :
+      std::abs(
+      -std::sin(scan_heading) * limits_.gravity_direction.x +
+      std::cos(scan_heading) * limits_.gravity_direction.y) / gravity_norm;
+    const double budget = start_approach_tolerance_ + drop * normal_share;
+    if (budget <= maximum_scan_offset_) {
+      return true;
+    }
+    std::ostringstream reason;
+    reason << "Entering the first scan line without a runway would leave up to " <<
+      budget * 1000.0 << " mm of normal offset, beyond the " <<
+      maximum_scan_offset_ * 1000.0 << " mm the scan entry can recover.";
+    finishGoal(ExecuteCoverage::Result::TRACKING_FAILED, reason.str());
+    return false;
+  }
+
+  /// Restart an approach leg from where the alignment turn actually left the
+  /// robot. The leg is captured before that turn, so the turn slip appears as
+  /// an initial cross-track error; on a short leg the cross-track term
+  /// saturates at max_heading_correction and still cannot work it off, which
+  /// is what puts the first scan line off nominal. Scan and transition
+  /// segments get the equivalent treatment from prepareDynamicReference().
+  void reanchorStartApproach()
+  {
+    if (!approaching_start_ || start_approach_reanchored_) {
+      return;
+    }
+    start_approach_reanchored_ = true;
+    if (std::hypot(end_.x - pose_.x, end_.y - pose_.y) <=
+      goal_position_exit_tolerance_)
+    {
+      return;
+    }
+    const double moved = std::hypot(pose_.x - start_.x, pose_.y - start_.y);
+    start_ = {pose_.x, pose_.y};
+    publishReferencePath();
+    RCLCPP_INFO(
+      get_logger(), "Re-anchored the start approach %.1f mm from its captured origin.",
+      moved * 1000.0);
+  }
+
   void configureApproachLine(const climbot_control::Point2 & target)
   {
     start_ = {pose_.x, pose_.y};
+    start_approach_reanchored_ = false;
     end_ = target;
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
     previous_command_ = {};
@@ -985,6 +1064,7 @@ private:
                   return;
                 }
               }
+              reanchorStartApproach();
               motion_state_ = arc_entry_active_ ?
                 MotionState::ARC_ENTRY : MotionState::TRACK_LINE;
               cross_integral_ = 0.0;
@@ -1090,6 +1170,7 @@ private:
   bool arc_entry_active_{false};
   bool approaching_start_{false};
   bool start_approach_final_leg_{true};
+  bool start_approach_reanchored_{false};
   bool waiting_for_start_pose_{false};
   bool oscillation_warning_emitted_{false};
   uint32_t completed_segments_{0U};

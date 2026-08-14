@@ -321,6 +321,49 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(second_future.result().accepted)
         second_future.result().cancel_goal_async()
 
+    def test_refuses_a_first_scan_entry_that_cannot_be_recovered(self):
+        """An unreachable runway plus a large entry turn fails before driving."""
+        # The scan line runs along +x from the region's left edge, so every
+        # runway point behind it lies outside the motion region. Approaching
+        # from beyond the far end leaves a turn of about 169 deg, whose slip is
+        # normal to a horizontal scan line and exceeds maximum_scan_offset_m.
+        self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
+        for _ in range(5):
+            self._publish_odometry(0.50, 0.10, 0.0)
+            time.sleep(0.02)
+
+        goal = ExecuteCoverage.Goal()
+        goal.task = _task()
+        goal.task.waypoints = [_pose(0.0, 0.0, 0.0), _pose(0.60, 0.0, 0.0)]
+        goal.task.segment_types = [CoverageTask.SEGMENT_SCAN]
+        for polygon in (goal.task.coverage_region, goal.task.motion_region):
+            del polygon.points[:]
+            for x, y in [(0.0, -0.5), (0.75, -0.5), (0.75, 0.5), (0.0, 0.5)]:
+                point = Point32()
+                point.x = x
+                point.y = y
+                polygon.points.append(point)
+
+        send_future = self.client.send_goal_async(goal)
+        deadline = time.monotonic() + 3.0
+        while not send_future.done() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(send_future.done())
+        handle = send_future.result()
+        self.assertTrue(handle.accepted)
+
+        result_future = handle.get_result_async()
+        deadline = time.monotonic() + 5.0
+        while not result_future.done() and time.monotonic() < deadline:
+            self._publish_odometry(0.50, 0.10, 0.0)
+            time.sleep(0.02)
+        self.assertTrue(result_future.done())
+        result = result_future.result().result
+        self.assertEqual(
+            result.result_code, ExecuteCoverage.Result.TRACKING_FAILED)
+        self.assertIn('scan entry can recover', result.message)
+        self.assertEqual(result.completed_segments, 0)
+
     def test_rejects_structurally_invalid_task(self):
         """An empty task never becomes an executable goal."""
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
