@@ -1,6 +1,7 @@
 coverage_planner:
   ros__parameters:
     frame_id: odom
+    task_id: trapezoid
     input_mode: parameters
     region_type: trapezoid
     lower_left: [-3.0, 0.50]

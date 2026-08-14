@@ -8,7 +8,14 @@ uint8 SEGMENT_TRANSITION=2
 uint8 SEGMENT_RETURN=3
 
 std_msgs/Header header
+
+# Identifies one user task. It comes from planner configuration, so give each
+# region its own value if results are to be told apart by task_id alone.
 string task_id
+
+# A monotonic publication counter, not a version of the region. Planning
+# failures, cleared selections and empty tasks all consume a number, so gaps
+# are expected: compare for newer or older, never assume consecutive values.
 uint32 revision
 uint8 sweep_direction
 

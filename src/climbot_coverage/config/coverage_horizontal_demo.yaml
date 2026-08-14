@@ -1,6 +1,7 @@
 coverage_planner:
   ros__parameters:
     frame_id: odom
+    task_id: horizontal-rectangle-demo
     input_mode: parameters
     region_type: rectangle
     # Large horizontal demo: 4.30 m wide by 1.70 m high.  The first scan

@@ -1,6 +1,7 @@
 coverage_planner:
   ros__parameters:
     frame_id: odom
+    task_id: trapezoid-horizontal-demo
     input_mode: parameters
     region_type: trapezoid
     # Isosceles trapezoid: 4.0 m bottom, 2.6 m top, 2.8 m height.

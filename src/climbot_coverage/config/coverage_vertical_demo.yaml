@@ -1,6 +1,7 @@
 coverage_planner:
   ros__parameters:
     frame_id: odom
+    task_id: vertical-rectangle-demo
     input_mode: parameters
     region_type: rectangle
     # With a 0.50 m footprint, the first vertical centreline starts at x=0.

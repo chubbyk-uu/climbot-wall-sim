@@ -1,6 +1,7 @@
 coverage_planner:
   ros__parameters:
     frame_id: odom
+    task_id: rectangle
     input_mode: parameters
     region_type: rectangle
     lower_left: [-3.0, 0.5]

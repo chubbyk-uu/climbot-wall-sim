@@ -1,6 +1,7 @@
 coverage_planner:
   ros__parameters:
     frame_id: odom
+    task_id: trapezoid-vertical-demo
     input_mode: parameters
     region_type: trapezoid
     # Same short-top trapezoid, swept vertically to exercise sloped transitions.
