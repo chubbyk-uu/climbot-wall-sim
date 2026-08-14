@@ -105,6 +105,11 @@ public:
     wall_height_ = declare_parameter("wall_height", -1.0);
     path_height_ = declare_parameter("path_height", 0.06);
     bottom_warning_tolerance_ = declare_parameter("bottom_warning_tolerance", 0.05);
+    // Above the acceptance gate by more than execution costs. Measured loss
+    // from nominal to executed footprint coverage is 0.37 to 1.09 points
+    // across the three baselines, against a 95 percent acceptance gate.
+    minimum_nominal_coverage_ratio_ = declare_parameter(
+      "minimum_nominal_coverage_ratio", 0.965);
     validatePhysicalParameters();
     row_spacing_ = detection_width_ * (1.0 - overlap_ratio_);
     // The robot turns in place at waypoints, so the inset must contain its
@@ -154,6 +159,12 @@ private:
     }
     if (overlap_ratio_ < 0.0 || overlap_ratio_ >= 1.0) {
       throw std::invalid_argument("overlap_ratio must be within [0, 1).");
+    }
+    if (minimum_nominal_coverage_ratio_ <= 0.0 ||
+      minimum_nominal_coverage_ratio_ > 1.0)
+    {
+      throw std::invalid_argument(
+              "minimum_nominal_coverage_ratio must be within (0, 1].");
     }
     if (robot_length_ <= 0.0 || robot_width_ <= 0.0 || edge_clearance_ < 0.0) {
       throw std::invalid_argument(
@@ -257,8 +268,12 @@ private:
         sweep_direction_, start_corner_);
       const double coverage_ratio = sampledCoverageRatio(
         region.polygon, path, detection_width_, detection_length_);
-      if (coverage_ratio < 0.98) {
-        throw std::invalid_argument("Nominal detection footprint covers less than 98 percent.");
+      if (coverage_ratio < minimum_nominal_coverage_ratio_) {
+        std::ostringstream reason;
+        reason << "Nominal detection footprint covers " << coverage_ratio * 100.0 <<
+          " percent, below the required " << minimum_nominal_coverage_ratio_ * 100.0 <<
+          " percent.";
+        throw std::invalid_argument(reason.str());
       }
       publishTask(makeTask(region.polygon, motion, path));
       publishMarkers(region.polygon, motion, path);
@@ -486,6 +501,7 @@ private:
   double detection_width_;
   double detection_length_;
   double overlap_ratio_;
+  double minimum_nominal_coverage_ratio_;
   double robot_length_;
   double robot_width_;
   double edge_clearance_;

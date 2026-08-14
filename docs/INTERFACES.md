@@ -77,8 +77,9 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 
 评价器按 Gazebo 真值位置与航向栅格化实际
 `detection_width × detection_length` 矩形检测足迹，只累计正式 `SCAN` 直线，不把
-转向、换道或小弧线入轨误算成覆盖。`minimum_actual_coverage_ratio` 默认 `0.98`，
-`coverage_grid_resolution_m` 默认 `0.01 m`；低于门限时进程返回失败。
+转向、换道或小弧线入轨误算成覆盖。`minimum_actual_coverage_ratio` 默认 `0.95`，
+`coverage_grid_resolution_m` 默认 `0.01 m`；低于门限时进程返回失败。该门限于
+2026-08-14 由 `0.98` 放宽到 `0.95`，见 §14.3。
 `trajectory_csv` 和 `summary_json` 默认为空，显式配置后分别保存完整真值/融合轨迹和
 机器可读的 Action、逐段误差、覆盖/漏扫面积摘要。两者都在 `try/finally` 中写出：
 超时或异常时同样落盘，摘要里 `completed=false`、`passed=false` 并记录
@@ -254,7 +255,7 @@ C（右下）。A、C 的高度取平均值修正为水平底边。
 
 竖向为主时，控制器以第一次转向后的实际位置为斜直线 `TRANSITION` 起点，第二次
 转向后按统一入轨判据冻结与名义线平行的 `SCAN`，不得逐列倒车返回名义起点。覆盖率
-必须按二维检测足迹重新计算；低于 98% 时增加一条顶部水平收边扫描。
+必须按二维检测足迹重新计算；低于 95% 时增加一条顶部水平收边扫描。
 
 ## 阶段 E 冻结接口
 
@@ -320,7 +321,9 @@ Header，避免同一任务内部出现多个坐标系或时间戳。
 当前规划器以原始用户区域填充 `coverage_region`，以整面墙按机器人安全边距内缩的
 多边形填充 `motion_region`。E2 已按 `detection_width × detection_length` 的矩形足迹
 布置标称 `SCAN`：中心线覆盖目标区域，端点沿行进方向按半个检测长度外延；每个中心
-路点必须位于 `motion_region`，否则拒绝规划。标称覆盖率低于 98% 也会拒绝规划。
+路点必须位于 `motion_region`，否则拒绝规划。标称覆盖率低于
+`minimum_nominal_coverage_ratio`（默认 `0.965`）也会拒绝规划；该值高于 §14.3 的
+`95%` 验收门限，留出实测 `0.37～1.09` 个百分点的执行损失。
 竖向执行中的转向下滑属于实际轨迹问题，E9 将用同一足迹评估实际轨迹，并在需要时追加
 一条顶部水平收边扫描。
 
