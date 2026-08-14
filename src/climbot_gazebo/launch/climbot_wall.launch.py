@@ -10,8 +10,10 @@ from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
     OpaqueFunction,
+    RegisterEventHandler,
     SetEnvironmentVariable,
 )
+from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
@@ -146,6 +148,19 @@ def render_robot(gazebo_share, description_share):
     return model_root, urdf.toxml()
 
 
+def cleanup_rendered_assets(context, *, world_path, model_root):
+    """Remove launch-local rendered SDF and model files during shutdown."""
+    del context
+    try:
+        os.unlink(world_path)
+    except FileNotFoundError:
+        pass
+    except OSError:
+        pass
+    shutil.rmtree(model_root, ignore_errors=True)
+    return []
+
+
 def launch_setup(context, *args, **kwargs):
     """Build the actions that depend on resolved launch configurations."""
     package_share = get_package_share_directory('climbot_gazebo')
@@ -168,6 +183,11 @@ def launch_setup(context, *args, **kwargs):
             name='GZ_SIM_RESOURCE_PATH',
             value=model_path + os.pathsep + existing_resource_path,
         ),
+        RegisterEventHandler(OnShutdown(on_shutdown=[
+            OpaqueFunction(
+                function=cleanup_rendered_assets,
+                kwargs={'world_path': world, 'model_root': model_path}),
+        ])),
     ]
 
     backend = LaunchConfiguration('gpu_backend').perform(context)
