@@ -80,10 +80,19 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 转向、换道或小弧线入轨误算成覆盖。`minimum_actual_coverage_ratio` 默认 `0.98`，
 `coverage_grid_resolution_m` 默认 `0.01 m`；低于门限时进程返回失败。
 `trajectory_csv` 和 `summary_json` 默认为空，显式配置后分别保存完整真值/融合轨迹和
-机器可读的 Action、逐段误差、覆盖/漏扫面积摘要。评价器同时按冻结后的动态直线参考
+机器可读的 Action、逐段误差、覆盖/漏扫面积摘要。两者都在 `try/finally` 中写出：
+超时或异常时同样落盘，摘要里 `completed=false`、`passed=false` 并记录
+`failure_reason`，因此最需要现场数据的失败运行不会丢数据。摘要还带 `provenance`
+段，记录代码提交、分支、`src` 树是否有未提交改动、评价器全部参数和执行任务的
+名义几何，满足 §12 与 §14.6 对可追溯性的要求。评价器同时按冻结后的动态直线参考
 检查终点位置和转向结束航向，默认门限分别为 `maximum_endpoint_error_m=0.030`、
 `maximum_turn_end_heading_error_deg=2.0`；水平 `SCAN` 的首末真值高度差默认不得超过
-`maximum_horizontal_height_drift_m=0.030`。摘要还记录实际/名义线段总长之比、最大
+`maximum_horizontal_height_drift_m=0.030`。
+
+转向结束航向误差按 §14.5 用真值度量：先由该段首个跟踪采样点的
+`filtered_yaw_rad + heading_error_rad` 还原控制器当时瞄准的重力补偿后目标航向，
+再用 `truth_yaw_rad` 与之比较。控制器估计只用于定义目标，不充当被测量，因此
+EKF 航向漂移会体现在该指标中，而不是被它掩盖。摘要还记录实际/名义线段总长之比、最大
 机体航向补偿角和正式直线期间最大指令角速度，当前只报告后面三项，不设臆测门限。
 
 单段调试节点发布 `/control/segment_complete`（`std_msgs/msg/Bool`，reliable、
@@ -187,6 +196,12 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 锁定的任务版本。管理器复制该任务作为不可变 Goal，因此预览更新不会改写执行中的
 任务；定位可用性和边界安全性仍由执行器在实际动作前持续检查。后续 RViz 面板调用
 同一组接口，不绕过管理器直接控制机器人。
+
+发出 Goal 后管理器进入"等待执行器应答"状态并拒绝新的开始请求。若执行器在应答前
+崩溃或被挂起，该应答永不到达，因此这个状态带 `start_response_timeout_s`（默认
+`5.0 s`）超时：超时后管理器在 `/coverage/manager_status` 报告一次并接受新的开始
+请求，不需要重启管理器。超时只释放"等待应答"，已被接受的 Goal 仍只能由
+`/coverage/cancel` 停止。
 
 ### 参数
 

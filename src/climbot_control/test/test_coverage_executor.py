@@ -276,6 +276,51 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertLess(abs(first_scan_y), 0.05)
         self.assertLess(math.hypot(x - 0.60, y - first_scan_y), 0.04)
 
+    def test_survives_a_task_rejected_during_acceptance(self):
+        """A goal that ends inside handleAccepted must not disturb the node."""
+        # The task validates structurally, so it is accepted and only then
+        # found to start outside the motion region. The long task_id keeps the
+        # string off the small-string buffer, so any read after the task is
+        # released touches returned heap memory, not stale inline bytes.
+        self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
+        for _ in range(5):
+            self._publish_odometry(10.0, 10.0, 0.0)
+            time.sleep(0.02)
+
+        goal = ExecuteCoverage.Goal()
+        goal.task = _task()
+        goal.task.task_id = 'outside-motion-region-' + 'x' * 48
+        send_future = self.client.send_goal_async(goal)
+        deadline = time.monotonic() + 3.0
+        while not send_future.done() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(send_future.done())
+        handle = send_future.result()
+        self.assertTrue(handle.accepted)
+
+        result_future = handle.get_result_async()
+        deadline = time.monotonic() + 3.0
+        while not result_future.done() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(result_future.done())
+        self.assertEqual(
+            result_future.result().result.result_code,
+            ExecuteCoverage.Result.OUT_OF_BOUNDS)
+
+        # The server is still healthy and no longer holds the released task.
+        for _ in range(5):
+            self._publish_odometry(0.0, 0.0, 0.0)
+            time.sleep(0.02)
+        second = ExecuteCoverage.Goal()
+        second.task = _task()
+        second_future = self.client.send_goal_async(second)
+        deadline = time.monotonic() + 3.0
+        while not second_future.done() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(second_future.done())
+        self.assertTrue(second_future.result().accepted)
+        second_future.result().cancel_goal_async()
+
     def test_rejects_structurally_invalid_task(self):
         """An empty task never becomes an executable goal."""
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))

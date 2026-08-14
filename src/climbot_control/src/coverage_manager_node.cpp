@@ -1,5 +1,6 @@
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
 #include "climbot_control/coverage_execution.hpp"
@@ -17,8 +18,12 @@ public:
   using GoalHandle = rclcpp_action::ClientGoalHandle<ExecuteCoverage>;
 
   CoverageManagerNode()
-  : Node("coverage_manager"), frame_id_(declare_parameter("frame_id", "odom"))
+  : Node("coverage_manager"), frame_id_(declare_parameter("frame_id", "odom")),
+    start_response_timeout_s_(declare_parameter("start_response_timeout_s", 5.0))
   {
+    if (!(start_response_timeout_s_ > 0.0)) {
+      throw std::invalid_argument("start_response_timeout_s must be positive.");
+    }
     task_subscription_ = create_subscription<climbot_interfaces::msg::CoverageTask>(
       "/coverage/task", rclcpp::QoS(1).reliable().transient_local(),
       [this](const climbot_interfaces::msg::CoverageTask::SharedPtr task) {
@@ -54,14 +59,29 @@ private:
     RCLCPP_INFO(get_logger(), "%s", text.c_str());
   }
 
+  /// Release a start request whose goal response never arrived, so a crashed or
+  /// restarted executor cannot lock the manager out until it is itself restarted.
+  void expireStalePending()
+  {
+    if (!start_pending_since_) {
+      return;
+    }
+    if ((now() - *start_pending_since_).seconds() < start_response_timeout_s_) {
+      return;
+    }
+    start_pending_since_.reset();
+    publishStatus("Start request timed out before the executor answered.");
+  }
+
   void start(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
   {
+    expireStalePending();
     if (!cached_task_) {
       response->success = false;
       response->message = "No valid coverage task is available.";
       return;
     }
-    if (active_goal_ || start_pending_) {
+    if (active_goal_ || start_pending_since_) {
       response->success = false;
       response->message = "A coverage task is already starting or executing.";
       return;
@@ -78,7 +98,7 @@ private:
     rclcpp_action::Client<ExecuteCoverage>::SendGoalOptions options;
     options.goal_response_callback = [this, task_id,
         revision](const GoalHandle::SharedPtr & goal_handle) {
-        start_pending_ = false;
+        start_pending_since_.reset();
         if (!goal_handle) {
           publishStatus("Executor rejected " + task_id + " revision " + std::to_string(revision));
           return;
@@ -90,7 +110,7 @@ private:
         active_goal_.reset();
         publishStatus("Execution finished: " + result.result->message);
       };
-    start_pending_ = true;
+    start_pending_since_ = now();
     action_client_->async_send_goal(goal, options);
     response->success = true;
     response->message = "Start request accepted for " + task_id + " revision " +
@@ -99,10 +119,11 @@ private:
 
   void cancel(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
   {
+    expireStalePending();
     if (!active_goal_) {
       response->success = false;
       response->message =
-        start_pending_ ? "Goal is still being accepted." : "No active coverage task.";
+        start_pending_since_ ? "Goal is still being accepted." : "No active coverage task.";
       return;
     }
     action_client_->async_cancel_goal(active_goal_);
@@ -111,7 +132,8 @@ private:
   }
 
   std::string frame_id_;
-  bool start_pending_{false};
+  double start_response_timeout_s_;
+  std::optional<rclcpp::Time> start_pending_since_;
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;
   GoalHandle::SharedPtr active_goal_;
   rclcpp::Subscription<climbot_interfaces::msg::CoverageTask>::SharedPtr task_subscription_;

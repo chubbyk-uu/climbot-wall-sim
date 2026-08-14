@@ -362,13 +362,15 @@ private:
     approaching_start_ = true;
     waiting_for_start_pose_ = !have_pose_;
     segment_start_time_ = task_start_time_;
-    if (!waiting_for_start_pose_) {
-      configureStartApproach();
-    }
+    // Log before configuring: configureStartApproach() may finish the goal and
+    // release active_task_, and acceptance is what this line reports anyway.
     RCLCPP_INFO(
       get_logger(), "Accepted coverage task '%s' revision %u with %zu segments.",
       active_task_->task_id.c_str(), active_task_->revision,
       active_task_->segment_types.size());
+    if (!waiting_for_start_pose_) {
+      configureStartApproach();
+    }
   }
 
   void configureStartApproach()

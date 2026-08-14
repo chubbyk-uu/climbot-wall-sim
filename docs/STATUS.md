@@ -83,6 +83,21 @@
 本节原有新增 7 条边界/坐标系/健壮性回归继续通过；
 `cppcheck` 仍因已知慢版本策略跳过。
 
+## 2026-08-14 目标接受路径与验收可信度修复
+
+| 项目 | 状态 | 结果 |
+| --- | --- | --- |
+| 目标接受路径 use-after-free | 已完成 | `handleAccepted` 在 `configureStartApproach()` 之前打印接受日志。该函数在机器人位于运动区域外时会结束目标并释放 `active_task_`，原顺序对已释放的 `optional` 解引用。AddressSanitizer 修复前判定 `heap-use-after-free`（`line_tracker_node.cpp:368`），修复后同场景干净；新增 `test_survives_a_task_rejected_during_acceptance` |
+| 管理器启动请求死锁 | 已完成 | `start_pending_` 改为带时间戳的 `std::optional<rclcpp::Time>`，新增 `start_response_timeout_s`（默认 `5.0 s`）。执行器在应答前挂起或崩溃时，管理器超时后重新接受 `/coverage/start`，不再需要重启；在途 Goal 的互斥保护不变 |
+| 评价失败时丢弃数据 | 已完成 | 覆盖评价的轨迹 CSV 与摘要 JSON 改在 `finally` 中写出，超时或异常同样落盘，摘要标注 `completed=false` 与 `failure_reason`，与侧滑标定"失败也先存 CSV"的既有约定一致 |
+| 转向结束航向误差口径 | 已完成 | 该指标原先直接采用控制器对融合位姿的自报误差，必然收敛在对准容差内，且无法反映 EKF 漂移。现由 `filtered_yaw + heading_error` 还原控制器瞄准的重力补偿后目标航向，再用真值航向比较，符合 §14.5 |
+| 实验结果可追溯性 | 已完成 | 摘要新增 `provenance`：代码提交、分支、`src` 树是否有未提交改动、评价器全部参数、执行任务的名义几何和记录时间，满足 §12 与 §14.6 |
+
+全量 229 项测试通过，16 项按环境跳过。**三份覆盖基线待重跑**：转向结束航向误差
+改口径后三份摘要均已过期，且大型竖向矩形的 CSV 由更早的评价器生成、缺少
+`heading_error_rad` 等列，无法离线补算。重跑安排在扫描线间距验收口径定案之后，
+详见 `results/README.md` 顶部说明。
+
 ## 当前未决事项
 
 ### 1. WheelSlip 法向载荷局限

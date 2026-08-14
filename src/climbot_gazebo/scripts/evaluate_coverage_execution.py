@@ -3,9 +3,12 @@
 
 import copy
 import csv
+from datetime import datetime
+from datetime import timezone
 import json
 import math
 import os
+import subprocess
 import time
 
 from ament_index_python.packages import get_package_share_directory
@@ -50,23 +53,31 @@ def make_point(x, y):
 class CoverageExecutionEvaluator(Node):
     """Send one compact task and score TRACK_LINE samples against truth."""
 
+    #: Acceptance thresholds and outputs, declared here so a run can record the
+    #: exact values it was judged against (PROJECT_GUIDE 12 and 14.6).
+    PARAMETERS = (
+        ('case', 'short_top_trapezoid'),
+        ('startup_timeout_s', 10.0),
+        ('execution_timeout_s', 120.0),
+        ('maximum_cross_rms_m', 0.020),
+        ('maximum_cross_error_m', 0.050),
+        ('visible_excursion_m', 0.020),
+        ('maximum_visible_reversals', 0),
+        ('maximum_heading_range_deg', 5.0),
+        ('maximum_endpoint_error_m', 0.030),
+        ('maximum_turn_end_heading_error_deg', 2.0),
+        ('maximum_horizontal_height_drift_m', 0.030),
+        ('minimum_actual_coverage_ratio', 0.98),
+        ('coverage_grid_resolution_m', 0.01),
+        ('trajectory_csv', ''),
+        ('summary_json', ''),
+    )
+
     def __init__(self):
         super().__init__('coverage_execution_evaluator')
-        self.declare_parameter('case', 'short_top_trapezoid')
-        self.declare_parameter('startup_timeout_s', 10.0)
-        self.declare_parameter('execution_timeout_s', 120.0)
-        self.declare_parameter('maximum_cross_rms_m', 0.020)
-        self.declare_parameter('maximum_cross_error_m', 0.050)
-        self.declare_parameter('visible_excursion_m', 0.020)
-        self.declare_parameter('maximum_visible_reversals', 0)
-        self.declare_parameter('maximum_heading_range_deg', 5.0)
-        self.declare_parameter('maximum_endpoint_error_m', 0.030)
-        self.declare_parameter('maximum_turn_end_heading_error_deg', 2.0)
-        self.declare_parameter('maximum_horizontal_height_drift_m', 0.030)
-        self.declare_parameter('minimum_actual_coverage_ratio', 0.98)
-        self.declare_parameter('coverage_grid_resolution_m', 0.01)
-        self.declare_parameter('trajectory_csv', '')
-        self.declare_parameter('summary_json', '')
+        for name, default in self.PARAMETERS:
+            self.declare_parameter(name, default)
+        self.summary = {}
         wall_path = os.path.join(
             get_package_share_directory('climbot_description'),
             'config', 'wall.yaml')
@@ -317,6 +328,56 @@ class CoverageExecutionEvaluator(Node):
         }
 
     @staticmethod
+    def _git_state():
+        """Describe the source revision, or nulls when git is unavailable."""
+        def capture(arguments):
+            return subprocess.run(
+                ['git'] + arguments, check=True, capture_output=True,
+                text=True, timeout=5.0,
+                cwd=os.path.dirname(os.path.abspath(__file__))).stdout.strip()
+
+        try:
+            root = capture(['rev-parse', '--show-toplevel'])
+            return {
+                'commit': capture(['rev-parse', 'HEAD']),
+                'branch': capture(['rev-parse', '--abbrev-ref', 'HEAD']),
+                # Restricted to src so untracked notes and build outputs do not
+                # mark an otherwise reproducible run as modified.
+                'source_modified': bool(capture(
+                    ['-C', root, 'status', '--porcelain', '--', 'src'])),
+            }
+        except (OSError, subprocess.SubprocessError):
+            return {'commit': None, 'branch': None, 'source_modified': None}
+
+    def _provenance(self):
+        """Record what a later reader needs to reproduce or discard this run."""
+        return {
+            'recorded_utc': datetime.now(timezone.utc).isoformat(),
+            'git': self._git_state(),
+            'evaluator_parameters': {
+                name: self.get_parameter(name).value
+                for name, _ in self.PARAMETERS},
+        }
+
+    @staticmethod
+    def _task_record(task):
+        """Keep the nominal geometry the executed task was judged against."""
+        return {
+            'task_id': task.task_id,
+            'revision': task.revision,
+            'sweep_direction': task.sweep_direction,
+            'detection_width_m': task.detection_width,
+            'detection_length_m': task.detection_length,
+            'segment_types': list(task.segment_types),
+            'waypoints': [
+                [pose.position.x, pose.position.y] for pose in task.waypoints],
+            'coverage_region': [
+                [point.x, point.y] for point in task.coverage_region.points],
+            'motion_region': [
+                [point.x, point.y] for point in task.motion_region.points],
+        }
+
+    @staticmethod
     def _write_csv(path, rows):
         """Write the full task trajectory when an output path is configured."""
         if not path:
@@ -343,7 +404,30 @@ class CoverageExecutionEvaluator(Node):
             handle.write('\n')
 
     def run(self):
-        """Execute the selected case and return true only if every line passes."""
+        """Execute the selected case, persisting whatever was captured."""
+        # A timed-out or aborted run is exactly when the trajectory is most
+        # needed for diagnosis, so the outputs are written from a finally block
+        # and the summary states whether the run reached its own conclusion.
+        self.summary = {'completed': False, 'passed': False}
+        try:
+            passed = self.summary['passed'] = self._execute()
+            self.summary['completed'] = True
+            return passed
+        except Exception as error:
+            self.summary['failure_reason'] = '%s: %s' % (
+                type(error).__name__, error)
+            raise
+        finally:
+            self.recording = False
+            self.summary['trajectory_samples'] = len(self.trajectory)
+            self.summary['provenance'] = self._provenance()
+            self._write_csv(
+                str(self.get_parameter('trajectory_csv').value), self.trajectory)
+            self._write_json(
+                str(self.get_parameter('summary_json').value), self.summary)
+
+    def _execute(self):
+        """Run the selected case and return true only if every line passes."""
         startup_timeout = float(self.get_parameter('startup_timeout_s').value)
         deadline = time.monotonic() + startup_timeout
         case_name = str(self.get_parameter('case').value)
@@ -369,6 +453,7 @@ class CoverageExecutionEvaluator(Node):
         handle = future.result()
         if handle is None or not handle.accepted:
             raise RuntimeError('Coverage evaluation goal was rejected.')
+        self.summary['task'] = self._task_record(goal.task)
         self.recording = True
         result_future = handle.get_result_async()
         deadline = time.monotonic() + float(
@@ -382,6 +467,14 @@ class CoverageExecutionEvaluator(Node):
         self.recording = False
         wrapped = result_future.result()
         result = wrapped.result
+        self.summary.update({
+            'task_id': goal.task.task_id,
+            'revision': goal.task.revision,
+            'result_code': result.result_code,
+            'result_message': result.message,
+            'completed_segments': result.completed_segments,
+            'elapsed_time_s': result.elapsed_time_s,
+        })
         self.get_logger().info(
             'Action result=%d completed=%d elapsed=%.3f s: %s' % (
                 result.result_code, result.completed_segments,
@@ -413,6 +506,7 @@ class CoverageExecutionEvaluator(Node):
                 metrics['reversals'] <= limits[2] and
                 metrics['heading_range_deg'] <= limits[3])
 
+        self.summary['segment_metrics'] = segment_metrics
         polygon = [
             (point.x, point.y) for point in goal.task.coverage_region.points]
         scan_paths = []
@@ -437,6 +531,7 @@ class CoverageExecutionEvaluator(Node):
                 coverage['covered_area_m2'], coverage['region_area_m2'],
                 coverage['resolution_m'] * 1000.0))
         passed = passed and coverage['ratio'] >= minimum_coverage
+        self.summary['coverage'] = coverage
         planned_lengths = []
         for first, second in zip(goal.task.waypoints, goal.task.waypoints[1:]):
             planned_lengths.append(math.hypot(
@@ -445,6 +540,7 @@ class CoverageExecutionEvaluator(Node):
         quality = execution_quality(
             self.trajectory, goal.task.segment_types, planned_lengths,
             CoverageTask.SEGMENT_SCAN)
+        self.summary['execution_quality'] = quality
         horizontal_drift = quality['maximum_horizontal_height_drift_m']
         self.get_logger().info(
             'endpoint_max=%.2f mm turn_end_max=%.2f deg '
@@ -466,22 +562,6 @@ class CoverageExecutionEvaluator(Node):
             (horizontal_drift is None or horizontal_drift <=
              float(self.get_parameter(
                  'maximum_horizontal_height_drift_m').value)))
-        self._write_csv(
-            str(self.get_parameter('trajectory_csv').value), self.trajectory)
-        self._write_json(
-            str(self.get_parameter('summary_json').value), {
-                'task_id': goal.task.task_id,
-                'revision': goal.task.revision,
-                'result_code': result.result_code,
-                'result_message': result.message,
-                'completed_segments': result.completed_segments,
-                'elapsed_time_s': result.elapsed_time_s,
-                'trajectory_samples': len(self.trajectory),
-                'coverage': coverage,
-                'execution_quality': quality,
-                'segment_metrics': segment_metrics,
-                'passed': passed,
-            })
         return passed
 
 

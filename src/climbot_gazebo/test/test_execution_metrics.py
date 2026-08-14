@@ -6,12 +6,14 @@ from climbot_gazebo.execution_metrics import execution_quality
 import pytest
 
 
-def _row(segment, x, y, yaw=0.0, heading_error=0.0, angular=0.0):
+def _row(segment, x, y, yaw=0.0, heading_error=0.0, angular=0.0,
+         filtered_yaw=None):
     return {
         'segment': segment,
         'truth_x_m': x,
         'truth_y_m': y,
         'truth_yaw_rad': yaw,
+        'filtered_yaw_rad': yaw if filtered_yaw is None else filtered_yaw,
         'reference_start_x_m': 0.0,
         'reference_start_y_m': 0.0,
         'reference_end_x_m': 1.0,
@@ -50,6 +52,30 @@ def test_quality_excludes_approach_and_does_not_label_vertical_height_drift():
     assert result['actual_path_length_m'] == pytest.approx(1.0)
     assert result['maximum_horizontal_height_drift_m'] is None
     assert result['segments'][0]['horizontal_height_drift_m'] is None
+
+
+def test_turn_end_heading_error_is_measured_from_truth_not_the_filter():
+    """A drifting filter must widen the reported error, not hide inside it."""
+    honest = execution_quality(
+        [_row(0, 0.0, 0.0, yaw=0.10, heading_error=0.02)], [1], [1.0])
+    assert honest['maximum_turn_end_heading_error_deg'] == pytest.approx(
+        math.degrees(0.02))
+
+    # Same controller report, but the filter believes the robot is 0.05 rad
+    # further round than it truly is, so the true miss is 0.02 + 0.05.
+    drifting = execution_quality(
+        [_row(0, 0.0, 0.0, yaw=0.10, heading_error=0.02, filtered_yaw=0.15)],
+        [1], [1.0])
+    assert drifting['maximum_turn_end_heading_error_deg'] == pytest.approx(
+        math.degrees(0.07))
+
+
+def test_turn_end_heading_error_is_omitted_without_a_filtered_pose():
+    result = execution_quality(
+        [_row(0, 0.0, 0.0, yaw=0.10, heading_error=0.02,
+              filtered_yaw=math.nan)], [1], [1.0])
+    assert result['segments'][0]['turn_end_heading_error_deg'] is None
+    assert math.isnan(result['maximum_turn_end_heading_error_deg'])
 
 
 def test_quality_rejects_inconsistent_planning_metadata():
