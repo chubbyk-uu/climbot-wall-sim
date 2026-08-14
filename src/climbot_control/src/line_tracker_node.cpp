@@ -53,7 +53,7 @@ public:
     turn_slip_per_degree_ = declare_parameter("turn_slip_per_degree_m", 0.0005);
     parallel_scan_offset_ = declare_parameter("parallel_scan_offset_m", 0.045);
     maximum_scan_offset_ = declare_parameter("maximum_scan_offset_m", 0.12);
-    arc_entry_finish_offset_ = declare_parameter("arc_entry_finish_offset_m", 0.03);
+    arc_entry_finish_offset_ = declare_parameter("arc_entry_finish_offset_m", 0.012);
     arc_entry_speed_ = declare_parameter("arc_entry_speed_mps", 0.08);
     arc_entry_lookahead_ = declare_parameter("arc_entry_lookahead_m", 0.20);
     arc_entry_heading_gain_ = declare_parameter("arc_entry_heading_gain", 2.0);
@@ -92,8 +92,8 @@ public:
     max_turn_angular_speed_ = declare_parameter("max_turn_angular_speed", 0.60);
     max_turn_angular_acceleration_ = declare_parameter(
       "max_turn_angular_acceleration", 1.00);
-    final_approach_distance_ = declare_parameter("final_approach_distance_m", 0.10);
-    final_approach_speed_ = declare_parameter("final_approach_speed_mps", 0.03);
+    final_approach_distance_ = declare_parameter("final_approach_distance_m", 0.05);
+    final_approach_speed_ = declare_parameter("final_approach_speed_mps", 0.08);
     goal_position_tolerance_ = declare_parameter("goal_position_tolerance_m", 0.03);
     goal_position_exit_tolerance_ = declare_parameter(
       "goal_position_exit_tolerance_m", 0.04);
@@ -109,6 +109,8 @@ public:
     stopped_angular_speed_ = declare_parameter("stopped_angular_speed_rps", 0.02);
     goal_settle_duration_ = declare_parameter("goal_settle_duration_s", 0.30);
     limits_.max_deceleration = declare_parameter("max_linear_deceleration", 0.25);
+    limits_.braking_deceleration = declare_parameter(
+      "braking_profile_deceleration", 0.12);
     limits_.gravity_slip_ratio = declare_parameter("gravity_slip_ratio", 0.0);
     limits_.gravity_direction = {
       declare_parameter("gravity_down_x", 0.0),
@@ -304,6 +306,11 @@ private:
               "goal_heading_exit_tolerance_deg must exceed alignment_tolerance_deg.");
     }
     requirePositive("max_linear_deceleration", limits_.max_deceleration);
+    requirePositive("braking_profile_deceleration", limits_.braking_deceleration);
+    if (limits_.braking_deceleration >= limits_.max_deceleration) {
+      throw std::invalid_argument(
+              "braking_profile_deceleration must stay below max_linear_deceleration.");
+    }
     requireFinite("gravity_slip_ratio", limits_.gravity_slip_ratio);
     if (limits_.gravity_slip_ratio < 0.0) {
       throw std::invalid_argument("gravity_slip_ratio must be non-negative.");
@@ -834,7 +841,6 @@ private:
       motion_state_ = MotionState::FINAL_APPROACH;
     }
     if (motion_state_ == MotionState::FINAL_APPROACH) {
-      desired.linear = std::min(desired.linear, final_approach_speed_);
       if (updateGoalCompletion(current_time, desired)) {
         limitAndPublish({}, dt, angular_acceleration_);
         publishFeedback(desired);
@@ -863,6 +869,11 @@ private:
         desired = candidate;
       }
     }
+    // After the cross-track integral update, which rebuilds the whole command:
+    // clamping before it left final_approach_speed_mps with no effect at all.
+    if (motion_state_ == MotionState::FINAL_APPROACH) {
+      desired.linear = std::min(desired.linear, final_approach_speed_);
+    }
     if (oscillation_monitor_->update(desired.cross, desired.along) &&
       !oscillation_warning_emitted_)
     {
@@ -881,6 +892,10 @@ private:
   {
     const double position_error = std::hypot(end_.x - pose_.x, end_.y - pose_.y);
     const double heading_error = std::abs(command.heading_error);
+    // The start approach keeps a loose tolerance on both legs: the robot turns
+    // in place there and slips while stopped, so a tight ball around the goal
+    // can be left as fast as it is entered. Where the first scan line ends up
+    // is bounded by arc_entry_finish_offset_m instead.
     const double position_tolerance = approaching_start_ ?
       start_approach_tolerance_ : goal_position_tolerance_;
     const double position_exit_tolerance = approaching_start_ ?
@@ -1038,7 +1053,7 @@ private:
   double turn_slip_per_degree_{0.0005};
   double parallel_scan_offset_{0.045};
   double maximum_scan_offset_{0.12};
-  double arc_entry_finish_offset_{0.03};
+  double arc_entry_finish_offset_{0.012};
   double arc_entry_speed_{0.08};
   double arc_entry_lookahead_{0.20};
   double arc_entry_heading_gain_{2.0};
@@ -1051,8 +1066,8 @@ private:
   double turn_heading_gain_{2.0};
   double max_turn_angular_speed_{0.60};
   double max_turn_angular_acceleration_{1.00};
-  double final_approach_distance_{0.10};
-  double final_approach_speed_{0.03};
+  double final_approach_distance_{0.05};
+  double final_approach_speed_{0.08};
   double goal_position_tolerance_{0.03};
   double goal_position_exit_tolerance_{0.04};
   double start_approach_tolerance_{0.05};

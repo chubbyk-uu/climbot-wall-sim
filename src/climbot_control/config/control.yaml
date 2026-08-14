@@ -13,7 +13,9 @@ line_tracker:
     turn_slip_per_degree_m: 0.0005
     parallel_scan_offset_m: 0.045
     maximum_scan_offset_m: 0.12
-    arc_entry_finish_offset_m: 0.03
+    # Bounds where a scan line entered by arc is frozen, so it has to sit
+    # inside the 20 mm adjacent-spacing budget of PROJECT_GUIDE 14.3.
+    arc_entry_finish_offset_m: 0.012
     arc_entry_speed_mps: 0.08
     arc_entry_lookahead_m: 0.20
     arc_entry_heading_gain: 2.0
@@ -39,11 +41,17 @@ line_tracker:
     turn_heading_gain: 2.0
     max_turn_angular_speed: 0.60
     max_turn_angular_acceleration: 1.00
-    final_approach_distance_m: 0.10
-    final_approach_speed_mps: 0.03
+    # A terminal guard, not the mechanism that stops the robot: the braking
+    # profile below already lands within a few millimetres. Kept just above
+    # goal_position_exit_tolerance_m, and at a speed the profile is close to
+    # anyway at that distance, so the guard costs about 0.2 s per segment.
+    final_approach_distance_m: 0.05
+    final_approach_speed_mps: 0.08
     goal_position_tolerance_m: 0.03
     goal_position_exit_tolerance_m: 0.04
-    # Collection remains disabled; the first SCAN entry handles the residual.
+    # This tolerance also covers the staging point, where the robot turns in
+    # place and slips while stopped; tightening it there stalls the approach.
+    # Stopping accuracy now comes from the braking profile instead.
     start_approach_tolerance_m: 0.05
     start_approach_exit_tolerance_m: 0.06
     start_approach_runway_m: 0.40
@@ -53,6 +61,11 @@ line_tracker:
     goal_settle_duration_s: 0.30
     max_linear_acceleration: 0.20
     max_linear_deceleration: 0.25
+    # Deliberately below max_linear_deceleration: the distance-to-stop profile
+    # has to ask for less than the rate limiter can deliver, or the command
+    # trails the profile all the way down and passes the endpoint. Braking
+    # starts at cruise_speed^2 / (2 * 0.12) = 0.167 m.
+    braking_profile_deceleration: 0.12
     max_angular_acceleration: 0.80
     gravity_slip_ratio: 0.1056
     gravity_down_x: 0.0

@@ -14,6 +14,72 @@ def _wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
 
 
+def scan_line_spacing(rows, segment_types, waypoints, scan_type=1):
+    """Measure where each executed scan line sat relative to its nominal line."""
+    # PROJECT_GUIDE 14.2 and 14.3 accept a coverage run partly on the spacing
+    # between adjacent scan lines, which no other metric observes: cross-track
+    # error is measured against the frozen line itself, so it stays small no
+    # matter where that line ended up. Positions come from truth (14.5).
+    if len(waypoints) != len(segment_types) + 1:
+        raise ValueError('Waypoints must hold one more entry than segments.')
+
+    scans = [index for index, kind in enumerate(segment_types)
+             if kind == scan_type]
+    if len(scans) < 2:
+        return {
+            'scan_line_offsets_m': [],
+            'scan_line_spacing_errors_m': [],
+            'maximum_scan_line_offset_m': math.nan,
+            'maximum_scan_line_spacing_error_m': math.nan,
+        }
+
+    # Adjacent scan lines run in opposite directions, so each line's own normal
+    # alternates. Project every line onto one shared axis instead.
+    first, second = waypoints[scans[0]], waypoints[scans[0] + 1]
+    length = math.hypot(second[0] - first[0], second[1] - first[1])
+    if length <= 1e-9:
+        raise ValueError('The first scan line must have non-zero length.')
+    axis = (-(second[1] - first[1]) / length, (second[0] - first[0]) / length)
+    # Orient the axis along sweep advance so a positive offset always means
+    # "further along the sweep than nominal", whichever way line 0 runs.
+    advance = waypoints[scans[1]]
+    if ((advance[0] - first[0]) * axis[0] +
+            (advance[1] - first[1]) * axis[1]) < 0.0:
+        axis = (-axis[0], -axis[1])
+
+    grouped = {}
+    for row in rows:
+        segment = int(row['segment'])
+        if int(row['scored_line_sample']) and _finite(
+                row, ('truth_x_m', 'truth_y_m')):
+            grouped.setdefault(segment, []).append(row)
+
+    nominal = []
+    actual = []
+    for segment in scans:
+        samples = grouped.get(segment)
+        if not samples:
+            continue
+        start = waypoints[segment]
+        nominal.append(start[0] * axis[0] + start[1] * axis[1])
+        actual.append(sum(
+            float(row['truth_x_m']) * axis[0] +
+            float(row['truth_y_m']) * axis[1]
+            for row in samples) / len(samples))
+
+    offsets = [a - n for a, n in zip(actual, nominal)]
+    errors = [abs(actual[i + 1] - actual[i]) - abs(nominal[i + 1] - nominal[i])
+              for i in range(len(actual) - 1)]
+    return {
+        'scan_line_offsets_m': offsets,
+        'scan_line_spacing_errors_m': errors,
+        'maximum_scan_line_offset_m': max(
+            (abs(value) for value in offsets), default=math.nan),
+        'maximum_scan_line_spacing_error_m': max(
+            (abs(value) for value in errors), default=math.nan),
+    }
+
+
 def execution_quality(rows, segment_types, planned_lengths, scan_type=1):
     """Summarize spatial execution quality without depending on ROS messages."""
     if len(segment_types) != len(planned_lengths):

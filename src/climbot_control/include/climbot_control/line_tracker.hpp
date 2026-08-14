@@ -26,6 +26,10 @@ struct Limits
   double max_gravity_feedforward{0.139626340};
   double max_cross_feedback{0.139626340};
   double max_deceleration{0.25};
+  // The distance-to-stop profile must demand less than the rate limiter can
+  // deliver. Setting both from one constant makes the command lag the profile
+  // by a step it can never recover, which overshoots every segment endpoint.
+  double braking_deceleration{0.12};
   double alignment_threshold{0.174532925};
   double cross_slowdown_start{0.03};
   double cross_slowdown_full{0.08};

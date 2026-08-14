@@ -89,6 +89,13 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 `maximum_turn_end_heading_error_deg=2.0`；水平 `SCAN` 的首末真值高度差默认不得超过
 `maximum_horizontal_height_drift_m=0.030`。
 
+摘要还输出 `scan_line_spacing`：每条正式 `SCAN` 的真值位置投影到统一法向轴后，
+相对名义扫描线的偏移、相邻扫描线的间距误差，以及两者的最大值。相邻扫描线方向
+相反，各自的法向会翻转，因此必须投影到同一条轴上才能比较。该项由
+`maximum_scan_line_spacing_error_m`（默认 `0.020`，即 §14.3 阈值）判定；扫描线
+少于两条时该指标无定义，不参与判定。横轨误差是相对冻结后的执行参考算的，无论
+那条线被平移到哪里都很小，因此它无法替代这项检查。
+
 转向结束航向误差按 §14.5 用真值度量：先由该段首个跟踪采样点的
 `filtered_yaw_rad + heading_error_rad` 还原控制器当时瞄准的重力补偿后目标航向，
 再用 `truth_yaw_rad` 与之比较。控制器估计只用于定义目标，不充当被测量，因此
@@ -111,7 +118,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `turn_slip_per_degree_m` | `0.0005 m/°` | 横向换道终点为第二次转向预留的标定下滑系数 |
 | `line_tracker` | `parallel_scan_offset_m` | `0.045 m` | 首条或转后偏差不超过此值时直接冻结实测位置对应的平行扫描线 |
 | `line_tracker` | `maximum_scan_offset_m` | `0.12 m` | 转后可尝试单次前进小弧线入轨的最大法向偏差 |
-| `line_tracker` | `arc_entry_finish_offset_m` | `0.03 m` | 小弧线结束、重新对齐并冻结平行扫描线的法向偏差门限 |
+| `line_tracker` | `arc_entry_finish_offset_m` | `0.012 m` | 小弧线结束、重新对齐并冻结平行扫描线的法向偏差门限；直接决定该扫描线冻结在何处，因此必须落在 §14.3 的 `20 mm` 间距预算内 |
 | `line_tracker` | `arc_entry_speed_mps` | `0.08 m/s` | 带重力侧滑前馈的小弧线恒定前进速度；采集保持关闭 |
 | `line_tracker` | `arc_entry_lookahead_m` | `0.20 m` | 小弧线航向引导前视距离 |
 | `line_tracker` | `arc_entry_max_heading_deg` | `20°` | 小弧线相对名义扫描方向的最大航向修正 |
@@ -137,8 +144,8 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `max_turn_angular_speed` | `0.60 rad/s` | 原地转向曲线峰值角速度 |
 | `line_tracker` | `max_turn_angular_acceleration` | `1.00 rad/s²` | 原地转向曲线角加速度 |
 | `line_tracker` | `turn_heading_gain` | `2.0` | 转向参考航向闭环增益 |
-| `line_tracker` | `final_approach_distance_m` | `0.10 m` | 进入终点低速收敛的剩余沿轨距离 |
-| `line_tracker` | `final_approach_speed_mps` | `0.03 m/s` | 终点收敛线速度上限 |
+| `line_tracker` | `final_approach_distance_m` | `0.05 m` | 进入终点低速收敛的剩余沿轨距离；只是护栏，停车精度由制动剖面负责 |
+| `line_tracker` | `final_approach_speed_mps` | `0.08 m/s` | 终点收敛线速度上限，在横轨积分更新之后施加 |
 | `line_tracker` | `goal_position_tolerance_m` | `0.03 m` | 完成时二维终点距离严格门限 |
 | `line_tracker` | `goal_position_exit_tolerance_m` | `0.04 m` | 终点候选状态退出门限 |
 | `line_tracker` | `start_approach_tolerance_m` | `0.05 m` | 采集关闭的起点进入位置门限 |
@@ -148,6 +155,8 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `stopped_linear_speed_mps` | `0.01 m/s` | 完成时融合线速度上限 |
 | `line_tracker` | `stopped_angular_speed_rps` | `0.02 rad/s` | 完成时融合角速度上限 |
 | `line_tracker` | `goal_settle_duration_s` | `0.30 s` | 位置、航向和停车状态稳定时间 |
+| `line_tracker` | `max_linear_deceleration` | `0.25 m/s²` | 速率限幅器的减速权限 |
+| `line_tracker` | `braking_profile_deceleration` | `0.12 m/s²` | 距离-停车剖面使用的减速度，必须小于 `max_linear_deceleration`：两者相等时指令永远滞后剖面一步，每个段终点都会冲过去 |
 | `cmd_vel_watchdog` | `command_timeout_s` | `0.40 s` | 上游速度指令超时后持续发布零速 |
 | `cmd_vel_watchdog` | `publish_rate_hz` | `50 Hz` | 向执行器重发安全速度的频率 |
 

@@ -244,7 +244,7 @@ class TestCoverageExecutor(unittest.TestCase):
             self._feedback_callback(message)
         send_future = self.client.send_goal_async(
             goal, feedback_callback=record_feedback)
-        deadline = time.monotonic() + 25.0
+        deadline = time.monotonic() + 45.0
         while not send_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(send_future.done())

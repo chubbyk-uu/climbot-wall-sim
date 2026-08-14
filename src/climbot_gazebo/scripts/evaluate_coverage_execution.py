@@ -17,6 +17,7 @@ from climbot_description.geometry import yaw_from_quaternion
 from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.coverage_metrics import footprint_coverage
 from climbot_gazebo.execution_metrics import execution_quality
+from climbot_gazebo.execution_metrics import scan_line_spacing
 from climbot_interfaces.action import ExecuteCoverage
 from climbot_interfaces.msg import CoverageTask
 from geometry_msgs.msg import Point32
@@ -67,6 +68,7 @@ class CoverageExecutionEvaluator(Node):
         ('maximum_endpoint_error_m', 0.030),
         ('maximum_turn_end_heading_error_deg', 2.0),
         ('maximum_horizontal_height_drift_m', 0.030),
+        ('maximum_scan_line_spacing_error_m', 0.020),
         ('minimum_actual_coverage_ratio', 0.98),
         ('coverage_grid_resolution_m', 0.01),
         ('trajectory_csv', ''),
@@ -541,6 +543,25 @@ class CoverageExecutionEvaluator(Node):
             self.trajectory, goal.task.segment_types, planned_lengths,
             CoverageTask.SEGMENT_SCAN)
         self.summary['execution_quality'] = quality
+        spacing = scan_line_spacing(
+            self.trajectory, goal.task.segment_types,
+            [(pose.position.x, pose.position.y)
+             for pose in goal.task.waypoints],
+            CoverageTask.SEGMENT_SCAN)
+        self.summary['scan_line_spacing'] = spacing
+        self.get_logger().info(
+            'scan_line_offset_max=%.2f mm spacing_error_max=%.2f mm '
+            'offsets=[%s] mm' % (
+                spacing['maximum_scan_line_offset_m'] * 1000.0,
+                spacing['maximum_scan_line_spacing_error_m'] * 1000.0,
+                ' '.join('%+.1f' % (value * 1000.0)
+                         for value in spacing['scan_line_offsets_m'])))
+        maximum_spacing_error = float(
+            self.get_parameter('maximum_scan_line_spacing_error_m').value)
+        passed = passed and (
+            math.isnan(spacing['maximum_scan_line_spacing_error_m']) or
+            spacing['maximum_scan_line_spacing_error_m'] <=
+            maximum_spacing_error)
         horizontal_drift = quality['maximum_horizontal_height_drift_m']
         self.get_logger().info(
             'endpoint_max=%.2f mm turn_end_max=%.2f deg '

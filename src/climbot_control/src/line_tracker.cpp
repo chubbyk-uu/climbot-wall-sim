@@ -52,7 +52,7 @@ Command trackLine(
   const double heading_error = wrapAngle(target_yaw - pose.yaw);
   const double remaining = length - along;
   const double braking_speed = std::sqrt(std::max(0.0,
-      2.0 * limits.max_deceleration * std::max(0.0, remaining)));
+      2.0 * limits.braking_deceleration * std::max(0.0, remaining)));
   double linear = std::clamp(std::min(cruise_speed, braking_speed),
     0.0, limits.max_linear);
   if (std::abs(cross) > limits.cross_slowdown_start) {
