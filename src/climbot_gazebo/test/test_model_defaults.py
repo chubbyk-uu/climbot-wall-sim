@@ -32,3 +32,16 @@ def test_sdf_defaults_match_shared_and_simulation_yaml():
     assert arguments['caster_x'] == pytest.approx(robot['caster']['centre_x_m'])
     assert arguments['contact_rate'] == pytest.approx(
         simulation['contact']['update_rate_hz'])
+
+
+def test_truth_odometry_is_explicitly_labelled_as_world_frame():
+    """Keep Gazebo world truth distinct from wall-frame odometry."""
+    root = ElementTree.parse(
+        PACKAGE_ROOT / 'models' / 'climbot' / 'model.sdf.xacro').getroot()
+    plugins = {
+        plugin.attrib['name']: plugin
+        for plugin in root.findall('model/plugin')
+    }
+    assert plugins['gz::sim::systems::DiffDrive'].findtext('frame_id') == 'odom'
+    assert (plugins['gz::sim::systems::OdometryPublisher'].findtext('odom_frame')
+            == 'world')

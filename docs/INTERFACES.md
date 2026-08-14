@@ -43,7 +43,7 @@
 | --- | --- | --- | --- |
 | `/control/cmd_vel` | `geometry_msgs/msg/Twist` | E3 直线控制器、未来任务状态机 | E4 速度看门狗；控制层唯一入口 |
 | `/cmd_vel` | `geometry_msgs/msg/Twist` | E4 速度看门狗 | Gazebo DiffDrive；每 `20 ms` 重发 |
-| `/model/climbot/ground_truth` | `nav_msgs/msg/Odometry` | Gazebo | 仅模拟传感器和评价 |
+| `/model/climbot/ground_truth` | `nav_msgs/msg/Odometry` | Gazebo | `header.frame_id=world`；仅模拟传感器和评价 |
 | `/model/climbot/odometry` | `nav_msgs/msg/Odometry` | Gazebo DiffDrive | 诊断、轮式协方差适配 |
 | `/wheel_odom` | `nav_msgs/msg/Odometry` | `wall_wheel_odom_adapter` | EKF 的前向速度和偏航角速度 |
 | `/imu` | `sensor_msgs/msg/Imu` | Gazebo | 诊断、IMU 适配 |
@@ -55,8 +55,9 @@
 | `/contact/right_wheel` | `ros_gz_interfaces/msg/Contacts` | Gazebo bridge | 法向载荷评价 |
 | `/contact/caster` | `ros_gz_interfaces/msg/Contacts` | Gazebo bridge | 法向载荷评价 |
 
-`/model/climbot/ground_truth` 不得成为轨迹控制器输入。模拟全站仪可以由它派生，
-但必须经过频率、噪声、延迟和坐标变换模型。
+`/model/climbot/ground_truth` 是 Gazebo world 坐标真值，不得成为轨迹控制器输入。
+模拟全站仪和所有评价工具使用前必须将它转换到墙面 `odom` 工作坐标系；模拟全站仪
+还必须经过频率、噪声和延迟模型。
 
 `climbot_wall.launch.py` 始终启动 `cmd_vel_watchdog_node`，它是唯一的执行器控制
 输出者：以 `50 Hz` 从
