@@ -245,7 +245,7 @@ CrossTrackOscillationMonitor::CrossTrackOscillationMonitor(
 bool CrossTrackOscillationMonitor::update(double cross_track, double along_track)
 {
   if (!std::isfinite(cross_track) || !std::isfinite(along_track)) {
-    return true;
+    return false;
   }
   if (std::abs(cross_track) < deadband_) {
     return false;

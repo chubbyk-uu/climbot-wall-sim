@@ -25,6 +25,13 @@ public:
   using ExecuteCoverage = climbot_interfaces::action::ExecuteCoverage;
   using GoalHandle = rclcpp_action::ServerGoalHandle<ExecuteCoverage>;
 
+  enum class DynamicReferenceResult
+  {
+    FAILED,
+    READY,
+    REALIGN,
+  };
+
   LineTrackerNode()
   : Node("line_tracker")
   {
@@ -424,7 +431,7 @@ private:
     return true;
   }
 
-  bool prepareDynamicReference()
+  DynamicReferenceResult prepareDynamicReference()
   {
     using Task = climbot_interfaces::msg::CoverageTask;
     const auto segment_type = active_task_->segment_types[current_segment_];
@@ -445,28 +452,29 @@ private:
         finishGoal(
           ExecuteCoverage::Result::OUT_OF_BOUNDS,
           "Dynamic transition endpoint lies outside the motion region.");
-        return false;
+        return DynamicReferenceResult::FAILED;
       }
       start_ = dynamic.start;
       end_ = dynamic.end;
     } else if (segment_type == Task::SEGMENT_SCAN && current_segment_ > 0U &&
       active_task_->segment_types[current_segment_ - 1U] == Task::SEGMENT_TRANSITION)
     {
-      return preparePostTurnScan();
+      return preparePostTurnScan() ? DynamicReferenceResult::READY :
+             DynamicReferenceResult::FAILED;
     }
 
     if (std::hypot(end_.x - start_.x, end_.y - start_.y) <= 1e-9) {
       finishGoal(
         ExecuteCoverage::Result::TRACKING_FAILED,
         "Dynamic execution segment collapsed to zero length.");
-      return false;
+      return DynamicReferenceResult::FAILED;
     }
     reference_prepared_ = true;
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
     alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     cross_integral_ = 0.0;
     publishReferencePath();
-    return false;
+    return DynamicReferenceResult::REALIGN;
   }
 
   void finishGoal(uint16_t code, const std::string & message)
@@ -820,10 +828,13 @@ private:
             } else if ((current_time - alignment_settle_start_).seconds() >=
               alignment_settle_duration_)
             {
-              if (!standalone_mode_ && !reference_prepared_ &&
-                !prepareDynamicReference())
-              {
-                return;
+              if (!standalone_mode_ && !reference_prepared_) {
+                const auto reference_result = prepareDynamicReference();
+                if (reference_result == DynamicReferenceResult::FAILED ||
+                  reference_result == DynamicReferenceResult::REALIGN)
+                {
+                  return;
+                }
               }
               motion_state_ = arc_entry_active_ ?
                 MotionState::ARC_ENTRY : MotionState::TRACK_LINE;

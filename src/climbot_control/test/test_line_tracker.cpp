@@ -289,6 +289,14 @@ TEST(CoverageExecution, DetectsSustainedCrossTrackReversalsNotSensorNoise)
   EXPECT_EQ(monitor.reversalCount(), 0U);
 }
 
+TEST(CoverageExecution, DoesNotClassifyInvalidSamplesAsOscillation)
+{
+  CrossTrackOscillationMonitor monitor(0.020, 0.10, 3U);
+  EXPECT_FALSE(monitor.update(std::numeric_limits<double>::quiet_NaN(), 0.0));
+  EXPECT_FALSE(monitor.update(0.0, std::numeric_limits<double>::infinity()));
+  EXPECT_EQ(monitor.reversalCount(), 0U);
+}
+
 TEST(CoverageExecution, HorizontalTransitionPreloadsTheSecondTurnDrop)
 {
   auto task = validTask();
