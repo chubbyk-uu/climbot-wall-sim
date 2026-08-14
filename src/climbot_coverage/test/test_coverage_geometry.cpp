@@ -115,10 +115,10 @@ TEST(CoverageGeometry, InsetsTrapezoidAlongEveryEdge)
 
 TEST(CoverageGeometry, GeneratesHorizontalStraightAlternatingLines)
 {
-  const auto region = insetConvexPolygon(
-    makeRectangle({-3.0, 0.5}, {3.0, 6.5}).polygon, 0.35);
-  const auto path = generateBoustrophedonPath(
-    region, 0.4, "horizontal", "lower_left");
+  const auto coverage = makeRectangle({-3.0, 0.5}, {3.0, 6.5}).polygon;
+  const auto motion = makeRectangle({-3.1, 0.25}, {3.1, 6.75}).polygon;
+  const auto path = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, 0.5, 0.1, 0.4, "horizontal", "lower_left");
   ASSERT_GE(path.size(), 4U);
   for (std::size_t index = 0; index < path.size(); index += 2) {
     EXPECT_NEAR(path[index].y, path[index + 1].y, 1e-9);
@@ -132,10 +132,11 @@ TEST(CoverageGeometry, GeneratesHorizontalStraightAlternatingLines)
 
 TEST(CoverageGeometry, GeneratesVerticalStraightAlternatingLines)
 {
-  const auto region = insetConvexPolygon(
-    makeIsoscelesTrapezoid({-3.0, 0.5}, {2.4, 6.5}, {3.0, 0.5}).polygon, 0.35);
-  const auto path = generateBoustrophedonPath(
-    region, 0.4, "vertical", "lower_left");
+  const auto coverage = makeIsoscelesTrapezoid(
+    {-3.0, 0.5}, {2.4, 6.5}, {3.0, 0.5}).polygon;
+  const auto motion = makeRectangle({-3.5, 0.0}, {3.5, 7.0}).polygon;
+  const auto path = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, 0.5, 0.1, 0.4, "vertical", "lower_left");
   ASSERT_GE(path.size(), 4U);
   for (std::size_t index = 0; index < path.size(); index += 2) {
     EXPECT_NEAR(path[index].x, path[index + 1].x, 1e-9);
@@ -152,7 +153,8 @@ TEST(CoverageGeometry, RejectsInvalidRegionAndSpacing)
   EXPECT_THROW(makeRectangle({1.0, 1.0}, {0.0, 2.0}), std::invalid_argument);
   const auto rectangle = makeRectangle({0.0, 0.0}, {2.0, 2.0}).polygon;
   EXPECT_THROW(
-    generateBoustrophedonPath(rectangle, 0.0, "horizontal", "lower_left"),
+    generateFootprintAwareBoustrophedonPath(
+      rectangle, rectangle, 0.5, 0.1, 0.0, "horizontal", "lower_left"),
     std::invalid_argument);
 }
 
@@ -162,14 +164,14 @@ TEST(CoverageGeometry, CoversAtLeastNinetyEightPercentInBothDirections)
   constexpr double overlap_ratio = 0.20;
   constexpr double row_spacing = detection_width * (1.0 - overlap_ratio);
   const std::vector<Polygon> regions{
-    insetConvexPolygon(makeRectangle({-3.0, 0.5}, {3.0, 6.5}).polygon, 0.46),
-    insetConvexPolygon(
-      makeIsoscelesTrapezoid({-3.0, 0.5}, {2.4, 6.5}, {3.0, 0.5}).polygon, 0.46)};
+    makeRectangle({-3.0, 0.5}, {3.0, 6.5}).polygon,
+    makeIsoscelesTrapezoid({-3.0, 0.5}, {2.4, 6.5}, {3.0, 0.5}).polygon};
+  const auto motion = makeRectangle({-4.0, 0.0}, {4.0, 7.0}).polygon;
   for (const auto & region : regions) {
     for (const auto & direction : {std::string("horizontal"), std::string("vertical")}) {
-      const auto path = generateBoustrophedonPath(
-        region, row_spacing, direction, "lower_left");
-      EXPECT_GE(sampledCoverageRatio(region, path, detection_width), 0.98)
+      const auto path = generateFootprintAwareBoustrophedonPath(
+        region, motion, detection_width, 0.1, row_spacing, direction, "lower_left");
+      EXPECT_GE(sampledCoverageRatio(region, path, detection_width, 0.1), 0.98)
         << "direction=" << direction;
     }
   }
@@ -238,10 +240,13 @@ TEST(CoverageGeometry, RejectsInvalidFootprintPathOptions)
 
 TEST(CoverageGeometry, IsExactlyDeterministicForIdenticalInput)
 {
-  const auto region = insetConvexPolygon(
-    makeIsoscelesTrapezoid({-3.0, 0.5}, {2.4, 6.5}, {3.0, 0.5}).polygon, 0.46);
-  const auto first = generateBoustrophedonPath(region, 0.4, "horizontal", "upper_right");
-  const auto second = generateBoustrophedonPath(region, 0.4, "horizontal", "upper_right");
+  const auto coverage = makeIsoscelesTrapezoid(
+    {-3.0, 0.5}, {2.4, 6.5}, {3.0, 0.5}).polygon;
+  const auto motion = makeRectangle({-4.0, 0.0}, {4.0, 7.0}).polygon;
+  const auto first = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, 0.5, 0.1, 0.4, "horizontal", "upper_right");
+  const auto second = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, 0.5, 0.1, 0.4, "horizontal", "upper_right");
   ASSERT_EQ(first.size(), second.size());
   for (std::size_t index = 0; index < first.size(); ++index) {
     EXPECT_DOUBLE_EQ(first[index].x, second[index].x);

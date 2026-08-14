@@ -29,10 +29,6 @@ RegionResult makeIsoscelesTrapezoid(
 
 Polygon insetConvexPolygon(const Polygon & polygon, double margin);
 
-std::vector<Point2> generateBoustrophedonPath(
-  const Polygon & polygon, double maximum_spacing,
-  const std::string & sweep_direction, const std::string & start_corner);
-
 // Generates SCAN line pairs whose rectangular swept detection footprint covers
 // coverage_region.  Every robot-centre waypoint must lie in motion_region.
 std::vector<Point2> generateFootprintAwareBoustrophedonPath(

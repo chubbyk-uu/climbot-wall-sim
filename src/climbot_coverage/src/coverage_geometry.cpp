@@ -234,54 +234,6 @@ Polygon insetConvexPolygon(const Polygon & polygon, double margin)
   return inset;
 }
 
-std::vector<Point2> generateBoustrophedonPath(
-  const Polygon & polygon, double maximum_spacing,
-  const std::string & sweep_direction, const std::string & start_corner)
-{
-  if (maximum_spacing <= 0.0) {
-    throw std::invalid_argument("Track spacing must be positive.");
-  }
-  const bool horizontal = sweep_direction == "horizontal";
-  if (!horizontal && sweep_direction != "vertical") {
-    throw std::invalid_argument("Sweep direction must be horizontal or vertical.");
-  }
-  validateStartCorner(start_corner);
-  // Safe to decompose only now that the value is known to be one of the four.
-  const bool start_low = start_corner.rfind("lower_", 0) == 0;
-  const bool start_left = start_corner.compare(start_corner.size() - 4, 4, "left") == 0;
-
-  const auto [minimum, maximum] = bounds(polygon, horizontal);
-  const double span = maximum - minimum;
-  if (span <= kEpsilon) {
-    throw std::invalid_argument("Effective region has no sweep span.");
-  }
-  const int line_count = std::max(1, static_cast<int>(std::ceil(span / maximum_spacing)));
-  const double spacing = span / static_cast<double>(line_count);
-
-  std::vector<Point2> path;
-  for (int line_index = 0; line_index < line_count; ++line_index) {
-    const bool reverse_order = horizontal ? !start_low : !start_left;
-    const int ordered_index = reverse_order ? line_count - 1 - line_index : line_index;
-    const double coordinate = minimum + spacing * (static_cast<double>(ordered_index) + 0.5);
-    auto segment = clipScanLine(polygon, coordinate, horizontal);
-    bool forward_along_line;
-    if (horizontal) {
-      forward_along_line = start_left;
-    } else {
-      forward_along_line = start_low;
-    }
-    if (line_index % 2 == 1) {
-      forward_along_line = !forward_along_line;
-    }
-    if (!forward_along_line) {
-      std::swap(segment.first, segment.second);
-    }
-    path.push_back(segment.first);
-    path.push_back(segment.second);
-  }
-  return path;
-}
-
 std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   const Polygon & coverage_region, const Polygon & motion_region,
   double detection_width, double detection_length, double maximum_spacing,
