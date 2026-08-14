@@ -8,6 +8,7 @@ find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 add_library(line_tracker src/line_tracker.cpp src/command_watchdog.cpp src/coverage_execution.cpp
   src/turn_profile.cpp)
@@ -27,7 +28,13 @@ target_compile_features(cmd_vel_watchdog_node PUBLIC cxx_std_17)
 target_link_libraries(cmd_vel_watchdog_node line_tracker)
 ament_target_dependencies(cmd_vel_watchdog_node geometry_msgs rclcpp)
 
-install(TARGETS line_tracker line_tracker_node cmd_vel_watchdog_node ARCHIVE DESTINATION lib LIBRARY DESTINATION lib
+add_executable(coverage_manager_node src/coverage_manager_node.cpp)
+target_compile_features(coverage_manager_node PUBLIC cxx_std_17)
+target_link_libraries(coverage_manager_node line_tracker)
+ament_target_dependencies(coverage_manager_node
+  climbot_interfaces rclcpp rclcpp_action std_msgs std_srvs)
+
+install(TARGETS line_tracker line_tracker_node cmd_vel_watchdog_node coverage_manager_node ARCHIVE DESTINATION lib LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
@@ -47,6 +54,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_line_tracker_completion.py TIMEOUT 30)
   add_launch_test(test/test_line_tracker_node.py TIMEOUT 30)
   add_launch_test(test/test_coverage_executor.py TIMEOUT 30)
+  add_launch_test(test/test_coverage_manager.py TIMEOUT 30)
 endif()
 
 ament_export_include_directories(include)

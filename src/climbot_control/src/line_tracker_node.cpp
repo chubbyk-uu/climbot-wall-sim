@@ -344,11 +344,55 @@ private:
     completed_segments_ = 0U;
     current_segment_ = 0U;
     task_start_time_ = now();
-    configureSegment(current_segment_);
+    approaching_start_ = true;
+    waiting_for_start_pose_ = !have_pose_;
+    segment_start_time_ = task_start_time_;
+    if (!waiting_for_start_pose_) {
+      configureStartApproach();
+    }
     RCLCPP_INFO(
       get_logger(), "Accepted coverage task '%s' revision %u with %zu segments.",
       active_task_->task_id.c_str(), active_task_->revision,
       active_task_->segment_types.size());
+  }
+
+  void configureStartApproach()
+  {
+    const auto & first = active_task_->waypoints.front().position;
+    if (!climbot_control::pointInPolygon(
+        pose_.x, pose_.y, active_task_->motion_region, motion_region_tolerance_) ||
+      !climbot_control::pointInPolygon(
+        first.x, first.y, active_task_->motion_region, motion_region_tolerance_))
+    {
+      finishGoal(
+        ExecuteCoverage::Result::OUT_OF_BOUNDS,
+        "Robot or first task waypoint lies outside the motion region.");
+      return;
+    }
+    waiting_for_start_pose_ = false;
+    if (std::hypot(first.x - pose_.x, first.y - pose_.y) <= goal_position_tolerance_) {
+      approaching_start_ = false;
+      configureSegment(0U);
+      return;
+    }
+    start_ = {pose_.x, pose_.y};
+    end_ = {first.x, first.y};
+    motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
+    previous_command_ = {};
+    cross_integral_ = 0.0;
+    alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    goal_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    segment_start_time_ = now();
+    alignment_origin_ = start_;
+    arc_entry_active_ = false;
+    reference_prepared_ = true;
+    oscillation_monitor_->reset();
+    oscillation_warning_emitted_ = false;
+    publishCompletion(false);
+    publishReferencePath();
+    RCLCPP_INFO(
+      get_logger(), "Approaching first task waypoint from %.3f m away.",
+      std::hypot(end_.x - start_.x, end_.y - start_.y));
   }
 
   void configureSegment(std::size_t index)
@@ -516,6 +560,9 @@ private:
 
   uint8_t feedbackState() const
   {
+    if (approaching_start_ || waiting_for_start_pose_) {
+      return ExecuteCoverage::Feedback::APPROACH_START;
+    }
     switch (motion_state_) {
       case MotionState::WAITING_FOR_ALIGNMENT:
       case MotionState::ALIGN_BRAKE:
@@ -541,8 +588,10 @@ private:
     }
     auto feedback = std::make_shared<ExecuteCoverage::Feedback>();
     feedback->state = feedbackState();
-    feedback->current_segment = static_cast<int32_t>(current_segment_);
-    feedback->segment_type = active_task_->segment_types[current_segment_];
+    feedback->current_segment = approaching_start_ || waiting_for_start_pose_ ?
+      -1 : static_cast<int32_t>(current_segment_);
+    feedback->segment_type = approaching_start_ || waiting_for_start_pose_ ?
+      0U : active_task_->segment_types[current_segment_];
     feedback->along_track_error = command.along;
     feedback->cross_track_error = command.cross;
     feedback->heading_error = command.heading_error;
@@ -637,6 +686,12 @@ private:
         "Fused robot position left the task motion region.");
       return;
     }
+    if (!standalone_mode_ && waiting_for_start_pose_) {
+      configureStartApproach();
+      if (!active_goal_) {
+        return;
+      }
+    }
     const double dt = last_control_time_.nanoseconds() == 0 ?
       1.0 / control_frequency_hz_ : (current_time - last_control_time_).seconds();
     last_control_time_ = current_time;
@@ -645,6 +700,11 @@ private:
     }
 
     if (!standalone_mode_ && motion_state_ == MotionState::SEGMENT_COMPLETE) {
+      if (approaching_start_) {
+        approaching_start_ = false;
+        configureSegment(0U);
+        return;
+      }
       ++completed_segments_;
       ++current_segment_;
       if (current_segment_ >= active_task_->segment_types.size()) {
@@ -786,7 +846,7 @@ private:
 
     motion_state_ = MotionState::SEGMENT_COMPLETE;
     cross_integral_ = 0.0;
-    publishCompletion(true);
+    publishCompletion(!approaching_start_);
     RCLCPP_INFO(
       get_logger(), "Segment complete: position error %.4f m, heading error %.2f deg.",
       position_error, heading_error * 180.0 / std::acos(-1.0));
@@ -947,6 +1007,8 @@ private:
   bool standalone_mode_{true};
   bool reference_prepared_{true};
   bool arc_entry_active_{false};
+  bool approaching_start_{false};
+  bool waiting_for_start_pose_{false};
   bool oscillation_warning_emitted_{false};
   uint32_t completed_segments_{0U};
   std::size_t current_segment_{0U};

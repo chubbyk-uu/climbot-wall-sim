@@ -221,6 +221,44 @@ class TestCoverageExecutor(unittest.TestCase):
         linear, angular, _ = self._current_command()
         self.assertEqual((linear, angular), (0.0, 0.0))
 
+    def test_approaches_first_waypoint_before_counting_scan_segments(self):
+        """A distant start uses a non-collection approach before scan segment zero."""
+        self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
+        x, y, yaw = -0.20, 0.0, 0.0
+        feedback_states = []
+        for _ in range(5):
+            self._publish_odometry(x, y, yaw)
+            time.sleep(0.02)
+        goal = ExecuteCoverage.Goal()
+        goal.task = _task()
+        goal.task.waypoints = goal.task.waypoints[:2]
+        goal.task.segment_types = [CoverageTask.SEGMENT_SCAN]
+        send_future = self.client.send_goal_async(
+            goal, feedback_callback=lambda message: feedback_states.append(message.feedback.state))
+        deadline = time.monotonic() + 12.0
+        while not send_future.done() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(send_future.done())
+        goal_handle = send_future.result()
+        self.assertTrue(goal_handle.accepted)
+        result_future = goal_handle.get_result_async()
+
+        step = 0.01
+        while not result_future.done() and time.monotonic() < deadline:
+            linear, angular, _ = self._current_command()
+            yaw += angular * step
+            x += linear * math.cos(yaw) * step
+            y += linear * math.sin(yaw) * step
+            self._publish_odometry(x, y, yaw, linear, angular)
+            time.sleep(step)
+
+        self.assertTrue(result_future.done())
+        result = result_future.result()
+        self.assertEqual(result.status, GoalStatus.STATUS_SUCCEEDED)
+        self.assertEqual(result.result.completed_segments, 1)
+        self.assertIn(ExecuteCoverage.Feedback.APPROACH_START, feedback_states)
+        self.assertLess(math.hypot(x - 0.20, y), 0.04)
+
     def test_rejects_structurally_invalid_task(self):
         """An empty task never becomes an executable goal."""
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))

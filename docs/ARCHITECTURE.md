@@ -118,7 +118,7 @@ Gazebo physics
 
 区域参数或 RViz 点选 -> coverage planner -> /coverage/task（权威任务预览）
                                               ├─> /coverage/path（派生显示）
-                                              └─> coverage manager（待实现，显式开始并锁定版本）
+                                              └─> coverage manager（显式开始并锁定版本）
                                                             │
                                                             └─> ExecuteCoverage Action goal
                                                             │
@@ -162,11 +162,12 @@ C++ 通用直线段跟踪、任务状态机、
 `climbot_bringup`；等控制器和完整启动组合出现后再拆，
 避免只为一个 launch 提前增加空包。
 
-下一步增加独立任务管理器，订阅 `/coverage/task` 并缓存最新有效预览，只有收到操作员
-明确的开始命令后才锁定 `task_id + revision` 并发送 Action Goal。管理器负责开始、
-取消、版本锁定和执行状态汇总；规划器不直接调用控制器，RViz 面板也不直接实现安全
-状态机。管理器可先落在 `climbot_control`，形成统一系统入口时再随组合 launch 一并
-评估是否迁入 `climbot_bringup`。
+`coverage_manager_node` 已订阅 `/coverage/task` 并缓存最新有效预览，只有收到操作员
+明确的 `/coverage/start` 后才复制并锁定 `task_id + revision`、发送 Action Goal。
+它还提供 `/coverage/cancel` 和 `/coverage/manager_status`；规划器不直接调用控制器，
+RViz 面板也不直接实现安全状态机。执行器在首条扫描前完成采集关闭的起点进入，首点
+之外的直线不计入覆盖段。管理器当前位于 `climbot_control`，统一系统入口形成后再评估
+是否迁入 `climbot_bringup`。
 
 未来面阵相机及位置触发采集归属于独立的 `climbot_inspection`。它消费冻结后的动态
 执行参考、任务状态、EKF 位姿和相机图像，生成触发事件及带位姿的检测数据；不参与

@@ -22,6 +22,7 @@ uint8 TURN_SETTLE=2
 uint8 TRACK_LINE=3
 uint8 FINAL_APPROACH=4
 uint8 STOPPED=5
+uint8 APPROACH_START=6
 
 uint8 state
 int32 current_segment
