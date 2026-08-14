@@ -140,3 +140,24 @@ class TestCoverageManager(unittest.TestCase):
 
         canceled = self._call(self.cancel_client)
         self.assertTrue(canceled.success)
+
+    def test_reports_a_cleared_preview_as_idle_rather_than_malformed(self):
+        """An empty task is how the planner clears a preview, not a fault."""
+        self.assertTrue(self.start_client.wait_for_service(timeout_sec=3.0))
+        empty = CoverageTask()
+        empty.header.frame_id = 'odom'
+        empty.task_id = 'manager-test'
+        empty.revision = 10
+        empty.sweep_direction = CoverageTask.SWEEP_HORIZONTAL
+        empty.detection_width = 0.1
+        empty.detection_length = 0.1
+        self.task_publisher.publish(empty)
+        deadline = time.monotonic() + 3.0
+        while (not any('Idle: no coverage region selected.' in status
+                       for status in self.statuses)
+               and time.monotonic() < deadline):
+            time.sleep(0.01)
+        self.assertTrue(any(
+            'Idle: no coverage region selected.' in status for status in self.statuses))
+        self.assertFalse(any('No executable preview' in status for status in self.statuses))
+        self.assertFalse(self._call(self.start_client).success)

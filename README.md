@@ -100,14 +100,37 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args \
 机器人初始朝墙面水平方向。水平行驶时应在重力作用下逐渐下降，停车后由静摩擦
 基本保持高度。
 
-启动仿真、覆盖规划器和 RViz：
+启动仿真、覆盖规划器和 RViz（只能预览，不能执行）：
 
 ```bash
 ros2 launch climbot_coverage coverage_sim.launch.py
 ```
 
-使用独立规划器或等腰梯形/RViz 点选的命令见
+使用独立规划器或等腰梯形的命令见
 [climbot_coverage/README.md](src/climbot_coverage/README.md)。
+
+### 在 RViz 中点选区域并执行
+
+一条命令启动仿真、规划器、RViz、跟踪器和任务管理器：
+
+```bash
+ros2 launch climbot_coverage coverage_mission.launch.py
+```
+
+在 RViz 工具栏选择 `Publish Point`，依次点击矩形的左下角和右上角
+（`region_type:=trapezoid` 时再点右下角）。第二次点击后 RViz 中出现规划路径，
+`/coverage/manager_status` 变为 `Ready: rectangle revision <n>`。确认路径正确后
+在另一个终端启动执行：
+
+```bash
+ros2 service call /coverage/start std_srvs/srv/Trigger
+ros2 topic echo /coverage/manager_status    # 观察 Executing / Execution finished
+ros2 service call /coverage/cancel std_srvs/srv/Trigger   # 中途停车
+```
+
+点错角点时先调用 `ros2 service call /coverage/clear_points std_srvs/srv/Trigger`
+再重新点选。`/coverage/status` 会回显每个被接受的点的坐标，可用来确认没有因为
+相机视角而选反方向。按 §11.1，开始与取消目前只经由服务；RViz 按钮面板是后续工作。
 
 ### 完整覆盖任务演示
 

@@ -8,7 +8,8 @@
 | --- | --- |
 | `ros2 launch climbot_gazebo climbot_wall.launch.py` | Gazebo、桥接、TF、传感器适配和 EKF |
 | `ros2 launch climbot_coverage coverage_planner.launch.py` | 独立覆盖规划器和可选 RViz |
-| `ros2 launch climbot_coverage coverage_sim.launch.py` | 当前阶段联合启动仿真、规划器和 RViz |
+| `ros2 launch climbot_coverage coverage_sim.launch.py` | 联合启动仿真、规划器和 RViz；**不含执行器**，只能预览 |
+| `ros2 launch climbot_coverage coverage_mission.launch.py` | 完整任务入口：仿真、规划器、RViz、跟踪器和管理器 |
 | `ros2 launch climbot_control line_tracker.launch.py` | 单段直线跟踪器；从共享描述注入轮距和轮缘硬限值 |
 | `ros2 launch climbot_control coverage_executor.launch.py` | 多段覆盖 Action 执行器；不接入 Nav2 |
 
@@ -22,6 +23,26 @@
 联合启动时通过 `config_file:=<配置绝对路径>` 选择演示；同时启动
 `coverage_executor.launch.py use_sim_time:=true`，再由 Action 客户端发送规划器发布的
 `/coverage/task`。
+
+`coverage_mission.launch.py` 把上述两条命令合成一条，默认 `input_mode:=rviz`，
+用于操作员在 RViz 中点选区域后手动启动执行：
+
+| 参数 | 默认值 | 含义 |
+| --- | ---: | --- |
+| `headless` | `false` | 不启动 Gazebo GUI；RViz 仍然启动 |
+| `gpu_backend` | `auto` | 透传给 `climbot_wall.launch.py` |
+| `rviz` | `true` | 启动 RViz；点选工具由它提供 |
+| `input_mode` | `rviz` | `rviz` 点选或 `parameters` 配置区域 |
+| `config_file` | `coverage_rectangle.yaml` | 规划器参数；点选模式下忽略其中的角点 |
+| `region_type` | `rectangle` | `rectangle` 需两点，`trapezoid` 需三点 |
+| `sweep_direction` | `horizontal` | 扫描方向 |
+
+点选模式下的操作顺序是：用 RViz 的 `Publish Point` 工具依次点击区域角点
+（矩形为左下、右上；梯形再加右下），确认 `/coverage/manager_status` 变为
+`Ready: <task_id> revision <n>`，再调用 `/coverage/start`。`/coverage/status`
+会回显每次点击被接受时的坐标，可据此发现相机视角造成的镜像或旋转误选。
+角点点错时调用 `/coverage/clear_points` 清空重来。RViz 的固定坐标系是 `odom`，
+即墙面平面，所以点选工具给出的 `x`、`y` 就是墙面坐标；规划器忽略 `z`。
 
 `climbot_wall.launch.py` 的主要 launch 参数：
 

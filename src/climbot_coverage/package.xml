@@ -20,6 +20,8 @@
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>climbot_description</exec_depend>
+  <exec_depend>climbot_gazebo</exec_depend>
+  <exec_depend>climbot_control</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
 
   <test_depend>ament_cmake_gtest</test_depend>

@@ -159,6 +159,26 @@
 | 静默失效参数排查 | 已完成 | 按 `final_approach_speed_mps` 的失效模式（赋值后被整体重建覆盖）逐条核对 `line_tracker` 的 55 个参数与 `Limits` 的 13 个字段，确认其余全部到达消费点，无第二处 |
 | `test_coverage_executor` 超时余量 | 已完成 | 制动变缓后该 launch 测试实测 `42.2 s`，CTest `TIMEOUT` 为 `60 s`（占 70%，且不含节点启动时间），负载稍高就会误报。放宽到 `120 s` |
 
+## 2026-08-14 RViz 点选到执行的链路打通（阶段 1）
+
+此前"在 RViz 点选区域、规划、下发并执行"这条链没有一条命令能跑通：
+`coverage_sim.launch.py` 只有仿真、规划器和 RViz，`coverage_executor.launch.py`
+只有跟踪器和管理器，没有任何 launch 同时包含两者。`input_mode:=rviz` 分支也
+从未被任何测试覆盖。
+
+| 项目 | 状态 | 结果 |
+| --- | --- | --- |
+| 统一任务入口 | 已完成 | 新增 `climbot_coverage/launch/coverage_mission.launch.py`，一条命令启动仿真、规划器、RViz、跟踪器和管理器，默认 `input_mode:=rviz`。`climbot_coverage` 相应补上 `climbot_gazebo` 与 `climbot_control` 的 `exec_depend`（前者此前就已被 `coverage_sim` 使用但未声明） |
+| launch 参数作用域串台 | 已完成 | **首版实测失败并暴露一个真实缺陷。** 组合 launch 声明 `config_file` 供规划器使用，被包含的 launch 会继承父作用域，而 `DeclareLaunchArgument` 的默认值对父作用域已设定的同名参数不生效，于是 `line_tracker` 拿到了规划器的 YAML，静默退回内置默认值——包括 `gravity_slip_ratio` 为 `0`，即完全没有重力侧滑补偿。表现为扫描到线段末端时横轨偏差 `82 mm`，机器人停在终点容差外不再移动，直到段超时。改为 `coverage_executor.launch.py` 使用互不冲突的 `control_config_file`，并显式传给 `line_tracker.launch.py`；组合 launch 用 `planner_config_file` 与 `control_config_file` 两个名字，各自显式传递 |
+| `input_mode:=rviz` 测试 | 已完成 | 新增 `test_coverage_planner_rviz.py`：模拟点选工具发布 `/clicked_point`，覆盖异坐标系拒绝、单点只更新标记不出路径、两点成图且区域角点等于点选坐标、`/coverage/clear_points` 清空。此前该分支零覆盖 |
+| 参数文件串台回归护栏 | 已完成 | 新增 `test_coverage_executor_config.py`：从一个已设定 `config_file` 的父作用域包含执行器 launch，再读运行中 `line_tracker` 的参数，断言 `gravity_slip_ratio` 等确实来自 `control.yaml`。把执行器改回同名参数即失败（`0.0 != 0.1056`） |
+| 空预览的状态措辞 | 已完成 | 规划器清空点选时会发布空 Task，管理器据此报 `No executable preview: waypoint and segment counts are inconsistent`，读起来像任务损坏。改为在 `waypoints` 为空时报 `Idle: no coverage region selected.` |
+
+链路已按操作员顺序实测：发布 `/clicked_point` 两点 → `/coverage/status` 回显接受的
+坐标 → `/coverage/manager_status` 变为 `Ready` → `/coverage/start` → `Executing` →
+`Execution finished`。§11.1 要求的 RViz 按钮面板、任务版本与执行进度显示尚未开始；
+管理器目前也没有注册 Action `feedback_callback`，执行进度还没有数据来源。
+
 ## 当前未决事项
 
 ### 1. WheelSlip 法向载荷局限
@@ -168,13 +188,22 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 
 ### 2. 集成 launch 和定位配置归属
 
-`coverage_sim.launch.py` 和 `ekf_wall.yaml` 目前仍放在各自阶段包中。待完整任务状态机
-和统一系统入口出现后，再决定是否新增 `climbot_bringup` 并统一外移。
+`coverage_sim.launch.py`、`coverage_mission.launch.py` 和 `ekf_wall.yaml` 目前仍放在
+各自阶段包中，其中前两个使 `climbot_coverage` 运行时依赖 `climbot_gazebo` 和
+`climbot_control`。待 RViz 操作面板落地后，再决定是否新增 `climbot_bringup` 承载
+组合 launch，把这些编排依赖从算法包里移出。
 
 ## 下一步顺序
 
-1. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
+1. 操作界面阶段 2：为管理器注册 Action `feedback_callback`，并把
+   `/coverage/manager_status` 从无结构 `std_msgs/String` 换成带状态枚举、
+   `task_id`、`revision`、当前段/总段数和错误原因的结构化消息，使 §11.1 要求的
+   "执行进度"有数据来源，且面板只需订阅一个话题；
+2. 操作界面阶段 3：`rviz_common::Panel` 插件，提供重新规划/开始/取消·停车按钮
+   与版本、进度、错误显示。按 §11.1，面板只调服务，不得持有任务锁定、版本检查
+   或安全状态转换；
+3. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
    工况的可重复回归；不可进入和定位超时停车的 Gazebo 基线已经通过；
-2. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
-3. 第一阶段闭环后，为 Gazebo 墙面增加不影响碰撞参数的可配置视觉贴图；面阵相机、
+4. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
+5. 第一阶段闭环后，为 Gazebo 墙面增加不影响碰撞参数的可配置视觉贴图；面阵相机、
    位置触发拍照及图像—融合位姿关联作为 `climbot_inspection` 扩展实施。

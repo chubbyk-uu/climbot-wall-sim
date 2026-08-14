@@ -41,6 +41,7 @@ if(BUILD_TESTING)
   target_include_directories(test_coverage_geometry PRIVATE include)
   add_launch_test(test/test_coverage_planner_node.py TIMEOUT 30)
   add_launch_test(test/test_coverage_planner_failure.py TIMEOUT 30)
+  add_launch_test(test/test_coverage_planner_rviz.py TIMEOUT 60)
 endif()
 
 ament_export_include_directories(include)

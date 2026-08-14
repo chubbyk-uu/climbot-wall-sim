@@ -11,10 +11,16 @@ C++ 墙面覆盖路径规划器，支持矩形、等腰梯形、横向/纵向弓
 ros2 launch climbot_coverage coverage_planner.launch.py
 ```
 
-联合墙面仿真：
+联合墙面仿真，只预览不执行：
 
 ```bash
 ros2 launch climbot_coverage coverage_sim.launch.py
+```
+
+仿真、规划器、RViz、跟踪器和任务管理器一并启动，默认在 RViz 中点选区域：
+
+```bash
+ros2 launch climbot_coverage coverage_mission.launch.py
 ```
 
 大区域参数式演示配置：
@@ -24,11 +30,14 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 - `config/coverage_trapezoid_horizontal_demo.yaml`：大型等腰梯形横向任务；
 - `config/coverage_trapezoid_vertical_demo.yaml`：同一梯形竖向任务。
 
-通过 `coverage_sim.launch.py config_file:=<配置绝对路径>` 选择配置。完整自动执行还需
-启动 `climbot_control/coverage_executor.launch.py`，再向 `/coverage/execute` 发送
-规划器发布的任务；完整命令见仓库根目录 [README](../../README.md)。
+通过 `config_file:=<配置绝对路径>` 选择配置，两个联合 launch 都接受该参数。
+用 `coverage_sim.launch.py` 时还需另行启动
+`climbot_control/coverage_executor.launch.py` 才能执行；`coverage_mission.launch.py`
+已经包含它。完整命令见仓库根目录 [README](../../README.md)。
 
-等腰梯形点选顺序为 A（左下）、B（右上）、C（右下）；矩形只使用 A、B。
+等腰梯形点选顺序为 A（左下）、B（右上）、C（右下）；矩形只使用 A、B。点选工具
+发布的点必须在规划器的 `frame_id`（默认 `odom`，即墙面平面）中，其他坐标系的点
+会被拒绝并在 `/coverage/status` 中说明原因。规划器只使用点的 `x`、`y`，忽略 `z`。
 
 ## 输出
 

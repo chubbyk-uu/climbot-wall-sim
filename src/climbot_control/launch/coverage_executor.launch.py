@@ -14,13 +14,24 @@ def generate_launch_description():
     """Reuse the tracker configuration with standalone mode disabled."""
     tracker_launch = PathJoinSubstitution([
         FindPackageShare('climbot_control'), 'launch', 'line_tracker.launch.py'])
+    default_config = PathJoinSubstitution([
+        FindPackageShare('climbot_control'), 'config', 'control.yaml'])
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
+        # Deliberately not named config_file. Included launch files inherit the
+        # parent scope, and a declared default is skipped for a name the parent
+        # already set, so a combined launch that declares config_file for its
+        # planner would hand the planner's file to the tracker. The tracker
+        # would then start on built-in defaults, including no slip
+        # compensation, without reporting anything. A distinct name plus the
+        # explicit pass below makes that collision impossible.
+        DeclareLaunchArgument('control_config_file', default_value=default_config),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(tracker_launch),
             launch_arguments={
                 'standalone_mode': 'false',
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
+                'config_file': LaunchConfiguration('control_config_file'),
             }.items(),
         ),
         Node(

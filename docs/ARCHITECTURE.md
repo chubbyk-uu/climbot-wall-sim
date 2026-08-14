@@ -23,11 +23,13 @@
 `climbot_description` 是共享物理描述的唯一上游。规划器和控制器不得依赖
 `climbot_gazebo`，也不得读取 Gazebo 真值或仿真专有参数。
 
-`climbot_coverage/launch/coverage_sim.launch.py` 是当前阶段用于联合启动仿真
-和规划器的临时集成入口，会在运行时查找 `climbot_gazebo`。它不代表规划器
-算法依赖 Gazebo。`climbot_gazebo` 为启动速度看门狗而运行时依赖
-`climbot_control`，该依赖仅属于仿真编排；控制包不反向依赖 Gazebo。完整任务
-状态机出现后，再评估是否抽出独立的 `climbot_bringup` 统一承载组合 launch。
+`climbot_coverage/launch/coverage_sim.launch.py` 和 `coverage_mission.launch.py`
+是当前阶段的临时集成入口，会在运行时查找 `climbot_gazebo`，`coverage_mission`
+还查找 `climbot_control`。二者都只是启动编排，不代表规划器算法依赖 Gazebo 或
+控制器。`climbot_gazebo` 为启动速度看门狗而运行时依赖 `climbot_control`，同样
+只属于仿真编排；控制包不反向依赖 Gazebo。这些组合 launch 现在集中在
+`climbot_coverage`，等 RViz 操作面板落地后再评估是否抽出独立的
+`climbot_bringup` 统一承载。
 
 ## 包职责
 
@@ -73,7 +75,8 @@ C++ 覆盖规划器和 RViz 可视化：
 - `coverage_planner_node`：参数或 RViz 点选输入、路径与状态发布、重规划服务；
 - `config/`：默认矩形和等腰梯形任务；
 - `launch/coverage_planner.launch.py`：独立规划入口；
-- `launch/coverage_sim.launch.py`：当前阶段的仿真联合入口；
+- `launch/coverage_sim.launch.py`：仿真加规划器的预览入口；
+- `launch/coverage_mission.launch.py`：再加跟踪器和管理器的完整任务入口；
 - `rviz/`：墙面、区域和路径显示配置。
 
 规划器读取 `climbot_description` 的墙面尺寸和机器人轮廓，不读取任何

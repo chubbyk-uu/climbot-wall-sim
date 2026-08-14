@@ -29,7 +29,13 @@ public:
       [this](const climbot_interfaces::msg::CoverageTask::SharedPtr task) {
         if (const auto error = climbot_control::validateCoverageTask(*task, frame_id_)) {
           cached_task_.reset();
-          publishStatus("No executable preview: " + *error);
+          // The planner publishes an empty task to clear the preview after a
+          // click or a clear request, so reporting that as a malformed task
+          // would make the operator hunt for a fault that does not exist.
+          publishStatus(
+            task->waypoints.empty() ?
+            "Idle: no coverage region selected." :
+            "No executable preview: " + *error);
           return;
         }
         cached_task_ = *task;

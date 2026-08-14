@@ -55,6 +55,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_line_tracker_node.py TIMEOUT 30)
   add_launch_test(test/test_coverage_executor.py TIMEOUT 120)
   add_launch_test(test/test_coverage_manager.py TIMEOUT 30)
+  add_launch_test(test/test_coverage_executor_config.py TIMEOUT 60)
 endif()
 
 ament_export_include_directories(include)
