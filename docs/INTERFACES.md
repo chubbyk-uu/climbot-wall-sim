@@ -157,6 +157,17 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `/coverage/clear_points` | `std_srvs/srv/Trigger` | 清除点选，并发布空 Path/Marker |
 | `/coverage/replan` | `std_srvs/srv/Trigger` | 使用当前区域重新规划 |
 
+以下任务操作接口为下一步设计，**当前尚未实现**：
+
+| 服务 | 类型 | 计划行为 |
+| --- | --- | --- |
+| `/coverage/start` | `std_srvs/srv/Trigger` | 锁定管理器当前显示的有效 `task_id + revision`，校验后发送 `/coverage/execute` Goal |
+| `/coverage/cancel` | `std_srvs/srv/Trigger` | 请求取消当前 Goal；控制器确认停车后返回 |
+
+`/coverage/start` 不得使规划器一发布任务就自动运动。任务管理器必须拒绝空任务、过期
+任务、已有任务执行中或定位不可用的开始请求，并在响应及状态输出中给出实际锁定的
+任务版本。后续 RViz 面板调用同一组接口，不绕过管理器直接控制机器人。
+
 ### 参数
 
 | 参数 | 可选值/单位 | 来源或作用 |
@@ -272,6 +283,16 @@ Header，避免同一任务内部出现多个坐标系或时间戳。
 ### `ExecuteCoverage.action`
 
 Action 名称为 `/coverage/execute`，E7 已实现。使用 ROS 2 Action 不表示接入 Nav2。
+
+当前演示由 `evaluate_coverage_execution.py` 订阅规划任务并充当 Action Client；这是
+测试入口，不是最终操作流程。正式流程将由待实现的任务管理器在收到显式开始请求后
+发送 Goal，并先执行采集关闭的 `GO_TO_START/APPROACH_START`。该进入段校验当前点、
+首个路点和连接直线均在 `motion_region` 内，采用原地对准、直线到达、停车、再对准
+首条扫描线的顺序，不计入覆盖采集。
+
+实现起点进入时，Action Feedback 应在保留现有数值的前提下追加
+`APPROACH_START=6`，用于区分采集关闭的起点进入和正式任务线段；不得复用
+`TRACK_LINE` 让上层误认为已经开始扫描。
 
 Goal：
 
