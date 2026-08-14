@@ -53,7 +53,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_line_tracker_alignment.py TIMEOUT 30)
   add_launch_test(test/test_line_tracker_completion.py TIMEOUT 30)
   add_launch_test(test/test_line_tracker_node.py TIMEOUT 30)
-  add_launch_test(test/test_coverage_executor.py TIMEOUT 30)
+  add_launch_test(test/test_coverage_executor.py TIMEOUT 60)
   add_launch_test(test/test_coverage_manager.py TIMEOUT 30)
 endif()
 

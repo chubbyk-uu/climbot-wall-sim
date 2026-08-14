@@ -96,14 +96,14 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `segment_timeout_s` | `120 s` | 单段超过该时间则停车并以 `CONTROL_TIMEOUT` 终止任务 |
 | `line_tracker` | `motion_region_tolerance_m` | `0.02 m` | 融合位置越出安全运动区域的数值容差 |
 | `line_tracker` | `turn_slip_per_degree_m` | `0.0005 m/°` | 横向换道终点为第二次转向预留的标定下滑系数 |
-| `line_tracker` | `parallel_scan_offset_m` | `0.04 m` | 转后偏差不超过此值时直接冻结实测位置对应的平行扫描线 |
+| `line_tracker` | `parallel_scan_offset_m` | `0.045 m` | 首条或转后偏差不超过此值时直接冻结实测位置对应的平行扫描线 |
 | `line_tracker` | `maximum_scan_offset_m` | `0.12 m` | 转后可尝试单次前进小弧线入轨的最大法向偏差 |
-| `line_tracker` | `arc_entry_finish_offset_m` | `0.01 m` | 小弧线结束并冻结平行扫描线的法向偏差门限 |
-| `line_tracker` | `arc_entry_speed_mps` | `0.06 m/s` | 小弧线恒定前进速度；采集保持关闭 |
+| `line_tracker` | `arc_entry_finish_offset_m` | `0.03 m` | 小弧线结束、重新对齐并冻结平行扫描线的法向偏差门限 |
+| `line_tracker` | `arc_entry_speed_mps` | `0.08 m/s` | 带重力侧滑前馈的小弧线恒定前进速度；采集保持关闭 |
 | `line_tracker` | `arc_entry_lookahead_m` | `0.20 m` | 小弧线航向引导前视距离 |
 | `line_tracker` | `arc_entry_max_heading_deg` | `20°` | 小弧线相对名义扫描方向的最大航向修正 |
 | `line_tracker` | `arc_entry_max_angular_speed` | `0.25 rad/s` | 小弧线最大角速度 |
-| `line_tracker` | `arc_entry_timeout_s` | `10 s` | 小弧线未收敛时的停车失败门限 |
+| `line_tracker` | `arc_entry_timeout_s` | `15 s` | 小弧线未收敛时的停车失败门限 |
 | `line_tracker` | `cruise_speed` | `0.20 m/s` | 扫描和换道期望巡航速度 |
 | `line_tracker` | `max_linear_speed` | `0.25 m/s` | 控制器线速度上限，高于巡航值以容纳上爬打滑 |
 | `line_tracker` | `visible_oscillation_amplitude_m` | `0.03 m` | 仅记录肉眼可见幅度的横轨往复；小误差反复过零不算故障 |
@@ -128,6 +128,9 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `final_approach_speed_mps` | `0.03 m/s` | 终点收敛线速度上限 |
 | `line_tracker` | `goal_position_tolerance_m` | `0.03 m` | 完成时二维终点距离严格门限 |
 | `line_tracker` | `goal_position_exit_tolerance_m` | `0.04 m` | 终点候选状态退出门限 |
+| `line_tracker` | `start_approach_tolerance_m` | `0.05 m` | 采集关闭的起点进入位置门限 |
+| `line_tracker` | `start_approach_exit_tolerance_m` | `0.06 m` | 起点进入候选状态退出门限 |
+| `line_tracker` | `start_approach_runway_m` | `0.40 m` | 空间允许时第一条扫描线起点后的同向进入跑道长度 |
 | `line_tracker` | `goal_heading_exit_tolerance_deg` | `3°` | 航向候选状态退出门限；严格门限沿用 `2°` |
 | `line_tracker` | `stopped_linear_speed_mps` | `0.01 m/s` | 完成时融合线速度上限 |
 | `line_tracker` | `stopped_angular_speed_rps` | `0.02 rad/s` | 完成时融合角速度上限 |
@@ -360,9 +363,9 @@ float32 progress
 到达判据；取消、定位超时、单段超时或越界均先发布零速。执行时 `CoverageTask`
 保持不变，但转向稳定后更新动态执行参考：横向换道采用实测起点，并在换道终点上方
 预留第二次转向的预计下滑量；竖向换道采用实测起点到名义终点的斜直线，不倒车返回
-名义点。第二次转向后两种方向使用同一入轨规则：法向偏差不超过 `0.04 m` 时直接
-冻结实测位置对应的平行扫描线；偏差在 `0.04～0.12 m` 时先执行一次前进小弧线，
-收敛到 `0.01 m` 且航向对齐后冻结平行线；偏差更大、超时、剩余距离不足或动态端点
+名义点。首条扫描和第二次转向后的扫描使用同一入轨规则：法向偏差不超过 `0.045 m`
+时直接冻结实测位置对应的平行扫描线；偏差在 `0.045～0.12 m` 时先执行一次带重力
+前馈的前进小弧线，收敛到 `0.03 m` 后重新对齐并冻结平行线；偏差更大、超时、剩余距离不足或动态端点
 越界时停车并终止任务。正式扫描线一旦冻结便保持为直线，不在跟踪中继续移动。
 横向换道的预计下滑量取 `turn_slip_per_degree_m × 下一转角` 与第一次转向实测下坠
 量的较大值；短上底梯形会因此自动适应斜向换道两侧不同的接触扰动。

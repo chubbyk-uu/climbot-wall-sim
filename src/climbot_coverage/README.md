@@ -21,6 +21,8 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 
 - `config/coverage_vertical_demo.yaml`：`3.30 × 4.50 m` 竖向任务；
 - `config/coverage_horizontal_demo.yaml`：`4.30 × 1.70 m` 横向任务。
+- `config/coverage_trapezoid_horizontal_demo.yaml`：大型等腰梯形横向任务；
+- `config/coverage_trapezoid_vertical_demo.yaml`：同一梯形竖向任务。
 
 通过 `coverage_sim.launch.py config_file:=<配置绝对路径>` 选择配置。完整自动执行还需
 启动 `climbot_control/coverage_executor.launch.py`，再向 `/coverage/execute` 发送

@@ -1,0 +1,125 @@
+{
+  "completed_segments": 13,
+  "coverage": {
+    "covered_area_m2": 9.171000000000001,
+    "covered_cells": 91710,
+    "missed_ratio": 0.007467532467532512,
+    "ratio": 0.9925324675324675,
+    "region_area_m2": 9.24,
+    "region_cells": 92400,
+    "resolution_m": 0.01
+  },
+  "elapsed_time_s": 238.784,
+  "passed": true,
+  "result_code": 0,
+  "result_message": "Coverage task completed.",
+  "revision": 1,
+  "segment_metrics": [
+    {
+      "heading_range_deg": 1.2919483789713662,
+      "maximum": 0.0018694811060213645,
+      "reversals": 0,
+      "rms": 0.001087898590090579,
+      "samples": 2023,
+      "segment": 0
+    },
+    {
+      "heading_range_deg": 0.24331470231363242,
+      "maximum": 0.0013471001331928417,
+      "reversals": 0,
+      "rms": 0.0010354322550755455,
+      "samples": 402,
+      "segment": 1
+    },
+    {
+      "heading_range_deg": 3.211558296919798,
+      "maximum": 0.0018619984750385399,
+      "reversals": 0,
+      "rms": 0.0010663625253356371,
+      "samples": 2010,
+      "segment": 2
+    },
+    {
+      "heading_range_deg": 0.18260234344258958,
+      "maximum": 0.0011388658587585723,
+      "reversals": 0,
+      "rms": 0.0007052017136944342,
+      "samples": 378,
+      "segment": 3
+    },
+    {
+      "heading_range_deg": 2.9848343714195105,
+      "maximum": 0.001936389357769297,
+      "reversals": 0,
+      "rms": 0.0012029420123516375,
+      "samples": 1920,
+      "segment": 4
+    },
+    {
+      "heading_range_deg": 0.5210982006937092,
+      "maximum": 0.002455918324984838,
+      "reversals": 0,
+      "rms": 0.0023907749115710457,
+      "samples": 382,
+      "segment": 5
+    },
+    {
+      "heading_range_deg": 3.3943227555773623,
+      "maximum": 0.002403186239266386,
+      "reversals": 0,
+      "rms": 0.0015161285177619666,
+      "samples": 1812,
+      "segment": 6
+    },
+    {
+      "heading_range_deg": 0.29343980706276585,
+      "maximum": 0.0009321119904409927,
+      "reversals": 0,
+      "rms": 0.0006845605126541287,
+      "samples": 378,
+      "segment": 7
+    },
+    {
+      "heading_range_deg": 3.2442349117727414,
+      "maximum": 0.003125818672689018,
+      "reversals": 0,
+      "rms": 0.0018557592502481113,
+      "samples": 1720,
+      "segment": 8
+    },
+    {
+      "heading_range_deg": 0.39282899962080575,
+      "maximum": 0.0014984008596733653,
+      "reversals": 0,
+      "rms": 0.0010420904028127051,
+      "samples": 378,
+      "segment": 9
+    },
+    {
+      "heading_range_deg": 3.1864075350272816,
+      "maximum": 0.002211061019364191,
+      "reversals": 0,
+      "rms": 0.001489562826283059,
+      "samples": 1628,
+      "segment": 10
+    },
+    {
+      "heading_range_deg": 0.43508711217877316,
+      "maximum": 0.0010709919616600462,
+      "reversals": 0,
+      "rms": 0.0007366400887329119,
+      "samples": 378,
+      "segment": 11
+    },
+    {
+      "heading_range_deg": 3.036026420805836,
+      "maximum": 0.0021241607859461276,
+      "reversals": 0,
+      "rms": 0.0014972446548103466,
+      "samples": 1538,
+      "segment": 12
+    }
+  ],
+  "task_id": "coverage-task",
+  "trajectory_samples": 23874
+}

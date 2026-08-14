@@ -1,0 +1,173 @@
+{
+  "completed_segments": 19,
+  "coverage": {
+    "covered_area_m2": 9.0748,
+    "covered_cells": 90748,
+    "missed_ratio": 0.017878787878787827,
+    "ratio": 0.9821212121212122,
+    "region_area_m2": 9.24,
+    "region_cells": 92400,
+    "resolution_m": 0.01
+  },
+  "elapsed_time_s": 280.371,
+  "passed": true,
+  "result_code": 0,
+  "result_message": "Coverage task completed.",
+  "revision": 1,
+  "segment_metrics": [
+    {
+      "heading_range_deg": 0.25468128089120334,
+      "maximum": 0.0014569691346044689,
+      "reversals": 0,
+      "rms": 0.0006638465026342153,
+      "samples": 650,
+      "segment": 0
+    },
+    {
+      "heading_range_deg": 0.4099934885247874,
+      "maximum": 0.0022114519871399645,
+      "reversals": 0,
+      "rms": 0.0015929610155824363,
+      "samples": 960,
+      "segment": 1
+    },
+    {
+      "heading_range_deg": 0.8902319570562748,
+      "maximum": 0.00043367473969418285,
+      "reversals": 0,
+      "rms": 0.000256091507728136,
+      "samples": 1331,
+      "segment": 2
+    },
+    {
+      "heading_range_deg": 1.2332844014703923,
+      "maximum": 0.001184507834226112,
+      "reversals": 0,
+      "rms": 0.0008338759963823317,
+      "samples": 378,
+      "segment": 3
+    },
+    {
+      "heading_range_deg": 2.6234042673979485,
+      "maximum": 0.013742229917145464,
+      "reversals": 0,
+      "rms": 0.0013662213025000284,
+      "samples": 1608,
+      "segment": 4
+    },
+    {
+      "heading_range_deg": 0.6157297273764623,
+      "maximum": 0.0022902439920325906,
+      "reversals": 0,
+      "rms": 0.001431963720471281,
+      "samples": 371,
+      "segment": 5
+    },
+    {
+      "heading_range_deg": 2.7019062159274143,
+      "maximum": 0.0014768711999065818,
+      "reversals": 0,
+      "rms": 0.0006721608132603148,
+      "samples": 1464,
+      "segment": 6
+    },
+    {
+      "heading_range_deg": 0.8743416450688879,
+      "maximum": 0.0028951873924976134,
+      "reversals": 0,
+      "rms": 0.0017098036254746386,
+      "samples": 362,
+      "segment": 7
+    },
+    {
+      "heading_range_deg": 2.662012074726513,
+      "maximum": 0.0009501694394400406,
+      "reversals": 0,
+      "rms": 0.0004790789773462598,
+      "samples": 1608,
+      "segment": 8
+    },
+    {
+      "heading_range_deg": 0.893176552544508,
+      "maximum": 0.0010160893587905274,
+      "reversals": 0,
+      "rms": 0.0007288474293841272,
+      "samples": 372,
+      "segment": 9
+    },
+    {
+      "heading_range_deg": 2.7157258655950307,
+      "maximum": 0.0016113396696053606,
+      "reversals": 0,
+      "rms": 0.000838367126298347,
+      "samples": 1463,
+      "segment": 10
+    },
+    {
+      "heading_range_deg": 1.096720868487671,
+      "maximum": 0.002659270151829369,
+      "reversals": 0,
+      "rms": 0.0014389349805640358,
+      "samples": 376,
+      "segment": 11
+    },
+    {
+      "heading_range_deg": 2.6846809766381865,
+      "maximum": 0.0014573534544228828,
+      "reversals": 0,
+      "rms": 0.00076569345324873,
+      "samples": 1608,
+      "segment": 12
+    },
+    {
+      "heading_range_deg": 0.6774795515397667,
+      "maximum": 0.0024334469632852104,
+      "reversals": 0,
+      "rms": 0.001517034835908946,
+      "samples": 380,
+      "segment": 13
+    },
+    {
+      "heading_range_deg": 3.059644548837475,
+      "maximum": 0.0021066083476721786,
+      "reversals": 0,
+      "rms": 0.001132372009101414,
+      "samples": 1463,
+      "segment": 14
+    },
+    {
+      "heading_range_deg": 1.032577978439283,
+      "maximum": 0.003981754462157398,
+      "reversals": 0,
+      "rms": 0.002377240920140933,
+      "samples": 375,
+      "segment": 15
+    },
+    {
+      "heading_range_deg": 2.810742212116928,
+      "maximum": 0.002540609570848229,
+      "reversals": 0,
+      "rms": 0.0013721511091921421,
+      "samples": 1481,
+      "segment": 16
+    },
+    {
+      "heading_range_deg": 0.34979411639863583,
+      "maximum": 0.0010020287631075499,
+      "reversals": 0,
+      "rms": 0.000662574938119787,
+      "samples": 873,
+      "segment": 17
+    },
+    {
+      "heading_range_deg": 2.259260695893252,
+      "maximum": 0.001037399994234356,
+      "reversals": 0,
+      "rms": 0.0006832665882973253,
+      "samples": 606,
+      "segment": 18
+    }
+  ],
+  "task_id": "coverage-task",
+  "trajectory_samples": 28037
+}

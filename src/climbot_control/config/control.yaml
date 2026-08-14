@@ -11,15 +11,15 @@ line_tracker:
     segment_timeout_s: 120.0
     motion_region_tolerance_m: 0.02
     turn_slip_per_degree_m: 0.0005
-    parallel_scan_offset_m: 0.04
+    parallel_scan_offset_m: 0.045
     maximum_scan_offset_m: 0.12
-    arc_entry_finish_offset_m: 0.01
-    arc_entry_speed_mps: 0.06
+    arc_entry_finish_offset_m: 0.03
+    arc_entry_speed_mps: 0.08
     arc_entry_lookahead_m: 0.20
     arc_entry_heading_gain: 2.0
     arc_entry_max_heading_deg: 20.0
     arc_entry_max_angular_speed: 0.25
-    arc_entry_timeout_s: 10.0
+    arc_entry_timeout_s: 15.0
     # This is a diagnostic for visibly large oscillations, not a zero-crossing fault.
     visible_oscillation_amplitude_m: 0.03
     visible_oscillation_minimum_travel_m: 0.10
@@ -43,6 +43,10 @@ line_tracker:
     final_approach_speed_mps: 0.03
     goal_position_tolerance_m: 0.03
     goal_position_exit_tolerance_m: 0.04
+    # Collection remains disabled; the first SCAN entry handles the residual.
+    start_approach_tolerance_m: 0.05
+    start_approach_exit_tolerance_m: 0.06
+    start_approach_runway_m: 0.40
     goal_heading_exit_tolerance_deg: 3.0
     stopped_linear_speed_mps: 0.01
     stopped_angular_speed_rps: 0.02

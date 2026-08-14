@@ -1,0 +1,16 @@
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    input_mode: parameters
+    region_type: trapezoid
+    # Isosceles trapezoid: 4.0 m bottom, 2.6 m top, 2.8 m height.
+    lower_left: [-0.6, 1.4]
+    upper_right: [2.7, 4.2]
+    lower_right: [3.4, 1.4]
+    detection_width: 0.50
+    detection_length: 0.01
+    overlap_ratio: 0.20
+    sweep_direction: horizontal
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

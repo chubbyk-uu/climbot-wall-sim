@@ -111,10 +111,12 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 
 ### 完整覆盖任务演示
 
-仓库提供两个从机器人出生位置附近开始的参数式演示：
+仓库提供矩形和等腰梯形参数式演示：
 
 - `coverage_vertical_demo.yaml`：`3.30 × 4.50 m`，8 条竖向扫描线；
 - `coverage_horizontal_demo.yaml`：`4.30 × 1.70 m`，4 条横向扫描线。
+- `coverage_trapezoid_horizontal_demo.yaml`：底边 `4.00 m`、上底 `2.60 m`、高 `2.80 m`，横向扫描；
+- `coverage_trapezoid_vertical_demo.yaml`：同一梯形，竖向扫描。
 
 以下示例运行横向长扁矩形。终端 1 启动仿真、规划器和 RViz：
 
@@ -157,7 +159,7 @@ ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
 - 阶段 C：传感器与定位融合——完成；
 - 阶段 D：覆盖路径规划——完成；
 - 阶段 E：自定义轨迹跟踪——进行中（多段 Action、动态换道、转后平行扫描和小弧线入轨已完成，最终系统评价待完成）；
-- 阶段 F：系统测试与数据评价——进行中（大型竖向矩形已完成实际二维足迹覆盖率和轨迹结果导出）。
+- 阶段 F：系统测试与数据评价——进行中（大型矩形及横/竖向等腰梯形已完成实际二维足迹覆盖率和轨迹结果导出）。
 
 详细证据和待办见 [docs/STATUS.md](docs/STATUS.md)。
 

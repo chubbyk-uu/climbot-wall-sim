@@ -57,7 +57,8 @@ Command trackLine(
 Command followArcEntry(
   const Point2 & nominal_start, const Point2 & nominal_end, const Pose2 & pose,
   double speed, double lookahead, double heading_gain,
-  double max_heading_correction, double max_angular_speed);
+  double max_heading_correction, double max_angular_speed,
+  double gravity_feedforward);
 Command rateLimit(
   const Command & desired, const Command & previous, double dt,
   double linear_acceleration, double linear_deceleration, double angular_acceleration,

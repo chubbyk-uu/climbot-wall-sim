@@ -308,7 +308,8 @@ class CoverageExecutionEvaluator(Node):
         fields = list(rows[0].keys()) if rows else [
             'time_s', 'segment', 'segment_type', 'state']
         with open(expanded, 'w', newline='', encoding='utf-8') as handle:
-            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer = csv.DictWriter(
+                handle, fieldnames=fields, lineterminator='\n')
             writer.writeheader()
             writer.writerows(rows)
 

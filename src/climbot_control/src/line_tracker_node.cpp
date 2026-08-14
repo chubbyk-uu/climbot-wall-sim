@@ -51,16 +51,16 @@ public:
     segment_timeout_s_ = declare_parameter("segment_timeout_s", 120.0);
     motion_region_tolerance_ = declare_parameter("motion_region_tolerance_m", 0.02);
     turn_slip_per_degree_ = declare_parameter("turn_slip_per_degree_m", 0.0005);
-    parallel_scan_offset_ = declare_parameter("parallel_scan_offset_m", 0.04);
+    parallel_scan_offset_ = declare_parameter("parallel_scan_offset_m", 0.045);
     maximum_scan_offset_ = declare_parameter("maximum_scan_offset_m", 0.12);
-    arc_entry_finish_offset_ = declare_parameter("arc_entry_finish_offset_m", 0.01);
-    arc_entry_speed_ = declare_parameter("arc_entry_speed_mps", 0.06);
+    arc_entry_finish_offset_ = declare_parameter("arc_entry_finish_offset_m", 0.03);
+    arc_entry_speed_ = declare_parameter("arc_entry_speed_mps", 0.08);
     arc_entry_lookahead_ = declare_parameter("arc_entry_lookahead_m", 0.20);
     arc_entry_heading_gain_ = declare_parameter("arc_entry_heading_gain", 2.0);
     arc_entry_max_heading_ = degreesToRadians(
       declare_parameter("arc_entry_max_heading_deg", 20.0));
     arc_entry_max_angular_ = declare_parameter("arc_entry_max_angular_speed", 0.25);
-    arc_entry_timeout_ = declare_parameter("arc_entry_timeout_s", 10.0);
+    arc_entry_timeout_ = declare_parameter("arc_entry_timeout_s", 15.0);
     const int oscillation_reversals = declare_parameter("visible_oscillation_reversals", 4);
     if (oscillation_reversals < 0) {
       throw std::invalid_argument("visible_oscillation_reversals must be non-negative.");
@@ -97,6 +97,12 @@ public:
     goal_position_tolerance_ = declare_parameter("goal_position_tolerance_m", 0.03);
     goal_position_exit_tolerance_ = declare_parameter(
       "goal_position_exit_tolerance_m", 0.04);
+    start_approach_tolerance_ = declare_parameter(
+      "start_approach_tolerance_m", 0.05);
+    start_approach_exit_tolerance_ = declare_parameter(
+      "start_approach_exit_tolerance_m", 0.06);
+    start_approach_runway_ = declare_parameter(
+      "start_approach_runway_m", 0.40);
     goal_heading_exit_tolerance_ = degreesToRadians(
       declare_parameter("goal_heading_exit_tolerance_deg", 3.0));
     stopped_linear_speed_ = declare_parameter("stopped_linear_speed_mps", 0.01);
@@ -260,6 +266,9 @@ private:
     requirePositive("final_approach_speed_mps", final_approach_speed_);
     requirePositive("goal_position_tolerance_m", goal_position_tolerance_);
     requirePositive("goal_position_exit_tolerance_m", goal_position_exit_tolerance_);
+    requirePositive("start_approach_tolerance_m", start_approach_tolerance_);
+    requirePositive("start_approach_exit_tolerance_m", start_approach_exit_tolerance_);
+    requirePositive("start_approach_runway_m", start_approach_runway_);
     requirePositive("goal_heading_exit_tolerance_deg", goal_heading_exit_tolerance_);
     requirePositive("stopped_linear_speed_mps", stopped_linear_speed_);
     requirePositive("stopped_angular_speed_rps", stopped_angular_speed_);
@@ -279,6 +288,12 @@ private:
     if (goal_position_exit_tolerance_ <= goal_position_tolerance_) {
       throw std::invalid_argument(
               "goal_position_exit_tolerance_m must exceed goal_position_tolerance_m.");
+    }
+    if (start_approach_exit_tolerance_ <= start_approach_tolerance_ ||
+      start_approach_exit_tolerance_ > maximum_scan_offset_)
+    {
+      throw std::invalid_argument(
+              "Start-approach tolerances must be increasing and recoverable by scan entry.");
     }
     if (final_approach_distance_ <= goal_position_exit_tolerance_) {
       throw std::invalid_argument(
@@ -375,8 +390,33 @@ private:
       configureSegment(0U);
       return;
     }
+    climbot_control::Point2 target{first.x, first.y};
+    start_approach_final_leg_ = true;
+    if (active_task_->segment_types.front() ==
+      climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN)
+    {
+      const auto & second = active_task_->waypoints[1U].position;
+      const double dx = second.x - first.x;
+      const double dy = second.y - first.y;
+      const double length = std::hypot(dx, dy);
+      const climbot_control::Point2 staging{
+        first.x - start_approach_runway_ * dx / length,
+        first.y - start_approach_runway_ * dy / length};
+      if (climbot_control::pointInPolygon(
+          staging.x, staging.y, active_task_->motion_region, motion_region_tolerance_) &&
+        std::hypot(staging.x - pose_.x, staging.y - pose_.y) > goal_position_tolerance_)
+      {
+        target = staging;
+        start_approach_final_leg_ = false;
+      }
+    }
+    configureApproachLine(target);
+  }
+
+  void configureApproachLine(const climbot_control::Point2 & target)
+  {
     start_ = {pose_.x, pose_.y};
-    end_ = {first.x, first.y};
+    end_ = target;
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
     previous_command_ = {};
     cross_integral_ = 0.0;
@@ -391,7 +431,9 @@ private:
     publishCompletion(false);
     publishReferencePath();
     RCLCPP_INFO(
-      get_logger(), "Approaching first task waypoint from %.3f m away.",
+      get_logger(), "%s from %.3f m away.",
+      start_approach_final_leg_ ? "Entering first task waypoint" :
+      "Approaching first-scan staging point",
       std::hypot(end_.x - start_.x, end_.y - start_.y));
   }
 
@@ -415,8 +457,11 @@ private:
     const bool follows_transition = index > 0U &&
       active_task_->segment_types[index - 1U] ==
       climbot_interfaces::msg::CoverageTask::SEGMENT_TRANSITION;
+    const bool needs_scan_entry = segment_type ==
+      climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN &&
+      (index == 0U || follows_transition);
     reference_prepared_ = segment_type !=
-      climbot_interfaces::msg::CoverageTask::SEGMENT_TRANSITION && !follows_transition;
+      climbot_interfaces::msg::CoverageTask::SEGMENT_TRANSITION && !needs_scan_entry;
     publishCompletion(false);
     publishReferencePath();
   }
@@ -511,8 +556,9 @@ private:
       }
       start_ = dynamic.start;
       end_ = dynamic.end;
-    } else if (segment_type == Task::SEGMENT_SCAN && current_segment_ > 0U &&
-      active_task_->segment_types[current_segment_ - 1U] == Task::SEGMENT_TRANSITION)
+    } else if (segment_type == Task::SEGMENT_SCAN &&
+      (current_segment_ == 0U ||
+      active_task_->segment_types[current_segment_ - 1U] == Task::SEGMENT_TRANSITION))
     {
       return preparePostTurnScan() ? DynamicReferenceResult::READY :
              DynamicReferenceResult::FAILED;
@@ -701,6 +747,12 @@ private:
 
     if (!standalone_mode_ && motion_state_ == MotionState::SEGMENT_COMPLETE) {
       if (approaching_start_) {
+        if (!start_approach_final_leg_) {
+          start_approach_final_leg_ = true;
+          const auto & first = active_task_->waypoints.front().position;
+          configureApproachLine({first.x, first.y});
+          return;
+        }
         approaching_start_ = false;
         configureSegment(0U);
         return;
@@ -715,23 +767,28 @@ private:
     }
 
     if (motion_state_ == MotionState::ARC_ENTRY) {
+      const double nominal_dx = nominal_scan_end_.x - nominal_scan_start_.x;
+      const double nominal_dy = nominal_scan_end_.y - nominal_scan_start_.y;
+      const double nominal_length = std::hypot(nominal_dx, nominal_dy);
+      const climbot_control::Point2 nominal_normal{
+        -nominal_dy / nominal_length, nominal_dx / nominal_length};
+      const double gravity_normal =
+        limits_.gravity_direction.x * nominal_normal.x +
+        limits_.gravity_direction.y * nominal_normal.y;
+      const double gravity_feedforward = std::clamp(
+        -std::atan(limits_.gravity_slip_ratio * gravity_normal),
+        -limits_.max_gravity_feedforward, limits_.max_gravity_feedforward);
       const auto arc_command = climbot_control::followArcEntry(
         nominal_scan_start_, nominal_scan_end_, pose_, arc_entry_speed_,
         arc_entry_lookahead_, arc_entry_heading_gain_, arc_entry_max_heading_,
-        arc_entry_max_angular_);
-      const double nominal_heading = std::atan2(
-        nominal_scan_end_.y - nominal_scan_start_.y,
-        nominal_scan_end_.x - nominal_scan_start_.x);
-      const double nominal_heading_error = climbot_control::wrapAngle(
-        nominal_heading - pose_.yaw);
-      if (std::abs(arc_command.cross) <= arc_entry_finish_offset_ &&
-        std::abs(nominal_heading_error) <= alignment_tolerance_)
-      {
+        arc_entry_max_angular_, gravity_feedforward);
+      if (std::abs(arc_command.cross) <= arc_entry_finish_offset_) {
         if (!lockParallelScanLine(arc_command.cross, arc_command.along)) {
           return;
         }
-        motion_state_ = MotionState::TRACK_LINE;
-        previous_command_ = {};
+        motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
+        alignment_origin_ = {pose_.x, pose_.y};
+        alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
         cross_integral_ = 0.0;
         publishFeedback(arc_command);
         return;
@@ -822,11 +879,15 @@ private:
   {
     const double position_error = std::hypot(end_.x - pose_.x, end_.y - pose_.y);
     const double heading_error = std::abs(command.heading_error);
+    const double position_tolerance = approaching_start_ ?
+      start_approach_tolerance_ : goal_position_tolerance_;
+    const double position_exit_tolerance = approaching_start_ ?
+      start_approach_exit_tolerance_ : goal_position_exit_tolerance_;
     const bool stopped = measured_linear_speed_ <= stopped_linear_speed_ &&
       measured_angular_speed_ <= stopped_angular_speed_;
-    const bool strict_goal = position_error <= goal_position_tolerance_ &&
+    const bool strict_goal = position_error <= position_tolerance &&
       heading_error <= alignment_tolerance_ && stopped;
-    const bool relaxed_goal = position_error <= goal_position_exit_tolerance_ &&
+    const bool relaxed_goal = position_error <= position_exit_tolerance &&
       heading_error <= goal_heading_exit_tolerance_ && stopped;
 
     if (!relaxed_goal) {
@@ -973,15 +1034,15 @@ private:
   double segment_timeout_s_{120.0};
   double motion_region_tolerance_{0.02};
   double turn_slip_per_degree_{0.0005};
-  double parallel_scan_offset_{0.04};
+  double parallel_scan_offset_{0.045};
   double maximum_scan_offset_{0.12};
-  double arc_entry_finish_offset_{0.01};
-  double arc_entry_speed_{0.06};
+  double arc_entry_finish_offset_{0.03};
+  double arc_entry_speed_{0.08};
   double arc_entry_lookahead_{0.20};
   double arc_entry_heading_gain_{2.0};
   double arc_entry_max_heading_{0.349065850};
   double arc_entry_max_angular_{0.25};
-  double arc_entry_timeout_{10.0};
+  double arc_entry_timeout_{15.0};
   double alignment_reentry_threshold_{0.209439510};
   double alignment_tolerance_{0.034906585};
   double alignment_settle_duration_{0.50};
@@ -992,6 +1053,9 @@ private:
   double final_approach_speed_{0.03};
   double goal_position_tolerance_{0.03};
   double goal_position_exit_tolerance_{0.04};
+  double start_approach_tolerance_{0.05};
+  double start_approach_exit_tolerance_{0.06};
+  double start_approach_runway_{0.40};
   double goal_heading_exit_tolerance_{0.052359878};
   double stopped_linear_speed_{0.01};
   double stopped_angular_speed_{0.02};
@@ -1008,6 +1072,7 @@ private:
   bool reference_prepared_{true};
   bool arc_entry_active_{false};
   bool approaching_start_{false};
+  bool start_approach_final_leg_{true};
   bool waiting_for_start_pose_{false};
   bool oscillation_warning_emitted_{false};
   uint32_t completed_segments_{0U};

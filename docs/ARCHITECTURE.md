@@ -165,7 +165,8 @@ C++ 通用直线段跟踪、任务状态机、
 `coverage_manager_node` 已订阅 `/coverage/task` 并缓存最新有效预览，只有收到操作员
 明确的 `/coverage/start` 后才复制并锁定 `task_id + revision`、发送 Action Goal。
 它还提供 `/coverage/cancel` 和 `/coverage/manager_status`；规划器不直接调用控制器，
-RViz 面板也不直接实现安全状态机。执行器在首条扫描前完成采集关闭的起点进入，首点
+RViz 面板也不直接实现安全状态机。执行器在首条扫描前完成采集关闭的起点进入；空间
+允许时先使用首条扫描线后方的同向跑道点，首条扫描随后复用统一的动态入轨判据。首点
 之外的直线不计入覆盖段。管理器当前位于 `climbot_control`，统一系统入口形成后再评估
 是否迁入 `climbot_bringup`。
 

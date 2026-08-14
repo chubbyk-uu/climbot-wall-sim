@@ -113,7 +113,7 @@ TEST(LineTracker, ArcEntrySteersMonotonicallyTowardTheNominalLine)
   for (int step = 0; step < 400 && std::abs(pose.y) > 0.005; ++step) {
     const auto command = followArcEntry(
       {0.0, 0.0}, {2.0, 0.0}, pose, 0.06, 0.20, 2.0,
-      std::acos(-1.0) / 9.0, 0.25);
+      std::acos(-1.0) / 9.0, 0.25, 0.0);
     EXPECT_LT(command.heading_correction, 0.0);
     pose.yaw += command.angular * 0.02;
     pose.x += command.linear * std::cos(pose.yaw) * 0.02;
@@ -129,7 +129,7 @@ TEST(LineTracker, ArcEntryCommandsNoTurnOnTheNominalLine)
 {
   const auto command = followArcEntry(
     {0.0, 0.0}, {0.0, -1.0}, {0.0, -0.2, -std::acos(-1.0) / 2.0},
-    0.06, 0.20, 2.0, std::acos(-1.0) / 9.0, 0.25);
+    0.06, 0.20, 2.0, std::acos(-1.0) / 9.0, 0.25, 0.0);
   EXPECT_NEAR(command.cross, 0.0, 1e-12);
   EXPECT_NEAR(command.angular, 0.0, 1e-12);
 }
@@ -142,7 +142,7 @@ TEST(LineTracker, ArcEntryApproachesFromEitherSideWithoutReversing)
     for (int step = 0; step < 400 && std::abs(pose.y) > 0.005; ++step) {
       const auto command = followArcEntry(
         {0.0, 0.0}, {2.0, 0.0}, pose, 0.06, 0.20, 2.0,
-        std::acos(-1.0) / 9.0, 0.25);
+        std::acos(-1.0) / 9.0, 0.25, 0.0);
       EXPECT_GT(command.linear, 0.0);
       pose.yaw += command.angular * 0.02;
       pose.x += command.linear * std::cos(pose.yaw) * 0.02;
@@ -153,6 +153,24 @@ TEST(LineTracker, ArcEntryApproachesFromEitherSideWithoutReversing)
     }
     EXPECT_LT(std::abs(pose.y), 0.02);
   }
+}
+
+TEST(LineTracker, ArcEntryGravityFeedforwardRemovesWallSlipBias)
+{
+  constexpr double slip_ratio = 0.1056;
+  constexpr double step_duration = 0.02;
+  Pose2 pose{0.0, -0.11, 0.0};
+  const double gravity_feedforward = std::atan(slip_ratio);
+  for (int step = 0; step < 1000 && std::abs(pose.y) > 0.005; ++step) {
+    const auto command = followArcEntry(
+      {0.0, 0.0}, {4.0, 0.0}, pose, 0.08, 0.20, 2.0,
+      std::acos(-1.0) / 9.0, 0.25, gravity_feedforward);
+    pose.yaw += command.angular * step_duration;
+    pose.x += command.linear * std::cos(pose.yaw) * step_duration;
+    pose.y += command.linear *
+      (std::sin(pose.yaw) - slip_ratio) * step_duration;
+  }
+  EXPECT_LT(std::abs(pose.y), 0.01);
 }
 
 TEST(LineTracker, JointWheelSaturationPreservesCurvature)

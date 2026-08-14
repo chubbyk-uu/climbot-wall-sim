@@ -161,7 +161,7 @@ class TestCoverageExecutor(unittest.TestCase):
         result_future = goal_handle.get_result_async()
 
         step = 0.01
-        deadline = time.monotonic() + 25.0
+        deadline = time.monotonic() + 40.0
         max_linear_while_turning = 0.0
         while not result_future.done() and time.monotonic() < deadline:
             linear, angular, state = self._current_command()
@@ -222,9 +222,9 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertEqual((linear, angular), (0.0, 0.0))
 
     def test_approaches_first_waypoint_before_counting_scan_segments(self):
-        """A distant start uses a non-collection approach before scan segment zero."""
+        """A distant start enters the first scan only after turn-slip recovery."""
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
-        x, y, yaw = -0.20, 0.0, 0.0
+        x, y, yaw = 0.0, -0.20, 0.0
         feedback_states = []
         for _ in range(5):
             self._publish_odometry(x, y, yaw)
@@ -232,10 +232,19 @@ class TestCoverageExecutor(unittest.TestCase):
         goal = ExecuteCoverage.Goal()
         goal.task = _task()
         goal.task.waypoints = goal.task.waypoints[:2]
+        goal.task.waypoints[1] = _pose(0.60, 0.0, 0.0)
         goal.task.segment_types = [CoverageTask.SEGMENT_SCAN]
+        for polygon in (goal.task.coverage_region, goal.task.motion_region):
+            for point in polygon.points:
+                if point.x > 0.0:
+                    point.x = 0.75
+
+        def record_feedback(message):
+            feedback_states.append(message.feedback.state)
+            self._feedback_callback(message)
         send_future = self.client.send_goal_async(
-            goal, feedback_callback=lambda message: feedback_states.append(message.feedback.state))
-        deadline = time.monotonic() + 12.0
+            goal, feedback_callback=record_feedback)
+        deadline = time.monotonic() + 25.0
         while not send_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(send_future.done())
@@ -244,8 +253,14 @@ class TestCoverageExecutor(unittest.TestCase):
         result_future = goal_handle.get_result_async()
 
         step = 0.01
+        first_scan_y = None
         while not result_future.done() and time.monotonic() < deadline:
-            linear, angular, _ = self._current_command()
+            linear, angular, state = self._current_command()
+            if state == ExecuteCoverage.Feedback.TRACK_LINE and first_scan_y is None:
+                first_scan_y = y
+            yaw_delta = angular * step
+            if abs(linear) <= 1e-4:
+                y -= 0.0005 * abs(math.degrees(yaw_delta))
             yaw += angular * step
             x += linear * math.cos(yaw) * step
             y += linear * math.sin(yaw) * step
@@ -257,7 +272,9 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertEqual(result.status, GoalStatus.STATUS_SUCCEEDED)
         self.assertEqual(result.result.completed_segments, 1)
         self.assertIn(ExecuteCoverage.Feedback.APPROACH_START, feedback_states)
-        self.assertLess(math.hypot(x - 0.20, y), 0.04)
+        self.assertIsNotNone(first_scan_y)
+        self.assertLess(abs(first_scan_y), 0.05)
+        self.assertLess(math.hypot(x - 0.60, y - first_scan_y), 0.04)
 
     def test_rejects_structurally_invalid_task(self):
         """An empty task never becomes an executable goal."""
