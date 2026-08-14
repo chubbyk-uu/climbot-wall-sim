@@ -75,6 +75,13 @@
 大矩形演示应显式设置 `execution_timeout_s:=600.0`；若评价工具超时，它会主动取消
 Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停车判定。
 
+评价器按 Gazebo 真值位置与航向栅格化实际
+`detection_width × detection_length` 矩形检测足迹，只累计正式 `SCAN` 直线，不把
+转向、换道或小弧线入轨误算成覆盖。`minimum_actual_coverage_ratio` 默认 `0.98`，
+`coverage_grid_resolution_m` 默认 `0.01 m`；低于门限时进程返回失败。
+`trajectory_csv` 和 `summary_json` 默认为空，显式配置后分别保存完整真值/融合轨迹和
+机器可读的 Action、逐段误差、覆盖/漏扫面积摘要。
+
 单段调试节点发布 `/control/segment_complete`（`std_msgs/msg/Bool`，reliable、
 transient local、depth 1）。启动时为 `false`，同时满足终点位置、补偿后航向和停车
 速度判据后锁存为 `true`。这是接入 Action 前的单段诊断接口；完整任务以

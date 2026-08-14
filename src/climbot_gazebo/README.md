@@ -27,7 +27,7 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 - `scripts/calibrate_wall_slip.py`：静止、水平和上下行侧滑标定；
 - `scripts/measure_normal_loads.py`：三点法向载荷与接触率；
 - `scripts/measure_turn_slip.py`：多角度原地转向下滑；
-- `scripts/evaluate_coverage_execution.py`：执行内置紧凑任务，或用 `case:=planned_task` 执行规划器发布的完整任务，按动态直线参考统计 Gazebo 真值横轨误差、可见往复和航向摆幅；
+- `scripts/evaluate_coverage_execution.py`：执行内置紧凑任务，或用 `case:=planned_task` 执行规划器发布的完整任务，按动态直线参考统计 Gazebo 真值横轨误差、可见往复和航向摆幅，并计算实际二维检测足迹覆盖率；
 - `scripts/evaluate_localization.py`：四方向定位误差评价。
 
 ## 侧滑标定
@@ -41,6 +41,9 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 完整大区域覆盖评价应将 `execution_timeout_s` 从默认 `120 s` 显式提高，例如
 `600 s`。该参数是评价工具等待整个 Action 的墙钟超时；超时后工具会主动取消任务，
 它不是控制器的单段安全超时。
+
+通过 `trajectory_csv` 和 `summary_json` 可选参数可分别保存完整真值/融合轨迹与评价
+摘要。覆盖率默认使用 `10 mm` 栅格，只累计正式扫描直线，并要求不低于 `98%`。
 
 ## 边界
 

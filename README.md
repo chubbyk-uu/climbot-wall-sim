@@ -141,7 +141,9 @@ source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
   -p use_sim_time:=true -p case:=planned_task \
-  -p startup_timeout_s:=20.0 -p execution_timeout_s:=600.0
+  -p startup_timeout_s:=20.0 -p execution_timeout_s:=600.0 \
+  -p trajectory_csv:=results/coverage_trajectory.csv \
+  -p summary_json:=results/coverage_summary.json
 ```
 
 竖向演示只需在终端 1 改用 `coverage_vertical_demo.yaml`，并把
@@ -155,7 +157,7 @@ ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
 - 阶段 C：传感器与定位融合——完成；
 - 阶段 D：覆盖路径规划——完成；
 - 阶段 E：自定义轨迹跟踪——进行中（多段 Action、动态换道、转后平行扫描和小弧线入轨已完成，最终系统评价待完成）；
-- 阶段 F：系统测试与数据评价——未开始。
+- 阶段 F：系统测试与数据评价——进行中（大型竖向矩形已完成实际二维足迹覆盖率和轨迹结果导出）。
 
 详细证据和待办见 [docs/STATUS.md](docs/STATUS.md)。
 

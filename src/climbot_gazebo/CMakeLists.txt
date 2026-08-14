@@ -39,6 +39,7 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(test_command_routing test/test_command_routing.py)
+  ament_add_pytest_test(test_coverage_metrics test/test_coverage_metrics.py)
   ament_add_pytest_test(test_model_defaults test/test_model_defaults.py)
   ament_add_pytest_test(
     test_normal_load_statistics test/test_normal_load_statistics.py)
