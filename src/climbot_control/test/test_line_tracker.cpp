@@ -249,6 +249,25 @@ TEST(CoverageExecution, IncludesPolygonBoundaryButRejectsOutsidePoint)
   EXPECT_FALSE(pointInPolygon(2.1, 0.0, polygon));
 }
 
+TEST(CoverageExecution, InterpretsPolygonToleranceAsMetres)
+{
+  const auto polygon = validTask().motion_region;
+  EXPECT_TRUE(pointInPolygon(2.015, 0.0, polygon, 0.020));
+  EXPECT_FALSE(pointInPolygon(2.021, 0.0, polygon, 0.020));
+}
+
+TEST(CoverageExecution, RejectsParallelScanThatWouldRunBackward)
+{
+  const auto valid = parallelScanSegment({0.0, 0.0}, {1.0, 0.0}, 0.02, 0.80, 0.10);
+  ASSERT_TRUE(valid.has_value());
+  EXPECT_NEAR(valid->start.x, 0.80, 1e-12);
+  EXPECT_NEAR(valid->start.y, 0.02, 1e-12);
+  EXPECT_NEAR(valid->end.x, 1.0, 1e-12);
+  EXPECT_NEAR(valid->end.y, 0.02, 1e-12);
+  EXPECT_FALSE(parallelScanSegment({0.0, 0.0}, {1.0, 0.0}, 0.02, 0.91, 0.10).has_value());
+  EXPECT_FALSE(parallelScanSegment({0.0, 0.0}, {1.0, 0.0}, 0.02, 1.05, 0.10).has_value());
+}
+
 TEST(CoverageExecution, DetectsSustainedCrossTrackReversalsNotSensorNoise)
 {
   // Repeated zero crossings inside a small error envelope are acceptable.

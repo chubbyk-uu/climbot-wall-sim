@@ -24,6 +24,12 @@ struct ExecutionSegment
   Point2 end;
 };
 
+// Freeze a scan line parallel to its nominal line at the measured cross-track
+// offset. Returns std::nullopt when too little forward scan length remains.
+std::optional<ExecutionSegment> parallelScanSegment(
+  const Point2 & nominal_start, const Point2 & nominal_end,
+  double cross_track, double along_track, double minimum_remaining_length);
+
 ExecutionSegment dynamicTransitionSegment(
   const climbot_interfaces::msg::CoverageTask & task, std::size_t segment_index,
   const Point2 & actual_start, double turn_slip_per_degree,

@@ -192,6 +192,23 @@ TEST(CoverageGeometry, FootprintAwarePathCoversRequestedRegionInsideMotionRegion
   }
 }
 
+TEST(CoverageGeometry, KeepsExactMultipleOfMaximumSpacingAtTheExpectedLineCount)
+{
+  constexpr double detection_width = 0.50;
+  constexpr double maximum_spacing = 0.40;
+  const double height = std::nextafter(1.70, std::numeric_limits<double>::infinity());
+  const auto coverage = makeRectangle({0.0, 0.0}, {4.0, height}).polygon;
+  const auto motion = makeRectangle({-0.10, -0.10}, {4.10, height + 0.10}).polygon;
+  const auto path = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, detection_width, 0.10, maximum_spacing,
+    "horizontal", "lower_left");
+  ASSERT_EQ(path.size(), 8U);
+  for (std::size_t index = 0; index < path.size(); index += 2U) {
+    EXPECT_NEAR(path[index].y, 0.25 + 0.40 * static_cast<double>(index / 2U), 1e-12);
+    EXPECT_NEAR(path[index].y, path[index + 1U].y, 1e-12);
+  }
+}
+
 TEST(CoverageGeometry, RejectsFootprintThatCannotRemainInsideMotionRegion)
 {
   const auto coverage = makeRectangle({0.0, 0.0}, {2.0, 2.0}).polygon;

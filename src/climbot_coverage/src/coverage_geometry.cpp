@@ -22,6 +22,7 @@ void validateStartCorner(const std::string & start_corner)
 }
 
 constexpr double kEpsilon = 1e-9;
+constexpr double kLineCountTolerance = 1e-9;
 
 Point2 subtract(const Point2 & first, const Point2 & second)
 {
@@ -303,8 +304,9 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
     throw std::invalid_argument("Coverage region has no sweep span.");
   }
   const double usable_span = std::max(0.0, span - detection_width);
+  const double interval_ratio = usable_span / maximum_spacing;
   const int line_count = std::max(
-    1, static_cast<int>(std::ceil(usable_span / maximum_spacing)) + 1);
+    1, static_cast<int>(std::ceil(interval_ratio - kLineCountTolerance)) + 1);
   const double spacing = line_count == 1 ? 0.0 : usable_span / static_cast<double>(line_count - 1);
   const bool start_low = start_corner.rfind("lower_", 0) == 0;
   const bool start_left = start_corner.compare(start_corner.size() - 4, 4, "left") == 0;

@@ -114,7 +114,7 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 仓库提供两个从机器人出生位置附近开始的参数式演示：
 
 - `coverage_vertical_demo.yaml`：`3.30 × 4.50 m`，8 条竖向扫描线；
-- `coverage_horizontal_demo.yaml`：`4.30 × 1.70 m`，5 条横向扫描线。
+- `coverage_horizontal_demo.yaml`：`4.30 × 1.70 m`，4 条横向扫描线。
 
 以下示例运行横向长扁矩形。终端 1 启动仿真、规划器和 RViz：
 

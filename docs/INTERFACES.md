@@ -17,7 +17,7 @@
 | 配置 | 区域 | 路径 |
 | --- | ---: | --- |
 | `coverage_vertical_demo.yaml` | `3.30 × 4.50 m` | 8 条竖向扫描线、15 段 |
-| `coverage_horizontal_demo.yaml` | `4.30 × 1.70 m` | 5 条横向扫描线、9 段 |
+| `coverage_horizontal_demo.yaml` | `4.30 × 1.70 m` | 4 条横向扫描线、7 段 |
 
 联合启动时通过 `config_file:=<配置绝对路径>` 选择演示；同时启动
 `coverage_executor.launch.py use_sim_time:=true`，再由 Action 客户端发送规划器发布的

@@ -61,9 +61,14 @@ bool pointInPolygon(
   for (std::size_t index = 0; index < polygon.points.size(); ++index) {
     const auto & first = polygon.points[index];
     const auto & second = polygon.points[(index + 1U) % polygon.points.size()];
-    const double side = (second.x - first.x) * (y - first.y) -
-      (second.y - first.y) * (x - first.x);
-    if (std::abs(side) <= tolerance) {
+    const double edge_x = second.x - first.x;
+    const double edge_y = second.y - first.y;
+    const double edge_length = std::hypot(edge_x, edge_y);
+    if (!std::isfinite(edge_length) || edge_length <= 1e-9) {
+      return false;
+    }
+    const double side = edge_x * (y - first.y) - edge_y * (x - first.x);
+    if (std::abs(side) / edge_length <= tolerance) {
       continue;
     }
     const int current_orientation = side > 0.0 ? 1 : -1;
@@ -73,6 +78,37 @@ bool pointInPolygon(
     orientation = current_orientation;
   }
   return true;
+}
+
+std::optional<ExecutionSegment> parallelScanSegment(
+  const Point2 & nominal_start, const Point2 & nominal_end,
+  double cross_track, double along_track, double minimum_remaining_length)
+{
+  if (!std::isfinite(nominal_start.x) || !std::isfinite(nominal_start.y) ||
+    !std::isfinite(nominal_end.x) || !std::isfinite(nominal_end.y) ||
+    !std::isfinite(cross_track) || !std::isfinite(along_track) ||
+    !std::isfinite(minimum_remaining_length) || minimum_remaining_length < 0.0)
+  {
+    throw std::invalid_argument("Parallel scan inputs must be finite and valid.");
+  }
+  const double dx = nominal_end.x - nominal_start.x;
+  const double dy = nominal_end.y - nominal_start.y;
+  const double length = std::hypot(dx, dy);
+  if (length <= 1e-9) {
+    throw std::invalid_argument("Nominal scan line must be non-zero.");
+  }
+  const double forward_along = std::max(0.0, along_track);
+  if (length - forward_along <= minimum_remaining_length) {
+    return std::nullopt;
+  }
+  const double tx = dx / length;
+  const double ty = dy / length;
+  const Point2 normal{-ty, tx};
+  return ExecutionSegment{
+    {nominal_start.x + cross_track * normal.x + forward_along * tx,
+      nominal_start.y + cross_track * normal.y + forward_along * ty},
+    {nominal_end.x + cross_track * normal.x,
+      nominal_end.y + cross_track * normal.y}};
 }
 
 ExecutionSegment dynamicTransitionSegment(

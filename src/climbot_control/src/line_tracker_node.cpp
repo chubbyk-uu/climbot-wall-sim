@@ -361,27 +361,16 @@ private:
 
   bool lockParallelScanLine(double cross, double along)
   {
-    const double dx = nominal_scan_end_.x - nominal_scan_start_.x;
-    const double dy = nominal_scan_end_.y - nominal_scan_start_.y;
-    const double length = std::hypot(dx, dy);
-    const double tx = dx / length;
-    const double ty = dy / length;
-    const climbot_control::Point2 normal{-ty, tx};
-    const climbot_control::Point2 shifted_origin{
-      nominal_scan_start_.x + cross * normal.x,
-      nominal_scan_start_.y + cross * normal.y};
-    start_ = {
-      shifted_origin.x + std::max(0.0, along) * tx,
-      shifted_origin.y + std::max(0.0, along) * ty};
-    end_ = {
-      nominal_scan_end_.x + cross * normal.x,
-      nominal_scan_end_.y + cross * normal.y};
-    if (std::hypot(end_.x - start_.x, end_.y - start_.y) <= 1e-9) {
+    const auto frozen = climbot_control::parallelScanSegment(
+      nominal_scan_start_, nominal_scan_end_, cross, along, final_approach_distance_);
+    if (!frozen.has_value()) {
       finishGoal(
         ExecuteCoverage::Result::TRACKING_FAILED,
-        "Parallel scan line has no remaining length.");
+        "Parallel scan line has insufficient forward length remaining.");
       return false;
     }
+    start_ = frozen->start;
+    end_ = frozen->end;
     if (!climbot_control::pointInPolygon(
         end_.x, end_.y, active_task_->motion_region, 1e-6))
     {
