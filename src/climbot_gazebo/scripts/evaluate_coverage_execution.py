@@ -13,10 +13,12 @@ from climbot_description.geometry import quaternion_tuple
 from climbot_description.geometry import yaw_from_quaternion
 from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.coverage_metrics import footprint_coverage
+from climbot_gazebo.execution_metrics import execution_quality
 from climbot_interfaces.action import ExecuteCoverage
 from climbot_interfaces.msg import CoverageTask
 from geometry_msgs.msg import Point32
 from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
 import rclpy
@@ -58,6 +60,9 @@ class CoverageExecutionEvaluator(Node):
         self.declare_parameter('visible_excursion_m', 0.020)
         self.declare_parameter('maximum_visible_reversals', 0)
         self.declare_parameter('maximum_heading_range_deg', 5.0)
+        self.declare_parameter('maximum_endpoint_error_m', 0.030)
+        self.declare_parameter('maximum_turn_end_heading_error_deg', 2.0)
+        self.declare_parameter('maximum_horizontal_height_drift_m', 0.030)
         self.declare_parameter('minimum_actual_coverage_ratio', 0.98)
         self.declare_parameter('coverage_grid_resolution_m', 0.01)
         self.declare_parameter('trajectory_csv', '')
@@ -72,6 +77,9 @@ class CoverageExecutionEvaluator(Node):
         self.executed_task = None
         self.segment = -1
         self.state = ExecuteCoverage.Feedback.WAITING
+        self.heading_error = math.nan
+        self.command_linear = 0.0
+        self.command_angular = 0.0
         self.samples = {}
         self.references = []
         self.trajectory = []
@@ -80,6 +88,8 @@ class CoverageExecutionEvaluator(Node):
             Odometry, '/odometry/filtered', self._filtered_callback, 10)
         self.create_subscription(
             Odometry, '/model/climbot/ground_truth', self._truth_callback, 10)
+        self.create_subscription(
+            Twist, '/control/cmd_vel', self._command_callback, 10)
         reference_qos = QoSProfile(depth=1)
         reference_qos.reliability = ReliabilityPolicy.RELIABLE
         reference_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
@@ -101,6 +111,11 @@ class CoverageExecutionEvaluator(Node):
     def _feedback_callback(self, message):
         self.segment = message.feedback.current_segment
         self.state = message.feedback.state
+        self.heading_error = message.feedback.heading_error
+
+    def _command_callback(self, message):
+        self.command_linear = message.linear.x
+        self.command_angular = message.angular.z
 
     def _reference_callback(self, message):
         if len(message.poses) < 2:
@@ -186,6 +201,9 @@ class CoverageExecutionEvaluator(Node):
             'reference_end_x_m': reference[2],
             'reference_end_y_m': reference[3],
             'cross_track_error_m': cross_track,
+            'heading_error_rad': self.heading_error,
+            'command_linear_mps': self.command_linear,
+            'command_angular_rps': self.command_angular,
             'scored_line_sample': int(scored),
         })
 
@@ -419,6 +437,35 @@ class CoverageExecutionEvaluator(Node):
                 coverage['covered_area_m2'], coverage['region_area_m2'],
                 coverage['resolution_m'] * 1000.0))
         passed = passed and coverage['ratio'] >= minimum_coverage
+        planned_lengths = []
+        for first, second in zip(goal.task.waypoints, goal.task.waypoints[1:]):
+            planned_lengths.append(math.hypot(
+                second.position.x - first.position.x,
+                second.position.y - first.position.y))
+        quality = execution_quality(
+            self.trajectory, goal.task.segment_types, planned_lengths,
+            CoverageTask.SEGMENT_SCAN)
+        horizontal_drift = quality['maximum_horizontal_height_drift_m']
+        self.get_logger().info(
+            'endpoint_max=%.2f mm turn_end_max=%.2f deg '
+            'horizontal_drift_max=%.2f mm path_ratio=%.4f '
+            'heading_compensation_max=%.2f deg tracking_angular_max=%.3f rad/s' % (
+                quality['maximum_endpoint_error_m'] * 1000.0,
+                quality['maximum_turn_end_heading_error_deg'],
+                (horizontal_drift * 1000.0
+                 if horizontal_drift is not None else math.nan),
+                quality['actual_to_planned_length_ratio'],
+                quality['maximum_heading_compensation_deg'],
+                quality['maximum_tracking_angular_speed_rps']))
+        passed = passed and (
+            quality['maximum_endpoint_error_m'] <=
+            float(self.get_parameter('maximum_endpoint_error_m').value) and
+            quality['maximum_turn_end_heading_error_deg'] <=
+            float(self.get_parameter(
+                'maximum_turn_end_heading_error_deg').value) and
+            (horizontal_drift is None or horizontal_drift <=
+             float(self.get_parameter(
+                 'maximum_horizontal_height_drift_m').value)))
         self._write_csv(
             str(self.get_parameter('trajectory_csv').value), self.trajectory)
         self._write_json(
@@ -431,6 +478,7 @@ class CoverageExecutionEvaluator(Node):
                 'elapsed_time_s': result.elapsed_time_s,
                 'trajectory_samples': len(self.trajectory),
                 'coverage': coverage,
+                'execution_quality': quality,
                 'segment_metrics': segment_metrics,
                 'passed': passed,
             })

@@ -80,7 +80,11 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 转向、换道或小弧线入轨误算成覆盖。`minimum_actual_coverage_ratio` 默认 `0.98`，
 `coverage_grid_resolution_m` 默认 `0.01 m`；低于门限时进程返回失败。
 `trajectory_csv` 和 `summary_json` 默认为空，显式配置后分别保存完整真值/融合轨迹和
-机器可读的 Action、逐段误差、覆盖/漏扫面积摘要。
+机器可读的 Action、逐段误差、覆盖/漏扫面积摘要。评价器同时按冻结后的动态直线参考
+检查终点位置和转向结束航向，默认门限分别为 `maximum_endpoint_error_m=0.030`、
+`maximum_turn_end_heading_error_deg=2.0`；水平 `SCAN` 的首末真值高度差默认不得超过
+`maximum_horizontal_height_drift_m=0.030`。摘要还记录实际/名义线段总长之比、最大
+机体航向补偿角和正式直线期间最大指令角速度，当前只报告后面三项，不设臆测门限。
 
 单段调试节点发布 `/control/segment_complete`（`std_msgs/msg/Bool`，reliable、
 transient local、depth 1）。启动时为 `false`，同时满足终点位置、补偿后航向和停车
