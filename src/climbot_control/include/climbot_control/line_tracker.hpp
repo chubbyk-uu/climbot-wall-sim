@@ -27,6 +27,9 @@ struct Limits
   double max_cross_feedback{0.139626340};
   double max_deceleration{0.25};
   double alignment_threshold{0.174532925};
+  double cross_slowdown_start{0.03};
+  double cross_slowdown_full{0.08};
+  double cross_slowdown_min_scale{0.25};
   double gravity_slip_ratio{0.0};
   Point2 gravity_direction{0.0, -1.0};
 };

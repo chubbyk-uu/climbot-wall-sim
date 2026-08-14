@@ -80,6 +80,9 @@ public:
       declare_parameter("max_cross_feedback_deg", 8.0));
     limits_.alignment_threshold = degreesToRadians(
       declare_parameter("alignment_threshold_deg", 10.0));
+    limits_.cross_slowdown_start = declare_parameter("cross_slowdown_start_m", 0.03);
+    limits_.cross_slowdown_full = declare_parameter("cross_slowdown_full_m", 0.08);
+    limits_.cross_slowdown_min_scale = declare_parameter("cross_slowdown_min_scale", 0.25);
     alignment_reentry_threshold_ = degreesToRadians(
       declare_parameter("alignment_reentry_threshold_deg", 12.0));
     alignment_tolerance_ = degreesToRadians(
@@ -239,6 +242,14 @@ private:
     requirePositive("max_gravity_feedforward_deg", limits_.max_gravity_feedforward);
     requirePositive("max_cross_feedback_deg", limits_.max_cross_feedback);
     requirePositive("alignment_threshold_deg", limits_.alignment_threshold);
+    requirePositive("cross_slowdown_start_m", limits_.cross_slowdown_start);
+    requirePositive("cross_slowdown_full_m", limits_.cross_slowdown_full);
+    requireFinite("cross_slowdown_min_scale", limits_.cross_slowdown_min_scale);
+    if (limits_.cross_slowdown_full <= limits_.cross_slowdown_start ||
+      limits_.cross_slowdown_min_scale <= 0.0 || limits_.cross_slowdown_min_scale > 1.0)
+    {
+      throw std::invalid_argument("Cross-track slowdown limits are invalid.");
+    }
     requirePositive("alignment_reentry_threshold_deg", alignment_reentry_threshold_);
     requirePositive("alignment_tolerance_deg", alignment_tolerance_);
     requirePositive("alignment_settle_duration_s", alignment_settle_duration_);

@@ -104,6 +104,9 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `cross_gain` | `1.0 rad/m` | 横轨比例反馈增益 |
 | `line_tracker` | `cross_integral_gain` | `0.30 rad/(m·s)` | 横轨积分反馈增益 |
 | `line_tracker` | `cross_integral_limit_m_s` | `0.10 m·s` | 横轨积分状态绝对限值 |
+| `line_tracker` | `cross_slowdown_start_m` | `0.03 m` | 超过此横轨误差后开始连续降速 |
+| `line_tracker` | `cross_slowdown_full_m` | `0.08 m` | 到此误差后保持最小缩放速度，不完全停车 |
+| `line_tracker` | `cross_slowdown_min_scale` | `0.25` | 大横轨误差下的最小线速度比例 |
 | `line_tracker` | `max_gravity_feedforward_deg` | `8°` | 重力前馈独立限幅 |
 | `line_tracker` | `max_cross_feedback_deg` | `8°` | 横轨 PI 反馈独立限幅 |
 | `line_tracker` | `max_heading_correction_deg` | `12°` | 前馈与反馈相加后的总航向硬限幅 |

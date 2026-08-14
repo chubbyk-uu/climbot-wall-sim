@@ -30,6 +30,9 @@ line_tracker:
     max_gravity_feedforward_deg: 8.0
     max_cross_feedback_deg: 8.0
     alignment_threshold_deg: 10.0
+    cross_slowdown_start_m: 0.03
+    cross_slowdown_full_m: 0.08
+    cross_slowdown_min_scale: 0.25
     alignment_reentry_threshold_deg: 12.0
     alignment_tolerance_deg: 2.0
     alignment_settle_duration_s: 0.50

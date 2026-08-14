@@ -55,6 +55,13 @@ Command trackLine(
       2.0 * limits.max_deceleration * std::max(0.0, remaining)));
   double linear = std::clamp(std::min(cruise_speed, braking_speed),
     0.0, limits.max_linear);
+  if (std::abs(cross) > limits.cross_slowdown_start) {
+    const double ratio = (limits.cross_slowdown_full - std::abs(cross)) /
+      (limits.cross_slowdown_full - limits.cross_slowdown_start);
+    const double scale = std::clamp(
+      ratio, limits.cross_slowdown_min_scale, 1.0);
+    linear *= scale;
+  }
   if (std::abs(heading_error) > limits.alignment_threshold) {
     linear = 0.0;
   }

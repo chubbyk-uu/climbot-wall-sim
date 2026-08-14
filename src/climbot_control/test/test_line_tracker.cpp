@@ -88,6 +88,17 @@ TEST(LineTracker, StopsForwardMotionUntilHeadingIsAligned)
   EXPECT_DOUBLE_EQ(command.linear, 0.0);
 }
 
+TEST(LineTracker, ReducesSpeedForLargeCrossTrackErrorWithoutStopping)
+{
+  Limits limits;
+  const auto nominal = trackLine({0, 0}, {1, 0}, {0, 0, 0}, .20, 1, 2, limits);
+  const auto moderate = trackLine({0, 0}, {1, 0}, {0, .055, 0}, .20, 1, 2, limits);
+  const auto large = trackLine({0, 0}, {1, 0}, {0, .20, 0}, .20, 1, 2, limits);
+  EXPECT_LT(moderate.linear, nominal.linear);
+  EXPECT_GT(moderate.linear, 0.0);
+  EXPECT_NEAR(large.linear, nominal.linear * limits.cross_slowdown_min_scale, 1e-12);
+}
+
 TEST(LineTracker, WorksForVerticalAndDiagonalLines)
 {
   EXPECT_NEAR(trackLine({0, 0}, {0, 1}, {.05, .4, 1.57079632679}, .15, 1, 2, {}).cross,
