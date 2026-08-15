@@ -3,6 +3,11 @@ Panels:
     Name: Displays
   - Class: rviz_common/Tool Properties
     Name: Tool Properties
+  # Provided by climbot_rviz_plugins. RViz logs a warning and starts without
+  # the panel if that package is not on the workspace, so an unbuilt plugin
+  # costs the buttons but never the rest of the visualization.
+  - Class: climbot_rviz_plugins/Coverage
+    Name: Coverage Task
 Visualization Manager:
   Class: ""
   Displays:

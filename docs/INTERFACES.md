@@ -33,19 +33,25 @@
 | `gpu_backend` | `auto` | 透传给 `climbot_wall.launch.py` |
 | `rviz` | `true` | 启动 RViz；点选工具由它提供 |
 | `input_mode` | `rviz` | `rviz` 点选或 `parameters` 配置区域 |
-| `config_file` | `coverage_rectangle.yaml` | 规划器参数；点选模式下忽略其中的角点 |
+| `planner_config_file` | `coverage_rectangle.yaml` | 规划器参数；点选模式下忽略其中的角点 |
+| `control_config_file` | `control.yaml` | 跟踪器参数 |
 | `region_type` | `rectangle` | `rectangle` 需两点，`trapezoid` 需三点 |
 | `sweep_direction` | `horizontal` | 扫描方向 |
 
 `region_type` 和 `sweep_direction` 由规划器在构造时读入成员变量，没有参数回调，
 因此运行中 `ros2 param set` 不生效；更换区域形状或扫描方向必须重启 launch。
 
+两个参数文件名字不同且各自显式传递。被包含的 launch 会继承父作用域的同名参数，
+且 `DeclareLaunchArgument` 的默认值对父作用域已设定的名字不生效，因此一个共用的
+`config_file` 会同时落到规划器和跟踪器上，使跟踪器静默退回内置默认值。
+
 点选模式下的操作顺序是：用 RViz 的 `Publish Point` 工具依次点击区域角点
-（矩形为左下、右上；梯形再加右下），确认 `/coverage/manager_status` 变为
-`Ready: <task_id> revision <n>`，再调用 `/coverage/start`。`/coverage/status`
+（矩形为左下、右上；梯形再加右下），确认 `Coverage Task` 面板的 State 变为
+`Ready`，再点面板上的 `Start`（等价于调用 `/coverage/start`）。`/coverage/status`
 会回显每次点击被接受时的坐标，可据此发现相机视角造成的镜像或旋转误选。
-角点点错时调用 `/coverage/clear_points` 清空重来。RViz 的固定坐标系是 `odom`，
-即墙面平面，所以点选工具给出的 `x`、`y` 就是墙面坐标；规划器忽略 `z`。
+角点点错时用面板的 `Clear points` 或 `/coverage/clear_points` 清空重来。
+RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出的 `x`、`y` 就是墙面
+坐标；规划器忽略 `z`。
 
 `climbot_wall.launch.py` 的主要 launch 参数：
 
@@ -243,7 +249,8 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `/coverage/manager_status` | `climbot_interfaces/msg/CoverageStatus` | reliable、transient local、depth 1 | 操作界面所需的全部信息 |
 
 界面所需的一切都在这一个话题上，界面因此不持有任何自己的状态，也不可能和管理器
-对当前在跑什么产生分歧。这是 §11.1「面板只负责人机交互」的落地方式。
+对当前在跑什么产生分歧。这是 §11.1「面板只负责人机交互」的落地方式：
+`climbot_rviz_plugins/Coverage` 面板就只订阅这一个话题并调用下面四个服务。
 
 | 字段 | 含义 |
 | --- | --- |

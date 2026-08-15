@@ -8,9 +8,9 @@
 
 ```text
                     climbot_interfaces
-                       ^          ^
-                       │          │
-              climbot_coverage  climbot_control
+                    ^      ^        ^
+                    │      │        │
+climbot_rviz_plugins┘  climbot_coverage  climbot_control
                        │          │
                        v          v
                     climbot_description
@@ -18,6 +18,9 @@
                             │
                      climbot_gazebo
 ```
+
+`climbot_rviz_plugins` 只依赖 `climbot_interfaces`、`std_srvs` 和 RViz/Qt，不依赖
+规划或控制实现。`climbot_coverage` 运行时依赖它，是因为 `coverage.rviz` 载入该面板。
 
 `climbot_interfaces` 是无业务实现的公共 ROS 接口包，不依赖其他项目包。
 `climbot_description` 是共享物理描述的唯一上游。规划器和控制器不得依赖
@@ -82,6 +85,17 @@ C++ 覆盖规划器和 RViz 可视化：
 
 规划器读取 `climbot_description` 的墙面尺寸和机器人轮廓，不读取任何
 Gazebo 接触参数。
+
+### `climbot_rviz_plugins`
+
+C++ RViz 操作面板：
+
+- `CoveragePanel`：重新规划/清除点选/开始/取消·停车按钮，以及状态、任务版本、
+  段进度和最近一次请求结果的显示。
+
+面板只订阅 `/coverage/manager_status` 并调用管理器服务，自身不保存任务状态，
+因此任务锁定、版本检查和安全状态转换不会被分叉到界面里。Qt 与 pluginlib 依赖
+集中在本包，控制包保持无界面依赖。
 
 ### `climbot_control`
 

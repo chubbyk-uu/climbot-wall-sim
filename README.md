@@ -39,6 +39,7 @@ climbot_sim/
     ├── climbot_gazebo/          仿真、定位与评估工具
     ├── climbot_interfaces/      覆盖任务消息与执行 Action
     ├── climbot_coverage/        C++ 覆盖规划与 RViz
+    ├── climbot_rviz_plugins/    RViz 操作面板
     └── climbot_control/         C++ 轨迹跟踪和速度安全
 ```
 
@@ -191,23 +192,37 @@ ros2 launch climbot_coverage coverage_mission.launch.py
 `Bottom clicks differed by ... and were corrected to their mean height.`，这是提示
 不是错误。
 
-最后一次点击后 RViz 中出现规划路径，`/coverage/manager_status` 变为
-`Ready: <task_id> revision <n>`。确认路径正确后在另一个终端启动执行：
+最后一次点击后 RViz 中出现规划路径，左侧 **Coverage Task** 面板的 State 变为
+`Ready` 并显示任务名与 revision。确认路径正确后直接点面板上的按钮：
+
+| 按钮 | 作用 |
+| --- | --- |
+| **Start** | 开始执行，State 转为 `Executing`，进度条和 Segment 随之更新 |
+| **Cancel / Stop** | 中途停车 |
+| **Clear points** | 点错角点时清空重选 |
+| **Replan** | 用当前角点重新规划 |
+
+按钮置灰只是依据已发布状态给出的提示；无论面板显示什么，非法请求都由管理器
+拒绝，原因显示在 Last request 一行。任务锁定和版本检查始终在管理器里，符合
+§11.1 对界面插件的限制。
+
+面板由 `climbot_rviz_plugins` 提供，已写入 `coverage.rviz`，随 launch 自动出现；
+若被关掉，用 RViz 菜单 `Panels → Add New Panel → climbot_rviz_plugins/Coverage`
+恢复。
+
+同样的操作也可以走命令行，两者等价：
 
 ```bash
 ros2 service call /coverage/start std_srvs/srv/Trigger
+ros2 service call /coverage/cancel std_srvs/srv/Trigger
+ros2 service call /coverage/clear_points std_srvs/srv/Trigger
 
 # 只看人类可读的一行，等价于原来的 std_msgs/String
 ros2 topic echo /coverage/manager_status --field message
 
 # 看完整状态：state、task_id、revision、current_segment/total_segments、progress
 ros2 topic echo /coverage/manager_status
-
-ros2 service call /coverage/cancel std_srvs/srv/Trigger   # 中途停车
 ```
-
-点错角点时先调用 `ros2 service call /coverage/clear_points std_srvs/srv/Trigger`
-再重新点选。按 §11.1，开始与取消目前只经由服务；RViz 按钮面板是后续工作。
 
 #### 切换区域形状与扫描方向
 

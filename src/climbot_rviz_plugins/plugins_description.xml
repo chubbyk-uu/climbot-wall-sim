@@ -1,0 +1,10 @@
+<library path="climbot_rviz_plugins">
+  <class name="climbot_rviz_plugins/Coverage"
+         type="climbot_rviz_plugins::CoveragePanel"
+         base_class_type="rviz_common::Panel">
+    <description>
+      Plan, start and stop a wall coverage task, and show the manager's task
+      version, segment progress and last error.
+    </description>
+  </class>
+</library>

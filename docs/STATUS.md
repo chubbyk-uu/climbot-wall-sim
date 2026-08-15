@@ -198,6 +198,30 @@
 面板由此只需订阅一个话题：任务锁定、版本检查和安全状态转换全部留在管理器，
 符合 §11.1 对界面插件的限制。
 
+## 2026-08-15 RViz 操作面板（阶段 3）
+
+新建 `climbot_rviz_plugins`，实现 §11.1 要求的面板。放在独立包而不是
+`climbot_control`：面板引入 Qt5 与 pluginlib，控制包应保持无界面依赖。同类需求
+的既有做法一致——Nav2 的 `nav2_rviz_plugins` 提供四个 `rviz_common::Panel`
+（含带启动/暂停/取消按钮的 `Nav2Panel`），MoveIt 的 MotionPlanning 面板同理；
+与三维场景无关的工具才走 rqt。
+
+| 项目 | 状态 | 结果 |
+| --- | --- | --- |
+| `CoveragePanel` | 已完成 | `rviz_common::Panel` 子类，四个按钮（Replan / Clear points / Start / Cancel·Stop）加 State、Task+revision、Segment、进度条、管理器消息和最近一次请求结果 |
+| 面板不持有状态 | 已完成 | 只订阅 `/coverage/manager_status` 并调用四个 Trigger 服务。按钮置灰仅依据已发布的 `state`，是提示不是校验；非法请求仍由管理器拒绝，原因显示在 Last request 一行。任务锁定、版本检查和安全状态转换全部不在插件里 |
+| 线程安全 | 已完成 | RViz 在执行器线程派发订阅与服务回调，Qt 控件只能在 GUI 线程访问。回调只写入互斥量保护的成员，控件由 `100 ms` 的 `QTimer` 在 GUI 线程统一刷新 |
+| 随 launch 自动出现 | 已完成 | 写入 `climbot_coverage/rviz/coverage.rviz`，`coverage_mission.launch.py` 启动即带面板；`climbot_coverage` 相应补上 `climbot_rviz_plugins` 依赖 |
+| 插件加载回归护栏 | 已完成 | 构建成功不能说明面板可用：插件加载失败时 RViz 只警告一次然后照常启动，面板是消失而不是报错。`test_coverage_panel_plugin` 经 ament 索引按 RViz 的方式加载该类；把 `plugins_description.xml` 的库名改错即失败 |
+| 配置与声明交叉检查 | 已完成 | `climbot_coverage` 新增 `test_rviz_config`：断言 `coverage.rviz` 里配置的 `climbot_*` 面板类名确实由 `climbot_rviz_plugins` 声明，防止改名后静默失效 |
+
+实机验证：在 WSLg 显示下启动 RViz 加载该配置，日志无插件加载警告；
+`ros2 topic info /coverage/manager_status -v` 显示 `rviz` 节点已按正确类型订阅，
+`ros2 node info /rviz` 列出四个 Trigger 服务客户端，即 `onInitialize()` 已执行且
+接线正确。**面板的实际视觉布局和按钮点击行为未经自动化验证**，需人工确认。
+
+全量 261 项测试通过，19 项按环境跳过。
+
 ## 当前未决事项
 
 ### 1. WheelSlip 法向载荷局限
@@ -214,14 +238,7 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 
 ## 下一步顺序
 
-1. 操作界面阶段 3：新建 `climbot_rviz_plugins` 包（不放进 `climbot_control`，
-   避免把 Qt 和 pluginlib 依赖引入控制包），实现 `rviz_common::Panel` 插件，
-   提供重新规划/开始/取消·停车按钮与版本、进度、错误显示，并写入 `coverage.rviz`
-   使其随 `coverage_mission.launch.py` 自动出现。按 §11.1，面板只调服务，不得
-   持有任务锁定、版本检查或安全状态转换。同类需求的既有做法一致：Nav2 的
-   `nav2_rviz_plugins` 提供四个 `rviz_common::Panel`（含带启动/暂停/取消按钮的
-   `Nav2Panel`），MoveIt 的 MotionPlanning 面板同理；RViz2 插件只能用 C++，
-   若要 Python 则须改用 rqt，但那是独立窗口，与点选场景脱节；
+1. 人工确认面板的视觉布局与按钮点击行为，这是阶段 3 唯一无法自动验证的部分；
 2. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
    工况的可重复回归；不可进入和定位超时停车的 Gazebo 基线已经通过；
 3. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
