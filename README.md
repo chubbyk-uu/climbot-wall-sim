@@ -56,6 +56,66 @@ climbot_coverage  climbot_control（多段覆盖 Action 与直线跟踪）
 规划器和控制器都不读取 Gazebo 真值或仿真专有参数；Gazebo 包仅因仿真组合 launch
 依赖控制包。
 
+## 环境安装
+
+本仓库当前在以下环境上验证通过：
+
+| 组件 | 版本 |
+| --- | --- |
+| 操作系统 | Ubuntu 24.04.4 LTS（WSL2，内核 `6.18` microsoft-standard） |
+| ROS 2 | Jazzy Jalisco |
+| Gazebo | Harmonic / gz-sim `8.11.0` |
+| Python | `3.12.3` |
+| 构建工具 | `colcon`（`python3-colcon-common-extensions`） |
+
+### 1. 添加 ROS 2 apt 源并安装 Jazzy
+
+apt 源的添加方式以
+[官方安装文档](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
+为准（本机使用的是 `ros2-apt-source` deb 方式）：
+
+```bash
+sudo apt update && sudo apt install -y curl
+export ROS_APT_SOURCE_VERSION=$(curl -s \
+  https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest \
+  | grep -F "tag_name" | awk -F\" '{print $4}')
+curl -L -o /tmp/ros2-apt-source.deb \
+  "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo $VERSION_CODENAME)_all.deb"
+sudo apt install -y /tmp/ros2-apt-source.deb
+sudo apt update
+sudo apt install -y ros-jazzy-desktop python3-colcon-common-extensions python3-rosdep
+```
+
+需要 `ros-jazzy-desktop` 而不是 `ros-base`，因为点选和预览依赖 RViz2。
+
+### 2. 安装本仓库声明的依赖
+
+**不需要单独添加 `packages.osrfoundation.org` 源。** Gazebo Harmonic 由
+`ros-jazzy-gz-sim-vendor` 和 `ros-jazzy-gz-tools-vendor` 随
+`ros-jazzy-ros-gz` 一并从 packages.ros.org 装入，`gz` 命令在 source 之后可用。
+
+```bash
+sudo rosdep init      # 只需一次，已初始化过会报错，可忽略
+rosdep update
+
+cd ~/robot_ws/climbot_sim
+source /opt/ros/jazzy/setup.bash
+rosdep install --from-paths src --ignore-src --rosdistro jazzy -y
+```
+
+该命令会按各包 `package.xml` 装齐 `ros_gz`、`robot_localization`、
+`teleop_twist_keyboard`、`rviz2`、`xacro`、`robot_state_publisher`、
+`python3-yaml` 和 `python3-matplotlib`。想先看会装什么，把 `-y` 换成
+`--simulate`。
+
+### 3. 验证
+
+```bash
+source /opt/ros/jazzy/setup.bash
+gz sim --versions        # 应输出 8.x
+ros2 doctor --report | head -20
+```
+
 ## 构建与测试
 
 ```bash
@@ -117,10 +177,22 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 ros2 launch climbot_coverage coverage_mission.launch.py
 ```
 
-在 RViz 工具栏选择 `Publish Point`，依次点击矩形的左下角和右上角
-（`region_type:=trapezoid` 时再点右下角）。第二次点击后 RViz 中出现规划路径，
-`/coverage/manager_status` 变为 `Ready: rectangle revision <n>`。确认路径正确后
-在另一个终端启动执行：
+在 RViz 工具栏选择 `Publish Point`，按下表顺序点击区域角点。每次点击
+`/coverage/status` 都会回显它认成了哪个角和坐标，用来确认没有因为相机视角
+而选反方向：
+
+| 区域 | 点击顺序 |
+| --- | --- |
+| `rectangle`（默认） | A 左下 → B 右上 |
+| `trapezoid` | A 左下 → **B 右上** → C 右下 |
+
+梯形第二下是右上、第三下才是右下，容易顺手点成逆时针。手点两个底角不可能等高，
+规划器会取均值，差超过 `bottom_warning_tolerance`（默认 `50 mm`）时状态里会多一句
+`Bottom clicks differed by ... and were corrected to their mean height.`，这是提示
+不是错误。
+
+最后一次点击后 RViz 中出现规划路径，`/coverage/manager_status` 变为
+`Ready: <task_id> revision <n>`。确认路径正确后在另一个终端启动执行：
 
 ```bash
 ros2 service call /coverage/start std_srvs/srv/Trigger
@@ -129,8 +201,41 @@ ros2 service call /coverage/cancel std_srvs/srv/Trigger   # 中途停车
 ```
 
 点错角点时先调用 `ros2 service call /coverage/clear_points std_srvs/srv/Trigger`
-再重新点选。`/coverage/status` 会回显每个被接受的点的坐标，可用来确认没有因为
-相机视角而选反方向。按 §11.1，开始与取消目前只经由服务；RViz 按钮面板是后续工作。
+再重新点选。按 §11.1，开始与取消目前只经由服务；RViz 按钮面板是后续工作。
+
+#### 切换区域形状与扫描方向
+
+`region_type` 和 `sweep_direction` 只在规划器启动时读取一次，`ros2 param set`
+改了不生效，换构型必须重启 launch：
+
+```bash
+# 矩形 + 竖向扫描（点 2 下）
+ros2 launch climbot_coverage coverage_mission.launch.py sweep_direction:=vertical
+
+# 梯形 + 横向扫描（点 3 下）
+ros2 launch climbot_coverage coverage_mission.launch.py region_type:=trapezoid
+
+# 梯形 + 竖向扫描（点 3 下）
+ros2 launch climbot_coverage coverage_mission.launch.py \
+  region_type:=trapezoid sweep_direction:=vertical
+```
+
+想和 `results/` 中的基线对照，可直接点选基线几何：矩形取
+`(0.005, 1.75)`–`(4.305, 3.45)`；梯形取 A `(-0.6, 1.4)`、B `(2.7, 4.2)`、
+C `(3.4, 1.4)`，即底边 `4.00 m`、上底 `2.60 m`、高 `2.80 m`。梯形横向约
+`232 s`、13 段，梯形竖向约 `284 s`、19 段，竖向工况接近五分钟，不是卡住。
+
+跳过点选、直接用配置里的角点启动同一条链：
+
+```bash
+ros2 launch climbot_coverage coverage_mission.launch.py \
+  input_mode:=parameters region_type:=trapezoid sweep_direction:=vertical \
+  planner_config_file:="$(pwd)/src/climbot_coverage/config/coverage_trapezoid_vertical_demo.yaml"
+```
+
+该 launch 的规划器与控制器参数文件分别叫 `planner_config_file` 和
+`control_config_file`，不能都写成 `config_file`：被包含的 launch 会继承父作用域的
+同名参数，一个 `config_file` 会同时落到两个节点上，使跟踪器退回内置默认值。
 
 ### 完整覆盖任务演示
 

@@ -37,6 +37,9 @@
 | `region_type` | `rectangle` | `rectangle` 需两点，`trapezoid` 需三点 |
 | `sweep_direction` | `horizontal` | 扫描方向 |
 
+`region_type` 和 `sweep_direction` 由规划器在构造时读入成员变量，没有参数回调，
+因此运行中 `ros2 param set` 不生效；更换区域形状或扫描方向必须重启 launch。
+
 点选模式下的操作顺序是：用 RViz 的 `Publish Point` 工具依次点击区域角点
 （矩形为左下、右上；梯形再加右下），确认 `/coverage/manager_status` 变为
 `Ready: <task_id> revision <n>`，再调用 `/coverage/start`。`/coverage/status`
