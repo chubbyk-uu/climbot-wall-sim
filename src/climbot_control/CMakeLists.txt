@@ -58,6 +58,8 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_executor.py TIMEOUT 120)
   add_launch_test(test/test_coverage_manager.py TIMEOUT 30)
   add_launch_test(test/test_coverage_progress.py TIMEOUT 60)
+  add_launch_test(test/test_coverage_manager_states.py TIMEOUT 120)
+  add_launch_test(test/test_coverage_manager_executor_loss.py TIMEOUT 120)
   add_launch_test(test/test_coverage_executor_config.py TIMEOUT 60)
 endif()
 

@@ -39,6 +39,14 @@ uint8 executor_state
 # Only meaningful while state is FINISHED.
 uint16 result_code
 
+# Whether the manager would accept each request right now, decided by the same
+# preconditions its services apply. An interface renders these rather than
+# inferring them from state, so the decision stays in one place. They are a
+# hint, not a guarantee: a request can still be refused, for instance when the
+# executor's Action server is not running, and the refusal explains itself.
+bool can_start
+bool can_cancel
+
 # The same line the manager logs. Publishing it here keeps one wording for the
 # log, the panel and ros2 topic echo.
 string message

@@ -14,6 +14,7 @@
 #include "climbot_interfaces/msg/coverage_status.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rviz_common/panel.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
 namespace climbot_rviz_plugins
@@ -50,6 +51,7 @@ private:
   QLabel * segment_label_{nullptr};
   QProgressBar * progress_bar_{nullptr};
   QLabel * message_label_{nullptr};
+  QLabel * planner_label_{nullptr};
   QLabel * response_label_{nullptr};
   QPushButton * replan_button_{nullptr};
   QPushButton * clear_button_{nullptr};
@@ -59,6 +61,7 @@ private:
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<Status>::SharedPtr status_subscription_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr planner_subscription_;
   rclcpp::Client<Trigger>::SharedPtr replan_client_;
   rclcpp::Client<Trigger>::SharedPtr clear_client_;
   rclcpp::Client<Trigger>::SharedPtr start_client_;
@@ -68,6 +71,7 @@ private:
   // access is guarded. Widgets are only ever touched from the refresh timer.
   std::mutex mutex_;
   std::unique_ptr<Status> status_;
+  QString planner_;
   QString response_;
 };
 

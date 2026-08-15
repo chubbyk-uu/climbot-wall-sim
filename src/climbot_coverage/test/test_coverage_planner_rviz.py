@@ -70,6 +70,7 @@ class TestCoveragePlannerRvizInput(unittest.TestCase):
             PointStamped, '/clicked_point', 10)
         self.clear_client = self.node.create_client(
             Trigger, '/coverage/clear_points')
+        self.replan_client = self.node.create_client(Trigger, '/coverage/replan')
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
@@ -115,6 +116,50 @@ class TestCoveragePlannerRvizInput(unittest.TestCase):
         return [
             marker for marker in self.markers.markers
             if marker.ns == 'clicked_points']
+
+    def _call(self, client):
+        self.assertTrue(client.wait_for_service(timeout_sec=10.0))
+        future = client.call_async(Trigger.Request())
+        self._wait_for(future.done, description='a service response')
+        return future.result()
+
+    def test_replanning_without_a_selection_is_refused(self):
+        """The configured corners survive into rviz mode and must not be run."""
+        self._wait_for(
+            lambda: self.task is not None, description='the initial empty task')
+        # lower_left and friends still hold their parameter defaults here, and
+        # clearing a selection does not reset them, so replanning from them
+        # would hand the operator a startable task over an unselected region.
+        refused = self._call(self.replan_client)
+        self.assertFalse(refused.success)
+        self.assertIn('before replanning', refused.message)
+        self.assertEqual(len(self.task.waypoints), 0)
+
+        self._wait_for(
+            lambda: self.click_publisher.get_subscription_count() > 0,
+            description='the planner to subscribe to /clicked_point')
+        self._click(*LOWER_LEFT)
+        self._wait_for(
+            lambda: len(self._clicked_point_markers()) == 1,
+            description='the first corner marker')
+        # One point of two is still not a selection.
+        self.assertFalse(self._call(self.replan_client).success)
+        self.assertEqual(len(self.task.waypoints), 0)
+
+        self._click(*UPPER_RIGHT)
+        self._wait_for(
+            lambda: len(self.task.waypoints) > 2,
+            description='a planned path from the clicked corners')
+        self.assertTrue(self._call(self.replan_client).success)
+
+        self.assertTrue(self._call(self.clear_client).success)
+        self._wait_for(
+            lambda: len(self.task.waypoints) == 0,
+            description='the task to be emptied')
+        # Clearing leaves the last corners in place, so this is the case that
+        # would silently resurrect the previous region.
+        self.assertFalse(self._call(self.replan_client).success)
+        self.assertEqual(len(self.task.waypoints), 0)
 
     def test_two_clicks_produce_the_task_the_corners_describe(self):
         self._wait_for(

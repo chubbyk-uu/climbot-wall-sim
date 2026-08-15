@@ -44,6 +44,8 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   segment_label_ = new QLabel("-");
   message_label_ = new QLabel("-");
   message_label_->setWordWrap(true);
+  planner_label_ = new QLabel("-");
+  planner_label_->setWordWrap(true);
   response_label_ = new QLabel("-");
   response_label_->setWordWrap(true);
 
@@ -67,8 +69,12 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   fields->addWidget(progress_bar_, 3, 1);
   fields->addWidget(new QLabel(tr("Manager")), 4, 0);
   fields->addWidget(message_label_, 4, 1);
-  fields->addWidget(new QLabel(tr("Last request")), 5, 0);
-  fields->addWidget(response_label_, 5, 1);
+  // The manager cannot tell a cleared selection from a failed plan: both
+  // arrive as an empty task. Only the planner knows which, so show it.
+  fields->addWidget(new QLabel(tr("Planner")), 5, 0);
+  fields->addWidget(planner_label_, 5, 1);
+  fields->addWidget(new QLabel(tr("Last request")), 6, 0);
+  fields->addWidget(response_label_, 6, 1);
   fields->setColumnStretch(1, 1);
 
   auto * buttons = new QGridLayout();
@@ -100,6 +106,12 @@ void CoveragePanel::onInitialize()
     [this](const Status::SharedPtr status) {
       const std::lock_guard<std::mutex> lock(mutex_);
       status_ = std::make_unique<Status>(*status);
+    });
+  planner_subscription_ = node_->create_subscription<std_msgs::msg::String>(
+    "/coverage/status", rclcpp::QoS(1).transient_local(),
+    [this](const std_msgs::msg::String::SharedPtr message) {
+      const std::lock_guard<std::mutex> lock(mutex_);
+      planner_ = QString::fromStdString(message->data);
     });
   replan_client_ = node_->create_client<Trigger>("/coverage/replan");
   clear_client_ = node_->create_client<Trigger>("/coverage/clear_points");
@@ -166,8 +178,10 @@ void CoveragePanel::renderDisconnected()
   segment_label_->setText("-");
   progress_bar_->setValue(0);
   message_label_->setText("-");
-  // Every button stays available: the manager, not this panel, decides whether
-  // a request is legal, and greying everything out would hide that decision.
+  // Replan and clear only change the preview, never the running task, so they
+  // stay available. Start and cancel follow the manager's own permissions,
+  // which are unknown until it publishes: offering them here would let a click
+  // reach a manager that may not exist.
   replan_button_->setEnabled(true);
   clear_button_->setEnabled(true);
   start_button_->setEnabled(false);
@@ -196,25 +210,28 @@ void CoveragePanel::renderStatus(const Status & status)
   progress_bar_->setValue(static_cast<int>(status.progress * 100.0F + 0.5F));
   message_label_->setText(QString::fromStdString(status.message));
 
-  // Enabling follows the published state only. It is a hint, not a guard: the
-  // manager rejects an illegal request regardless of what this panel shows.
-  const bool executing = status.state == Status::EXECUTING;
-  const bool starting = status.state == Status::STARTING;
-  start_button_->setEnabled(status.state == Status::READY);
-  cancel_button_->setEnabled(executing);
-  replan_button_->setEnabled(!executing && !starting);
-  clear_button_->setEnabled(!executing && !starting);
+  // The manager publishes what it would accept, so this panel renders that
+  // decision rather than deriving one from the state. Deriving it is how a
+  // task that finished stayed unstartable although the manager still had it
+  // cached. Replan and clear belong to the planner and only affect the
+  // preview, so they are never withheld here.
+  start_button_->setEnabled(status.can_start);
+  cancel_button_->setEnabled(status.can_cancel);
+  replan_button_->setEnabled(true);
+  clear_button_->setEnabled(true);
 }
 
 void CoveragePanel::refresh()
 {
   std::unique_ptr<Status> status;
+  QString planner;
   QString response;
   {
     const std::lock_guard<std::mutex> lock(mutex_);
     if (status_) {
       status = std::make_unique<Status>(*status_);
     }
+    planner = planner_;
     response = response_;
   }
   if (status) {
@@ -222,6 +239,7 @@ void CoveragePanel::refresh()
   } else {
     renderDisconnected();
   }
+  planner_label_->setText(planner.isEmpty() ? "-" : planner);
   response_label_->setText(response.isEmpty() ? "-" : response);
 }
 

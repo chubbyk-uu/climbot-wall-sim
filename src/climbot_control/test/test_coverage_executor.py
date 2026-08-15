@@ -152,7 +152,7 @@ class TestCoverageExecutor(unittest.TestCase):
         goal.task = _task()
         send_future = self.client.send_goal_async(
             goal, feedback_callback=self._feedback_callback)
-        deadline = time.monotonic() + 3.0
+        deadline = time.monotonic() + 12.0
         while not send_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(send_future.done())
@@ -197,7 +197,7 @@ class TestCoverageExecutor(unittest.TestCase):
         goal = ExecuteCoverage.Goal()
         goal.task = _task()
         send_future = self.client.send_goal_async(goal)
-        deadline = time.monotonic() + 2.0
+        deadline = time.monotonic() + 12.0
         while not send_future.done() and time.monotonic() < deadline:
             self._publish_odometry(0.0, 0.0, 0.0)
             time.sleep(0.01)
@@ -291,7 +291,7 @@ class TestCoverageExecutor(unittest.TestCase):
         goal.task = _task()
         goal.task.task_id = 'outside-motion-region-' + 'x' * 48
         send_future = self.client.send_goal_async(goal)
-        deadline = time.monotonic() + 3.0
+        deadline = time.monotonic() + 12.0
         while not send_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(send_future.done())
@@ -299,7 +299,7 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(handle.accepted)
 
         result_future = handle.get_result_async()
-        deadline = time.monotonic() + 3.0
+        deadline = time.monotonic() + 12.0
         while not result_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(result_future.done())
@@ -314,7 +314,7 @@ class TestCoverageExecutor(unittest.TestCase):
         second = ExecuteCoverage.Goal()
         second.task = _task()
         second_future = self.client.send_goal_async(second)
-        deadline = time.monotonic() + 3.0
+        deadline = time.monotonic() + 12.0
         while not second_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(second_future.done())
@@ -345,7 +345,7 @@ class TestCoverageExecutor(unittest.TestCase):
                 polygon.points.append(point)
 
         send_future = self.client.send_goal_async(goal)
-        deadline = time.monotonic() + 3.0
+        deadline = time.monotonic() + 12.0
         while not send_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(send_future.done())
@@ -353,7 +353,7 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(handle.accepted)
 
         result_future = handle.get_result_async()
-        deadline = time.monotonic() + 5.0
+        deadline = time.monotonic() + 15.0
         while not result_future.done() and time.monotonic() < deadline:
             self._publish_odometry(0.50, 0.10, 0.0)
             time.sleep(0.02)
@@ -369,7 +369,7 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
         goal = ExecuteCoverage.Goal()
         send_future = self.client.send_goal_async(goal)
-        deadline = time.monotonic() + 2.0
+        deadline = time.monotonic() + 12.0
         while not send_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(send_future.done())

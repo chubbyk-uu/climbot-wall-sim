@@ -1,3 +1,4 @@
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -11,6 +12,8 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
+using namespace std::chrono_literals;
+
 class CoverageManagerNode : public rclcpp::Node
 {
 public:
@@ -21,13 +24,17 @@ public:
   CoverageManagerNode()
   : Node("coverage_manager"), frame_id_(declare_parameter("frame_id", "odom")),
     start_response_timeout_s_(declare_parameter("start_response_timeout_s", 5.0)),
-    feedback_publish_period_s_(declare_parameter("feedback_publish_period_s", 0.2))
+    feedback_publish_period_s_(declare_parameter("feedback_publish_period_s", 0.2)),
+    executor_timeout_s_(declare_parameter("executor_timeout_s", 5.0))
   {
     if (!(start_response_timeout_s_ > 0.0)) {
       throw std::invalid_argument("start_response_timeout_s must be positive.");
     }
     if (!(feedback_publish_period_s_ >= 0.0)) {
       throw std::invalid_argument("feedback_publish_period_s must be non-negative.");
+    }
+    if (!(executor_timeout_s_ > 0.0)) {
+      throw std::invalid_argument("executor_timeout_s must be positive.");
     }
     status_.current_segment = -1;
     // Created before the task subscription so no preview can ever be handled
@@ -37,14 +44,35 @@ public:
     task_subscription_ = create_subscription<climbot_interfaces::msg::CoverageTask>(
       "/coverage/task", rclcpp::QoS(1).reliable().transient_local(),
       [this](const climbot_interfaces::msg::CoverageTask::SharedPtr task) {
-        if (const auto error = climbot_control::validateCoverageTask(*task, frame_id_)) {
+        const auto error = climbot_control::validateCoverageTask(*task, frame_id_);
+        if (error) {
           cached_task_.reset();
+        } else {
+          cached_task_ = *task;
+        }
+        if (busy()) {
+          // A preview arriving mid-run only changes what a later start would
+          // use; the executor holds its own copy of the running task. Letting
+          // it rewrite the state here reported a moving robot as Ready or Idle
+          // and took the cancel button away from the operator.
+          publishStatus(
+            status_.state,
+            error ?
+            "Preview cleared while " + status_.task_id + " keeps running." :
+            "Cached newer preview " + task->task_id + " revision " +
+            std::to_string(task->revision) + " while " + status_.task_id +
+            " keeps running.");
+          return;
+        }
+        if (error) {
           status_.task_id.clear();
           status_.revision = 0U;
           status_.total_segments = 0U;
           // The planner publishes an empty task to clear the preview after a
           // click or a clear request, so reporting that as a malformed task
-          // would make the operator hunt for a fault that does not exist.
+          // would make the operator hunt for a fault that does not exist. It
+          // also publishes one when planning fails, and the manager cannot
+          // tell those apart: the reason is on the planner's own status topic.
           if (task->waypoints.empty()) {
             publishStatus(Status::IDLE, "Idle: no coverage region selected.");
           } else {
@@ -52,7 +80,6 @@ public:
           }
           return;
         }
-        cached_task_ = *task;
         status_.task_id = task->task_id;
         status_.revision = task->revision;
         status_.total_segments = static_cast<uint32_t>(task->segment_types.size());
@@ -69,15 +96,34 @@ public:
       "/coverage/cancel",
       [this](const std_srvs::srv::Trigger::Request::SharedPtr,
       const std_srvs::srv::Trigger::Response::SharedPtr response) {cancel(response);});
+    // Steady time, and a wall timer, so a paused or stopped simulation clock
+    // cannot freeze the checks that release a stuck task.
+    supervision_timer_ = create_wall_timer(500ms, [this]() {superviseExecution();});
     publishStatus(Status::IDLE, "Idle: waiting for a valid coverage preview.");
   }
 
 private:
+  /// A goal is in flight, either awaiting acceptance or executing.
+  bool busy() const
+  {
+    return active_goal_ != nullptr || start_pending_since_.has_value();
+  }
+
+  /// Publish what this manager would accept right now, using the same
+  /// preconditions its services apply, so an interface renders the decision
+  /// instead of guessing it from the state.
+  void refreshPermissions()
+  {
+    status_.can_start = cached_task_.has_value() && !busy();
+    status_.can_cancel = active_goal_ != nullptr;
+  }
+
   void publishStatus(uint8_t state, const std::string & text)
   {
     status_.header.stamp = now();
     status_.state = state;
     status_.message = text;
+    refreshPermissions();
     status_publisher_->publish(status_);
     last_publish_ = now();
     RCLCPP_INFO(get_logger(), "%s", text.c_str());
@@ -93,8 +139,43 @@ private:
       return;
     }
     status_.header.stamp = current;
+    refreshPermissions();
     status_publisher_->publish(status_);
     last_publish_ = current;
+  }
+
+  /// An accepted goal is only ever finished by its result callback, which a
+  /// dead executor never delivers: the manager then reports EXECUTING forever
+  /// and refuses every later start until it is itself restarted. Releasing the
+  /// goal after the server has been gone for a while restores the operator's
+  /// control. The robot is already safe by then, because the speed watchdog
+  /// zeroes the command as soon as one stops arriving.
+  void superviseExecution()
+  {
+    expireStalePending();
+    if (!active_goal_ || action_client_->action_server_is_ready()) {
+      executor_missing_since_.reset();
+      return;
+    }
+    const auto current = std::chrono::steady_clock::now();
+    if (!executor_missing_since_) {
+      executor_missing_since_ = current;
+      return;
+    }
+    if (std::chrono::duration<double>(current - *executor_missing_since_).count() <
+      executor_timeout_s_)
+    {
+      return;
+    }
+    executor_missing_since_.reset();
+    active_goal_.reset();
+    status_.result_code = ExecuteCoverage::Result::CONTROL_TIMEOUT;
+    status_.current_segment = -1;
+    status_.executor_state = ExecuteCoverage::Feedback::STOPPED;
+    publishStatus(
+      Status::FINISHED,
+      "Executor disappeared while running " + status_.task_id +
+      "; released the task so it can be started again.");
   }
 
   /// Release a start request whose goal response never arrived, so a crashed or
@@ -121,7 +202,7 @@ private:
       response->message = "No valid coverage task is available.";
       return;
     }
-    if (active_goal_ || start_pending_since_) {
+    if (busy()) {
       response->success = false;
       response->message = "A coverage task is already starting or executing.";
       return;
@@ -165,6 +246,12 @@ private:
         status_.executor_state = ExecuteCoverage::Feedback::STOPPED;
         publishStatus(Status::FINISHED, "Execution finished: " + result.result->message);
       };
+    // The identity always describes whatever the current state is about. A
+    // preview cached during the previous run only becomes the reported task
+    // here, when it is the one actually being sent.
+    status_.task_id = task_id;
+    status_.revision = revision;
+    status_.total_segments = static_cast<uint32_t>(goal.task.segment_types.size());
     status_.current_segment = -1;
     status_.progress = 0.0F;
     status_.executor_state = ExecuteCoverage::Feedback::WAITING;
@@ -197,9 +284,11 @@ private:
   std::string frame_id_;
   double start_response_timeout_s_;
   double feedback_publish_period_s_;
+  double executor_timeout_s_;
   Status status_;
   rclcpp::Time last_publish_{0, 0, RCL_ROS_TIME};
   std::optional<rclcpp::Time> start_pending_since_;
+  std::optional<std::chrono::steady_clock::time_point> executor_missing_since_;
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;
   GoalHandle::SharedPtr active_goal_;
   rclcpp::Subscription<climbot_interfaces::msg::CoverageTask>::SharedPtr task_subscription_;
@@ -207,6 +296,7 @@ private:
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr cancel_service_;
   rclcpp::Publisher<Status>::SharedPtr status_publisher_;
+  rclcpp::TimerBase::SharedPtr supervision_timer_;
 };
 
 int main(int argc, char ** argv)

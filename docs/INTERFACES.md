@@ -261,7 +261,37 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `progress` | 按预计耗时加权的完成比例，`0`～`1`；起点进入期间固定为 `0`，因为进入段不是任务段 |
 | `executor_state` | 执行器运动状态，取值与 `ExecuteCoverage.action` 反馈一致；仅在 `EXECUTING` 有意义 |
 | `result_code` | 上一次执行的结果码，取值与 Action 结果一致；仅在 `FINISHED` 有意义 |
+| `can_start`、`can_cancel` | 管理器当前是否接受该请求，由它自己服务的前置条件计算；界面直接渲染，不从 `state` 反推 |
 | `message` | 与管理器日志同一行文本 |
+
+`can_start` 和 `can_cancel` 是提示不是保证：请求仍可能被拒绝（例如执行器 Action
+服务未运行），拒绝原因在服务响应里。界面不得据此认为请求一定成功。
+
+### 操作在各状态下的行为
+
+| 状态 | Start | Cancel | Replan / Clear points |
+| --- | --- | --- | --- |
+| `IDLE` | 拒绝，无有效任务 | 拒绝，无执行中任务 | 允许；`Replan` 在点选模式下需先选够点 |
+| `INVALID` | 拒绝，无有效任务 | 拒绝 | 同上 |
+| `READY` | **接受**，发送 Goal | 拒绝 | 允许，重新生成预览 |
+| `STARTING` | 拒绝，已有任务在启动 | 拒绝，Goal 仍在接受中 | 允许；只改预览，不影响在途 Goal |
+| `EXECUTING` | 拒绝 | **接受**，请求取消 | 允许；只改预览，运行中的任务继续 |
+| `FINISHED` | **接受**（若仍有缓存任务），重跑该任务 | 拒绝 | 允许 |
+
+执行中收到新预览（重新规划、清除点选，或在 RViz 里重新点选）只更新缓存，不改变
+`state`，也不改变 `task_id`/`revision`——它们始终标识**当前 `state` 所描述的那个
+任务**。否则运行中的机器人会被报成 `Ready` 或 `Idle`，取消按钮随之消失。执行器
+在接受 Goal 时已复制任务，运行中的任务本身不受预览影响。
+
+规划失败与"未选择区域"在管理器看来都是空任务，它无法区分，因此都报
+`IDLE: no coverage region selected.`。真正的原因只在规划器的 `/coverage/status`
+上，面板因此单独显示该话题。
+
+已接受的 Goal 只由结果回调结束，而执行器崩溃时结果永远不会到达。管理器以
+`executor_timeout_s`（默认 `5.0 s`）监视 Action 服务的存在：持续消失超过该时间即
+释放该 Goal，报 `FINISHED` 与 `CONTROL_TIMEOUT`，操作员无需重启管理器即可重新开始。
+实测从 `SIGKILL` 到释放约 `25 s`，其中约 `20 s` 是 DDS 摘除已死参与者所需的时间，
+正常退出会快得多。这期间机器人已由速度看门狗停住——指令一停它就发零速。
 
 `message` 与日志共用一份措辞，命令行观察等价于原来的 `std_msgs/String`：
 

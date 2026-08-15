@@ -247,6 +247,21 @@ private:
     const std::shared_ptr<std_srvs::srv::Trigger::Request>,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
+    // The corners keep their configured values in rviz mode until enough
+    // points are clicked, and clearing the selection does not reset them.
+    // Replanning from those would hand the operator a startable task over a
+    // region nobody selected.
+    if (input_mode_ == "rviz") {
+      const std::size_t required_points = region_type_ == "trapezoid" ? 3U : 2U;
+      if (clicked_points_.size() < required_points) {
+        response->success = false;
+        response->message = "Select " + std::to_string(required_points) +
+          " region points before replanning; " +
+          std::to_string(clicked_points_.size()) + " are set.";
+        publishStatus(response->message);
+        return;
+      }
+    }
     response->success = planFromPoints();
     response->message = response->success ? "Coverage path regenerated." : last_error_;
   }

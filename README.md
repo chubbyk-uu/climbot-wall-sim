@@ -202,9 +202,19 @@ ros2 launch climbot_coverage coverage_mission.launch.py
 | **Clear points** | 点错角点时清空重选 |
 | **Replan** | 用当前角点重新规划 |
 
-按钮置灰只是依据已发布状态给出的提示；无论面板显示什么，非法请求都由管理器
-拒绝，原因显示在 Last request 一行。任务锁定和版本检查始终在管理器里，符合
-§11.1 对界面插件的限制。
+Start 和 Cancel 的置灰由管理器发布的 `can_start` / `can_cancel` 决定，不是面板
+自己推断的；Replan 和 Clear points 始终可用，它们只改预览，不影响正在执行的任务。
+无论面板显示什么，非法请求都由管理器拒绝，原因显示在 Last request 一行。
+
+几个容易踩的点：
+
+- 取消或跑完之后 **Start 仍然可用**，再按一次就重跑同一个任务；
+- 执行中重新规划或清除点选**不会影响正在跑的任务**，只更新下一次要跑的预览，
+  面板的 State 和任务号仍然指向正在执行的那个；
+- 点选模式下**没选够点时 Replan 会被拒绝**，因为配置文件里的角点仍在，否则会规划出
+  一块没人选过的区域；
+- Planner 一行显示规划器自己的状态——规划失败和"没选区域"在管理器看来都是空任务，
+  只有这一行能区分。
 
 面板由 `climbot_rviz_plugins` 提供，已写入 `coverage.rviz`，随 launch 自动出现；
 若被关掉，用 RViz 菜单 `Panels → Add New Panel → climbot_rviz_plugins/Coverage`

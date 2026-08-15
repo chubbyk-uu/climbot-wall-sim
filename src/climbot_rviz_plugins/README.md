@@ -19,7 +19,11 @@
 | Segment | `current_segment + 1` / `total_segments`；接近首点期间显示 `approach of N` |
 | Progress | `progress`，百分比进度条 |
 | Manager | `message`，与管理器日志同一行 |
+| Planner | 规划器的 `/coverage/status`：点击被接受的坐标、规划失败原因、清空确认 |
 | Last request | 最近一次按钮调用的服务响应 |
+
+规划失败与"未选择区域"在管理器看来都是空任务，无法区分，都会报 `Idle`。
+真正的原因只在 Planner 一行。
 
 按钮：
 
@@ -30,8 +34,15 @@
 | Start | `/coverage/start` |
 | Cancel / Stop | `/coverage/cancel` |
 
-按钮的可用/置灰只依据已发布的 `state`，是提示而不是校验：无论面板显示什么，
-非法请求都由管理器拒绝，并把原因显示在 Last request 一行。
+`Start` 与 `Cancel / Stop` 的可用性直接取自 `CoverageStatus` 的 `can_start` /
+`can_cancel`——由管理器按自己服务的前置条件计算，面板不做推断。面板自行从
+`state` 推断正是"取消后无法重新开始"那个 bug 的成因。
+
+`Replan` 与 `Clear points` 始终可用：它们是规划器的服务，只改预览，不影响正在
+执行的任务，管理器无权替其决定，面板更无权。
+
+这些都是提示而非校验：无论面板显示什么，非法请求都由管理器或规划器拒绝，并把
+原因显示在 Last request 一行。
 
 ## 线程
 
