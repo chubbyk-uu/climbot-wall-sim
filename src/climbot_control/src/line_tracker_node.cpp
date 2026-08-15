@@ -5,9 +5,11 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "climbot_control/coverage_execution.hpp"
 #include "climbot_control/line_tracker.hpp"
+#include "climbot_control/segment_duration.hpp"
 #include "climbot_control/turn_profile.hpp"
 #include "climbot_interfaces/action/execute_coverage.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -370,6 +372,7 @@ private:
     approaching_start_ = true;
     waiting_for_start_pose_ = !have_pose_;
     segment_start_time_ = task_start_time_;
+    planSegmentDurations();
     // Log before configuring: configureStartApproach() may finish the goal and
     // release active_task_, and acceptance is what this line reports anyway.
     RCLCPP_INFO(
@@ -378,6 +381,65 @@ private:
       active_task_->segment_types.size());
     if (!waiting_for_start_pose_) {
       configureStartApproach();
+    }
+  }
+
+  climbot_control::DurationModel durationModel() const
+  {
+    climbot_control::DurationModel model;
+    model.cruise_speed = cruise_speed_;
+    model.linear_acceleration = linear_acceleration_;
+    model.braking_deceleration = limits_.braking_deceleration;
+    model.max_turn_rate = max_turn_angular_speed_;
+    model.turn_acceleration = max_turn_angular_acceleration_;
+    model.settle_duration = alignment_settle_duration_ + goal_settle_duration_;
+    return model;
+  }
+
+  /// Estimate how long each segment takes, so progress can be weighted by
+  /// duration. Weighting segments equally makes a 0.44 m transition advance the
+  /// bar as far as a 4.5 m scan line, which it covers in well under half the
+  /// time; measured baselines put that discrepancy at a factor of 2.4.
+  void planSegmentDurations()
+  {
+    const auto model = durationModel();
+    const auto & waypoints = active_task_->waypoints;
+    segment_turn_estimates_.assign(active_task_->segment_types.size(), 0.0);
+    segment_travel_estimates_.assign(active_task_->segment_types.size(), 0.0);
+    total_duration_estimate_ = 0.0;
+    double previous_heading = pose_.yaw;
+    for (std::size_t index = 0; index < active_task_->segment_types.size(); ++index) {
+      const auto & from = waypoints[index].position;
+      const auto & to = waypoints[index + 1U].position;
+      const double heading = std::atan2(to.y - from.y, to.x - from.x);
+      const double turn = std::atan2(
+        std::sin(heading - previous_heading), std::cos(heading - previous_heading));
+      previous_heading = heading;
+      segment_turn_estimates_[index] =
+        climbot_control::estimateTurnDuration(turn, model);
+      segment_travel_estimates_[index] = climbot_control::estimateTravelDuration(
+        std::hypot(to.x - from.x, to.y - from.y), model);
+      total_duration_estimate_ +=
+        segment_turn_estimates_[index] + segment_travel_estimates_[index];
+    }
+  }
+
+  /// How much of the current segment's turn is done. The alignment profile is
+  /// the controller's own plan for this turn, so the bar advances at the rate
+  /// the robot is actually turning instead of jumping when the turn ends.
+  double alignmentFraction() const
+  {
+    switch (motion_state_) {
+      case MotionState::WAITING_FOR_ALIGNMENT:
+      case MotionState::ALIGN_BRAKE:
+        return 0.0;
+      case MotionState::ALIGN_PROFILE:
+        return alignment_profile_.duration > 0.0 ?
+               std::clamp(
+          (now() - alignment_profile_start_).seconds() / alignment_profile_.duration,
+          0.0, 1.0) : 1.0;
+      default:
+        return 1.0;
     }
   }
 
@@ -715,6 +777,29 @@ private:
     return ExecuteCoverage::Feedback::WAITING;
   }
 
+  /// Fraction of the task's estimated duration already spent. The start
+  /// approach drives along its own line, which is not a task segment, so
+  /// callers exclude it: measuring it the same way made progress climb to a
+  /// whole segment's worth over each approach leg and then drop back to zero.
+  float taskProgress(const climbot_control::Command & command)
+  {
+    if (!(total_duration_estimate_ > 0.0) ||
+      current_segment_ >= segment_turn_estimates_.size())
+    {
+      return 0.0F;
+    }
+    double spent = 0.0;
+    for (std::size_t index = 0; index < completed_segments_; ++index) {
+      spent += segment_turn_estimates_[index] + segment_travel_estimates_[index];
+    }
+    const double length = std::hypot(end_.x - start_.x, end_.y - start_.y);
+    const double travelled = length > 0.0 ?
+      std::clamp(command.along / length, 0.0, 1.0) : 0.0;
+    spent += segment_turn_estimates_[current_segment_] * alignmentFraction() +
+      segment_travel_estimates_[current_segment_] * travelled;
+    return static_cast<float>(std::clamp(spent / total_duration_estimate_, 0.0, 1.0));
+  }
+
   void publishFeedback(const climbot_control::Command & command)
   {
     if (!active_goal_) {
@@ -731,16 +816,7 @@ private:
     feedback->cross_track_error = command.cross;
     feedback->heading_error = command.heading_error;
     feedback->remaining_distance = command.remaining;
-    // The start approach drives along its own line, which is not a task
-    // segment. Measuring it the same way made progress climb to one segment's
-    // worth over each approach leg and then drop back to zero once the first
-    // segment configured its own line.
-    const double length = std::hypot(end_.x - start_.x, end_.y - start_.y);
-    const double segment_progress = length > 0.0 ?
-      std::clamp(command.along / length, 0.0, 1.0) : 0.0;
-    feedback->progress = before_first_segment ? 0.0F : static_cast<float>(
-      (static_cast<double>(completed_segments_) + segment_progress) /
-      static_cast<double>(active_task_->segment_types.size()));
+    feedback->progress = before_first_segment ? 0.0F : taskProgress(command);
     active_goal_->publish_feedback(feedback);
   }
 
@@ -1179,6 +1255,9 @@ private:
   bool waiting_for_start_pose_{false};
   bool oscillation_warning_emitted_{false};
   uint32_t completed_segments_{0U};
+  std::vector<double> segment_turn_estimates_;
+  std::vector<double> segment_travel_estimates_;
+  double total_duration_estimate_{0.0};
   std::size_t current_segment_{0U};
   climbot_control::Limits limits_;
   climbot_control::Point2 start_{};
