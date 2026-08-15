@@ -38,6 +38,7 @@
 只包含跨包通信定义：
 
 - `msg/CoverageTask.msg`：不可分割的名义覆盖任务；
+- `msg/CoverageStatus.msg`：面向操作界面的管理器状态汇总；
 - `action/ExecuteCoverage.action`：任务执行、取消、反馈和结果。
 
 该包不得读取 YAML，不包含几何规划、控制算法、Gazebo 代码或节点实现。
@@ -167,7 +168,9 @@ C++ 通用直线段跟踪、任务状态机、
 
 `coverage_manager_node` 已订阅 `/coverage/task` 并缓存最新有效预览，只有收到操作员
 明确的 `/coverage/start` 后才复制并锁定 `task_id + revision`、发送 Action Goal。
-它还提供 `/coverage/cancel` 和 `/coverage/manager_status`；规划器不直接调用控制器，
+它还提供 `/coverage/cancel`，并在 `/coverage/manager_status` 上以
+`climbot_interfaces/msg/CoverageStatus` 汇总状态、任务标识、段进度和上次结果，
+使界面无需自行拼装状态；规划器不直接调用控制器，
 RViz 面板也不直接实现安全状态机。执行器在首条扫描前完成采集关闭的起点进入；空间
 允许时先使用首条扫描线后方的同向跑道点，首条扫描随后复用统一的动态入轨判据。首点
 之外的直线不计入覆盖段。管理器当前位于 `climbot_control`，统一系统入口形成后再评估

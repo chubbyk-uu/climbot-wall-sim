@@ -236,6 +236,35 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `/coverage/start` | `std_srvs/srv/Trigger` | 锁定管理器当前显示的有效 `task_id + revision`，校验后发送 `/coverage/execute` Goal |
 | `/coverage/cancel` | `std_srvs/srv/Trigger` | 请求取消当前 Goal；控制器确认停车后返回 |
 
+### 管理器状态话题
+
+| 话题 | 类型 | QoS | 内容 |
+| --- | --- | --- | --- |
+| `/coverage/manager_status` | `climbot_interfaces/msg/CoverageStatus` | reliable、transient local、depth 1 | 操作界面所需的全部信息 |
+
+界面所需的一切都在这一个话题上，界面因此不持有任何自己的状态，也不可能和管理器
+对当前在跑什么产生分歧。这是 §11.1「面板只负责人机交互」的落地方式。
+
+| 字段 | 含义 |
+| --- | --- |
+| `state` | 管理器状态：`IDLE` / `INVALID` / `READY` / `STARTING` / `EXECUTING` / `FINISHED` |
+| `task_id`、`revision` | 已缓存或正在执行的任务标识；`task_id` 为空且 `revision` 为 `0` 表示从未收到任务 |
+| `current_segment` | 执行器上报的当前段；接近首点期间为 `-1`，仅在 `EXECUTING` 有意义 |
+| `total_segments` | 来自缓存任务，从 `READY` 起即可用 |
+| `progress` | 执行器上报的完成比例，`0`～`1` |
+| `executor_state` | 执行器运动状态，取值与 `ExecuteCoverage.action` 反馈一致；仅在 `EXECUTING` 有意义 |
+| `result_code` | 上一次执行的结果码，取值与 Action 结果一致；仅在 `FINISHED` 有意义 |
+| `message` | 与管理器日志同一行文本 |
+
+`message` 与日志共用一份措辞，命令行观察等价于原来的 `std_msgs/String`：
+
+```bash
+ros2 topic echo /coverage/manager_status --field message
+```
+
+状态转换由管理器发布，执行器反馈按 `feedback_publish_period_s`（默认 `0.2 s`）
+限频转发。反馈本身以控制环频率到达，任何显示都不需要那个速率，日志也不应承载它。
+
 `/coverage/start` 不会使规划器一发布任务就自动运动。管理器拒绝空任务、已有任务
 执行中或 Action 服务不可用的开始请求，并在响应和 `/coverage/manager_status` 中给出
 锁定的任务版本。管理器复制该任务作为不可变 Goal，因此预览更新不会改写执行中的

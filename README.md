@@ -196,7 +196,13 @@ ros2 launch climbot_coverage coverage_mission.launch.py
 
 ```bash
 ros2 service call /coverage/start std_srvs/srv/Trigger
-ros2 topic echo /coverage/manager_status    # 观察 Executing / Execution finished
+
+# 只看人类可读的一行，等价于原来的 std_msgs/String
+ros2 topic echo /coverage/manager_status --field message
+
+# 看完整状态：state、task_id、revision、current_segment/total_segments、progress
+ros2 topic echo /coverage/manager_status
+
 ros2 service call /coverage/cancel std_srvs/srv/Trigger   # 中途停车
 ```
 

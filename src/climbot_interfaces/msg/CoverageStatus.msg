@@ -1,0 +1,44 @@
+# The operator-facing view of one coverage manager. Everything a user interface
+# needs arrives on this one topic, so the interface holds no state of its own
+# and cannot disagree with the manager about what is running.
+
+# Manager states. These describe the manager, not the motion: while EXECUTING,
+# executor_state says what the robot is actually doing.
+uint8 IDLE=0        # no region selected, or the selection was cleared
+uint8 INVALID=1     # a preview arrived that cannot be executed; see message
+uint8 READY=2       # a valid task is cached and waiting for an explicit start
+uint8 STARTING=3    # start requested, the executor has not answered yet
+uint8 EXECUTING=4   # the executor accepted the goal and is running it
+uint8 FINISHED=5    # the last run ended; see result_code and message
+
+std_msgs/Header header
+
+uint8 state
+
+# Identity of the cached or executing task. An empty task_id with revision 0
+# means no task has ever been received.
+string task_id
+uint32 revision
+
+# current_segment is -1 while the robot is still approaching the first
+# waypoint, and is only meaningful while state is EXECUTING. total_segments
+# comes from the cached task and is known from READY onwards.
+int32 current_segment
+uint32 total_segments
+
+# Fraction of the task the executor reports as complete, 0 to 1.
+float32 progress
+
+# Motion state reported by the executor. The values mirror the constants in
+# ExecuteCoverage.action's feedback, which stays the authoritative definition:
+# WAITING, ALIGN, TURN_SETTLE, TRACK_LINE, FINAL_APPROACH, STOPPED,
+# APPROACH_START. Only meaningful while state is EXECUTING.
+uint8 executor_state
+
+# Outcome of the last finished run, using the ExecuteCoverage result codes.
+# Only meaningful while state is FINISHED.
+uint16 result_code
+
+# The same line the manager logs. Publishing it here keeps one wording for the
+# log, the panel and ros2 topic echo.
+string message

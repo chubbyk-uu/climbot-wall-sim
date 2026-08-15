@@ -1,6 +1,6 @@
 # 实施状态与待办
 
-更新日期：2026-08-14。
+更新日期：2026-08-15。
 
 本文档只记录当前实现状态。目标、算法约束和验收阈值以
 [PROJECT_GUIDE.md](../PROJECT_GUIDE.md) 为准。
@@ -179,6 +179,25 @@
 `Execution finished`。§11.1 要求的 RViz 按钮面板、任务版本与执行进度显示尚未开始；
 管理器目前也没有注册 Action `feedback_callback`，执行进度还没有数据来源。
 
+## 2026-08-15 结构化管理器状态（阶段 2）
+
+§11.1 要求操作面板显示任务版本、执行进度和错误，但管理器的 `SendGoalOptions`
+只注册了 `goal_response_callback` 和 `result_callback`，**没有 `feedback_callback`**，
+执行进度根本没有数据源；`/coverage/manager_status` 又是无结构的
+`std_msgs/String`，界面只能靠解析日志文本还原状态。
+
+| 项目 | 状态 | 结果 |
+| --- | --- | --- |
+| `CoverageStatus.msg` | 已完成 | 新增消息：`state` 六态枚举（`IDLE`/`INVALID`/`READY`/`STARTING`/`EXECUTING`/`FINISHED`）、`task_id`、`revision`、`current_segment`、`total_segments`、`progress`、`executor_state`、`result_code`、`message`。`executor_state` 与 `result_code` 的取值以 `ExecuteCoverage.action` 为权威定义，消息里只做镜像说明，不复制成第二份真相 |
+| 话题类型替换而非并存 | 已完成 | `/coverage/manager_status` 直接换成 `CoverageStatus`，没有保留并行的 String 话题。两个话题携带同一信息迟早会互相矛盾；人类可读那一行作为 `message` 字段保留，`ros2 topic echo --field message` 与原来等价 |
+| 执行进度 | 已完成 | 管理器注册 `feedback_callback`，把执行器上报的 `current_segment`、`progress`、`state` 并入状态发布。反馈以控制环频率到达，按 `feedback_publish_period_s`（默认 `0.2 s`）限频转发，且不写日志；状态跃迁始终立即发布 |
+| `STARTING` 与应答的竞态 | 已完成 | `STARTING` 在 `async_send_goal` **之前**发布。反过来写的话，单线程执行器虽然不会真的乱序，但一旦换成多线程执行器，已被接受的 Goal 就可能被这一行覆盖成"仍在启动"。顺序调整后该问题不依赖执行器类型 |
+| 发布器与订阅器创建顺序 | 已完成 | 状态发布器移到任务订阅之前创建，任何预览都不可能在有地方汇报之前被处理 |
+| 进度回归护栏 | 已完成 | 新增 `test_publishes_executor_progress`：断言执行中出现非 `WAITING` 的 `executor_state` 且 `progress` 在 `[0, 1]`。移除 `feedback_callback` 即失败（`The executor never reported a motion state.`）。另外两个用例改为断言结构化字段，并按 `message` 文本匹配，使三个用例不依赖执行顺序 |
+
+面板由此只需订阅一个话题：任务锁定、版本检查和安全状态转换全部留在管理器，
+符合 §11.1 对界面插件的限制。
+
 ## 当前未决事项
 
 ### 1. WheelSlip 法向载荷局限
@@ -195,15 +214,16 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 
 ## 下一步顺序
 
-1. 操作界面阶段 2：为管理器注册 Action `feedback_callback`，并把
-   `/coverage/manager_status` 从无结构 `std_msgs/String` 换成带状态枚举、
-   `task_id`、`revision`、当前段/总段数和错误原因的结构化消息，使 §11.1 要求的
-   "执行进度"有数据来源，且面板只需订阅一个话题；
-2. 操作界面阶段 3：`rviz_common::Panel` 插件，提供重新规划/开始/取消·停车按钮
-   与版本、进度、错误显示。按 §11.1，面板只调服务，不得持有任务锁定、版本检查
-   或安全状态转换；
-3. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
+1. 操作界面阶段 3：新建 `climbot_rviz_plugins` 包（不放进 `climbot_control`，
+   避免把 Qt 和 pluginlib 依赖引入控制包），实现 `rviz_common::Panel` 插件，
+   提供重新规划/开始/取消·停车按钮与版本、进度、错误显示，并写入 `coverage.rviz`
+   使其随 `coverage_mission.launch.py` 自动出现。按 §11.1，面板只调服务，不得
+   持有任务锁定、版本检查或安全状态转换。同类需求的既有做法一致：Nav2 的
+   `nav2_rviz_plugins` 提供四个 `rviz_common::Panel`（含带启动/暂停/取消按钮的
+   `Nav2Panel`），MoveIt 的 MotionPlanning 面板同理；RViz2 插件只能用 C++，
+   若要 Python 则须改用 rqt，但那是独立窗口，与点选场景脱节；
+2. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
    工况的可重复回归；不可进入和定位超时停车的 Gazebo 基线已经通过；
-4. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
-5. 第一阶段闭环后，为 Gazebo 墙面增加不影响碰撞参数的可配置视觉贴图；面阵相机、
+3. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
+4. 第一阶段闭环后，为 Gazebo 墙面增加不影响碰撞参数的可配置视觉贴图；面阵相机、
    位置触发拍照及图像—融合位姿关联作为 `climbot_inspection` 扩展实施。
