@@ -258,7 +258,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `task_id`、`revision` | 已缓存或正在执行的任务标识；`task_id` 为空且 `revision` 为 `0` 表示从未收到任务 |
 | `current_segment` | 执行器上报的当前段；接近首点期间为 `-1`，仅在 `EXECUTING` 有意义 |
 | `total_segments` | 来自缓存任务，从 `READY` 起即可用 |
-| `progress` | 执行器上报的完成比例，`0`～`1` |
+| `progress` | 执行器上报的完成比例，`0`～`1`；起点进入期间固定为 `0`，因为进入段不是任务段 |
 | `executor_state` | 执行器运动状态，取值与 `ExecuteCoverage.action` 反馈一致；仅在 `EXECUTING` 有意义 |
 | `result_code` | 上一次执行的结果码，取值与 Action 结果一致；仅在 `FINISHED` 有意义 |
 | `message` | 与管理器日志同一行文本 |

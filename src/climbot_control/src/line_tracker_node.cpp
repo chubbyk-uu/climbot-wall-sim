@@ -720,20 +720,25 @@ private:
     if (!active_goal_) {
       return;
     }
+    const bool before_first_segment = approaching_start_ || waiting_for_start_pose_;
     auto feedback = std::make_shared<ExecuteCoverage::Feedback>();
     feedback->state = feedbackState();
-    feedback->current_segment = approaching_start_ || waiting_for_start_pose_ ?
+    feedback->current_segment = before_first_segment ?
       -1 : static_cast<int32_t>(current_segment_);
-    feedback->segment_type = approaching_start_ || waiting_for_start_pose_ ?
+    feedback->segment_type = before_first_segment ?
       0U : active_task_->segment_types[current_segment_];
     feedback->along_track_error = command.along;
     feedback->cross_track_error = command.cross;
     feedback->heading_error = command.heading_error;
     feedback->remaining_distance = command.remaining;
+    // The start approach drives along its own line, which is not a task
+    // segment. Measuring it the same way made progress climb to one segment's
+    // worth over each approach leg and then drop back to zero once the first
+    // segment configured its own line.
     const double length = std::hypot(end_.x - start_.x, end_.y - start_.y);
     const double segment_progress = length > 0.0 ?
       std::clamp(command.along / length, 0.0, 1.0) : 0.0;
-    feedback->progress = static_cast<float>(
+    feedback->progress = before_first_segment ? 0.0F : static_cast<float>(
       (static_cast<double>(completed_segments_) + segment_progress) /
       static_cast<double>(active_task_->segment_types.size()));
     active_goal_->publish_feedback(feedback);
