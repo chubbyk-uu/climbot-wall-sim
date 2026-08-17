@@ -49,12 +49,11 @@ line_tracker:
     final_approach_speed_mps: 0.08
     goal_position_tolerance_m: 0.03
     goal_position_exit_tolerance_m: 0.04
-    # This tolerance also covers the staging point, where the robot turns in
-    # place and slips while stopped; tightening it there stalls the approach.
-    # Stopping accuracy now comes from the braking profile instead.
+    # This covers the entry leg's end, where the robot turns in place and
+    # slips while stopped; tightening it there stalls the approach. Stopping
+    # accuracy comes from the braking profile instead.
     start_approach_tolerance_m: 0.05
     start_approach_exit_tolerance_m: 0.06
-    start_approach_runway_m: 0.40
     goal_heading_exit_tolerance_deg: 3.0
     stopped_linear_speed_mps: 0.01
     stopped_angular_speed_rps: 0.02

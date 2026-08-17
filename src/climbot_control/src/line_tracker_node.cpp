@@ -105,8 +105,6 @@ public:
       "start_approach_tolerance_m", 0.05);
     start_approach_exit_tolerance_ = declare_parameter(
       "start_approach_exit_tolerance_m", 0.06);
-    start_approach_runway_ = declare_parameter(
-      "start_approach_runway_m", 0.40);
     goal_heading_exit_tolerance_ = degreesToRadians(
       declare_parameter("goal_heading_exit_tolerance_deg", 3.0));
     stopped_linear_speed_ = declare_parameter("stopped_linear_speed_mps", 0.01);
@@ -304,7 +302,6 @@ private:
     requirePositive("goal_position_exit_tolerance_m", goal_position_exit_tolerance_);
     requirePositive("start_approach_tolerance_m", start_approach_tolerance_);
     requirePositive("start_approach_exit_tolerance_m", start_approach_exit_tolerance_);
-    requirePositive("start_approach_runway_m", start_approach_runway_);
     requirePositive("goal_heading_exit_tolerance_deg", goal_heading_exit_tolerance_);
     requirePositive("stopped_linear_speed_mps", stopped_linear_speed_);
     requirePositive("stopped_angular_speed_rps", stopped_angular_speed_);
@@ -494,41 +491,56 @@ private:
       return;
     }
     climbot_control::Point2 target{first.x, first.y};
-    start_approach_final_leg_ = true;
     if (active_task_->segment_types.front() ==
       climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN)
     {
+      // The approach is a transition into the first scan line, and it gets the
+      // same treatment every other transition gets: its end is lifted by the
+      // drop of the turn waiting at it, so the robot lands on the scan line
+      // rather than below it.
+      //
+      // This replaces a runway point 0.40 m behind the first waypoint along
+      // the scan direction. That entered along the line so the turn happened
+      // outside it, which worked, but it was a second mechanism for one
+      // problem and it made the robot drive past its own first waypoint and
+      // come back whenever it approached from the far side - measured at about
+      // 0.8 m and a 180 degree turn of pure detour. Reserving the drop needs
+      // no detour at all, and unlike the runway it also covers the case where
+      // there was no room for one.
       const auto & second = active_task_->waypoints[1U].position;
-      const double dx = second.x - first.x;
-      const double dy = second.y - first.y;
-      const double length = std::hypot(dx, dy);
-      // Shorten the runway rather than abandon it. Even a short straight entry
-      // along the scan direction removes almost all of the first alignment
-      // turn, and that turn is what drops the robot off the first scan line.
-      constexpr int kRunwayAttempts = 8;
-      for (int attempt = 0; attempt < kRunwayAttempts; ++attempt) {
-        const double runway = start_approach_runway_ *
-          (1.0 - static_cast<double>(attempt) / kRunwayAttempts);
-        if (runway < final_approach_distance_) {
-          break;
-        }
-        const climbot_control::Point2 staging{
-          first.x - runway * dx / length, first.y - runway * dy / length};
-        if (climbot_control::pointInPolygon(
-            staging.x, staging.y, active_task_->motion_region, motion_region_tolerance_) &&
-          std::hypot(staging.x - pose_.x, staging.y - pose_.y) > goal_position_tolerance_)
-        {
-          target = staging;
-          start_approach_final_leg_ = false;
-          if (attempt > 0) {
-            RCLCPP_INFO(
-              get_logger(), "Shortened the first-scan runway to %.2f m to stay in bounds.",
-              runway);
+      const double approach_yaw = std::atan2(first.y - pose_.y, first.x - pose_.x);
+      const double scan_yaw = std::atan2(second.y - first.y, second.x - first.x);
+      const double gravity_norm = std::hypot(
+        limits_.gravity_direction.x, limits_.gravity_direction.y);
+      const double reserve = climbot_control::reservedTurnDrop(
+        {pose_.x, pose_.y}, {first.x, first.y}, approach_yaw, scan_yaw,
+        turn_slip_per_degree_, limits_);
+      if (gravity_norm > 1e-9 && reserve > 0.0) {
+        // Shorten rather than abandon: a partial lift still removes most of
+        // the offset, and the residual is what firstScanEntryFits judges.
+        constexpr int kLiftAttempts = 8;
+        for (int attempt = 0; attempt < kLiftAttempts; ++attempt) {
+          const double lift = reserve *
+            (1.0 - static_cast<double>(attempt) / kLiftAttempts);
+          const climbot_control::Point2 lifted{
+            first.x - limits_.gravity_direction.x / gravity_norm * lift,
+            first.y - limits_.gravity_direction.y / gravity_norm * lift};
+          if (climbot_control::pointInPolygon(
+              lifted.x, lifted.y, active_task_->motion_region,
+              motion_region_tolerance_))
+          {
+            target = lifted;
+            if (attempt > 0) {
+              RCLCPP_INFO(
+                get_logger(),
+                "Shortened the first-scan drop reserve to %.1f mm to stay in bounds.",
+                lift * 1000.0);
+            }
+            break;
           }
-          break;
         }
       }
-      if (start_approach_final_leg_ && !firstScanEntryFits(first, second)) {
+      if (!firstScanEntryFits(first, second, target)) {
         return;
       }
     }
@@ -540,10 +552,16 @@ private:
   /// Only the component normal to the scan line matters: turn slip is along
   /// gravity, so it shifts a horizontal scan line but runs along a vertical
   /// one. Returns false and finishes the goal when the budget is exceeded.
+  /// Check the offset the first scan line will be left with after the entry
+  /// leg's end has been lifted. Only the part of the drop that was not
+  /// reserved can still displace the line, and only its component across that
+  /// line displaces it at all.
   bool firstScanEntryFits(
-    const geometry_msgs::msg::Point & first, const geometry_msgs::msg::Point & second)
+    const geometry_msgs::msg::Point & first, const geometry_msgs::msg::Point & second,
+    const climbot_control::Point2 & lifted_target)
   {
-    const double approach_heading = std::atan2(first.y - pose_.y, first.x - pose_.x);
+    const double approach_heading = std::atan2(
+      lifted_target.y - pose_.y, lifted_target.x - pose_.x);
     const double scan_heading = std::atan2(second.y - first.y, second.x - first.x);
     const double turn = std::abs(
       std::atan2(
@@ -552,16 +570,19 @@ private:
     const double drop = turn_slip_per_degree_ * turn * 180.0 / std::acos(-1.0);
     const double gravity_norm = std::hypot(
       limits_.gravity_direction.x, limits_.gravity_direction.y);
+    const double reserved = std::hypot(
+      lifted_target.x - first.x, lifted_target.y - first.y);
+    const double residual = std::max(0.0, drop - reserved);
     const double normal_share = gravity_norm <= 1e-9 ? 0.0 :
       std::abs(
       -std::sin(scan_heading) * limits_.gravity_direction.x +
       std::cos(scan_heading) * limits_.gravity_direction.y) / gravity_norm;
-    const double budget = start_approach_tolerance_ + drop * normal_share;
+    const double budget = start_approach_tolerance_ + residual * normal_share;
     if (budget <= maximum_scan_offset_) {
       return true;
     }
     std::ostringstream reason;
-    reason << "Entering the first scan line without a runway would leave up to " <<
+    reason << "Entering the first scan line would leave up to " <<
       budget * 1000.0 << " mm of normal offset, beyond the " <<
       maximum_scan_offset_ * 1000.0 << " mm the scan entry can recover.";
     finishGoal(ExecuteCoverage::Result::TRACKING_FAILED, reason.str());
@@ -612,9 +633,7 @@ private:
     publishCompletion(false);
     publishReferencePath();
     RCLCPP_INFO(
-      get_logger(), "%s from %.3f m away.",
-      start_approach_final_leg_ ? "Entering first task waypoint" :
-      "Approaching first-scan staging point",
+      get_logger(), "Entering first task waypoint from %.3f m away.",
       std::hypot(end_.x - start_.x, end_.y - start_.y));
   }
 
@@ -971,12 +990,6 @@ private:
 
     if (!standalone_mode_ && motion_state_ == MotionState::SEGMENT_COMPLETE) {
       if (approaching_start_) {
-        if (!start_approach_final_leg_) {
-          start_approach_final_leg_ = true;
-          const auto & first = active_task_->waypoints.front().position;
-          configureApproachLine({first.x, first.y});
-          return;
-        }
         approaching_start_ = false;
         configureSegment(0U);
         return;
@@ -1314,7 +1327,6 @@ private:
   double goal_position_exit_tolerance_{0.04};
   double start_approach_tolerance_{0.05};
   double start_approach_exit_tolerance_{0.06};
-  double start_approach_runway_{0.40};
   double goal_heading_exit_tolerance_{0.052359878};
   double stopped_linear_speed_{0.01};
   double stopped_angular_speed_{0.02};
@@ -1331,7 +1343,6 @@ private:
   bool reference_prepared_{true};
   bool arc_entry_active_{false};
   bool approaching_start_{false};
-  bool start_approach_final_leg_{true};
   bool start_approach_reanchored_{false};
   bool waiting_for_start_pose_{false};
   bool oscillation_warning_emitted_{false};

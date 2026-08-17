@@ -164,16 +164,23 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 EKF 航向漂移会体现在该指标中，而不是被它掩盖。摘要还记录实际/名义线段总长之比、最大
 机体航向补偿角和正式直线期间最大指令角速度，当前只报告后面三项，不设臆测门限。
 
-起点进入分为跑道段和最后一段。两段都在原地对准稳定后把进入直线的起点重设为机器人
-的实际位置：直线是在对准之前捕获的，这次对准的下坠否则会成为该段的初始横轨误差，
-而进入段很短，横轨修正会在 `max_heading_correction` 上饱和仍追不回来。§10.7 对
-`SCAN` 与 `TRANSITION` 已有等效处理。
+起点进入是**一条**直线,直接开到首个路点。它在原地对准稳定后把起点重设为机器人的
+实际位置：直线是在对准之前捕获的,这次对准的下坠否则会成为该段的初始横轨误差,而
+进入段很短,横轨修正会在 `max_heading_correction` 上饱和仍追不回来。
 
-确实没有可用跑道时（跑道点整体越界），控制器在接受目标阶段就校验
-`start_approach_tolerance_m + 预计对准下坠的法向分量 ≤ maximum_scan_offset_m`，
-不满足即以 `TRACKING_FAILED` 拒绝并报出具体数值，不会驶到第一条扫描线才失败。
-只计法向分量：转向下坠沿重力方向，对水平扫描线是整段平移，对竖向扫描线则是沿轨
-位移，不构成间距误差。
+进入段的**终点按首条扫描线上那次转向的预计下坠抬高**,用的就是换道段那套
+`reservedTurnDrop()` 不动点,所以机器人转完正好落在扫描线上。抬高后的点越出
+`motion_region` 时逐档缩短,取仍在区域内的最大抬升。
+
+这取代了原先的"跑道点"——首条扫描线后方 `0.40 m` 的同向进入点。跑道点让转向发生在
+扫描线**外面**,确实有效,但它是为同一个问题准备的第二套机制,而且当机器人本来就在
+首个路点的下游时,会强迫它先开过头再掉头回来(实测约 `0.8 m` 加一次 `180°` 掉头的
+纯绕路)。预留不需要绕路,而且覆盖了跑道点**放不下**的场景——那种情况以前只能拒绝。
+
+接受目标阶段仍校验
+`start_approach_tolerance_m + 未被预留的下坠的法向分量 ≤ maximum_scan_offset_m`,
+不满足即以 `TRACKING_FAILED` 拒绝并报出具体数值。只计法向分量：转向下坠沿重力方向,
+对水平扫描线是整段平移,对竖向扫描线则是沿轨位移,不构成间距误差。
 
 单段调试节点发布 `/control/segment_complete`（`std_msgs/msg/Bool`，reliable、
 transient local、depth 1）。启动时为 `false`，同时满足终点位置、补偿后航向和停车
@@ -223,7 +230,6 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `goal_position_exit_tolerance_m` | `0.04 m` | 终点候选状态退出门限 |
 | `line_tracker` | `start_approach_tolerance_m` | `0.05 m` | 采集关闭的起点进入位置门限 |
 | `line_tracker` | `start_approach_exit_tolerance_m` | `0.06 m` | 起点进入候选状态退出门限 |
-| `line_tracker` | `start_approach_runway_m` | `0.40 m` | 第一条扫描线起点后的同向进入跑道长度上限；跑道点越出 `motion_region` 时逐档缩短至 `final_approach_distance_m`，取仍在区域内的最长值，完全没有可用跑道才退化为直插首点 |
 | `line_tracker` | `goal_heading_exit_tolerance_deg` | `3°` | 航向候选状态退出门限；严格门限沿用 `2°` |
 | `line_tracker` | `stopped_linear_speed_mps` | `0.01 m/s` | 完成时融合线速度上限 |
 | `line_tracker` | `stopped_angular_speed_rps` | `0.02 rad/s` | 完成时融合角速度上限 |

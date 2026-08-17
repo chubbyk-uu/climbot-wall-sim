@@ -30,6 +30,17 @@ std::optional<ExecutionSegment> parallelScanSegment(
   const Point2 & nominal_start, const Point2 & nominal_end,
   double cross_track, double along_track, double minimum_remaining_length);
 
+// How far to lift a leg's end, against gravity, so the turn at its far end
+// lands the robot on the next line's nominal start instead of a turn-drop
+// below it. Solved as a fixed point: the lift tilts the leg the robot actually
+// drives, which changes the angle it turns through, which changes the lift.
+// Both ends of that turn use the heading the robot holds, gravity feedforward
+// included, not the lines' own directions.
+double reservedTurnDrop(
+  const Point2 & actual_start, const Point2 & nominal_end,
+  double nominal_leg_yaw, double next_line_yaw,
+  double turn_slip_per_degree, const Limits & limits);
+
 // Lift the transition's end so the turn at its far end lands the robot on the
 // next line's nominal start instead of a turn-drop below it. The drop follows
 // the angle the robot actually turns through, which depends on the headings it

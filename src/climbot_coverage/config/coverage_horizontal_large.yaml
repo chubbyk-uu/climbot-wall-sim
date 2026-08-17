@@ -1,0 +1,18 @@
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    task_id: horizontal-rectangle-large
+    input_mode: parameters
+    region_type: rectangle
+    # Large horizontal demo: 4.30 m wide by 1.70 m high.  The first scan
+    # centreline and its extended start point coincide with the spawn pose.
+    lower_left: [-3.0, 1.2]
+    upper_right: [3.0, 3.6]
+    lower_right: [4.305, 1.75]
+    detection_width: 0.50
+    detection_length: 0.01
+    overlap_ratio: 0.20
+    sweep_direction: horizontal
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

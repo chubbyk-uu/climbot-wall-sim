@@ -373,15 +373,17 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(second_future.result().accepted)
         second_future.result().cancel_goal_async()
 
-    def test_refuses_a_first_scan_entry_that_cannot_be_recovered(self):
-        """An unreachable runway plus a large entry turn fails before driving."""
-        # The scan line runs along +x from the region's left edge, so every
-        # runway point behind it lies outside the motion region. Approaching
-        # from beyond the far end leaves a turn of about 169 deg, whose slip is
-        # normal to a horizontal scan line and exceeds maximum_scan_offset_m.
+    def test_refuses_a_first_scan_entry_whose_drop_cannot_be_reserved(self):
+        """Approaching backwards onto a line pinned to the region's top edge."""
+        # The entry leg's end is normally lifted by the drop of the turn
+        # waiting at it. Here the scan line sits on the motion region's upper
+        # boundary, so there is nowhere to lift it to: the turn of about 169
+        # deg drops about 85 mm, all of it normal to a horizontal scan line,
+        # and none of it can be reserved. That exceeds what the scan entry can
+        # recover, and the run has to be refused before it drives.
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
         for _ in range(5):
-            self._publish_odometry(0.50, 0.10, 0.0)
+            self._publish_odometry(0.50, -0.10, 0.0)
             self._advance(0.02)
 
         goal = ExecuteCoverage.Goal()
@@ -390,7 +392,7 @@ class TestCoverageExecutor(unittest.TestCase):
         goal.task.segment_types = [CoverageTask.SEGMENT_SCAN]
         for polygon in (goal.task.coverage_region, goal.task.motion_region):
             del polygon.points[:]
-            for x, y in [(0.0, -0.5), (0.75, -0.5), (0.75, 0.5), (0.0, 0.5)]:
+            for x, y in [(0.0, -0.5), (0.75, -0.5), (0.75, 0.0), (0.0, 0.0)]:
                 point = Point32()
                 point.x = x
                 point.y = y
@@ -405,7 +407,7 @@ class TestCoverageExecutor(unittest.TestCase):
 
         result_future = handle.get_result_async()
         for _ in self._pending(result_future, 15.0):
-            self._publish_odometry(0.50, 0.10, 0.0)
+            self._publish_odometry(0.50, -0.10, 0.0)
             self._advance(0.02)
         self.assertTrue(result_future.done())
         result = result_future.result().result
@@ -413,6 +415,58 @@ class TestCoverageExecutor(unittest.TestCase):
             result.result_code, ExecuteCoverage.Result.TRACKING_FAILED)
         self.assertIn('scan entry can recover', result.message)
         self.assertEqual(result.completed_segments, 0)
+
+    def test_the_same_backwards_entry_succeeds_when_the_drop_can_be_reserved(self):
+        """The case the retired runway point could not serve."""
+        # Identical approach, identical 169 deg turn, but with room above the
+        # scan line. The entry leg's end is lifted by the drop instead of the
+        # robot driving past its own first waypoint to enter along the line,
+        # which is what the runway made it do - and the runway could not be
+        # placed here at all, so this used to be refused outright.
+        self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
+        x, y, yaw = 0.50, 0.10, 0.0
+        for _ in range(5):
+            self._publish_odometry(x, y, yaw)
+            self._advance(0.02)
+
+        goal = ExecuteCoverage.Goal()
+        goal.task = _task()
+        goal.task.waypoints = [_pose(0.0, 0.0, 0.0), _pose(0.60, 0.0, 0.0)]
+        goal.task.segment_types = [CoverageTask.SEGMENT_SCAN]
+        for polygon in (goal.task.coverage_region, goal.task.motion_region):
+            del polygon.points[:]
+            for corner in [(-0.4, -0.5), (0.9, -0.5), (0.9, 0.5), (-0.4, 0.5)]:
+                point = Point32()
+                point.x = corner[0]
+                point.y = corner[1]
+                polygon.points.append(point)
+
+        send_future = self.client.send_goal_async(goal)
+        for _ in self._pending(send_future, 12.0):
+            self._publish_odometry(x, y, yaw)
+            self._advance()
+        self.assertTrue(send_future.done())
+        handle = send_future.result()
+        self.assertTrue(handle.accepted)
+        result_future = handle.get_result_async()
+
+        step = SIM_STEP_S
+        for _ in self._pending(result_future, 60.0):
+            linear, angular, _ = self._current_command()
+            yaw_delta = angular * step
+            y -= 0.0005 * abs(math.degrees(yaw_delta))
+            yaw += yaw_delta
+            x += linear * math.cos(yaw) * step
+            y += linear * math.sin(yaw) * step
+            self._publish_odometry(x, y, yaw, linear, angular)
+            self._advance(step)
+        self.assertTrue(result_future.done())
+        result = result_future.result()
+        self.assertEqual(result.status, GoalStatus.STATUS_SUCCEEDED)
+        self.assertEqual(result.result.completed_segments, 1)
+        # It reached the far end of the scan without the detour the runway
+        # forced, and on the line rather than a turn-drop below it.
+        self.assertLess(math.hypot(x - 0.60, y), 0.05)
 
     def test_rejects_structurally_invalid_task(self):
         """An empty task never becomes an executable goal."""

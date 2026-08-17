@@ -135,6 +135,42 @@ std::optional<ExecutionSegment> parallelScanSegment(
       nominal_end.y + cross_track * normal.y}};
 }
 
+double reservedTurnDrop(
+  const Point2 & actual_start, const Point2 & nominal_end,
+  double nominal_leg_yaw, double next_line_yaw,
+  double turn_slip_per_degree, const Limits & limits)
+{
+  const double gravity_norm = std::hypot(
+    limits.gravity_direction.x, limits.gravity_direction.y);
+  if (!std::isfinite(turn_slip_per_degree) || turn_slip_per_degree < 0.0 ||
+    gravity_norm <= 1e-9)
+  {
+    return 0.0;
+  }
+  const double up_x = -limits.gravity_direction.x / gravity_norm;
+  const double up_y = -limits.gravity_direction.y / gravity_norm;
+  // The turn ends with the robot holding the next line's compensated heading,
+  // not the line's own direction.
+  const double held_after = heldHeading(next_line_yaw, limits);
+  const double maximum = turn_slip_per_degree * 180.0;
+  double reserve = 0.0;
+  for (int iteration = 0; iteration < kReserveIterations; ++iteration) {
+    const double end_x = nominal_end.x + up_x * reserve;
+    const double end_y = nominal_end.y + up_y * reserve;
+    const double span = std::hypot(end_x - actual_start.x, end_y - actual_start.y);
+    // Too short to read a heading from, so fall back to the nominal one rather
+    // than amplify a millimetre of position noise into tens of degrees.
+    const double driven_yaw = span >= kMinimumTransitionLength ?
+      std::atan2(end_y - actual_start.y, end_x - actual_start.x) :
+      nominal_leg_yaw;
+    const double held_before = heldHeading(driven_yaw, limits);
+    const double turn_degrees =
+      std::abs(wrapTo(held_after - held_before)) * 180.0 / std::acos(-1.0);
+    reserve = std::clamp(turn_slip_per_degree * turn_degrees, 0.0, maximum);
+  }
+  return reserve;
+}
+
 ExecutionSegment dynamicTransitionSegment(
   const climbot_interfaces::msg::CoverageTask & task, std::size_t segment_index,
   const Point2 & actual_start, double turn_slip_per_degree,
@@ -160,8 +196,6 @@ ExecutionSegment dynamicTransitionSegment(
   if (gravity_norm <= 1e-9) {
     throw std::invalid_argument("Gravity direction must be non-zero.");
   }
-  const double up_x = -limits.gravity_direction.x / gravity_norm;
-  const double up_y = -limits.gravity_direction.y / gravity_norm;
   const auto & nominal_end = task.waypoints[segment_index + 1U].position;
   ExecutionSegment segment{actual_start, {nominal_end.x, nominal_end.y}};
   if (segment_index + 1U >= task.segment_types.size()) {
@@ -174,9 +208,6 @@ ExecutionSegment dynamicTransitionSegment(
     nominal_end.y - nominal_start.y, nominal_end.x - nominal_start.x);
   const double next_scan_yaw = std::atan2(
     next_end.y - nominal_end.y, next_end.x - nominal_end.x);
-  // The turn ends with the robot holding the next line's compensated heading,
-  // not the line's own direction.
-  const double held_after = heldHeading(next_scan_yaw, limits);
 
   // Every turn onto a line gets this reservation, whatever the task calls
   // itself. Vertical sweeps were exempt on the reasoning that their drop runs
@@ -186,31 +217,11 @@ ExecutionSegment dynamicTransitionSegment(
   // downward column stopped 46 mm below the region top - one turn's worth of
   // drop - while every upward column cleared it, because there the same drop
   // pushes the start backwards and merely over-scans below.
-  //
-  // The angle turned through is not the nominal one. The robot starts the
-  // transition a drop below its nominal start and this lift raises the end, so
-  // the line it actually drives is tilted against the nominal, and lifting the
-  // end tilts it further - the reservation is its own input. Solved by
-  // iteration: the map contracts by turn_slip_per_degree * (180/pi) / length,
-  // which is 0.074 for a 0.39 m transition, so a few passes settle to microns.
-  const double maximum_reserve = turn_slip_per_degree * 180.0;
-  double reserve = 0.0;
-  for (int iteration = 0; iteration < kReserveIterations; ++iteration) {
-    const double end_x = nominal_end.x + up_x * reserve;
-    const double end_y = nominal_end.y + up_y * reserve;
-    const double span = std::hypot(end_x - actual_start.x, end_y - actual_start.y);
-    // Too short to read a heading from, so fall back to the nominal one rather
-    // than amplify a millimetre of position noise into tens of degrees.
-    const double driven_yaw = span >= kMinimumTransitionLength ?
-      std::atan2(end_y - actual_start.y, end_x - actual_start.x) :
-      nominal_transition_yaw;
-    const double held_before = heldHeading(driven_yaw, limits);
-    const double turn_degrees =
-      std::abs(wrapTo(held_after - held_before)) * 180.0 / std::acos(-1.0);
-    reserve = std::clamp(turn_slip_per_degree * turn_degrees, 0.0, maximum_reserve);
-  }
-  segment.end.x += up_x * reserve;
-  segment.end.y += up_y * reserve;
+  const double reserve = reservedTurnDrop(
+    actual_start, {nominal_end.x, nominal_end.y}, nominal_transition_yaw,
+    next_scan_yaw, turn_slip_per_degree, limits);
+  segment.end.x -= limits.gravity_direction.x / gravity_norm * reserve;
+  segment.end.y -= limits.gravity_direction.y / gravity_norm * reserve;
   return segment;
 }
 
