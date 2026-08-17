@@ -1,0 +1,77 @@
+{
+  "completed": true,
+  "descent_ratio_cv": 0.004091733003582111,
+  "drift_is_downward": true,
+  "legs": [
+    {
+      "advance_m": 1.1690314729700808,
+      "descent_ratio": 0.104464276933825,
+      "maximum_absolute_height_error_m": 0.12212202753670387,
+      "maximum_heading_offset_deg": 0.47806891004154634,
+      "mean_heading_offset_deg": 0.40740988572473424,
+      "net_height_error_m": -0.12212202753670387,
+      "path_angle_deg": -5.963731310497431,
+      "repetition": 1,
+      "samples": 800,
+      "visible_reversals": 0
+    },
+    {
+      "advance_m": 1.1690610218705362,
+      "descent_ratio": 0.1036306040207211,
+      "maximum_absolute_height_error_m": 0.1211504998335251,
+      "maximum_heading_offset_deg": 0.5951903390584045,
+      "mean_heading_offset_deg": 0.468215343763304,
+      "net_height_error_m": -0.1211504998335251,
+      "path_angle_deg": -5.916476943331534,
+      "repetition": 2,
+      "samples": 800,
+      "visible_reversals": 0
+    },
+    {
+      "advance_m": 1.1690699603715724,
+      "descent_ratio": 0.10350748994309629,
+      "maximum_absolute_height_error_m": 0.1210074971659365,
+      "maximum_heading_offset_deg": 0.6013064597452614,
+      "mean_heading_offset_deg": 0.4752404747599058,
+      "net_height_error_m": -0.1210074971659365,
+      "path_angle_deg": -5.909497887467606,
+      "repetition": 3,
+      "samples": 800,
+      "visible_reversals": 0
+    }
+  ],
+  "mean_absolute_height_error_m": 0.1214266748453885,
+  "mean_descent_ratio": 0.1038674569658808,
+  "mode": "open_loop",
+  "passed": true,
+  "provenance": {
+    "evaluator_parameters": {
+      "entry_lead_m": 0.4,
+      "execution_timeout_s": 300.0,
+      "heading_hold_gain": 1.5,
+      "line_length_m": 1.2,
+      "linear_speed_mps": 0.15,
+      "maximum_open_loop_cv": 0.05,
+      "maximum_visible_reversals": 0,
+      "minimum_height_error_reduction": 0.7,
+      "minimum_measured_fraction": 0.95,
+      "mode": "open_loop",
+      "reference_summary_json": "",
+      "repetitions": 3,
+      "settle_duration_s": 3.0,
+      "startup_timeout_s": 30.0,
+      "summary_json": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_off_2026-08-17_summary.json",
+      "trajectory_csv": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_off_2026-08-17_trajectory.csv",
+      "turn_timeout_s": 30.0,
+      "visible_excursion_m": 0.02,
+      "wall_config": "/home/jerry/robot_ws/climbot_sim/install/climbot_description/share/climbot_description/config/wall.yaml"
+    },
+    "git": {
+      "branch": "main",
+      "commit": "515e5e3500fcdbc96859e5c0d1e5a5e72de088be",
+      "source_modified": false
+    },
+    "recorded_utc": "2026-08-17T06:11:17.221314+00:00"
+  },
+  "trajectory_samples": 2400
+}

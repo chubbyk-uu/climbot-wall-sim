@@ -1,0 +1,89 @@
+{
+  "comparison": {
+    "compensated_mean_absolute_height_error_m": 0.006285653812655371,
+    "compensated_mean_descent_ratio": 0.0031288393820344735,
+    "descent_ratio_reduction": 0.9698766151263118,
+    "height_error_reduction": 0.9482349836174067,
+    "open_loop_mean_absolute_height_error_m": 0.1214266748453885,
+    "open_loop_mean_descent_ratio": 0.1038674569658808,
+    "reference_commit": "515e5e3500fcdbc96859e5c0d1e5a5e72de088be",
+    "reference_summary_json": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_off_2026-08-17_summary.json",
+    "required_height_error_reduction": 0.7
+  },
+  "completed": true,
+  "legs": [
+    {
+      "advance_m": 1.2012108445724414,
+      "descent_ratio": 0.012050570734336491,
+      "maximum_absolute_height_error_m": 0.014475276249372282,
+      "maximum_heading_offset_deg": 5.891462941786052,
+      "mean_heading_offset_deg": 5.664712655742322,
+      "net_height_error_m": -0.014475276249372282,
+      "path_angle_deg": -0.6904134253447232,
+      "repetition": 1,
+      "samples": 776,
+      "visible_reversals": 0
+    },
+    {
+      "advance_m": 1.2009583700549509,
+      "descent_ratio": -0.0031566433453287606,
+      "maximum_absolute_height_error_m": 0.00390701522505621,
+      "maximum_heading_offset_deg": 6.664457352029271,
+      "mean_heading_offset_deg": 6.466921619015509,
+      "net_height_error_m": 0.0037909972468508357,
+      "path_angle_deg": 0.1808617403909177,
+      "repetition": 2,
+      "samples": 770,
+      "visible_reversals": 0
+    },
+    {
+      "advance_m": 1.199145402617145,
+      "descent_ratio": 0.0004925907570956901,
+      "maximum_absolute_height_error_m": 0.0007575821280298989,
+      "maximum_heading_offset_deg": 6.422391132895454,
+      "mean_heading_offset_deg": 6.262386648447662,
+      "net_height_error_m": -0.0005906879417429955,
+      "path_angle_deg": -0.028223369125977806,
+      "repetition": 3,
+      "samples": 780,
+      "visible_reversals": 0
+    }
+  ],
+  "maximum_absolute_height_error_m": 0.014475276249372282,
+  "maximum_visible_reversals": 0,
+  "mean_absolute_height_error_m": 0.006285653812655371,
+  "mean_heading_offset_deg": 6.131340307735165,
+  "mode": "compensated",
+  "passed": true,
+  "position_closer_than_heading": true,
+  "provenance": {
+    "evaluator_parameters": {
+      "entry_lead_m": 0.4,
+      "execution_timeout_s": 300.0,
+      "heading_hold_gain": 1.5,
+      "line_length_m": 1.2,
+      "linear_speed_mps": 0.15,
+      "maximum_open_loop_cv": 0.05,
+      "maximum_visible_reversals": 0,
+      "minimum_height_error_reduction": 0.7,
+      "minimum_measured_fraction": 0.95,
+      "mode": "compensated",
+      "reference_summary_json": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_off_2026-08-17_summary.json",
+      "repetitions": 3,
+      "settle_duration_s": 3.0,
+      "startup_timeout_s": 30.0,
+      "summary_json": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_on_2026-08-17_summary.json",
+      "trajectory_csv": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_on_2026-08-17_trajectory.csv",
+      "turn_timeout_s": 30.0,
+      "visible_excursion_m": 0.02,
+      "wall_config": "/home/jerry/robot_ws/climbot_sim/install/climbot_description/share/climbot_description/config/wall.yaml"
+    },
+    "git": {
+      "branch": "main",
+      "commit": "515e5e3500fcdbc96859e5c0d1e5a5e72de088be",
+      "source_modified": false
+    },
+    "recorded_utc": "2026-08-17T06:12:24.647956+00:00"
+  },
+  "trajectory_samples": 5178
+}

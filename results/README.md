@@ -3,10 +3,11 @@
 本目录保存可追溯的实验输出，不是所有文件都代表当前正式验收基线。正式实验
 应同时记录代码提交、配置、随机种子、仿真时长和生成命令。
 
-> **三份覆盖基线已于 2026-08-14 在同一版代码、同一组参数下重跑。** 每份摘要都带
-> `provenance` 段（提交、分支、`src` 是否有未提交改动、评价器全部参数、任务名义
-> 几何），此后不会再出现"不知道哪一版评价器产生"的情况。重跑的原因是终点停车
-> 精度修复改变了扫描线落位，同时转向结束航向误差改为真值口径。
+> **四份覆盖基线已于 2026-08-17 在提交 `6227a3c` 的干净工作树上重跑。** 每份摘要
+> 的 `provenance.git` 都是 `commit=6227a3c`、`source_modified=false`，此后不会再
+> 出现"不知道哪一版代码产生"的情况。这次重跑做了两件事：补上一直缺失的**横向
+> 矩形**工况（§13 阶段 F 第 2 条要求横向和竖向矩形各一份），并把 8 月 14 日那三份
+> 带未提交改动的结果换成可追溯的版本。
 
 | 文件 | 状态 | 说明 |
 | --- | --- | --- |
@@ -16,71 +17,55 @@
 | `turn_slip.csv` | 当前参考 | 多角度、多角速度原地转向下滑结果 |
 | `wall_slip_trajectory.csv` | 当前正式基线 | 10209 行；真值时间戳去重；包含真值与融合航向 |
 | `wall_slip.png` | 当前正式基线 | 由当前侧滑轨迹 CSV 生成 |
-| `coverage_vertical_2026-08-14_trajectory.csv` | 阶段 F 正式结果 | 大型竖向矩形完整真值、融合位姿、动态参考、状态和横轨误差 |
-| `coverage_vertical_2026-08-14_summary.json` | 阶段 F 正式结果 | Action 结果、15 段误差和实际二维检测足迹覆盖率 |
-| `coverage_trapezoid_horizontal_2026-08-14_trajectory.csv` | 阶段 F 正式结果 | 大型等腰梯形横向扫描完整轨迹 |
-| `coverage_trapezoid_horizontal_2026-08-14_summary.json` | 阶段 F 正式结果 | 横向梯形 13 段误差和实际覆盖率 |
-| `coverage_trapezoid_vertical_2026-08-14_trajectory.csv` | 阶段 F 正式结果 | 同一等腰梯形竖向扫描完整轨迹 |
-| `coverage_trapezoid_vertical_2026-08-14_summary.json` | 阶段 F 正式结果 | 竖向梯形 19 段误差和实际覆盖率 |
+| `coverage_horizontal_2026-08-17_*` | 阶段 F 正式结果 | 大型横向矩形，4 条扫描线、7 段 |
+| `coverage_vertical_2026-08-17_*` | 阶段 F 正式结果 | 大型竖向矩形，8 条扫描线、15 段 |
+| `coverage_trapezoid_horizontal_2026-08-17_*` | 阶段 F 正式结果 | 大型等腰梯形横向扫描，13 段 |
+| `coverage_trapezoid_vertical_2026-08-17_*` | 阶段 F 正式结果 | 同一等腰梯形竖向扫描，19 段 |
+| `slip_compensation_off_2026-08-17_*` | §14.4 正式结果 | 横轨闭环关闭的三次水平直线 |
+| `slip_compensation_on_2026-08-17_*` | §14.4 正式结果 | 同一仿真、同一墙面上横轨闭环开启的三次水平直线 |
+| `coverage_*_2026-08-14_*` | 历史对照 | 同三个工况的上一版结果，`source_modified=true`，仅供对比趋势 |
 
-## 大型竖向矩形覆盖基线
+每组 `*` 包含一个 `_trajectory.csv`（逐采样真值、融合位姿、动态参考、状态和横轨
+误差）和一个 `_summary.json`（Action 结果、逐段误差、覆盖率和 `provenance`）。
 
-2026-08-14 在全新无界面仿真中执行 `3.30 × 4.50 m` 竖向矩形任务。规划路径包含
-8 条竖向扫描线、15 段；评价器以 `10 mm` 栅格和任务配置的
-`0.50 × 0.01 m` 检测足迹计算实际覆盖，不累计转向、换道和入轨运动。
+## 覆盖基线（四工况）
 
-| 指标 | 结果 |
-| --- | ---: |
-| Action 结果 | 成功，15/15 段 |
-| 执行时间 | 288.667 s |
-| 实际覆盖率 | 99.632% |
-| 漏扫比例 | 0.368% |
-| 最大单段横轨 RMS | 2.41 mm |
-| 最大绝对横轨误差 | 5.34 mm |
-| 最大动态终点误差 | 3.37 mm |
-| 最大扫描线偏离名义 | 7.52 mm |
-| 最大相邻扫描线间距误差 | 8.66 mm |
-| 可见反向往复 | 0 |
+2026-08-17 在四个全新无界面仿真中各执行一次，每次都从新启动的世界开始。矩形
+两个工况为 `4.30 × 1.70 m` 横向和 `3.30 × 4.50 m` 竖向；梯形两个工况为底边
+`4.00 m`、上底 `2.60 m`、高 `2.80 m` 的同一等腰梯形分别横向和竖向扫描。四次都用
+`0.50 × 0.01 m` 检测足迹和 `10 mm` 覆盖栅格，只累计正式 `SCAN` 直线，不把转向、
+换道和入轨运动算成覆盖。
 
-该矩形工况高出 `95%` 覆盖率门限 `4.63` 个百分点，因此当前参数下不增加顶部收边扫描。
+| 指标 | 矩形横向 | 矩形竖向 | 梯形横向 | 梯形竖向 | §14.3 阈值 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Action 结果 | 7/7 段 | 15/15 段 | 13/13 段 | 19/19 段 | 成功 |
+| 扫描线条数 | 4 | 8 | 7 | 10 | — |
+| 执行时间 | 134.3 s | 288.0 s | 231.0 s | 283.1 s | — |
+| 实际覆盖率 | 99.964% | 99.638% | 99.798% | 98.070% | ≥ 95% |
+| 最大单段横轨 RMS | 1.08 mm | 1.64 mm | 1.90 mm | 2.23 mm | ≤ 20 mm |
+| 最大绝对横轨误差 | 2.53 mm | 2.65 mm | 8.78 mm | 3.40 mm | ≤ 50 mm |
+| 最大动态终点误差 | 3.15 mm | 3.65 mm | 3.42 mm | 3.78 mm | ≤ 30 mm |
+| 最大转向结束航向误差（真值口径） | 1.64° | 1.82° | 1.73° | 1.78° | ≤ 2° |
+| 最大扫描线偏离名义 | 3.20 mm | 9.30 mm | 11.22 mm | 6.04 mm | — |
+| 最大相邻扫描线间距误差 | 5.08 mm | 10.83 mm | 16.26 mm | 6.27 mm | ≤ 20 mm |
+| 最大水平扫描净高度误差 | 1.34 mm | 不适用 | 2.18 mm | 不适用 | ≤ 30 mm |
+| 实际/名义线段总长比 | 1.0303 | 1.0178 | 1.0453 | 1.0232 | — |
+| 最大机体航向补偿角 | 7.34° | 7.02° | 6.71° | 7.01° | — |
+| 正式直线最大指令角速度 | 0.061 rad/s | 0.069 rad/s | 0.078 rad/s | 0.064 rad/s | — |
+| 可见反向往复 | 0 | 0 | 0 | 0 | 0 |
 
-## 大型等腰梯形覆盖基线
+四个工况全部通过评价器的每一项门限。相对 §14.3 于 2026-08-14 放宽后的 `95%`
+覆盖率门限，余量分别为 `4.96 / 4.64 / 4.80 / 3.07` 个百分点，因此本版仍不增加
+顶部收边扫描。**"不需要收边"不是永久结论**：修改检测足迹、行距、重叠率、转向
+下滑或入轨参数后必须重新评价，而梯形竖向 `3.07` 个百分点是四者中最薄的一份。
 
-2026-08-14 在两个全新无界面仿真中，对底边 `4.00 m`、上底 `2.60 m`、高
-`2.80 m` 的同一等腰梯形分别执行横向和竖向任务。两次均使用 `0.50 × 0.01 m`
-检测足迹和 `10 mm` 覆盖栅格。
+新增的横向矩形是四者中最好的一份（覆盖率 `99.964%`、最大横轨 RMS `1.08 mm`、
+间距误差 `5.08 mm`）。它扫描线最少、转向最少，符合预期。
 
-| 指标 | 横向扫描 | 竖向扫描 |
-| --- | ---: | ---: |
-| Action 结果 | 成功，13/13 段 | 成功，19/19 段 |
-| 执行时间 | 232.093 s | 284.433 s |
-| 实际覆盖率 | 99.798% | 98.122% |
-| 漏扫比例 | 0.202% | 1.878% |
-| 最大单段横轨 RMS | 1.77 mm | 2.91 mm |
-| 最大绝对横轨误差 | 10.89 mm | 6.37 mm |
-| 最大动态终点误差 | 3.11 mm | 3.57 mm |
-| 最大转向结束航向误差（真值口径） | 1.71° | 1.85° |
-| 最大扫描线偏离名义 | 10.32 mm | 8.92 mm |
-| 最大相邻扫描线间距误差 | 15.83 mm | 9.70 mm |
-| 最大水平扫描净高度误差 | 1.16 mm | 不适用 |
-| 实际/名义线段总长比 | 1.0453 | 1.0231 |
-| 最大机体航向补偿角 | 6.71° | 7.00° |
-| 正式直线最大指令角速度 | 0.078 rad/s | 0.073 rad/s |
-| 可见反向往复 | 0 | 0 |
-
-三个工况相对 §14.3 于 2026-08-14 放宽后的 `95%` 门限，余量分别为
-`4.63 / 4.80 / 3.12` 个百分点，因此本版不增加顶部收边扫描。修改检测足迹、行距、
-转向下滑或入轨参数后仍必须重新评价，不能把”不需要收边”视为永久成立。
-
-**覆盖率比上一版略低，这是终点停车精度修复的代价，不是回归。** 修复前扫描线
-带有 `+12~+23 mm` 的系统性偏置，恰好把上部各线推向梯形较窄的一侧、把首线压低，
-额外扫到了一些边缘面积；旧基线的覆盖率因此偏高（横向 `99.312%`、竖向
-`98.186%`）。现在扫描线落在名义位置附近，覆盖率回到规划路径本身所能提供的水平。
-
-名义覆盖率与实测覆盖率之差即执行损失，三个工况分别为 `0.37 / 0.57 / -0.04` 个
-百分点（横向梯形实测略高于名义，因为真值足迹在转向前后仍扫过名义直线之外的少量
-面积）。规划期门限 `minimum_nominal_coverage_ratio` 取 `0.965`，即验收门限加上
-略高于最大执行损失的裕度，避免出现”规划通过、跑几分钟后评价失败”。
+竖向矩形与两个梯形相对 2026-08-14 那一版的差异都在测量噪声量级内
+（覆盖率 `99.632→99.638%`、`99.798→99.798%`、`98.122→98.070%`），说明 8 月 15
+至 17 日的三次修改（进度加权、面板状态、控制环时钟）确实没有改变运动行为——
+这三处要么只影响状态上报，要么在 `use_sim_time:=true` 下逐位不变。
 
 ## 重新生成覆盖基线
 
@@ -88,30 +73,108 @@
 和执行器，需分别启动；三个工况只有 `--params-file` 与输出文件名不同：
 
 ```bash
-ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
+# 终端 1：仿真、TF、传感器、EKF 和速度看门狗
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  use_sim_time:=true headless:=true
 
-ros2 run climbot_coverage coverage_planner_node --ros-args \
-  --params-file src/climbot_coverage/config/coverage_vertical_demo.yaml \
-  -p use_sim_time:=true \
-  -p robot_length:=0.76 -p robot_width:=0.475 -p edge_clearance:=0.10 \
-  -p wall_width:=10.0 -p wall_height:=8.0
+# 终端 2：规划器（四个工况只有这一行的配置和 sweep_direction 不同）
+ros2 launch climbot_coverage coverage_planner.launch.py \
+  use_sim_time:=true rviz:=false \
+  config_file:="$(pwd)/src/climbot_coverage/config/coverage_horizontal_demo.yaml" \
+  input_mode:=parameters region_type:=rectangle sweep_direction:=horizontal
 
-ros2 run climbot_control line_tracker_node --ros-args \
-  --params-file src/climbot_control/config/control.yaml \
-  -p use_sim_time:=true -p standalone_mode:=false \
-  -p wheel_separation:=0.43 -p wheel_speed_limit:=0.30 \
-  -p wheel_acceleration_limit:=0.40
+# 终端 3：跟踪器和管理器
+ros2 launch climbot_control coverage_executor.launch.py use_sim_time:=true
 
+# 终端 4：发送 Action 并按真值评价
 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
-  -p use_sim_time:=true -p case:=planned_task -p execution_timeout_s:=600.0 \
-  -p trajectory_csv:=results/coverage_vertical_2026-08-14_trajectory.csv \
-  -p summary_json:=results/coverage_vertical_2026-08-14_summary.json
+  -p use_sim_time:=true -p case:=planned_task \
+  -p startup_timeout_s:=30.0 -p execution_timeout_s:=600.0 \
+  -p trajectory_csv:=results/coverage_horizontal_2026-08-17_trajectory.csv \
+  -p summary_json:=results/coverage_horizontal_2026-08-17_summary.json
 ```
+
+四个工况的配置与扫描方向：
+
+| 工况 | `config_file` | `region_type` | `sweep_direction` |
+| --- | --- | --- | --- |
+| 矩形横向 | `coverage_horizontal_demo.yaml` | `rectangle` | `horizontal` |
+| 矩形竖向 | `coverage_vertical_demo.yaml` | `rectangle` | `vertical` |
+| 梯形横向 | `coverage_trapezoid_horizontal_demo.yaml` | `trapezoid` | `horizontal` |
+| 梯形竖向 | `coverage_trapezoid_vertical_demo.yaml` | `trapezoid` | `vertical` |
+
+必须用 `planner_config_file` / `control_config_file` 这类互不冲突的名字，或者像
+上面这样分别启动：被包含的 launch 会继承父作用域的同名参数，一个 `config_file`
+会同时落到规划器和跟踪器上，使后者静默退回内置默认值（包括侧滑补偿为 `0`）。
 
 评价器在任一验收项不达标时返回失败，但无论成功、超时还是异常都会先写出 CSV 和
 摘要；失败运行的摘要里 `completed=false` 并记录 `failure_reason`，不要把这类文件
 当作基线。摘要的 `provenance.git.source_modified` 为 `true` 表示该结果产生时
 `src` 有未提交改动，此时记录的提交号只是父提交。
+
+## §14.4 侧滑补偿专项验收
+
+2026-08-17 在**同一个**无界面仿真、同一段墙面上依次执行两个阶段，提交
+`515e5e3`、工作树干净。两个阶段的速度（`0.15 m/s`）、名义直线长度（`1.20 m`）、
+吸附力和 WheelSlip 参数完全相同，差别只有横轨闭环的开关。
+
+| 指标 | 补偿关闭 | 补偿开启 | §14.4 要求 |
+| --- | ---: | ---: | --- |
+| 三次净高度误差 | `-122.1 / -121.2 / -121.0 mm` | `-14.5 / +3.8 / -0.6 mm` | — |
+| 三次实测直线长度 | `1.169 / 1.169 / 1.169 m` | `1.201 / 1.201 / 1.199 m` | — |
+| 平均净高度误差绝对值 | `121.43 mm` | `6.29 mm` | 降低 ≥ 70% → **94.82%** |
+| 平均下降/前进比 | `10.387%` | `0.313%` | 归一化降幅 **96.99%** |
+| 三次下降比 | `10.45 / 10.36 / 10.35%` | — | 变异系数 ≤ 5% → **0.41%** |
+| 漂移方向 | 三次全部向下 | — | 稳定、可重复的向下漂移 ✔ |
+| 平均机体航向偏角 | `+0.45°` | `+6.13°`（向上） | 允许小幅向上偏角 ✔ |
+| 位置轨迹相对水平线的倾角 | — | `0.69 / 0.18 / 0.03°` | 位置比机体朝向更贴近规划直线 ✔ |
+| 可见反向往复（`20 mm` 门限） | — | `0` | 无明显蛇形 ✔ |
+
+六条要求全部满足。最后两行是这一节的关键证据：补偿开启后机体持续向上偏
+`6.13°`，而**实际走出来的轨迹**相对水平线只倾斜 `0.03~0.69°`——机器人是"斜着身
+子走直线"，正是 §10.4 期望的形态，而不是把整条线走歪。
+
+补偿关闭态与 2026-08-13 的独立标定基线互相印证：下降比 `10.39%` vs `10.56%`，
+变异系数 `0.41%` vs `0.64%`。两者用不同脚本、不同仿真实例测得。本次实验中该阶段
+还被完整重复了三遍（三次独立仿真给出 `10.39 / 10.39 / 10.38%`，变异系数
+`0.41 / 0.34 / 0.41%`）。
+
+**第一条扫描线不计入**：掉头对准会带来约 `85 mm` 下坠，§10.7 把参考线平移到实际
+位置而不是爬回名义线，因此第一条扫描线的起始偏差必然超过
+`parallel_scan_offset_m`（`45 mm`），跟踪器改用一次前进小弧线入轨，吃掉约
+`0.33 m`。它照常执行但不参与统计；其后三条扫描线之间没有转向，是与开环段可比的
+稳态直线。加长引入段无效，实测 `0.5 m` 和 `1.2 m` 都仍把 `81~87 mm` 交给扫描段。
+
+## 重新生成 §14.4 配对实验
+
+两个阶段必须在**同一个**仿真里依次运行，而且 `open_loop` 阶段不能有
+`line_tracker`：空闲的跟踪器同样以 `50 Hz` 在 `/control/cmd_vel` 上发布零速，会
+覆盖开环指令。速度看门狗由 `climbot_wall.launch.py` 启动，`/cmd_vel` 的安全门与
+正常任务一致。
+
+```bash
+# 终端 1：仿真、传感器、EKF 和速度看门狗，不含跟踪器
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  use_sim_time:=true headless:=true
+
+# 终端 2，阶段一：补偿关闭
+ros2 run climbot_gazebo evaluate_slip_compensation.py --ros-args \
+  -p use_sim_time:=true -p mode:=open_loop \
+  -p trajectory_csv:=results/slip_compensation_off_2026-08-17_trajectory.csv \
+  -p summary_json:=results/slip_compensation_off_2026-08-17_summary.json
+
+# 阶段一结束后再启动跟踪器和管理器
+ros2 launch climbot_control coverage_executor.launch.py use_sim_time:=true
+
+# 终端 2，阶段二：补偿开启，并按关闭态摘要计算降幅
+ros2 run climbot_gazebo evaluate_slip_compensation.py --ros-args \
+  -p use_sim_time:=true -p mode:=compensated \
+  -p reference_summary_json:=results/slip_compensation_off_2026-08-17_summary.json \
+  -p trajectory_csv:=results/slip_compensation_on_2026-08-17_trajectory.csv \
+  -p summary_json:=results/slip_compensation_on_2026-08-17_summary.json
+```
+
+任一验收项不达标时进程返回失败，摘要仍会写出并带 `failure_reason`。
 
 ## 当前侧滑基线
 
