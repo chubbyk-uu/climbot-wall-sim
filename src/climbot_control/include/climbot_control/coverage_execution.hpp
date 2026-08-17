@@ -30,6 +30,19 @@ std::optional<ExecutionSegment> parallelScanSegment(
   const Point2 & nominal_start, const Point2 & nominal_end,
   double cross_track, double along_track, double minimum_remaining_length);
 
+// A turn started while the robot sits 12 to 40 degrees off vertical, in the
+// direction that keeps lowering its nose, slides about 68 mm on the spot
+// before it grips again - regardless of how far it goes on to turn. Measured
+// on a bare wall over the whole heading circle: the effect peaks 24 degrees
+// off vertical, is absent turning the other way, and is absent again once the
+// robot has swept past the band, so only the heading it *starts* from matters.
+// See results/turn_band.csv.
+//
+// Returns the signed angle to turn first - nose up, out of the band - so the
+// real turn begins from a heading that grips. Zero when the turn is already
+// safe. The band edges are the measured ones plus a margin.
+double turnLeadOut(double start_yaw, double heading_error);
+
 // How far to lift a leg's end, against gravity, so the turn at its far end
 // lands the robot on the next line's nominal start instead of a turn-drop
 // below it. Solved as a fixed point: the lift tilts the leg the robot actually

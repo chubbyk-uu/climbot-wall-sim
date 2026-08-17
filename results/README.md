@@ -253,6 +253,32 @@ ros2 run climbot_gazebo measure_turn_slip.py --ros-args \
 CSV 里的逐角度数值不能当作真实滑移读。换墙面、改摩擦或 WheelSlip 参数后都必须
 重标定。
 
+## 起步滑移带
+
+`measure_turn_slip.py` 从机器人当时朝向起转，因此漏掉了一个只取决于**起始朝向**的
+效应。`measure_turn_band.py` 把起始朝向固定成自变量，扫「起始朝向 × 转角 × 转向
+方向」：
+
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  use_sim_time:=true headless:=true
+
+# 全圆映射（results/turn_map.csv）：每 15° 一个朝向，正反各转 30°
+ros2 run climbot_gazebo measure_turn_band.py --ros-args \
+  -p use_sim_time:=true -p output_csv:=results/turn_map.csv
+
+# 带形细扫（results/turn_band.csv）
+ros2 run climbot_gazebo measure_turn_band.py --ros-args \
+  -p use_sim_time:=true -p output_csv:=results/turn_band.csv \
+  -p headings_deg:='[100.0, 105.0, 110.0, 112.0, 114.0, 116.0, 120.0, 125.0]' \
+  -p angles_deg:='[30.0]'
+```
+
+结论：起步做原地转向时，若朝向偏离竖直 12°~40° 且转向方向使车头继续下压，起步瞬间
+沿车身轴滑约 **68 mm**，与转角无关；反向转、或已扫过该带，都正常。峰值在偏离竖直
+24°（即 114°/66°/246°/294°）。`climbot_control` 的 `turnLeadOut()` 就按这两份 CSV
+标定，改墙面、摩擦或 WheelSlip 参数后必须重扫。
+
 ## 当前侧滑基线
 
 2026-08-13 在全新启动的无界面仿真中完成一次正式实验。参数为横向 WheelSlip

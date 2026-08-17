@@ -13,6 +13,14 @@ namespace
 constexpr double kMinimumTransitionLength = 0.05;
 constexpr int kReserveIterations = 4;
 
+// Edges of the measured slip band, in radians off vertical. The bare-wall
+// sweep in results/turn_band.csv reads 0.52 mm/deg at 10 degrees off, 1.0 at
+// 15, 2.55 at 24, 1.0 at 35 and 0.51 at 45, so the band is taken as 12 to 40
+// degrees and left by a further 4.
+constexpr double kBandInner = 0.209439510;   // 12 deg
+constexpr double kBandOuter = 0.698131701;   // 40 deg
+constexpr double kBandMargin = 0.069813170;  // 4 deg
+
 // The heading the robot actually holds on a line, which is the line's own
 // direction plus the gravity feedforward that line calls for. A vertical line
 // asks for none; a horizontal one asks for the full slip angle.
@@ -135,6 +143,34 @@ std::optional<ExecutionSegment> parallelScanSegment(
       nominal_end.y + cross_track * normal.y}};
 }
 
+double turnLeadOut(double start_yaw, double heading_error)
+{
+  if (!std::isfinite(start_yaw) || !std::isfinite(heading_error)) {
+    return 0.0;
+  }
+  const double pi = std::acos(-1.0);
+  // Nose height goes as sin(yaw), so the nose falls when the turn and cos(yaw)
+  // pull opposite ways. That is the only direction the band bites in.
+  const double nose_rate = std::cos(start_yaw);
+  if (nose_rate * heading_error >= 0.0) {
+    return 0.0;
+  }
+  // Deviation from whichever vertical the robot is nearer, signed so that the
+  // band test is symmetric about straight up and straight down.
+  const double vertical = std::sin(start_yaw) >= 0.0 ? pi / 2.0 : -pi / 2.0;
+  const double offset = wrapTo(start_yaw - vertical);
+  const double magnitude = std::abs(offset);
+  if (magnitude < kBandInner || magnitude > kBandOuter) {
+    return 0.0;
+  }
+  const double sign = offset >= 0.0 ? 1.0 : -1.0;
+  // Nose-up shrinks the deviation above the wall's waist and grows it below,
+  // so the near edge of the band is not the same edge in the two halves.
+  const double target = std::sin(start_yaw) >= 0.0 ?
+    kBandInner - kBandMargin : kBandOuter + kBandMargin;
+  return sign * (target - magnitude);
+}
+
 double reservedTurnDrop(
   const Point2 & actual_start, const Point2 & nominal_end,
   double nominal_leg_yaw, double next_line_yaw,
@@ -152,7 +188,10 @@ double reservedTurnDrop(
   // The turn ends with the robot holding the next line's compensated heading,
   // not the line's own direction.
   const double held_after = heldHeading(next_line_yaw, limits);
-  const double maximum = turn_slip_per_degree * 180.0;
+  // A turn is at most half a circle, and a lead-out adds twice its own span on
+  // top of that, so the cap has to leave room for both.
+  const double maximum = turn_slip_per_degree *
+    (180.0 + 4.0 * (kBandOuter + kBandMargin) * 180.0 / std::acos(-1.0));
   double reserve = 0.0;
   for (int iteration = 0; iteration < kReserveIterations; ++iteration) {
     const double end_x = nominal_end.x + up_x * reserve;
@@ -164,8 +203,13 @@ double reservedTurnDrop(
       std::atan2(end_y - actual_start.y, end_x - actual_start.x) :
       nominal_leg_yaw;
     const double held_before = heldHeading(driven_yaw, limits);
+    const double turn = wrapTo(held_after - held_before);
+    // A lead-out is driven nose-up and then given back on top of the turn, so
+    // the robot rotates twice as far as the lead-out on its way round. Leaving
+    // it out of the reservation would lose that rotation's ordinary slip.
+    const double lead_out = turnLeadOut(held_before, turn);
     const double turn_degrees =
-      std::abs(wrapTo(held_after - held_before)) * 180.0 / std::acos(-1.0);
+      (std::abs(turn) + 2.0 * std::abs(lead_out)) * 180.0 / std::acos(-1.0);
     reserve = std::clamp(turn_slip_per_degree * turn_degrees, 0.0, maximum);
   }
   return reserve;

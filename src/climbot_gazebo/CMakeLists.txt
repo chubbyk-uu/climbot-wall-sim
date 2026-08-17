@@ -25,6 +25,7 @@ install(
     scripts/evaluate_coverage_execution.py
     scripts/evaluate_slip_compensation.py
     scripts/measure_normal_loads.py
+    scripts/measure_turn_band.py
     scripts/measure_turn_slip.py
     scripts/plot_wall_slip.py
     scripts/total_station_sim.py
