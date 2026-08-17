@@ -130,6 +130,23 @@ def test_quality_rejects_inconsistent_planning_metadata():
         execution_quality([], [1], [])
 
 
+def test_spacing_ignores_a_scan_line_that_crosses_the_sweep():
+    """A top-edge finishing scan is a SCAN, but not one spacing is defined over."""
+    rows, types, waypoints = _vertical_boustrophedon([0.0, 0.400])
+    plain = scan_line_spacing(rows, types, waypoints)
+    # Append a horizontal finishing scan: transition up, then across the top.
+    types = list(types) + [2, 1]
+    waypoints = list(waypoints) + [(0.4, 1.0), (0.0, 1.0)]
+    rows = list(rows) + [
+        _scan_row(len(types) - 1, 0.4, 1.0), _scan_row(len(types) - 1, 0.0, 1.0)]
+    result = scan_line_spacing(rows, types, waypoints)
+    assert result['crossing_scan_lines'] == 1
+    assert result['maximum_scan_line_offset_m'] == pytest.approx(
+        plain['maximum_scan_line_offset_m'])
+    assert result['maximum_scan_line_spacing_error_m'] == pytest.approx(
+        plain['maximum_scan_line_spacing_error_m'])
+
+
 def test_noise_around_zero_is_not_a_visible_reversal():
     """PROJECT_GUIDE 14.3: crossings inside the band are not snaking."""
     noise = [0.001, -0.002, 0.003, -0.001, 0.002, -0.003]

@@ -66,6 +66,22 @@ safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 路点处原地转向，不生成圆角或切弯。控制器可能在转后偏差较大时执行一次采集关闭的
 前进小弧线，但正式 `SCAN` 仍为冻结的直线。
 
+## 顶部收边扫描
+
+竖向弓字任务在扫描柱末端会留下一条很薄的顶部漏扫。`top_edge_scan` 决定是否在
+路径末尾追加一条水平收边 `SCAN`：
+
+```bash
+# 强制追加（验收发现顶部漏扫时用这个重新规划）
+ros2 launch climbot_coverage coverage_mission.launch.py \
+  sweep_direction:=vertical \
+  planner_config_file:=<带 top_edge_scan: always 的配置>
+```
+
+`auto`（默认）只看**预计**覆盖率，而顶部漏扫是执行损失、名义几何里不存在，所以
+`auto` 在当前两个竖向工况下不会触发——它们的预计覆盖率都是 `100%`。需要收边时请
+显式设 `always`。横向扫描恒不追加：它最高一条扫描线已经压在区域顶边上。
+
 ## 测试
 
 ```bash

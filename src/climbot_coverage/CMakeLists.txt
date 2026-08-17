@@ -47,6 +47,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_planner_node.py TIMEOUT 30)
   add_launch_test(test/test_coverage_planner_failure.py TIMEOUT 30)
   add_launch_test(test/test_coverage_planner_rviz.py TIMEOUT 60)
+  add_launch_test(test/test_coverage_top_edge_scan.py TIMEOUT 90)
   ament_add_pytest_test(test_rviz_config test/test_rviz_config.py TIMEOUT 30)
 endif()
 

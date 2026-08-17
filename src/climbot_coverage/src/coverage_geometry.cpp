@@ -295,6 +295,45 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   return path;
 }
 
+std::vector<Point2> makeTopEdgeFinishingScan(
+  const Polygon & coverage_region, const Polygon & motion_region,
+  double detection_width, double detection_length, const Point2 & entry)
+{
+  if (detection_width <= 0.0 || detection_length <= 0.0) {
+    throw std::invalid_argument("Detection footprint dimensions must be positive.");
+  }
+  if (coverage_region.size() < 3U) {
+    throw std::invalid_argument("Coverage region requires at least three points.");
+  }
+  const auto [minimum_y, maximum_y] = bounds(coverage_region, true);
+  // The footprint reaches half its width above the line, so this is the highest
+  // line whose swept band still tops out exactly on the region edge. A region
+  // shorter than the footprint is covered whole by one centred line.
+  const double coordinate = maximum_y - minimum_y <= detection_width ?
+    0.5 * (minimum_y + maximum_y) :
+    maximum_y - 0.5 * detection_width;
+  auto segment = clipScanLine(coverage_region, coordinate, true);
+  const Point2 extension{0.5 * detection_length, 0.0};
+  segment.first = subtract(segment.first, extension);
+  segment.second = add(segment.second, extension);
+  if (!insideConvex(motion_region, segment.first) ||
+    !insideConvex(motion_region, segment.second))
+  {
+    // PROJECT_GUIDE 10.7 requires the finishing line and its transition to lie
+    // in motion_region. Refusing here leaves the caller a task it can execute,
+    // rather than one the executor will reject at goal acceptance.
+    return {};
+  }
+  // Enter from the end nearer the last scan so the transition onto the line is
+  // the short one, not a traverse back across the whole region.
+  const double to_first = std::hypot(segment.first.x - entry.x, segment.first.y - entry.y);
+  const double to_second = std::hypot(segment.second.x - entry.x, segment.second.y - entry.y);
+  if (to_second < to_first) {
+    std::swap(segment.first, segment.second);
+  }
+  return {segment.first, segment.second};
+}
+
 double sampledCoverageRatio(
   const Polygon & coverage_region, const std::vector<Point2> & scan_path,
   double detection_width, double detection_length, int samples_per_axis)

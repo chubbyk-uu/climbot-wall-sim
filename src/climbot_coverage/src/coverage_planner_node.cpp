@@ -110,6 +110,7 @@ public:
     // across the three baselines, against a 95 percent acceptance gate.
     minimum_nominal_coverage_ratio_ = declare_parameter(
       "minimum_nominal_coverage_ratio", 0.965);
+    top_edge_scan_ = declare_parameter("top_edge_scan", "auto");
     validatePhysicalParameters();
     row_spacing_ = detection_width_ * (1.0 - overlap_ratio_);
     // The robot turns in place at waypoints, so the inset must contain its
@@ -165,6 +166,11 @@ private:
     {
       throw std::invalid_argument(
               "minimum_nominal_coverage_ratio must be within (0, 1].");
+    }
+    if (top_edge_scan_ != "auto" && top_edge_scan_ != "always" &&
+      top_edge_scan_ != "never")
+    {
+      throw std::invalid_argument("top_edge_scan must be auto, always, or never.");
     }
     if (robot_length_ <= 0.0 || robot_width_ <= 0.0 || edge_clearance_ < 0.0) {
       throw std::invalid_argument(
@@ -278,11 +284,13 @@ private:
         throw std::invalid_argument("region_type must be rectangle or trapezoid.");
       }
       const auto motion = motionRegion();
-      const auto path = generateFootprintAwareBoustrophedonPath(
+      auto path = generateFootprintAwareBoustrophedonPath(
         region.polygon, motion, detection_width_, detection_length_, row_spacing_,
         sweep_direction_, start_corner_);
-      const double coverage_ratio = sampledCoverageRatio(
+      double coverage_ratio = sampledCoverageRatio(
         region.polygon, path, detection_width_, detection_length_);
+      const std::string finishing_scan =
+        appendTopEdgeFinishingScan(region.polygon, motion, path, coverage_ratio);
       if (coverage_ratio < minimum_nominal_coverage_ratio_) {
         std::ostringstream reason;
         reason << "Nominal detection footprint covers " << coverage_ratio * 100.0 <<
@@ -297,6 +305,9 @@ private:
         " coverage path with " << path.size() << " waypoints; row spacing <= " <<
         row_spacing_ << " m, nominal footprint coverage " << coverage_ratio * 100.0 <<
         "% and safety margin " << safety_margin_ << " m.";
+      if (!finishing_scan.empty()) {
+        status << " " << finishing_scan;
+      }
       if (region.bottom_height_correction > bottom_warning_tolerance_) {
         status << " Bottom clicks differed by " << region.bottom_height_correction <<
           " m and were corrected to their mean height.";
@@ -311,6 +322,44 @@ private:
       publishStatus("Planning failed: " + last_error_);
       return false;
     }
+  }
+
+  // Appends the finishing scan when the mode asks for it, updating the path and
+  // the predicted coverage in place.  Returns what to tell the operator, or an
+  // empty string when nothing was added.
+  std::string appendTopEdgeFinishingScan(
+    const Polygon & coverage_region, const Polygon & motion,
+    std::vector<Point2> & path, double & coverage_ratio)
+  {
+    if (top_edge_scan_ == "never" || path.empty()) {
+      return {};
+    }
+    // A horizontal sweep places its topmost line half a footprint below the top
+    // edge already, so a finishing line there would duplicate it exactly.
+    if (sweep_direction_ != "vertical") {
+      return top_edge_scan_ == "always" ?
+             "Top-edge scan skipped: a horizontal sweep already tops out on the edge." :
+             std::string{};
+    }
+    if (top_edge_scan_ == "auto" && coverage_ratio >= minimum_nominal_coverage_ratio_) {
+      return {};
+    }
+    const auto finishing = makeTopEdgeFinishingScan(
+      coverage_region, motion, detection_width_, detection_length_, path.back());
+    if (finishing.empty()) {
+      return "Top-edge scan skipped: the finishing line does not fit in motion_region.";
+    }
+    const double before = coverage_ratio;
+    std::vector<Point2> extended = path;
+    extended.insert(extended.end(), finishing.begin(), finishing.end());
+    const double after = sampledCoverageRatio(
+      coverage_region, extended, detection_width_, detection_length_);
+    path = std::move(extended);
+    coverage_ratio = after;
+    std::ostringstream note;
+    note << "Added a top-edge finishing scan: nominal coverage " << before * 100.0 <<
+      "% -> " << after * 100.0 << "%.";
+    return note.str();
   }
 
   climbot_interfaces::msg::CoverageTask emptyTask()
@@ -517,6 +566,7 @@ private:
   double detection_length_;
   double overlap_ratio_;
   double minimum_nominal_coverage_ratio_;
+  std::string top_edge_scan_;
   double robot_length_;
   double robot_width_;
   double edge_clearance_;

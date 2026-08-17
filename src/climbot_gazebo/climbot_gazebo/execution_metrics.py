@@ -14,6 +14,28 @@ def _wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
 
 
+def _unit_direction(waypoints, segment):
+    """Return the unit direction of one segment, or None when degenerate."""
+    first, second = waypoints[segment], waypoints[segment + 1]
+    delta_x = second[0] - first[0]
+    delta_y = second[1] - first[1]
+    length = math.hypot(delta_x, delta_y)
+    if length <= 1e-9:
+        return None
+    return (delta_x / length, delta_y / length)
+
+
+def _parallel_to(waypoints, segment, direction, tolerance_deg=2.0):
+    """Return whether a segment runs along direction, either way round."""
+    unit = _unit_direction(waypoints, segment)
+    if unit is None:
+        return False
+    # The magnitude of the 2-D cross product is the sine of the angle between
+    # them, so an anti-parallel line still counts as parallel.
+    return abs(unit[0] * direction[1] - unit[1] * direction[0]) <= math.sin(
+        math.radians(tolerance_deg))
+
+
 def coefficient_of_variation(values):
     """Return population standard deviation divided by the absolute mean."""
     if not values:
@@ -49,12 +71,24 @@ def scan_line_spacing(rows, segment_types, waypoints, scan_type=1):
 
     scans = [index for index, kind in enumerate(segment_types)
              if kind == scan_type]
+    # A top-edge finishing scan (PROJECT_GUIDE 10.7) is a SCAN that runs across
+    # the sweep, not along it. Projecting it onto the sweep normal would report
+    # its whole length as an offset, so spacing is measured only over the lines
+    # this metric is defined for: the parallel ones.
+    crossing = []
+    if scans:
+        sweep = _unit_direction(waypoints, scans[0])
+        if sweep is not None:
+            crossing = [index for index in scans[1:]
+                        if not _parallel_to(waypoints, index, sweep)]
+            scans = [index for index in scans if index not in set(crossing)]
     if len(scans) < 2:
         return {
             'scan_line_offsets_m': [],
             'scan_line_spacing_errors_m': [],
             'maximum_scan_line_offset_m': math.nan,
             'maximum_scan_line_spacing_error_m': math.nan,
+            'crossing_scan_lines': len(crossing),
         }
 
     # Adjacent scan lines run in opposite directions, so each line's own normal
@@ -101,6 +135,7 @@ def scan_line_spacing(rows, segment_types, waypoints, scan_type=1):
             (abs(value) for value in offsets), default=math.nan),
         'maximum_scan_line_spacing_error_m': max(
             (abs(value) for value in errors), default=math.nan),
+        'crossing_scan_lines': len(crossing),
     }
 
 

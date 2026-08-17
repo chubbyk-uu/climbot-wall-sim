@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -252,6 +253,78 @@ TEST(CoverageGeometry, IsExactlyDeterministicForIdenticalInput)
     EXPECT_DOUBLE_EQ(first[index].x, second[index].x);
     EXPECT_DOUBLE_EQ(first[index].y, second[index].y);
   }
+}
+
+TEST(TopEdgeFinishingScan, SweepsTheStripAVerticalPassLeavesAtTheTop)
+{
+  const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 6.5}).polygon;
+  const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
+  const auto line = makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, {3.0, 6.5});
+  ASSERT_EQ(line.size(), 2U);
+  // Half a footprint below the top edge, so the swept band tops out on it.
+  EXPECT_NEAR(line.front().y, 6.25, 1e-9);
+  EXPECT_NEAR(line.back().y, 6.25, 1e-9);
+  EXPECT_NEAR(std::abs(line.back().x - line.front().x), 3.0 + 0.01, 1e-9);
+}
+
+TEST(TopEdgeFinishingScan, ClosesTheGapAVerticalSweepLeaves)
+{
+  const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 6.5}).polygon;
+  const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
+  // A deliberately short footprint along travel leaves a strip at the column
+  // ends, which is exactly the case 10.7 asks the finishing scan to close.
+  auto path = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, 0.5, 0.01, 0.4, "vertical", "lower_left");
+  const double before = sampledCoverageRatio(coverage, path, 0.5, 0.01);
+  const auto line = makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, path.back());
+  ASSERT_EQ(line.size(), 2U);
+  path.insert(path.end(), line.begin(), line.end());
+  EXPECT_GE(sampledCoverageRatio(coverage, path, 0.5, 0.01), before);
+}
+
+TEST(TopEdgeFinishingScan, IsEnteredFromTheEndNearerTheLastScan)
+{
+  const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 6.5}).polygon;
+  const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
+  const auto from_right = makeTopEdgeFinishingScan(
+    coverage, motion, 0.5, 0.01, {3.0, 6.5});
+  const auto from_left = makeTopEdgeFinishingScan(
+    coverage, motion, 0.5, 0.01, {0.0, 6.5});
+  ASSERT_EQ(from_right.size(), 2U);
+  ASSERT_EQ(from_left.size(), 2U);
+  EXPECT_GT(from_right.front().x, from_right.back().x);
+  EXPECT_LT(from_left.front().x, from_left.back().x);
+}
+
+TEST(TopEdgeFinishingScan, RefusesALineThatLeavesMotionRegion)
+{
+  const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 6.5}).polygon;
+  // Too narrow for the line ends, which must sit inside it (10.7).
+  const auto motion = makeRectangle({1.0, 1.0}, {2.0, 7.5}).polygon;
+  EXPECT_TRUE(makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, {3.0, 6.5}).empty());
+}
+
+TEST(TopEdgeFinishingScan, CentresOnARegionShorterThanTheFootprint)
+{
+  const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 2.3}).polygon;
+  const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
+  const auto line = makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, {3.0, 2.3});
+  ASSERT_EQ(line.size(), 2U);
+  EXPECT_NEAR(line.front().y, 2.15, 1e-9);
+}
+
+TEST(TopEdgeFinishingScan, RejectsInvalidFootprints)
+{
+  const auto region = makeRectangle({0.0, 0.0}, {3.0, 4.0}).polygon;
+  EXPECT_THROW(
+    makeTopEdgeFinishingScan(region, region, 0.0, 0.01, {0.0, 0.0}),
+    std::invalid_argument);
+  EXPECT_THROW(
+    makeTopEdgeFinishingScan(region, region, 0.5, -1.0, {0.0, 0.0}),
+    std::invalid_argument);
+  EXPECT_THROW(
+    makeTopEdgeFinishingScan({}, region, 0.5, 0.01, {0.0, 0.0}),
+    std::invalid_argument);
 }
 
 }  // namespace climbot_coverage
