@@ -1,0 +1,7 @@
+# Repository defaults for colcon. Point colcon at this file with:
+#   export COLCON_DEFAULTS_FILE=$(pwd)/colcon_defaults.yaml
+#
+# Tests run in parallel because every launch test now owns a ROS_DOMAIN_ID and
+# therefore its own graph; before that they shared one and could not overlap.
+test:
+  ctest-args: ['-j8']

@@ -128,9 +128,29 @@ source install/setup.bash
 运行全部测试：
 
 ```bash
+export COLCON_DEFAULTS_FILE=$(pwd)/colcon_defaults.yaml   # 打开并行,见下
 colcon test
 colcon test-result --verbose
 ```
+
+`colcon_defaults.yaml` 只做一件事:`ctest-args: ['-j8']`。不设这个环境变量也能跑,
+只是串行,慢六倍。等价写法是 `colcon test --ctest-args -j8`。
+
+**并行是安全的,因为每个 launch 测试独占一个 `ROS_DOMAIN_ID`**(见各包
+`CMakeLists.txt`)。它们都在众所周知的话题名上启动真实节点,共用一张 ROS 图时会
+互相串台——不只是并行才有问题:一个没退干净的残留节点就足以让下一个测试锁到错误
+数据,这在本仓库真实发生过,并且差点被误判成规划器回归。改动构型时**不要让两个
+测试共用同一个域号**。
+
+| 全量耗时 | |
+| --- | ---: |
+| 串行 | `75 s` |
+| 并行 | `42 s` |
+| 并行 + 执行器跑仿真时间 | **`11 s`** |
+
+`test_coverage_executor.py` 曾占全量的一半(`38.8 s`)。它现在让跟踪器运行在
+`use_sim_time` 下、由测试自己发布 `/clock` 并以 `10×` 推进:控制环仍是 `50 Hz`
+**仿真时间**,所有超时也仍以仿真秒计,只是墙钟等待没有了。
 
 ## 快速启动
 

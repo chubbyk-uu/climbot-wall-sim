@@ -20,11 +20,24 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.action import ActionClient
+from rosgraph_msgs.msg import Clock
 
 
 # cmd_vel_watchdog's command_timeout_s default, mirrored here so the plant
 # coasts for exactly as long as the real one would and no longer.
 COMMAND_TIMEOUT_S = 0.40
+
+# The tracker runs on simulated time here and this test owns the clock, so the
+# whole closed loop can be stepped faster than real time without changing what
+# the controller experiences: it still sees a 50 Hz control period and the same
+# timeouts, because those are measured on the clock this file publishes.
+SIM_STEP_S = 0.01
+TIME_SCALE = 10.0
+
+# Every wait below is bounded in simulated seconds, which is what the numbers
+# always meant. This is the wall-clock backstop for the case where the loop
+# itself stops making progress.
+REAL_TIME_MARGIN_S = 15.0
 
 
 @pytest.mark.launch_test
@@ -35,6 +48,8 @@ def generate_test_description():
         executable='line_tracker_node',
         parameters=[{
             'standalone_mode': False,
+            # This file publishes /clock; see SIM_STEP_S.
+            'use_sim_time': True,
             # Keep this integration test tolerant of loaded CI scheduling;
             # stale-input behavior has a dedicated short-timeout launch test.
             'odometry_timeout_s': 2.0,
@@ -100,11 +115,13 @@ class TestCoverageExecutor(unittest.TestCase):
         self.node = rclpy.create_node('coverage_executor_test')
         self.command = Twist()
         self.command_time = None
+        self.sim_time = 0.0
         self.feedback_segments = set()
         self.feedback_state = ExecuteCoverage.Feedback.WAITING
         self.lock = Lock()
         self.publisher = self.node.create_publisher(
             Odometry, '/odometry/filtered', 10)
+        self.clock_publisher = self.node.create_publisher(Clock, '/clock', 10)
         self.node.create_subscription(
             Twist, '/control/cmd_vel', self._command_callback, 10)
         self.client = ActionClient(
@@ -127,7 +144,7 @@ class TestCoverageExecutor(unittest.TestCase):
     def _command_callback(self, message):
         with self.lock:
             self.command = message
-            self.command_time = time.monotonic()
+            self.command_time = self.sim_time
 
     def _feedback_callback(self, message):
         with self.lock:
@@ -143,13 +160,36 @@ class TestCoverageExecutor(unittest.TestCase):
         # turns any pause in the control loop into a silent overshoot rather
         # than the stop the real machine would perform.
         with self.lock:
+            # Simulated time, not wall time: the watchdog this models times
+            # out on the clock the controller runs on, so scaling the run must
+            # not quietly scale its timeout with it.
             stale = (
                 self.command_time is None or
-                time.monotonic() - self.command_time > COMMAND_TIMEOUT_S)
+                self.sim_time - self.command_time > COMMAND_TIMEOUT_S)
             if stale:
                 return (0.0, 0.0, self.feedback_state)
             return (self.command.linear.x, self.command.angular.z,
                     self.feedback_state)
+
+    def _advance(self, step=SIM_STEP_S):
+        """Move the simulated clock one plant step and pace the real loop."""
+        with self.lock:
+            self.sim_time += step
+            now = self.sim_time
+        message = Clock()
+        message.clock.sec = int(now)
+        message.clock.nanosec = int(round((now - int(now)) * 1e9))
+        self.clock_publisher.publish(message)
+        time.sleep(step / TIME_SCALE)
+
+    def _pending(self, future, timeout_s):
+        """Yield while a future is unresolved, bounded in simulated time."""
+        sim_deadline = self.sim_time + timeout_s
+        real_deadline = time.monotonic() + timeout_s / TIME_SCALE + \
+            REAL_TIME_MARGIN_S
+        while (not future.done() and self.sim_time < sim_deadline and
+               time.monotonic() < real_deadline):
+            yield
 
     def _publish_odometry(self, x, y, yaw, linear=0.0, angular=0.0):
         message = Odometry()
@@ -165,24 +205,22 @@ class TestCoverageExecutor(unittest.TestCase):
         x = y = yaw = 0.0
         for _ in range(5):
             self._publish_odometry(x, y, yaw)
-            time.sleep(0.02)
+            self._advance(0.02)
 
         goal = ExecuteCoverage.Goal()
         goal.task = _task()
         send_future = self.client.send_goal_async(
             goal, feedback_callback=self._feedback_callback)
-        deadline = time.monotonic() + 12.0
-        while not send_future.done() and time.monotonic() < deadline:
-            time.sleep(0.01)
+        for _ in self._pending(send_future, 12.0):
+            self._advance()
         self.assertTrue(send_future.done())
         goal_handle = send_future.result()
         self.assertTrue(goal_handle.accepted)
         result_future = goal_handle.get_result_async()
 
-        step = 0.01
-        deadline = time.monotonic() + 40.0
+        step = SIM_STEP_S
         max_linear_while_turning = 0.0
-        while not result_future.done() and time.monotonic() < deadline:
+        for _ in self._pending(result_future, 40.0):
             linear, angular, state = self._current_command()
             if (state in (ExecuteCoverage.Feedback.ALIGN,
                           ExecuteCoverage.Feedback.TURN_SETTLE)
@@ -195,7 +233,7 @@ class TestCoverageExecutor(unittest.TestCase):
             x += linear * math.cos(yaw) * step
             y += linear * math.sin(yaw) * step
             self._publish_odometry(x, y, yaw, linear, angular)
-            time.sleep(step)
+            self._advance(step)
 
         self.assertTrue(result_future.done())
         wrapped = result_future.result()
@@ -212,31 +250,30 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
         for _ in range(5):
             self._publish_odometry(0.0, 0.0, 0.0)
-            time.sleep(0.02)
+            self._advance(0.02)
         goal = ExecuteCoverage.Goal()
         goal.task = _task()
         send_future = self.client.send_goal_async(goal)
-        deadline = time.monotonic() + 12.0
-        while not send_future.done() and time.monotonic() < deadline:
+        for _ in self._pending(send_future, 12.0):
             self._publish_odometry(0.0, 0.0, 0.0)
-            time.sleep(0.01)
+            self._advance()
         goal_handle = send_future.result()
         self.assertTrue(goal_handle.accepted)
         cancel_future = goal_handle.cancel_goal_async()
-        while not cancel_future.done() and time.monotonic() < deadline:
+        for _ in self._pending(cancel_future, 12.0):
             self._publish_odometry(0.0, 0.0, 0.0)
-            time.sleep(0.01)
+            self._advance()
         self.assertTrue(cancel_future.done())
         self.assertGreater(len(cancel_future.result().goals_canceling), 0)
         result_future = goal_handle.get_result_async()
-        while not result_future.done() and time.monotonic() < deadline:
+        for _ in self._pending(result_future, 12.0):
             self._publish_odometry(0.0, 0.0, 0.0)
-            time.sleep(0.01)
+            self._advance()
         wrapped = result_future.result()
         self.assertEqual(wrapped.status, GoalStatus.STATUS_CANCELED)
         self.assertEqual(
             wrapped.result.result_code, ExecuteCoverage.Result.CANCELED)
-        time.sleep(0.05)
+        self._advance(0.05)
         linear, angular, _ = self._current_command()
         self.assertEqual((linear, angular), (0.0, 0.0))
 
@@ -247,7 +284,7 @@ class TestCoverageExecutor(unittest.TestCase):
         feedback_states = []
         for _ in range(5):
             self._publish_odometry(x, y, yaw)
-            time.sleep(0.02)
+            self._advance(0.02)
         goal = ExecuteCoverage.Goal()
         goal.task = _task()
         goal.task.waypoints = goal.task.waypoints[:2]
@@ -263,17 +300,16 @@ class TestCoverageExecutor(unittest.TestCase):
             self._feedback_callback(message)
         send_future = self.client.send_goal_async(
             goal, feedback_callback=record_feedback)
-        deadline = time.monotonic() + 45.0
-        while not send_future.done() and time.monotonic() < deadline:
-            time.sleep(0.01)
+        for _ in self._pending(send_future, 45.0):
+            self._advance()
         self.assertTrue(send_future.done())
         goal_handle = send_future.result()
         self.assertTrue(goal_handle.accepted)
         result_future = goal_handle.get_result_async()
 
-        step = 0.01
+        step = SIM_STEP_S
         first_scan_y = None
-        while not result_future.done() and time.monotonic() < deadline:
+        for _ in self._pending(result_future, 45.0):
             linear, angular, state = self._current_command()
             if state == ExecuteCoverage.Feedback.TRACK_LINE and first_scan_y is None:
                 first_scan_y = y
@@ -284,7 +320,7 @@ class TestCoverageExecutor(unittest.TestCase):
             x += linear * math.cos(yaw) * step
             y += linear * math.sin(yaw) * step
             self._publish_odometry(x, y, yaw, linear, angular)
-            time.sleep(step)
+            self._advance(step)
 
         self.assertTrue(result_future.done())
         result = result_future.result()
@@ -304,23 +340,21 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
         for _ in range(5):
             self._publish_odometry(10.0, 10.0, 0.0)
-            time.sleep(0.02)
+            self._advance(0.02)
 
         goal = ExecuteCoverage.Goal()
         goal.task = _task()
         goal.task.task_id = 'outside-motion-region-' + 'x' * 48
         send_future = self.client.send_goal_async(goal)
-        deadline = time.monotonic() + 12.0
-        while not send_future.done() and time.monotonic() < deadline:
-            time.sleep(0.01)
+        for _ in self._pending(send_future, 12.0):
+            self._advance()
         self.assertTrue(send_future.done())
         handle = send_future.result()
         self.assertTrue(handle.accepted)
 
         result_future = handle.get_result_async()
-        deadline = time.monotonic() + 12.0
-        while not result_future.done() and time.monotonic() < deadline:
-            time.sleep(0.01)
+        for _ in self._pending(result_future, 12.0):
+            self._advance()
         self.assertTrue(result_future.done())
         self.assertEqual(
             result_future.result().result.result_code,
@@ -329,13 +363,12 @@ class TestCoverageExecutor(unittest.TestCase):
         # The server is still healthy and no longer holds the released task.
         for _ in range(5):
             self._publish_odometry(0.0, 0.0, 0.0)
-            time.sleep(0.02)
+            self._advance(0.02)
         second = ExecuteCoverage.Goal()
         second.task = _task()
         second_future = self.client.send_goal_async(second)
-        deadline = time.monotonic() + 12.0
-        while not second_future.done() and time.monotonic() < deadline:
-            time.sleep(0.01)
+        for _ in self._pending(second_future, 12.0):
+            self._advance()
         self.assertTrue(second_future.done())
         self.assertTrue(second_future.result().accepted)
         second_future.result().cancel_goal_async()
@@ -349,7 +382,7 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
         for _ in range(5):
             self._publish_odometry(0.50, 0.10, 0.0)
-            time.sleep(0.02)
+            self._advance(0.02)
 
         goal = ExecuteCoverage.Goal()
         goal.task = _task()
@@ -364,18 +397,16 @@ class TestCoverageExecutor(unittest.TestCase):
                 polygon.points.append(point)
 
         send_future = self.client.send_goal_async(goal)
-        deadline = time.monotonic() + 12.0
-        while not send_future.done() and time.monotonic() < deadline:
-            time.sleep(0.01)
+        for _ in self._pending(send_future, 12.0):
+            self._advance()
         self.assertTrue(send_future.done())
         handle = send_future.result()
         self.assertTrue(handle.accepted)
 
         result_future = handle.get_result_async()
-        deadline = time.monotonic() + 15.0
-        while not result_future.done() and time.monotonic() < deadline:
+        for _ in self._pending(result_future, 15.0):
             self._publish_odometry(0.50, 0.10, 0.0)
-            time.sleep(0.02)
+            self._advance(0.02)
         self.assertTrue(result_future.done())
         result = result_future.result().result
         self.assertEqual(
@@ -388,8 +419,7 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
         goal = ExecuteCoverage.Goal()
         send_future = self.client.send_goal_async(goal)
-        deadline = time.monotonic() + 12.0
-        while not send_future.done() and time.monotonic() < deadline:
-            time.sleep(0.01)
+        for _ in self._pending(send_future, 12.0):
+            self._advance()
         self.assertTrue(send_future.done())
         self.assertFalse(send_future.result().accepted)
