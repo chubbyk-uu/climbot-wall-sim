@@ -15,7 +15,7 @@
 | `normal_loads_after_p2.csv` | 历史对照 | P2 调整后的法向载荷 |
 | `normal_loads_after_base_link_move.csv` | 当前几何参考 | `base_link` 移至主动轮轴中点后的七工况载荷 |
 | `turn_slip.csv` | 当前参考 | 多角度、多角速度原地转向下滑结果 |
-| `wall_slip_trajectory.csv` | 当前正式基线 | 10209 行；真值时间戳去重；包含真值与融合航向 |
+| `wall_slip_trajectory.csv.gz` | 当前正式基线 | 10209 行；真值时间戳去重；包含真值与融合航向 |
 | `wall_slip.png` | 当前正式基线 | 由当前侧滑轨迹 CSV 生成 |
 | `coverage_horizontal_2026-08-17_*` | 阶段 F 正式结果 | 大型横向矩形，4 条扫描线、7 段 |
 | `coverage_vertical_2026-08-17_*` | 阶段 F 正式结果 | 大型竖向矩形，8 条扫描线、15 段 |
@@ -23,10 +23,34 @@
 | `coverage_trapezoid_vertical_2026-08-17_*` | 阶段 F 正式结果 | 同一等腰梯形竖向扫描，19 段 |
 | `slip_compensation_off_2026-08-17_*` | §14.4 正式结果 | 横轨闭环关闭的三次水平直线 |
 | `slip_compensation_on_2026-08-17_*` | §14.4 正式结果 | 同一仿真、同一墙面上横轨闭环开启的三次水平直线 |
-| `coverage_*_2026-08-14_*` | 历史对照 | 同三个工况的上一版结果，`source_modified=true`，仅供对比趋势 |
+| `coverage_*_2026-08-14_summary.json` | 历史对照 | 同三个工况的上一版指标，`source_modified=true`，仅供对比趋势 |
 
-每组 `*` 包含一个 `_trajectory.csv`（逐采样真值、融合位姿、动态参考、状态和横轨
-误差）和一个 `_summary.json`（Action 结果、逐段误差、覆盖率和 `provenance`）。
+每组 `*` 包含一个 `_trajectory.csv.gz`（逐采样真值、融合位姿、动态参考、状态和
+横轨误差）和一个 `_summary.json`（Action 结果、逐段误差、覆盖率和 `provenance`）。
+
+## 归档格式
+
+轨迹以 **gzip 压缩的 CSV**（`.csv.gz`）保存，数值保留到 **6 位小数**。两项合计
+把归档压到原来的十分之一（`24.6 MB → 2.4 MB`）：
+
+| 处理 | 效果 |
+| --- | ---: |
+| 数值取到 `1e-6` | `1.93×` |
+| gzip | 再 `4.1×` |
+| 合计 | `10.1×` |
+
+`1e-6` 是米、弧度、秒下的微米/微弧度/微秒，而 §14.3 的验收阈值全部以毫米和度
+表述——原先写的 17 位有效数字里，第 6 位小数之后是浮点往返表示的噪声，不是测量。
+用压缩后的 `wall_slip_trajectory.csv.gz` 重新出图，PNG 与原图**逐字节相同**
+（`md5 17be4409…`）。
+
+`climbot_gazebo.trajectory_io` 按文件名后缀决定是否压缩，读写两端都走它，因此
+`plot_wall_slip.py` 之类的工具直接传 `.csv.gz` 即可，不需要先解压。
+
+2026-08-14 那三份的轨迹 CSV 已删除，只保留摘要 JSON：它们已被同工况、同参数、
+提交更干净的 08-17 版本取代，而摘要里就有全部指标和 `provenance`，对照趋势够用。
+**注意删除不会缩小 `.git`**——那些文件仍在历史里，回收需要改写历史，本仓库已推送
+故不做。这次调整的意义是止损：以后每次正式实验不再往仓库里加约 7 MB。
 
 ## 覆盖基线（四工况）
 
@@ -90,7 +114,7 @@ ros2 launch climbot_control coverage_executor.launch.py use_sim_time:=true
 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
   -p use_sim_time:=true -p case:=planned_task \
   -p startup_timeout_s:=30.0 -p execution_timeout_s:=600.0 \
-  -p trajectory_csv:=results/coverage_horizontal_2026-08-17_trajectory.csv \
+  -p trajectory_csv:=results/coverage_horizontal_2026-08-17_trajectory.csv.gz \
   -p summary_json:=results/coverage_horizontal_2026-08-17_summary.json
 ```
 
@@ -160,7 +184,7 @@ ros2 launch climbot_gazebo climbot_wall.launch.py \
 # 终端 2，阶段一：补偿关闭
 ros2 run climbot_gazebo evaluate_slip_compensation.py --ros-args \
   -p use_sim_time:=true -p mode:=open_loop \
-  -p trajectory_csv:=results/slip_compensation_off_2026-08-17_trajectory.csv \
+  -p trajectory_csv:=results/slip_compensation_off_2026-08-17_trajectory.csv.gz \
   -p summary_json:=results/slip_compensation_off_2026-08-17_summary.json
 
 # 阶段一结束后再启动跟踪器和管理器
@@ -170,7 +194,7 @@ ros2 launch climbot_control coverage_executor.launch.py use_sim_time:=true
 ros2 run climbot_gazebo evaluate_slip_compensation.py --ros-args \
   -p use_sim_time:=true -p mode:=compensated \
   -p reference_summary_json:=results/slip_compensation_off_2026-08-17_summary.json \
-  -p trajectory_csv:=results/slip_compensation_on_2026-08-17_trajectory.csv \
+  -p trajectory_csv:=results/slip_compensation_on_2026-08-17_trajectory.csv.gz \
   -p summary_json:=results/slip_compensation_on_2026-08-17_summary.json
 ```
 
@@ -214,9 +238,9 @@ ros2 run climbot_gazebo calibrate_wall_slip.py --ros-args \
   -p static_duration_s:=30.0 \
   -p drive_duration_s:=8.0 \
   -p horizontal_repeatability_max_cv:=0.05 \
-  -p trajectory_csv:=results/wall_slip_trajectory.csv
+  -p trajectory_csv:=results/wall_slip_trajectory.csv.gz
 
-ros2 run climbot_gazebo plot_wall_slip.py results/wall_slip_trajectory.csv
+ros2 run climbot_gazebo plot_wall_slip.py results/wall_slip_trajectory.csv.gz
 ```
 
 命令在水平下降比总体变异系数超过阈值时返回失败，但仍会先保存 CSV 供诊断。

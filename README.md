@@ -306,7 +306,7 @@ source install/setup.bash
 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
   -p use_sim_time:=true -p case:=planned_task \
   -p startup_timeout_s:=20.0 -p execution_timeout_s:=600.0 \
-  -p trajectory_csv:=results/coverage_trajectory.csv \
+  -p trajectory_csv:=results/coverage_trajectory.csv.gz \
   -p summary_json:=results/coverage_summary.json
 ```
 

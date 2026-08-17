@@ -3,7 +3,8 @@
 
 import argparse
 from collections import defaultdict
-import csv
+
+from climbot_gazebo.trajectory_io import read_trajectory as read_rows
 
 import matplotlib
 from matplotlib.patches import Rectangle
@@ -23,11 +24,10 @@ ROBOT_WIDTH_M = 0.44
 def read_trajectory(path):
     """Group the recorded samples by phase label."""
     phases = defaultdict(list)
-    with open(path) as handle:
-        for row in csv.DictReader(handle):
-            phases[row['phase']].append((
-                float(row['time_s']), float(row['forward_m']),
-                float(row['up_m']), float(row['yaw_deg'])))
+    for row in read_rows(path):
+        phases[row['phase']].append((
+            float(row['time_s']), float(row['forward_m']),
+            float(row['up_m']), float(row['yaw_deg'])))
     return phases
 
 

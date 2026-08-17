@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Measure static, lateral, and longitudinal wall-slip characteristics."""
 
-import csv
 import math
 import os
 import time
@@ -15,6 +14,7 @@ from climbot_description.geometry import (
 from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.execution_metrics import coefficient_of_variation
 from climbot_gazebo.safe_stop import install_stop_on_termination
+from climbot_gazebo.trajectory_io import write_trajectory
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import rclpy
@@ -155,18 +155,13 @@ class WallSlipCalibrator(Node):
         path = str(self.get_parameter('trajectory_csv').value)
         if not path or not self._trajectory:
             return
-        directory = os.path.dirname(path)
-        if directory:
-            os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', newline='') as handle:
-            writer = csv.writer(handle, lineterminator='\n')
-            writer.writerow([
-                'phase', 'time_s', 'forward_m', 'up_m', 'yaw_deg',
-                'filtered_yaw_deg'])
-            for row in self._trajectory:
-                writer.writerow(
-                    [row[0]] + ['%.6f' % value for value in row[1:]])
-        self.get_logger().info('Wrote %s' % os.path.abspath(path))
+        fields = [
+            'phase', 'time_s', 'forward_m', 'up_m', 'yaw_deg',
+            'filtered_yaw_deg']
+        written = write_trajectory(
+            path, fields,
+            [dict(zip(fields, row)) for row in self._trajectory])
+        self.get_logger().info('Wrote %s' % written)
 
     def _delta(self, start, end):
         start_position = self._wall_position(start)

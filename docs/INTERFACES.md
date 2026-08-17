@@ -139,7 +139,13 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 超时或异常时同样落盘，摘要里 `completed=false`、`passed=false` 并记录
 `failure_reason`，因此最需要现场数据的失败运行不会丢数据。摘要还带 `provenance`
 段，记录代码提交、分支、`src` 树是否有未提交改动、评价器全部参数和执行任务的
-名义几何，满足 §12 与 §14.6 对可追溯性的要求。评价器同时按冻结后的动态直线参考
+名义几何，满足 §12 与 §14.6 对可追溯性的要求。
+
+轨迹 CSV 由 `climbot_gazebo.trajectory_io` 写出，**文件名以 `.gz` 结尾就自动 gzip
+压缩**，数值一律取到 `1e-6`（米/弧度/秒下的微米、微弧度、微秒）。§14.3 的验收
+阈值都以毫米和度表述，原先写满 17 位有效数字只是把浮点往返噪声也存了下来；两项
+合计使归档缩小约 `10×`。读取端用同一模块的 `read_trajectory()`，`.csv` 和
+`.csv.gz` 都能直接读，不需要先解压。评价器同时按冻结后的动态直线参考
 检查终点位置和转向结束航向，默认门限分别为 `maximum_endpoint_error_m=0.030`、
 `maximum_turn_end_heading_error_deg=2.0`；水平 `SCAN` 的首末真值高度差默认不得超过
 `maximum_horizontal_height_drift_m=0.030`。

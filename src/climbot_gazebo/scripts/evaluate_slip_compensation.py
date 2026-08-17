@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Measure a horizontal line with cross-track compensation off, then on."""
 
-import csv
 from datetime import datetime
 from datetime import timezone
 import json
@@ -18,6 +17,7 @@ from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.execution_metrics import coefficient_of_variation
 from climbot_gazebo.execution_metrics import count_visible_reversals
 from climbot_gazebo.safe_stop import install_stop_on_termination
+from climbot_gazebo.trajectory_io import write_trajectory
 from climbot_interfaces.action import ExecuteCoverage
 from climbot_interfaces.msg import CoverageTask
 from geometry_msgs.msg import Point32
@@ -531,16 +531,9 @@ class SlipCompensationEvaluator(Node):
     def _write_outputs(self):
         csv_path = str(self.get_parameter('trajectory_csv').value)
         if csv_path and self.trajectory:
-            directory = os.path.dirname(csv_path)
-            if directory:
-                os.makedirs(directory, exist_ok=True)
-            with open(csv_path, 'w', newline='') as handle:
-                writer = csv.DictWriter(
-                    handle, fieldnames=list(self.trajectory[0]),
-                    lineterminator='\n')
-                writer.writeheader()
-                writer.writerows(self.trajectory)
-            self.get_logger().info('Wrote %s' % os.path.abspath(csv_path))
+            written = write_trajectory(
+                csv_path, list(self.trajectory[0]), self.trajectory)
+            self.get_logger().info('Wrote %s' % written)
         json_path = str(self.get_parameter('summary_json').value)
         if json_path:
             directory = os.path.dirname(json_path)

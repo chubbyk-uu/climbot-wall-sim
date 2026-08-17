@@ -2,7 +2,6 @@
 """Execute compact coverage cases and evaluate each dynamic line with truth."""
 
 import copy
-import csv
 from datetime import datetime
 from datetime import timezone
 import json
@@ -19,6 +18,7 @@ from climbot_gazebo.coverage_metrics import footprint_coverage
 from climbot_gazebo.execution_metrics import count_visible_reversals
 from climbot_gazebo.execution_metrics import execution_quality
 from climbot_gazebo.execution_metrics import scan_line_spacing
+from climbot_gazebo.trajectory_io import write_trajectory
 from climbot_interfaces.action import ExecuteCoverage
 from climbot_interfaces.msg import CoverageTask
 from geometry_msgs.msg import Point32
@@ -380,15 +380,9 @@ class CoverageExecutionEvaluator(Node):
         """Write the full task trajectory when an output path is configured."""
         if not path:
             return
-        expanded = os.path.abspath(os.path.expanduser(path))
-        os.makedirs(os.path.dirname(expanded), exist_ok=True)
         fields = list(rows[0].keys()) if rows else [
             'time_s', 'segment', 'segment_type', 'state']
-        with open(expanded, 'w', newline='', encoding='utf-8') as handle:
-            writer = csv.DictWriter(
-                handle, fieldnames=fields, lineterminator='\n')
-            writer.writeheader()
-            writer.writerows(rows)
+        write_trajectory(path, fields, rows)
 
     @staticmethod
     def _write_json(path, values):
