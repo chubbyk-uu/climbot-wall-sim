@@ -1007,7 +1007,32 @@ private:
         arc_entry_lookahead_, arc_entry_heading_gain_, arc_entry_max_heading_,
         arc_entry_max_angular_, gravity_feedforward);
       if (std::abs(arc_command.cross) <= arc_entry_finish_offset_) {
-        if (!lockParallelScanLine(arc_command.cross, arc_command.along)) {
+        // The line is frozen here and an in-place alignment follows, so that
+        // turn's drop has to be in the offset or the robot ends up below the
+        // line it just chose. Measured before this: the arc left the robot
+        // 4.2 deg off the line it was about to freeze, and the alignment then
+        // dropped it 2.1 mm.
+        //
+        // Not solved with a heading condition on arc_command.heading_error:
+        // that error is measured against the arc's own moving target, which
+        // carries the same atan2(-cross, lookahead) term, so it is small by
+        // construction and says nothing about the turn still to come. The
+        // angle that matters is against the line about to be frozen.
+        const double line_yaw = std::atan2(
+          nominal_scan_end_.y - nominal_scan_start_.y,
+          nominal_scan_end_.x - nominal_scan_start_.x);
+        const double remaining_turn = std::abs(
+          climbot_control::wrapAngle(
+            line_yaw + gravity_feedforward - pose_.yaw)) * 180.0 / std::acos(-1.0);
+        const double drop = turn_slip_per_degree_ * remaining_turn;
+        // Only the part across the line moves it; along it the drop merely
+        // starts the scan slightly further on.
+        const double gravity_norm = std::hypot(
+          limits_.gravity_direction.x, limits_.gravity_direction.y);
+        const double reserve = gravity_norm <= 1e-9 ? 0.0 :
+          drop * (limits_.gravity_direction.x * nominal_normal.x +
+          limits_.gravity_direction.y * nominal_normal.y) / gravity_norm;
+        if (!lockParallelScanLine(arc_command.cross + reserve, arc_command.along)) {
           return;
         }
         motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
