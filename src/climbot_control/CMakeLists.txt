@@ -54,16 +54,21 @@ if(BUILD_TESTING)
   target_link_libraries(test_segment_duration line_tracker)
   target_link_libraries(test_line_tracker line_tracker)
   target_include_directories(test_line_tracker PRIVATE include)
-  add_launch_test(test/test_cmd_vel_watchdog_node.py TIMEOUT 30)
-  add_launch_test(test/test_line_tracker_alignment.py TIMEOUT 30)
-  add_launch_test(test/test_line_tracker_completion.py TIMEOUT 30)
-  add_launch_test(test/test_line_tracker_node.py TIMEOUT 30)
-  add_launch_test(test/test_coverage_executor.py TIMEOUT 120)
-  add_launch_test(test/test_coverage_manager.py TIMEOUT 30)
-  add_launch_test(test/test_coverage_progress.py TIMEOUT 60)
-  add_launch_test(test/test_coverage_manager_states.py TIMEOUT 120)
-  add_launch_test(test/test_coverage_manager_executor_loss.py TIMEOUT 120)
-  add_launch_test(test/test_coverage_executor_config.py TIMEOUT 60)
+  # Every launch test gets its own ROS_DOMAIN_ID. They all start real nodes on
+  # well-known topic names, colcon runs packages in parallel, and a stray node
+  # outliving its test is enough to make the next one latch the wrong data -
+  # which has already been mistaken here for a regression in the planner.
+  # Unique domains also let CTEST_PARALLEL_LEVEL be raised safely.
+  add_launch_test(test/test_cmd_vel_watchdog_node.py TIMEOUT 30 ENV ROS_DOMAIN_ID=41)
+  add_launch_test(test/test_line_tracker_alignment.py TIMEOUT 30 ENV ROS_DOMAIN_ID=42)
+  add_launch_test(test/test_line_tracker_completion.py TIMEOUT 30 ENV ROS_DOMAIN_ID=43)
+  add_launch_test(test/test_line_tracker_node.py TIMEOUT 30 ENV ROS_DOMAIN_ID=44)
+  add_launch_test(test/test_coverage_executor.py TIMEOUT 120 ENV ROS_DOMAIN_ID=45)
+  add_launch_test(test/test_coverage_manager.py TIMEOUT 30 ENV ROS_DOMAIN_ID=46)
+  add_launch_test(test/test_coverage_progress.py TIMEOUT 60 ENV ROS_DOMAIN_ID=47)
+  add_launch_test(test/test_coverage_manager_states.py TIMEOUT 120 ENV ROS_DOMAIN_ID=48)
+  add_launch_test(test/test_coverage_manager_executor_loss.py TIMEOUT 120 ENV ROS_DOMAIN_ID=49)
+  add_launch_test(test/test_coverage_executor_config.py TIMEOUT 60 ENV ROS_DOMAIN_ID=50)
 endif()
 
 ament_export_include_directories(include)

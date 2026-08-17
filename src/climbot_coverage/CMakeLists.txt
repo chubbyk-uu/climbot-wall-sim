@@ -44,10 +44,15 @@ if(BUILD_TESTING)
   ament_add_gtest(test_coverage_geometry test/test_coverage_geometry.cpp)
   target_link_libraries(test_coverage_geometry coverage_geometry)
   target_include_directories(test_coverage_geometry PRIVATE include)
-  add_launch_test(test/test_coverage_planner_node.py TIMEOUT 30)
-  add_launch_test(test/test_coverage_planner_failure.py TIMEOUT 30)
-  add_launch_test(test/test_coverage_planner_rviz.py TIMEOUT 60)
-  add_launch_test(test/test_coverage_top_edge_scan.py TIMEOUT 90)
+  # Every launch test gets its own ROS_DOMAIN_ID. They all start real nodes on
+  # well-known topic names, colcon runs packages in parallel, and a stray node
+  # outliving its test is enough to make the next one latch the wrong data -
+  # which has already been mistaken here for a regression in the planner.
+  # Unique domains also let CTEST_PARALLEL_LEVEL be raised safely.
+  add_launch_test(test/test_coverage_planner_node.py TIMEOUT 30 ENV ROS_DOMAIN_ID=61)
+  add_launch_test(test/test_coverage_planner_failure.py TIMEOUT 30 ENV ROS_DOMAIN_ID=62)
+  add_launch_test(test/test_coverage_planner_rviz.py TIMEOUT 60 ENV ROS_DOMAIN_ID=63)
+  add_launch_test(test/test_coverage_top_edge_scan.py TIMEOUT 90 ENV ROS_DOMAIN_ID=64)
   ament_add_pytest_test(test_rviz_config test/test_rviz_config.py TIMEOUT 30)
 endif()
 
