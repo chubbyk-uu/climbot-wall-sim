@@ -53,6 +53,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_planner_failure.py TIMEOUT 30 ENV ROS_DOMAIN_ID=62)
   add_launch_test(test/test_coverage_planner_rviz.py TIMEOUT 60 ENV ROS_DOMAIN_ID=63)
   add_launch_test(test/test_coverage_top_edge_scan.py TIMEOUT 90 ENV ROS_DOMAIN_ID=64)
+  add_launch_test(test/test_coverage_configure.py TIMEOUT 90 ENV ROS_DOMAIN_ID=65)
   ament_add_pytest_test(test_rviz_config test/test_rviz_config.py TIMEOUT 30)
 endif()
 

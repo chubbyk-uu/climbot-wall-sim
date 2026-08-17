@@ -259,8 +259,33 @@ ros2 topic echo /coverage/manager_status
 
 #### 切换区域形状与扫描方向
 
-`region_type` 和 `sweep_direction` 只在规划器启动时读取一次，`ros2 param set`
-改了不生效，换构型必须重启 launch：
+面板上的 **Region** 和 **Sweep** 两个下拉框直接切换,不用重启 launch。切换后若点数
+够就立即重新规划,不够就在 **Points** 一行显示还差几个点,同时把 Replan 置灰。
+
+几条防呆约定,都由规划器保证而不是界面自己判断:
+
+- **切形状不会丢点**。矩形选好 2 点再切梯形,那 2 点留着,只等第 3 点——A、B 在两种
+  形状里是同一个角。切回矩形立刻又能规划。
+- **梯形 3 点切回矩形**会用前 2 点,并在状态里说明第 3 点被忽略。
+- **没选点就切构型**只改构型,不会规划出一块没人选过的区域。
+- **请求被拒时下拉框弹回**规划器实际生效的值,不会停在一个规划器从未同意的显示上。
+- 执行中切换只影响**下一次**预览,不动正在跑的任务。
+
+命令行等价写法:
+
+```bash
+ros2 service call /coverage/configure climbot_interfaces/srv/ConfigureCoverage \
+  "{region_type: trapezoid, sweep_direction: vertical}"
+
+# 只改一项:留空的字段保持不变
+ros2 service call /coverage/configure climbot_interfaces/srv/ConfigureCoverage \
+  "{sweep_direction: horizontal}"
+
+# 当前构型(latched,后启动的客户端也能拿到)
+ros2 topic echo /coverage/config
+```
+
+启动时仍可用 launch 参数指定初值：
 
 ```bash
 # 矩形 + 竖向扫描（点 2 下）

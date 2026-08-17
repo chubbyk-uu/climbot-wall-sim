@@ -11,7 +11,9 @@
 #include <vector>
 
 #include "climbot_coverage/coverage_geometry.hpp"
+#include "climbot_interfaces/msg/coverage_config.hpp"
 #include "climbot_interfaces/msg/coverage_task.hpp"
+#include "climbot_interfaces/srv/configure_coverage.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -125,6 +127,8 @@ public:
       "/coverage/markers", rclcpp::QoS(1).transient_local());
     status_publisher_ = create_publisher<std_msgs::msg::String>(
       "/coverage/status", rclcpp::QoS(1).transient_local());
+    config_publisher_ = create_publisher<climbot_interfaces::msg::CoverageConfig>(
+      "/coverage/config", rclcpp::QoS(1).reliable().transient_local());
     clicked_point_subscription_ = create_subscription<geometry_msgs::msg::PointStamped>(
       "/clicked_point", 10,
       std::bind(&CoveragePlannerNode::clickedPointCallback, this, std::placeholders::_1));
@@ -138,6 +142,12 @@ public:
       std::bind(
         &CoveragePlannerNode::replan, this, std::placeholders::_1,
         std::placeholders::_2));
+    configure_service_ = create_service<climbot_interfaces::srv::ConfigureCoverage>(
+      "/coverage/configure",
+      std::bind(
+        &CoveragePlannerNode::configure, this, std::placeholders::_1,
+        std::placeholders::_2));
+    publishConfig();
 
     if (input_mode_ == "parameters") {
       planFromPoints();
@@ -212,7 +222,7 @@ private:
         message->header.frame_id + ".");
       return;
     }
-    const std::size_t required_points = region_type_ == "trapezoid" ? 3U : 2U;
+    const std::size_t required_points = requiredPoints();
     if (clicked_points_.size() >= required_points) {
       clicked_points_.clear();
     }
@@ -228,12 +238,127 @@ private:
       message->point.x << ", " << message->point.y << ").";
     publishStatus(accepted.str());
     if (clicked_points_.size() == required_points) {
-      lower_left_ = clicked_points_[0];
-      upper_right_ = clicked_points_[1];
-      if (required_points == 3U) {
-        lower_right_ = clicked_points_[2];
-      }
+      applySelectedPoints();
       planFromPoints();
+    }
+    publishConfig();
+  }
+
+  std::size_t requiredPoints() const
+  {
+    return region_type_ == "trapezoid" ? 3U : 2U;
+  }
+
+  // The single place that decides whether a replan can be accepted, so the
+  // panel's greying, the service response and the replan guard can never
+  // disagree with each other.
+  std::string planBlockedReason() const
+  {
+    if (input_mode_ != "rviz") {
+      return {};
+    }
+    const std::size_t required = requiredPoints();
+    if (clicked_points_.size() < required) {
+      std::ostringstream reason;
+      reason << "Select " << (required - clicked_points_.size()) << " more point" <<
+        (required - clicked_points_.size() == 1U ? "" : "s") << " for a " <<
+        region_type_ << " (" << clicked_points_.size() << " of " << required << ").";
+      return reason.str();
+    }
+    return {};
+  }
+
+  climbot_interfaces::msg::CoverageConfig currentConfig(const std::string & note) const
+  {
+    climbot_interfaces::msg::CoverageConfig config;
+    config.header.stamp = now();
+    config.header.frame_id = frame_id_;
+    config.region_type = region_type_;
+    config.sweep_direction = sweep_direction_;
+    config.input_mode = input_mode_;
+    config.required_points = static_cast<uint8_t>(requiredPoints());
+    config.selected_points = static_cast<uint8_t>(
+      std::min<std::size_t>(clicked_points_.size(), 255U));
+    const std::string blocked = planBlockedReason();
+    config.can_plan = blocked.empty();
+    config.message = note.empty() ? blocked : note;
+    return config;
+  }
+
+  void publishConfig(const std::string & note = {})
+  {
+    config_publisher_->publish(currentConfig(note));
+  }
+
+  void configure(
+    const std::shared_ptr<climbot_interfaces::srv::ConfigureCoverage::Request> request,
+    std::shared_ptr<climbot_interfaces::srv::ConfigureCoverage::Response> response)
+  {
+    // An empty field means "leave this one alone", so a panel changing only the
+    // sweep direction cannot clobber a shape someone else just set.
+    const std::string region = request->region_type.empty() ?
+      region_type_ : request->region_type;
+    const std::string sweep = request->sweep_direction.empty() ?
+      sweep_direction_ : request->sweep_direction;
+    if (region != "rectangle" && region != "trapezoid") {
+      response->success = false;
+      response->message = "region_type must be rectangle or trapezoid, received '" +
+        region + "'.";
+      response->config = currentConfig(response->message);
+      return;
+    }
+    if (sweep != "horizontal" && sweep != "vertical") {
+      response->success = false;
+      response->message = "sweep_direction must be horizontal or vertical, received '" +
+        sweep + "'.";
+      response->config = currentConfig(response->message);
+      return;
+    }
+    const bool unchanged = region == region_type_ && sweep == sweep_direction_;
+    region_type_ = region;
+    sweep_direction_ = sweep;
+
+    std::ostringstream note;
+    note << (unchanged ? "Configuration unchanged: " : "Configuration set to ") <<
+      sweep << " " << region << ".";
+    // Points are never discarded by a shape change. A and B mean the same
+    // corner in both shapes, so switching to the trapezoid keeps them and only
+    // waits for C, and switching back makes the extra point surplus rather
+    // than wrong. Clearing here would punish a mis-click on a drop-down.
+    const std::string blocked = planBlockedReason();
+    if (!blocked.empty()) {
+      note << " " << blocked;
+      response->success = true;
+      response->message = note.str();
+      response->config = currentConfig(response->message);
+      publishConfig(response->message);
+      publishStatus(response->message);
+      return;
+    }
+    if (input_mode_ == "rviz" && clicked_points_.size() > requiredPoints()) {
+      note << " Using the first " << requiredPoints() << " of " <<
+        clicked_points_.size() << " selected points.";
+    }
+    if (!unchanged || input_mode_ != "rviz") {
+      applySelectedPoints();
+      planFromPoints();
+    }
+    response->success = true;
+    response->message = note.str() + " " + (last_error_.empty() ?
+      std::string("Preview regenerated.") : "Planning failed: " + last_error_);
+    response->config = currentConfig(response->message);
+    publishConfig(response->message);
+  }
+
+  void applySelectedPoints()
+  {
+    if (input_mode_ != "rviz" || clicked_points_.size() < requiredPoints()) {
+      return;
+    }
+    lower_left_ = clicked_points_[0];
+    upper_right_ = clicked_points_[1];
+    if (requiredPoints() == 3U) {
+      lower_right_ = clicked_points_[2];
     }
   }
 
@@ -247,6 +372,7 @@ private:
     response->success = true;
     response->message = "Clicked points cleared.";
     publishStatus(response->message);
+    publishConfig();
   }
 
   void replan(
@@ -257,19 +383,20 @@ private:
     // points are clicked, and clearing the selection does not reset them.
     // Replanning from those would hand the operator a startable task over a
     // region nobody selected.
-    if (input_mode_ == "rviz") {
-      const std::size_t required_points = region_type_ == "trapezoid" ? 3U : 2U;
-      if (clicked_points_.size() < required_points) {
-        response->success = false;
-        response->message = "Select " + std::to_string(required_points) +
-          " region points before replanning; " +
-          std::to_string(clicked_points_.size()) + " are set.";
-        publishStatus(response->message);
-        return;
-      }
+    const std::string blocked = planBlockedReason();
+    if (!blocked.empty()) {
+      response->success = false;
+      response->message = blocked;
+      publishStatus(response->message);
+      publishConfig(response->message);
+      return;
     }
+    // A shape change can leave the newest clicks unapplied, so adopt them here
+    // rather than replanning the region a previous shape happened to store.
+    applySelectedPoints();
     response->success = planFromPoints();
     response->message = response->success ? "Coverage path regenerated." : last_error_;
+    publishConfig();
   }
 
   bool planFromPoints()
@@ -556,6 +683,8 @@ private:
   std::string frame_id_;
   std::string task_id_;
   std::string region_type_;
+  rclcpp::Publisher<climbot_interfaces::msg::CoverageConfig>::SharedPtr config_publisher_;
+  rclcpp::Service<climbot_interfaces::srv::ConfigureCoverage>::SharedPtr configure_service_;
   std::string input_mode_;
   std::string sweep_direction_;
   std::string start_corner_;

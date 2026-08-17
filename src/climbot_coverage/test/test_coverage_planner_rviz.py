@@ -132,7 +132,11 @@ class TestCoveragePlannerRvizInput(unittest.TestCase):
         # would hand the operator a startable task over an unselected region.
         refused = self._call(self.replan_client)
         self.assertFalse(refused.success)
-        self.assertIn('before replanning', refused.message)
+        # The reason is worded once, in the planner, and reused by the replan
+        # guard, the configure service and the panel's greying, so it names the
+        # shape and the shortfall rather than the action that asked.
+        self.assertIn('2 more points', refused.message)
+        self.assertIn('rectangle', refused.message)
         self.assertEqual(len(self.task.waypoints), 0)
 
         self._wait_for(

@@ -8,6 +8,7 @@
 #include <QFontMetrics>
 #include <QFrame>
 #include <QGridLayout>
+#include <QSignalBlocker>
 #include <QScrollArea>
 #include <QSizePolicy>
 #include <QVBoxLayout>
@@ -109,6 +110,18 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   progress_bar_->setValue(0);
   progress_bar_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
 
+  // The drop-downs carry the value, not the display text, so a translated
+  // build still sends the planner the words it validates.
+  region_box_ = new QComboBox();
+  region_box_->setObjectName("region_box");
+  region_box_->addItem(tr("Rectangle"), QStringLiteral("rectangle"));
+  region_box_->addItem(tr("Trapezoid"), QStringLiteral("trapezoid"));
+  sweep_box_ = new QComboBox();
+  sweep_box_->setObjectName("sweep_box");
+  sweep_box_->addItem(tr("Horizontal"), QStringLiteral("horizontal"));
+  sweep_box_->addItem(tr("Vertical"), QStringLiteral("vertical"));
+  selection_label_ = makeValue("selection_value");
+
   replan_button_ = new QPushButton(tr("Replan"));
   clear_button_ = new QPushButton(tr("Clear points"));
   start_button_ = new QPushButton(tr("Start"));
@@ -121,13 +134,24 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   // Short values keep their name beside them. The name column is sized from
   // its own text so it never grows with the value.
   auto * fields = new QGridLayout();
-  fields->addWidget(new QLabel(tr("State")), 0, 0);
-  fields->addWidget(state_label_, 0, 1);
-  fields->addWidget(new QLabel(tr("Segment")), 1, 0);
-  fields->addWidget(segment_label_, 1, 1);
-  fields->addWidget(new QLabel(tr("Progress")), 2, 0);
-  fields->addWidget(progress_bar_, 2, 1);
+  fields->addWidget(new QLabel(tr("Region")), 0, 0);
+  fields->addWidget(region_box_, 0, 1);
+  fields->addWidget(new QLabel(tr("Sweep")), 1, 0);
+  fields->addWidget(sweep_box_, 1, 1);
+  fields->addWidget(new QLabel(tr("Points")), 2, 0);
+  fields->addWidget(selection_label_, 2, 1);
+  fields->addWidget(new QLabel(tr("State")), 3, 0);
+  fields->addWidget(state_label_, 3, 1);
+  fields->addWidget(new QLabel(tr("Segment")), 4, 0);
+  fields->addWidget(segment_label_, 4, 1);
+  fields->addWidget(new QLabel(tr("Progress")), 5, 0);
+  fields->addWidget(progress_bar_, 5, 1);
   fields->setColumnStretch(1, 1);
+  // A combo box will happily grow to its widest item and drag the dock with
+  // it; it may elide instead, like the labels around it.
+  for (auto * box : {region_box_, sweep_box_}) {
+    box->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+  }
   // A grid hands the value column whatever the name column leaves, which in a
   // narrow dock was less than the word "Executing" needs. State names have no
   // break opportunity inside them, so the floor is the widest one, measured in
@@ -188,6 +212,14 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   // panel into the clipping this layout exists to prevent. The layout knows
   // the real figure; RViz clamps the dock to it.
 
+  // activated is overloaded in Qt 5, and it is deliberately not
+  // currentIndexChanged: only a human picking an item may send a request,
+  // while renderConfig writes these boxes on every refresh.
+  for (auto * box : {region_box_, sweep_box_}) {
+    connect(
+      box, QOverload<int>::of(&QComboBox::activated), this,
+      [this](int) {onConfigurationChosen();});
+  }
   connect(replan_button_, &QPushButton::clicked, this, &CoveragePanel::onReplan);
   connect(clear_button_, &QPushButton::clicked, this, &CoveragePanel::onClearPoints);
   connect(start_button_, &QPushButton::clicked, this, &CoveragePanel::onStart);
@@ -206,6 +238,16 @@ void CoveragePanel::onInitialize()
       const std::lock_guard<std::mutex> lock(mutex_);
       status_ = std::make_unique<Status>(*status);
     });
+  config_subscription_ = node_->create_subscription<Config>(
+    "/coverage/config", rclcpp::QoS(1).reliable().transient_local(),
+    [this](const Config::SharedPtr config) {
+      const std::lock_guard<std::mutex> lock(mutex_);
+      // A configure response in flight is newer than anything the topic can
+      // carry, so it wins until it lands.
+      if (!configure_pending_) {
+        config_ = std::make_unique<Config>(*config);
+      }
+    });
   planner_subscription_ = node_->create_subscription<std_msgs::msg::String>(
     "/coverage/status", rclcpp::QoS(1).transient_local(),
     [this](const std_msgs::msg::String::SharedPtr message) {
@@ -216,6 +258,7 @@ void CoveragePanel::onInitialize()
   clear_client_ = node_->create_client<Trigger>("/coverage/clear_points");
   start_client_ = node_->create_client<Trigger>("/coverage/start");
   cancel_client_ = node_->create_client<Trigger>("/coverage/cancel");
+  configure_client_ = node_->create_client<Configure>("/coverage/configure");
 
   // Subscription and service callbacks run on the executor thread, which must
   // never touch widgets. The timer runs on the Qt thread and is the only place
@@ -248,6 +291,69 @@ void CoveragePanel::call(
         .arg(response->success ? tr("ok") : tr("refused"))
         .arg(QString::fromStdString(response->message)));
     });
+}
+
+void CoveragePanel::onConfigurationChosen()
+{
+  // activated() rather than currentIndexChanged(): only a human choosing an
+  // item may send a request. renderConfig writes these boxes on every update,
+  // and the change signal would turn each of those writes into another call.
+  if (configure_pending_) {
+    note(tr("Configuration: previous change still pending."));
+    return;
+  }
+  if (!configure_client_ || !configure_client_->service_is_ready()) {
+    note(tr("Configuration: planner unavailable."));
+    // The boxes now show something the planner never agreed to, so put them
+    // back to the last configuration it published.
+    refresh();
+    return;
+  }
+  auto request = std::make_shared<Configure::Request>();
+  request->region_type = region_box_->currentData().toString().toStdString();
+  request->sweep_direction = sweep_box_->currentData().toString().toStdString();
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    configure_pending_ = true;
+    response_ = tr("Configuration: sent.");
+  }
+  region_box_->setEnabled(false);
+  sweep_box_->setEnabled(false);
+  configure_client_->async_send_request(
+    request,
+    [this](rclcpp::Client<Configure>::SharedFuture future) {
+      const auto response = future.get();
+      const std::lock_guard<std::mutex> lock(mutex_);
+      configure_pending_ = false;
+      // The response carries the configuration actually in force, accepted or
+      // not, so a refused change repaints the boxes back to the truth without
+      // waiting for the topic.
+      config_ = std::make_unique<Config>(response->config);
+      response_ = tr("Configuration: %1").arg(
+        QString::fromStdString(response->message));
+    });
+}
+
+void CoveragePanel::renderConfig(const Config & config)
+{
+  // Never currentIndexChanged: these writes must not look like a user choice.
+  for (auto * box : {region_box_, sweep_box_}) {
+    const QSignalBlocker blocker(box);
+    const QString wanted = QString::fromStdString(
+      box == region_box_ ? config.region_type : config.sweep_direction);
+    const int index = box->findData(wanted);
+    if (index >= 0) {
+      box->setCurrentIndex(index);
+    }
+  }
+  const bool clicking = config.input_mode == "rviz";
+  selection_label_->setText(
+    clicking ?
+    tr("%1 of %2 selected").arg(config.selected_points).arg(config.required_points) :
+    tr("from configuration file"));
+  // Point selection is meaningless outside rviz input mode, and so is the
+  // button that consumes it.
+  clear_button_->setEnabled(clicking);
 }
 
 void CoveragePanel::onReplan()
@@ -331,19 +437,37 @@ void CoveragePanel::refresh()
   std::unique_ptr<Status> status;
   QString planner;
   QString response;
+  std::unique_ptr<Config> config;
+  bool pending = false;
   {
     const std::lock_guard<std::mutex> lock(mutex_);
     if (status_) {
       status = std::make_unique<Status>(*status_);
     }
+    if (config_) {
+      config = std::make_unique<Config>(*config_);
+    }
     planner = planner_;
     response = response_;
+    pending = configure_pending_;
   }
   if (status) {
     renderStatus(*status);
   } else {
     renderDisconnected();
   }
+  if (config) {
+    renderConfig(*config);
+  } else {
+    selection_label_->setText(tr("planner not connected"));
+  }
+  // Enabled only once the planner has answered, so a second choice cannot be
+  // made against a configuration that is still being decided.
+  region_box_->setEnabled(!pending && config != nullptr);
+  sweep_box_->setEnabled(!pending && config != nullptr);
+  // Replanning is refused without enough points; say so before it is pressed
+  // rather than only in the response line afterwards.
+  replan_button_->setEnabled(config == nullptr || config->can_plan);
   planner_label_->setText(planner.isEmpty() ? "-" : wrappableText(planner));
   response_label_->setText(response.isEmpty() ? "-" : wrappableText(response));
 }

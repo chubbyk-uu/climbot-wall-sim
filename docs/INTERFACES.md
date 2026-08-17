@@ -38,8 +38,9 @@
 | `region_type` | `rectangle` | `rectangle` 需两点，`trapezoid` 需三点 |
 | `sweep_direction` | `horizontal` | 扫描方向 |
 
-`region_type` 和 `sweep_direction` 由规划器在构造时读入成员变量，没有参数回调，
-因此运行中 `ros2 param set` 不生效；更换区域形状或扫描方向必须重启 launch。
+launch 参数只给这两项定初值。运行中改用 `/coverage/configure` 或面板上的
+Region / Sweep 下拉框，不必重启，见下面的"运行时构型"。`ros2 param set` 仍然不
+生效——参数只在构造时读一次。
 
 两个参数文件名字不同且各自显式传递。被包含的 launch 会继承父作用域的同名参数，
 且 `DeclareLaunchArgument` 的默认值对父作用域已设定的名字不生效，因此一个共用的
@@ -358,6 +359,35 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 `5.0 s`）超时：超时后管理器在 `/coverage/manager_status` 报告一次并接受新的开始
 请求，不需要重启管理器。超时只释放"等待应答"，已被接受的 Goal 仍只能由
 `/coverage/cancel` 停止。
+
+### 运行时构型
+
+`region_type` 和 `sweep_direction` 可以在运行中改,不必重启 launch。二者由
+`/coverage/configure`（`climbot_interfaces/srv/ConfigureCoverage`）**一次原子设定**,
+现行值发布在 latched 的 `/coverage/config`（`CoverageConfig`）上。
+
+刻意不做成"先 `ros2 param set` 两个参数、再调 `/coverage/replan`":那样在两步之间
+存在半配置状态,调用方中途死掉会把规划器留在那里,第二个客户端也能插进来。
+
+请求里**留空的字段表示不改动**,所以只改扫描方向的客户端不必重述它以为的形状,
+也就不会覆盖别人刚做的修改。响应带回**实际生效**的构型（接受与否都带）,调用方
+据此立即同步显示,不必等话题。
+
+| `CoverageConfig` 字段 | 含义 |
+| --- | --- |
+| `region_type` / `sweep_direction` | 现行构型 |
+| `input_mode` | `rviz` 或 `parameters`;后者下点数无意义 |
+| `required_points` / `selected_points` | 该形状需要的点数与当前已选点数 |
+| `can_plan` | 现在重新规划会不会被接受 |
+| `message` | `can_plan` 为假时的原因 |
+
+**换形状不丢点。** A、B 两点在矩形和梯形里是同一个角,所以矩形选好 2 点后切到梯形
+只是等第 3 点,切回来立刻恢复可规划;梯形 3 点切回矩形则用前 2 点并说明多余的那个
+被忽略。丢点会让下拉框上的一次误点变成不可逆操作。
+
+`can_plan` 是**提示不是保证**:请求仍可能被拒,原因在服务响应里。判定只写在规划器的
+`planBlockedReason()` 一处,由 Replan 守卫、`configure` 响应和面板置灰共用,三者不可能
+互相矛盾。
 
 ### 参数
 

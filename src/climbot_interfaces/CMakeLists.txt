@@ -9,6 +9,8 @@ find_package(std_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CoverageTask.msg"
   "msg/CoverageStatus.msg"
+  "msg/CoverageConfig.msg"
+  "srv/ConfigureCoverage.srv"
   "action/ExecuteCoverage.action"
   DEPENDENCIES geometry_msgs std_msgs
 )

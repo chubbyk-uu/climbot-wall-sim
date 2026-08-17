@@ -1,0 +1,19 @@
+# Set the region shape and sweep direction in one call.
+#
+# Deliberately one atomic request rather than two parameter writes followed by
+# a replan: the panel would otherwise leave the planner half-configured if it
+# died between the two, and a second client could interleave.
+#
+# An empty field means "leave this one alone", so a panel that only changes the
+# sweep direction does not have to restate the shape it believes is current and
+# risk overwriting a change someone else just made.
+
+string region_type
+string sweep_direction
+---
+bool success
+string message
+
+# The configuration in force after the call, accepted or not, so the caller can
+# resynchronise its display without waiting for the latched topic.
+CoverageConfig config
