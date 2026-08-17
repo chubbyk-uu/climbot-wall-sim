@@ -28,6 +28,10 @@ install(TARGETS coverage_geometry coverage_planner_node
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY config launch rviz DESTINATION share/${PROJECT_NAME})
+# scripts/ is deliberately not installed. make_rviz_window_state.py regenerates
+# the dock layout inside rviz/coverage.rviz and needs PyQt5, which nothing else
+# here depends on; it is run from the source tree when a panel is added or
+# renamed, never at runtime. The linters still cover it.
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)

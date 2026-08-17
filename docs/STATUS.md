@@ -301,6 +301,28 @@
 上一轮遗留的"面板实际视觉布局未经自动化验证"由此闭合，按钮点击行为仍靠
 `test_coverage_manager_states.py` 从服务侧覆盖。
 
+### dock 高度分配
+
+配置里原本只有 `Width` / `Height`，没有 `QMainWindow State`，Qt 就把左列平分：
+Tool Properties 只有两行工具设置，却和操作面板一样高。现在 `coverage.rviz` 带上
+该段（Qt `saveState()` 的十六进制，按 dock 的 `objectName` 恢复，RViz 把它设成面板
+名），左列约 `300 / 90 / 374 px` 分给 Displays / Tool Properties / Coverage Task。
+
+生成器 `climbot_coverage/scripts/make_rviz_window_state.py` 用同名 dock 重建同样的
+布局再 `saveState()`，只改配置里的那一行，不像在 RViz 里存盘那样重写整个文件
+（会丢掉所有注释）。写死的宽度是 `342` 而不是 `364`：该脚本的窗口没有菜单栏和
+状态栏，RViz 的有，恢复出来会宽约 `22 px`，实测 `342` 正好落回原来的 `364`，
+即这次改动只动纵向切分。宽度低于面板自身最小值会被 Qt 静默夹住——`250` 被夹回
+`364`，是 Displays 属性树的下限。
+
+`test_rviz_config` 增加一条：blob 里必须出现 `Panels` 中每个面板名（Qt 以 UTF-16BE
+编码存 `objectName`）。改名后忘记重新生成时 Qt 只是退回平分，不报任何错。
+已用把 `Coverage Task` 改成 `Coverage Panel` 验证该用例会失败。
+
+RViz 确实读取该段：把宽度写成 `500` 后渲染窗口从 `820x764@364` 变为
+`662x764@522`。**dock 的实际像素高度未直接观测**——WSLg 下截不到 RViz 窗口，
+证据是"RViz 应用该 blob"加"该 blob 离屏恢复出 322/97/402"两条。
+
 ## 当前未决事项
 
 ### 1. WheelSlip 法向载荷局限

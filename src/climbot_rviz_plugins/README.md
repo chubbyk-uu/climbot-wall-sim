@@ -61,6 +61,12 @@
   区外面，正在运动时找 Cancel 不该需要先滚动。
 - State 一行只放状态名。未收到管理器状态时它显示 `Not connected`，解释那句话放在
   整行宽的 Manager 一行——放在 State 的窄列里会被折成四行。
+- dock 的高度分配不归面板管，归 `coverage.rviz` 里的 `QMainWindow State`（Qt 的
+  `saveState()` 十六进制，按 dock 的 `objectName` 恢复，RViz 把它设成面板名）。
+  没有这一段时 Qt 把左列平分，Tool Properties 只有两行工具设置却和操作面板一样高。
+  现在左列约 `300 / 90 / 374 px` 给 Displays / Tool Properties / Coverage Task。
+  改面板名或加面板后要用 `climbot_coverage/scripts/make_rviz_window_state.py`
+  重新生成，否则 Qt 静默退回平分。
 - 面板不设显式 `setMinimumWidth`：显式最小宽度会覆盖布局算出来的那个，一旦写小了
   就等于允许 dock 把面板压回裁字的状态。按钮不能换行也不能滚动，它们才是
   dock 宽度下限的真正来源（约 240 px）。
