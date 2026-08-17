@@ -18,6 +18,7 @@ from climbot_description.geometry import (
 )
 from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.safe_stop import install_stop_on_termination
+from climbot_gazebo.turn_slip_model import summarise
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import rclpy
@@ -101,10 +102,12 @@ class TurnSlipMeasurement(Node):
         self.declare_parameter('recentre_speed_mps', 0.15)
         self.declare_parameter('wall_config', default_wall_config())
         self.declare_parameter('output_csv', 'results/turn_slip.csv')
+        self.declare_parameter('maximum_reference_offset_m', 0.05)
 
         self._wall_frame = WallFrame.from_yaml(
             str(self.get_parameter('wall_config').value))
         self._records = []
+        self._offset_ok = True
         self._truth = None
         self._filtered = None
         self._command = self.create_publisher(Twist, '/control/cmd_vel', 10)
@@ -311,6 +314,33 @@ class TurnSlipMeasurement(Node):
                     'summary %5.0f deg @ %.2f rad/s: mean_vertical=%+7.1f mm '
                     'over %.2f s (%d runs)' % (
                         angle, rate, mean_vertical, mean_duration, len(matching)))
+        self._report_coefficient()
+
+    def _report_coefficient(self):
+        """Derive the control parameter this run implies, and self-check it."""
+        fit = summarise(self._records)
+        offset = fit['reference_offset_magnitude_m']
+        self.get_logger().info(
+            'fit: turn_slip_per_degree_m=%.5f from %d turns, residual RMS '
+            '%.1f mm' % (fit['turn_slip_per_degree_m'], fit['turns'],
+                         fit['residual_rms_m'] * 1000.0))
+        limit = float(self.get_parameter('maximum_reference_offset_m').value)
+        # A reported pose away from the rotation centre swings during the turn,
+        # and that swing lands in vertical_mm as if it were sliding. The
+        # 2026-08-13 data set was taken 79 mm behind the axle, where the raw
+        # per-direction numbers even changed sign, so this is checked rather
+        # than assumed. The coefficient itself survives because the sweep
+        # covers both directions and the swing cancels in the aggregate slope.
+        self.get_logger().info(
+            'fit: reported pose sits %.1f mm from the rotation centre '
+            '(limit %.1f mm)' % (offset * 1000.0, limit * 1000.0))
+        if offset > limit:
+            self.get_logger().error(
+                'The reported pose is not the rotation centre. The fit removes '
+                'that swing, but per-angle and per-direction numbers in the CSV '
+                'are not real sliding. Fix the pose reference before reading '
+                'them.')
+            self._offset_ok = False
 
 
 def main():

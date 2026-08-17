@@ -187,7 +187,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `standalone_mode` | `true` | `true` 执行参数单段；Action launch 将其设为 `false` |
 | `line_tracker` | `segment_timeout_s` | `120 s` | 单段超过该时间则停车并以 `CONTROL_TIMEOUT` 终止任务 |
 | `line_tracker` | `motion_region_tolerance_m` | `0.02 m` | 融合位置越出安全运动区域的数值容差 |
-| `line_tracker` | `turn_slip_per_degree_m` | `0.0005 m/°` | 横向换道终点为第二次转向预留的标定下滑系数 |
+| `line_tracker` | `turn_slip_per_degree_m` | `0.0005 m/°` | 横向换道终点为第二次转向预留的标定下滑系数；**壁面相关**，随摩擦与 WheelSlip 变化，换墙必须用 `measure_turn_slip.py` 重标定 |
 | `line_tracker` | `parallel_scan_offset_m` | `0.045 m` | 首条或转后偏差不超过此值时直接冻结实测位置对应的平行扫描线 |
 | `line_tracker` | `maximum_scan_offset_m` | `0.12 m` | 转后可尝试单次前进小弧线入轨的最大法向偏差 |
 | `line_tracker` | `arc_entry_finish_offset_m` | `0.012 m` | 小弧线结束、重新对齐并冻结平行扫描线的法向偏差门限；直接决定该扫描线冻结在何处，因此必须落在 §14.3 的 `20 mm` 间距预算内 |
@@ -610,6 +610,30 @@ float32 progress
 | `trajectory_csv` | 空 | 非空时保存真值相对轨迹和真值/融合航向 |
 
 水平段只做航向保持，不做横轨位置纠偏。正式运行必须使用全新启动的仿真世界。
+
+## 原地转向下滑标定参数
+
+`measure_turn_slip.py` 的主要参数：
+
+| 参数 | 默认值 | 含义 |
+| --- | ---: | --- |
+| `angles_deg` | `[30, 45, 90, 135, 180]` | 测试转角，交替方向 |
+| `max_rates_rps` | `[0.3, 0.6]` | 角速度上限档位 |
+| `repetitions` | `2` | 每组重复次数，第二次反向 |
+| `maximum_reference_offset_m` | `0.05` | 参考点偏移自检上限 |
+| `output_csv` | `results/turn_slip.csv` | 逐次转向的原始位移 |
+
+结束时由 `climbot_gazebo.turn_slip_model` **联合拟合**两个量:上报位姿相对旋转
+中心的偏移,以及下滑系数 `turn_slip_per_degree_m`,后者可直接填进 `control.yaml`。
+
+**两者必须联合拟合,不能先解偏移再算系数**:先解偏移会把一部分真实下滑吸收进
+偏移里。实测代价是系数从 `0.00050` 被压到 `0.00022`,少一半还多。
+
+偏移是自检项:上报位姿不在旋转中心时,原地转向会让它绕中心划弧,这段**运动学
+摆动**混进 `vertical_mm`,使 CSV 里逐角度、逐方向的数值不再是真实滑移(2026-08-13
+那份数据偏移 `79 mm`,逆时针大角度甚至呈现"净上升")。超过
+`maximum_reference_offset_m` 即报错。**聚合系数不受影响**——标定扫描两个方向对称,
+摆动在总体斜率里抵消,所以那份坏数据拟合出的系数仍是 `0.00049`。
 
 ## 侧滑补偿专项验收参数（§14.4）
 

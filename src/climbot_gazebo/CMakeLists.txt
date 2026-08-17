@@ -47,6 +47,7 @@ if(BUILD_TESTING)
     test_normal_load_statistics test/test_normal_load_statistics.py)
   ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
   ament_add_pytest_test(test_trajectory_io test/test_trajectory_io.py)
+  ament_add_pytest_test(test_turn_slip_model test/test_turn_slip_model.py)
   ament_add_pytest_test(test_turn_profile test/test_turn_profile.py)
   ament_add_pytest_test(
     test_wall_slip_sampling test/test_wall_slip_sampling.py)
