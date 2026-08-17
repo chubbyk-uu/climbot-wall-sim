@@ -13,6 +13,7 @@ from climbot_description.geometry import (
     yaw_from_quaternion,
 )
 from climbot_description.wall_frame import WallFrame
+from climbot_gazebo.execution_metrics import coefficient_of_variation
 from climbot_gazebo.safe_stop import install_stop_on_termination
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -34,17 +35,6 @@ def stamp_nanoseconds(message):
 def is_new_truth_sample(current_stamp_ns, previous_stamp_ns):
     """Return whether a truth message has not yet been recorded in this phase."""
     return previous_stamp_ns is None or current_stamp_ns != previous_stamp_ns
-
-
-def coefficient_of_variation(values):
-    """Return population standard deviation divided by the absolute mean."""
-    if not values:
-        raise ValueError('At least one value is required.')
-    mean = sum(values) / len(values)
-    if abs(mean) <= 1e-12:
-        raise ValueError('Coefficient of variation requires a non-zero mean.')
-    variance = sum((value - mean) ** 2 for value in values) / len(values)
-    return math.sqrt(variance) / abs(mean)
 
 
 class WallSlipCalibrator(Node):

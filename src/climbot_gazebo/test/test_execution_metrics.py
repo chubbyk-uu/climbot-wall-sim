@@ -2,6 +2,8 @@
 
 import math
 
+from climbot_gazebo.execution_metrics import coefficient_of_variation
+from climbot_gazebo.execution_metrics import count_visible_reversals
 from climbot_gazebo.execution_metrics import execution_quality
 from climbot_gazebo.execution_metrics import scan_line_spacing
 import pytest
@@ -126,3 +128,33 @@ def test_scan_line_spacing_rejects_mismatched_waypoints():
 def test_quality_rejects_inconsistent_planning_metadata():
     with pytest.raises(ValueError):
         execution_quality([], [1], [])
+
+
+def test_noise_around_zero_is_not_a_visible_reversal():
+    """PROJECT_GUIDE 14.3: crossings inside the band are not snaking."""
+    noise = [0.001, -0.002, 0.003, -0.001, 0.002, -0.003]
+    assert count_visible_reversals(noise, 0.020) == 0
+
+
+def test_one_excursion_to_each_side_is_one_reversal():
+    assert count_visible_reversals([0.05, 0.0, -0.05], 0.020) == 1
+    assert count_visible_reversals([0.05, -0.05, 0.05], 0.020) == 2
+
+
+def test_a_single_sided_excursion_is_not_a_reversal():
+    """A segment that drifts one way and stays there never reverses."""
+    assert count_visible_reversals([0.0, 0.03, 0.06, 0.09], 0.020) == 0
+
+
+def test_coefficient_of_variation_matches_the_population_definition():
+    assert coefficient_of_variation([1.0, 1.0, 1.0]) == pytest.approx(0.0)
+    # Population sigma of (9, 10, 11) is sqrt(2/3); the mean is 10.
+    assert coefficient_of_variation([9.0, 10.0, 11.0]) == pytest.approx(
+        math.sqrt(2.0 / 3.0) / 10.0)
+
+
+def test_coefficient_of_variation_rejects_undefined_inputs():
+    with pytest.raises(ValueError):
+        coefficient_of_variation([])
+    with pytest.raises(ValueError):
+        coefficient_of_variation([1.0, -1.0])

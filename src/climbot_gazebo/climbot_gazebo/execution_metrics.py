@@ -14,6 +14,30 @@ def _wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
 
 
+def coefficient_of_variation(values):
+    """Return population standard deviation divided by the absolute mean."""
+    if not values:
+        raise ValueError('At least one value is required.')
+    mean = sum(values) / len(values)
+    if abs(mean) <= 1e-12:
+        raise ValueError('Coefficient of variation requires a non-zero mean.')
+    variance = sum((value - mean) ** 2 for value in values) / len(values)
+    return math.sqrt(variance) / abs(mean)
+
+
+def count_visible_reversals(cross_errors, excursion):
+    """Count cross-track sign changes that leave the noise band on both sides."""
+    # PROJECT_GUIDE 14.3: centimetre-scale zero crossings near the noise floor
+    # are not snaking. Only an excursion past the band on one side, then past
+    # it on the other, counts as one visible reversal.
+    signs = []
+    for error in cross_errors:
+        sign = 1 if error > excursion else -1 if error < -excursion else 0
+        if sign and (not signs or sign != signs[-1]):
+            signs.append(sign)
+    return max(0, len(signs) - 1)
+
+
 def scan_line_spacing(rows, segment_types, waypoints, scan_type=1):
     """Measure where each executed scan line sat relative to its nominal line."""
     # PROJECT_GUIDE 14.2 and 14.3 accept a coverage run partly on the spacing

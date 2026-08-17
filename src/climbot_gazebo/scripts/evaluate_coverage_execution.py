@@ -16,6 +16,7 @@ from climbot_description.geometry import quaternion_tuple
 from climbot_description.geometry import yaw_from_quaternion
 from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.coverage_metrics import footprint_coverage
+from climbot_gazebo.execution_metrics import count_visible_reversals
 from climbot_gazebo.execution_metrics import execution_quality
 from climbot_gazebo.execution_metrics import scan_line_spacing
 from climbot_interfaces.action import ExecuteCoverage
@@ -315,17 +316,12 @@ class CoverageExecutionEvaluator(Node):
         cross = [value[0] for value in values]
         yaw = self._unwrap([value[1] for value in values])
         excursion = float(self.get_parameter('visible_excursion_m').value)
-        signs = []
-        for error in cross:
-            sign = 1 if error > excursion else -1 if error < -excursion else 0
-            if sign and (not signs or sign != signs[-1]):
-                signs.append(sign)
         return {
             'segment': segment,
             'samples': len(values),
             'rms': math.sqrt(sum(value * value for value in cross) / len(cross)),
             'maximum': max(abs(value) for value in cross),
-            'reversals': max(0, len(signs) - 1),
+            'reversals': count_visible_reversals(cross, excursion),
             'heading_range_deg': math.degrees(max(yaw) - min(yaw)),
         }
 

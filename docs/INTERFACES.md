@@ -577,6 +577,43 @@ float32 progress
 
 水平段只做航向保持，不做横轨位置纠偏。正式运行必须使用全新启动的仿真世界。
 
+## 侧滑补偿专项验收参数（§14.4）
+
+`evaluate_slip_compensation.py` 在同一仿真、同一段墙面上跑两个阶段，比较横轨闭环
+关闭与开启的水平直线。`mode` 决定跑哪个阶段：
+
+| 参数 | 默认值 | 含义 |
+| --- | ---: | --- |
+| `mode` | `open_loop` | `open_loop` 为补偿关闭，`compensated` 为补偿开启 |
+| `repetitions` | `3` | 每个阶段的重复次数，§14.4 要求关闭态至少三次 |
+| `line_length_m` | `1.20` | 被测水平直线的名义长度 |
+| `linear_speed_mps` | `0.15` | 与侧滑标定一致的线速度 |
+| `heading_hold_gain` | `1.5` | 仅 `open_loop` 使用的航向保持增益 |
+| `entry_lead_m` | `0.40` | 仅 `compensated` 使用的引入换道段长度 |
+| `minimum_measured_fraction` | `0.95` | 实测直线长度相对名义长度的下限 |
+| `minimum_height_error_reduction` | `0.70` | §14.4 的净高度误差降幅门限 |
+| `maximum_open_loop_cv` | `0.05` | §14.4 的关闭态下降比变异系数上限 |
+| `visible_excursion_m` | `0.020` | 计入可见往复的横轨幅值 |
+| `maximum_visible_reversals` | `0` | 补偿态允许的可见蛇形往复次数 |
+| `reference_summary_json` | 空 | `compensated` 模式下读取的关闭态摘要，用于计算降幅 |
+| `trajectory_csv` / `summary_json` | 空 | 非空时落盘逐采样轨迹与判定摘要 |
+
+两个阶段的差异只有补偿本身：**`open_loop` 阶段必须在没有 `line_tracker` 的情况下
+运行**。空闲的跟踪器同样以 `50 Hz` 在 `/control/cmd_vel` 上发布零速，会与开环指令
+互相覆盖。速度看门狗由 `climbot_wall.launch.py` 启动，因此 `/cmd_vel` 的安全门与
+正常任务完全一致。
+
+`compensated` 阶段是**一个**任务：一段 `TRANSITION` 引入段，加 `repetitions + 1`
+条同向 `SCAN`。掉头对准会带来约 `85 mm` 的下坠，而 §10.7 的换道段是把参考线平移
+到实际位置、不爬回名义线，因此第一条扫描线的起始偏差必然超过
+`parallel_scan_offset_m`（`45 mm`），跟踪器会用一次前进小弧线入轨而不是直接平移
+扫描线，吃掉约 `0.33 m`。**第一条扫描线因此只执行、不计入**：它承担入轨，其后的
+扫描线之间没有转向，是与开环段可比的稳态直线。加长引入段无效——实测 `0.5 m` 和
+`1.2 m` 的引入段都仍把 `81～87 mm` 的偏差交给扫描段。
+
+`minimum_measured_fraction` 是这条逻辑的护栏：任一被测扫描线的实测长度低于名义
+长度的该比例即失败，不会把半条线的结果混进平均值。它就是发现上述入轨消耗的原因。
+
 ## TF
 
 | 变换 | 发布者 | 说明 |
