@@ -30,10 +30,15 @@ std::optional<ExecutionSegment> parallelScanSegment(
   const Point2 & nominal_start, const Point2 & nominal_end,
   double cross_track, double along_track, double minimum_remaining_length);
 
+// Lift the transition's end so the turn at its far end lands the robot on the
+// next line's nominal start instead of a turn-drop below it. The drop follows
+// the angle the robot actually turns through, which depends on the headings it
+// actually holds - both lines' gravity feedforward included - and on the lift
+// itself, so the reservation is solved as a fixed point.
 ExecutionSegment dynamicTransitionSegment(
   const climbot_interfaces::msg::CoverageTask & task, std::size_t segment_index,
   const Point2 & actual_start, double turn_slip_per_degree,
-  const Point2 & gravity_down, double observed_previous_turn_drop = 0.0);
+  const Limits & limits);
 
 class CrossTrackOscillationMonitor
 {

@@ -326,6 +326,50 @@ TEST(CoverageExecution, DoesNotClassifyInvalidSamplesAsOscillation)
   EXPECT_EQ(monitor.reversalCount(), 0U);
 }
 
+namespace
+{
+Limits slipLimits(double ratio)
+{
+  Limits limits;
+  limits.gravity_slip_ratio = ratio;
+  limits.gravity_direction = {0.0, -1.0};
+  return limits;
+}
+
+double heldYaw(double line_yaw, const Limits & limits)
+{
+  const double gravity_normal =
+    limits.gravity_direction.x * -std::sin(line_yaw) +
+    limits.gravity_direction.y * std::cos(line_yaw);
+  return line_yaw + std::clamp(
+    -std::atan(limits.gravity_slip_ratio * gravity_normal),
+    -limits.max_gravity_feedforward, limits.max_gravity_feedforward);
+}
+
+// The reservation is defined by a fixed point: the lift must equal the drop of
+// the turn the robot actually performs at the end of the line it actually
+// drives. Checking that property beats pinning magic numbers, because it stays
+// meaningful when the geometry or the coefficient changes.
+void expectSelfConsistentReserve(
+  const climbot_interfaces::msg::CoverageTask & task, std::size_t index,
+  const Point2 & actual_start, double slip_per_degree, const Limits & limits)
+{
+  const auto segment = dynamicTransitionSegment(
+    task, index, actual_start, slip_per_degree, limits);
+  const auto & nominal_end = task.waypoints[index + 1U].position;
+  const auto & next_end = task.waypoints[index + 2U].position;
+  const double lift = segment.end.y - nominal_end.y;
+  const double driven = std::atan2(
+    segment.end.y - actual_start.y, segment.end.x - actual_start.x);
+  const double next_line = std::atan2(
+    next_end.y - nominal_end.y, next_end.x - nominal_end.x);
+  const double difference = heldYaw(next_line, limits) - heldYaw(driven, limits);
+  const double turn_degrees = std::abs(
+    std::atan2(std::sin(difference), std::cos(difference))) * 180.0 / std::acos(-1.0);
+  EXPECT_NEAR(lift, slip_per_degree * turn_degrees, 1e-4);
+}
+}  // namespace
+
 TEST(CoverageExecution, HorizontalTransitionPreloadsTheSecondTurnDrop)
 {
   auto task = validTask();
@@ -339,20 +383,24 @@ TEST(CoverageExecution, HorizontalTransitionPreloadsTheSecondTurnDrop)
   task.segment_types = {
     Task::SEGMENT_SCAN, Task::SEGMENT_TRANSITION, Task::SEGMENT_SCAN};
 
+  const auto limits = slipLimits(0.1056);
   const auto segment = dynamicTransitionSegment(
-    task, 1U, {1.0, -0.045}, 0.0005, {0.0, -1.0});
+    task, 1U, {1.0, -0.045}, 0.0005, limits);
   EXPECT_DOUBLE_EQ(segment.start.x, 1.0);
   EXPECT_DOUBLE_EQ(segment.start.y, -0.045);
   EXPECT_NEAR(segment.end.x, 1.0, 1e-12);
-  EXPECT_NEAR(segment.end.y, 0.245, 1e-12);
-
-  const auto observed_larger_drop = dynamicTransitionSegment(
-    task, 1U, {1.0, -0.070}, 0.0005, {0.0, -1.0}, 0.070);
-  EXPECT_NEAR(observed_larger_drop.end.y, 0.270, 1e-12);
+  // The next line is horizontal, so the robot ends the turn holding 6 degrees
+  // of up-slope: it turns 84, not the nominal 90.
+  EXPECT_NEAR(segment.end.y, 0.241986, 1e-6);
+  expectSelfConsistentReserve(task, 1U, {1.0, -0.045}, 0.0005, limits);
 }
 
-TEST(CoverageExecution, VerticalTransitionUsesActualStartWithoutPreload)
+TEST(CoverageExecution, VerticalTransitionPreloadsTheTurnOntoADownwardColumn)
 {
+  // A drop at the start of a downward column is not along-track error the
+  // tracker recovers - it truncates the column. Measured on the 3.30 x 4.50 m
+  // vertical rectangle before this was reserved: every downward column
+  // stopped 46 mm below the region top, one turn's worth of drop.
   auto task = validTask();
   using Task = climbot_interfaces::msg::CoverageTask;
   task.sweep_direction = Task::SWEEP_VERTICAL;
@@ -367,12 +415,131 @@ TEST(CoverageExecution, VerticalTransitionUsesActualStartWithoutPreload)
   task.segment_types = {
     Task::SEGMENT_SCAN, Task::SEGMENT_TRANSITION, Task::SEGMENT_SCAN};
 
+  const auto limits = slipLimits(0.1056);
   const auto segment = dynamicTransitionSegment(
-    task, 1U, {0.0, 0.955}, 0.0005, {0.0, -1.0});
-  EXPECT_DOUBLE_EQ(segment.start.x, 0.0);
+    task, 1U, {0.0, 0.955}, 0.0005, limits);
   EXPECT_DOUBLE_EQ(segment.start.y, 0.955);
-  EXPECT_DOUBLE_EQ(segment.end.x, 0.20);
-  EXPECT_DOUBLE_EQ(segment.end.y, 1.0);
+  EXPECT_GT(segment.end.y, 1.0);
+  expectSelfConsistentReserve(task, 1U, {0.0, 0.955}, 0.0005, limits);
+}
+
+TEST(CoverageExecution, ReserveUsesTheDrivenHeadingNotTheNominalOne)
+{
+  // Starting a drop below the nominal start tilts the line the robot actually
+  // drives, and lifting its end tilts it further. Reserving from the nominal
+  // heading under-reserves; both cases below turn well past the nominal 90.
+  auto task = validTask();
+  using Task = climbot_interfaces::msg::CoverageTask;
+  task.sweep_direction = Task::SWEEP_VERTICAL;
+  task.waypoints[1].position.x = 0.0;
+  task.waypoints[1].position.y = 1.0;
+  geometry_msgs::msg::Pose third = task.waypoints.back();
+  third.position.x = 0.20;
+  geometry_msgs::msg::Pose fourth = third;
+  fourth.position.y = 0.0;
+  task.waypoints.push_back(third);
+  task.waypoints.push_back(fourth);
+  task.segment_types = {
+    Task::SEGMENT_SCAN, Task::SEGMENT_TRANSITION, Task::SEGMENT_SCAN};
+
+  const auto limits = slipLimits(0.0);
+  const auto on_line = dynamicTransitionSegment(
+    task, 1U, {0.0, 1.0}, 0.0005, limits);
+  const auto dropped = dynamicTransitionSegment(
+    task, 1U, {0.0, 0.955}, 0.0005, limits);
+  // Same nominal geometry, different actual start. Reserving from the nominal
+  // heading would give these two the same lift; the driven heading does not.
+  EXPECT_GT(dropped.end.y - 1.0, on_line.end.y - 1.0 + 0.005);
+  // Both exceed the nominal 90 degree turn, because lifting the end tilts the
+  // driven line upward even when the robot starts exactly on the line.
+  EXPECT_GT(on_line.end.y - 1.0, 0.0005 * 90.0);
+  expectSelfConsistentReserve(task, 1U, {0.0, 1.0}, 0.0005, limits);
+  expectSelfConsistentReserve(task, 1U, {0.0, 0.955}, 0.0005, limits);
+}
+
+TEST(CoverageExecution, ReserveFollowsTheTurnAngleNotThePreviousTurn)
+{
+  // The trapezoid case that made the old observed-drop floor wrong: the robot
+  // has just swung 166 degrees onto a slanted transition, then only needs 14
+  // degrees onto the last column. Reserving the previous turn's drop would
+  // lift the end by 83 mm instead of 7 mm.
+  auto task = validTask();
+  using Task = climbot_interfaces::msg::CoverageTask;
+  task.sweep_direction = Task::SWEEP_VERTICAL;
+  task.waypoints[0].position.x = 2.761;
+  task.waypoints[0].position.y = 1.395;
+  task.waypoints[1].position.x = 2.761;
+  task.waypoints[1].position.y = 3.961;
+  geometry_msgs::msg::Pose third;
+  third.position.x = 3.150;
+  third.position.y = 2.405;
+  geometry_msgs::msg::Pose fourth;
+  fourth.position.x = 3.150;
+  fourth.position.y = 1.395;
+  task.waypoints.push_back(third);
+  task.waypoints.push_back(fourth);
+  task.segment_types = {
+    Task::SEGMENT_SCAN, Task::SEGMENT_TRANSITION, Task::SEGMENT_SCAN};
+
+  const auto limits = slipLimits(0.1056);
+  const auto segment = dynamicTransitionSegment(
+    task, 1U, {2.761, 3.878}, 0.0005, limits);
+  EXPECT_LT(segment.end.y - third.position.y, 0.020);
+  expectSelfConsistentReserve(task, 1U, {2.761, 3.878}, 0.0005, limits);
+}
+
+TEST(CoverageExecution, ShortTransitionsDoNotAmplifyIntoAWildReserve)
+{
+  // Below a few centimetres the driven heading is mostly position noise, and
+  // the fixed point stops contracting. The reserve must stay bounded.
+  auto task = validTask();
+  using Task = climbot_interfaces::msg::CoverageTask;
+  task.waypoints[1].position.x = 0.0;
+  task.waypoints[1].position.y = 0.0;
+  geometry_msgs::msg::Pose third;
+  third.position.x = 0.005;
+  third.position.y = 0.0;
+  geometry_msgs::msg::Pose fourth;
+  fourth.position.x = 0.005;
+  fourth.position.y = -1.0;
+  task.waypoints.push_back(third);
+  task.waypoints.push_back(fourth);
+  task.segment_types = {
+    Task::SEGMENT_SCAN, Task::SEGMENT_TRANSITION, Task::SEGMENT_SCAN};
+
+  const auto segment = dynamicTransitionSegment(
+    task, 1U, {0.0, -0.001}, 0.0005, slipLimits(0.1056));
+  EXPECT_GE(segment.end.y - third.position.y, 0.0);
+  EXPECT_LE(segment.end.y - third.position.y, 0.0005 * 180.0);
+}
+
+TEST(CoverageExecution, VerticalTaskStillPreloadsATopEdgeFinishingScan)
+{
+  // The last column ran downward, so the return leg retraces it straight back
+  // up before the finishing line heads off across the top.
+  auto task = validTask();
+  using Task = climbot_interfaces::msg::CoverageTask;
+  task.sweep_direction = Task::SWEEP_VERTICAL;
+  task.waypoints[0].position.x = 0.0;
+  task.waypoints[0].position.y = 1.0;
+  task.waypoints[1].position.x = 0.0;
+  task.waypoints[1].position.y = 0.0;
+  geometry_msgs::msg::Pose entry;
+  entry.position.x = 0.0;
+  entry.position.y = 1.0;
+  geometry_msgs::msg::Pose finish = entry;
+  finish.position.x = -1.0;
+  task.waypoints.push_back(entry);
+  task.waypoints.push_back(finish);
+  task.segment_types = {
+    Task::SEGMENT_SCAN, Task::SEGMENT_TRANSITION, Task::SEGMENT_SCAN};
+
+  const auto limits = slipLimits(0.1056);
+  const auto segment = dynamicTransitionSegment(
+    task, 1U, {0.0, -0.045}, 0.0005, limits);
+  EXPECT_NEAR(segment.end.x, 0.0, 1e-12);
+  EXPECT_NEAR(segment.end.y, 1.041986, 1e-6);
+  expectSelfConsistentReserve(task, 1U, {0.0, -0.045}, 0.0005, limits);
 }
 
 TEST(CommandWatchdog, StopsBeforeFirstCommandAndAfterTimeout)

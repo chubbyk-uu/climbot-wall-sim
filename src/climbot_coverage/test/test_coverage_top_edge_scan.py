@@ -1,5 +1,6 @@
 """Node-level test for the optional top-edge finishing scan (10.7)."""
 
+import math
 from threading import Event
 import unittest
 
@@ -31,13 +32,22 @@ REGION = {
 }
 
 
-def _planner(name, sweep, mode):
+def _planner(name, sweep, mode, **overrides):
     return launch_ros.actions.Node(
         package='climbot_coverage',
         executable='coverage_planner_node',
         name=name,
-        remappings=[('/coverage/task', '/%s/task' % name)],
-        parameters=[dict(REGION, sweep_direction=sweep, top_edge_scan=mode)],
+        # Every output is remapped, not just the task: a planner left publishing
+        # on the shared names is enough to make another launch test latch the
+        # wrong path.
+        remappings=[
+            ('/coverage/task', '/%s/task' % name),
+            ('/coverage/path', '/%s/path' % name),
+            ('/coverage/status', '/%s/status' % name),
+            ('/coverage/markers', '/%s/markers' % name),
+        ],
+        parameters=[dict(
+            REGION, sweep_direction=sweep, top_edge_scan=mode, **overrides)],
     )
 
 
@@ -50,6 +60,10 @@ def generate_test_description():
         _planner('auto_planner', 'vertical', 'auto'),
         _planner('always_planner', 'vertical', 'always'),
         _planner('horizontal_planner', 'horizontal', 'always'),
+        # An odd column count ends the sweep at the top, so the return leg is
+        # a short hop instead of retracing the last column.
+        _planner('odd_planner', 'vertical', 'always',
+                 upper_right=[2.65, 6.505]),
         launch_testing.actions.ReadyToTest(),
     ])
 
@@ -64,7 +78,7 @@ class TestTopEdgeScan(unittest.TestCase):
         self.events = {}
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         for name in ('never_planner', 'auto_planner', 'always_planner',
-                     'horizontal_planner'):
+                     'horizontal_planner', 'odd_planner'):
             self.events[name] = Event()
             self.node.create_subscription(
                 CoverageTask, '/%s/task' % name,
@@ -130,6 +144,38 @@ class TestTopEdgeScan(unittest.TestCase):
                 _inside(polygon, waypoint.position.x, waypoint.position.y),
                 'waypoint %r left motion_region' % waypoint.position)
 
+    def test_the_return_leg_is_never_a_scan(self):
+        """Retracing the last column upward must not be collected on."""
+        # An even column count ends the sweep at the bottom, so reaching the
+        # finishing line means driving the whole column height back up. That
+        # leg is travel, not inspection, and counting it would both claim
+        # coverage the robot did not inspect and trigger photography.
+        forced = self._task('always_planner')
+        self.assertEqual(
+            forced.segment_types[-2], CoverageTask.SEGMENT_TRANSITION)
+        # It really is the long retrace, not a short hop.
+        self.assertGreater(_segment_length(forced, len(forced.segment_types) - 2), 3.0)
+
+    def test_an_odd_column_count_ends_at_the_top_and_hops_straight_across(self):
+        """The other case: no retrace, because the last column ended high."""
+        odd = self._task('odd_planner')
+        self.assertEqual(
+            odd.segment_types[-2], CoverageTask.SEGMENT_TRANSITION)
+        self.assertEqual(odd.segment_types[-1], CoverageTask.SEGMENT_SCAN)
+        self.assertLess(_segment_length(odd, len(odd.segment_types) - 2), 1.0)
+        first = odd.waypoints[-2].position
+        last = odd.waypoints[-1].position
+        self.assertAlmostEqual(first.y, last.y, places=6)
+        self.assertAlmostEqual(first.y, 6.505 - 0.25, places=6)
+
+    def test_both_last_column_directions_are_actually_covered(self):
+        """Guard the pair itself, so neither case is silently lost."""
+        even = self._task('always_planner')
+        odd = self._task('odd_planner')
+        self.assertNotEqual(
+            self._scan_count(even) % 2, self._scan_count(odd) % 2,
+            'both planners ended the sweep the same way, so one case is untested')
+
     def test_a_horizontal_sweep_is_never_given_a_duplicate_top_line(self):
         """Its topmost scan line already tops out on the edge."""
         task = self._task('horizontal_planner')
@@ -138,6 +184,13 @@ class TestTopEdgeScan(unittest.TestCase):
         self.assertEqual(
             sum(1 for point in task.waypoints
                 if abs(point.position.y - top) < 1e-6), 2)
+
+
+def _segment_length(task, index):
+    """Return the planar length of one segment."""
+    first = task.waypoints[index].position
+    second = task.waypoints[index + 1].position
+    return math.hypot(second.x - first.x, second.y - first.y)
 
 
 def task_last_type(task):

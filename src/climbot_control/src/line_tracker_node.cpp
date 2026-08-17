@@ -712,6 +712,28 @@ private:
     return true;
   }
 
+  // The reservation trusts turn_slip_per_degree_m completely now that nothing
+  // floors it with a measurement. That is only safe if the constant still
+  // describes this wall, so every alignment is compared against it and a
+  // sustained disagreement is reported rather than silently absorbed.
+  void warnIfTurnSlipLooksStale(double observed_turn_drop)
+  {
+    const double degrees = alignment_turn_ * 180.0 / std::acos(-1.0);
+    if (degrees < 10.0) {
+      return;
+    }
+    const double predicted = turn_slip_per_degree_ * degrees;
+    const double tolerance = std::max(0.005, 0.5 * predicted);
+    if (std::abs(observed_turn_drop - predicted) <= tolerance) {
+      return;
+    }
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *control_clock_, 10000,
+      "Turn of %.0f deg dropped %.1f mm but turn_slip_per_degree_m predicts "
+      "%.1f mm. Re-run measure_turn_slip.py for this wall.",
+      degrees, observed_turn_drop * 1000.0, predicted * 1000.0);
+  }
+
   DynamicReferenceResult prepareDynamicReference()
   {
     using Task = climbot_interfaces::msg::CoverageTask;
@@ -722,11 +744,12 @@ private:
     if (segment_type == Task::SEGMENT_TRANSITION) {
       const auto dynamic = climbot_control::dynamicTransitionSegment(
         *active_task_, current_segment_, {pose_.x, pose_.y},
-        turn_slip_per_degree_, limits_.gravity_direction, observed_turn_drop);
+        turn_slip_per_degree_, limits_);
       RCLCPP_INFO(
         get_logger(),
         "Prepared dynamic transition after observing %.1f mm downward motion during alignment.",
         observed_turn_drop * 1000.0);
+      warnIfTurnSlipLooksStale(observed_turn_drop);
       if (!climbot_control::pointInPolygon(
           dynamic.end.x, dynamic.end.y, active_task_->motion_region, 1e-6))
       {
@@ -1197,6 +1220,7 @@ private:
       std::abs(previous_command_.angular) <= 1e-3)
     {
       alignment_start_yaw_ = pose_.yaw;
+      alignment_turn_ = std::abs(line_command.heading_error);
       alignment_profile_ = climbot_control::planTurn(
         line_command.heading_error, max_turn_angular_speed_,
         max_turn_angular_acceleration_);
@@ -1302,6 +1326,7 @@ private:
   MotionState motion_state_{MotionState::WAITING_FOR_ALIGNMENT};
   climbot_control::TurnProfile alignment_profile_;
   double alignment_start_yaw_{0.0};
+  double alignment_turn_{0.0};
   // Instants on control_clock_, whose type is only known once the constructor
   // has read use_sim_time, so all of these are assigned there. Subtracting two
   // rclcpp::Time of different clock types throws, which is what a leftover
