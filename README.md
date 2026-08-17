@@ -330,3 +330,9 @@ ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
 Gazebo DiffDrive 会持续执行最后收到的 `/cmd_vel`，因此仿真 launch 始终启动速度
 看门狗，并由它作为 `/cmd_vel` 的唯一发布者。键盘、实验脚本和自动控制统一发布到
 `/control/cmd_vel`；当前一次只能运行一个上游控制源，不要同时启动键盘和自动任务。
+
+控制环和看门狗的定时器**不使用节点默认时钟**。节点默认时钟在非仿真时间下就是
+系统时钟，可以被设置、可以往回跳（WSL2 每约 30 s 回跳 1～2 s），建在它上面的
+定时器在回跳期间不触发——控制器整段不发指令，而机器人还在按最后一条指令走。
+仿真时间激活时跟 `/clock`，否则用单调时钟，见
+[docs/INTERFACES.md](docs/INTERFACES.md) 的"控制环时钟"。

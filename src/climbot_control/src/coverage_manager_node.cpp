@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "climbot_control/control_clock.hpp"
 #include "climbot_control/coverage_execution.hpp"
 #include "climbot_interfaces/action/execute_coverage.hpp"
 #include "climbot_interfaces/msg/coverage_status.hpp"
@@ -36,6 +37,13 @@ public:
     if (!(executor_timeout_s_ > 0.0)) {
       throw std::invalid_argument("executor_timeout_s must be positive.");
     }
+    // The feedback throttle and the start-response deadline are elapsed times,
+    // and off sim time the node clock is the settable system clock. A backward
+    // step there stretched both silently: status stopped updating and a start
+    // request that never got an answer took the step's length longer to be
+    // reported as such.
+    control_clock_ = climbot_control::controlClock(this);
+    last_publish_ = rclcpp::Time(0, 0, control_clock_->get_clock_type());
     status_.current_segment = -1;
     // Created before the task subscription so no preview can ever be handled
     // before there is somewhere to report it.
@@ -125,7 +133,7 @@ private:
     status_.message = text;
     refreshPermissions();
     status_publisher_->publish(status_);
-    last_publish_ = now();
+    last_publish_ = control_clock_->now();
     RCLCPP_INFO(get_logger(), "%s", text.c_str());
   }
 
@@ -134,11 +142,11 @@ private:
   /// needs and no log should carry, so it is rate limited here.
   void publishProgress()
   {
-    const auto current = now();
+    const auto current = control_clock_->now();
     if ((current - last_publish_).seconds() < feedback_publish_period_s_) {
       return;
     }
-    status_.header.stamp = current;
+    status_.header.stamp = now();
     refreshPermissions();
     status_publisher_->publish(status_);
     last_publish_ = current;
@@ -185,7 +193,9 @@ private:
     if (!start_pending_since_) {
       return;
     }
-    if ((now() - *start_pending_since_).seconds() < start_response_timeout_s_) {
+    if ((control_clock_->now() - *start_pending_since_).seconds() <
+      start_response_timeout_s_)
+    {
       return;
     }
     start_pending_since_.reset();
@@ -255,7 +265,7 @@ private:
     status_.current_segment = -1;
     status_.progress = 0.0F;
     status_.executor_state = ExecuteCoverage::Feedback::WAITING;
-    start_pending_since_ = now();
+    start_pending_since_ = control_clock_->now();
     // Announce STARTING before sending, so the goal response can never be
     // overtaken by this line and leave a live goal reported as still starting.
     publishStatus(
@@ -286,7 +296,11 @@ private:
   double feedback_publish_period_s_;
   double executor_timeout_s_;
   Status status_;
-  rclcpp::Time last_publish_{0, 0, RCL_ROS_TIME};
+  // Durations here are measured on control_clock_, so this carries that
+  // clock's type and is set in the constructor. Message stamps stay on
+  // ROS time; only the elapsed-time arithmetic moves.
+  rclcpp::Clock::SharedPtr control_clock_;
+  rclcpp::Time last_publish_;
   std::optional<rclcpp::Time> start_pending_since_;
   std::optional<std::chrono::steady_clock::time_point> executor_missing_since_;
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;

@@ -22,6 +22,11 @@ import rclpy
 from rclpy.action import ActionClient
 
 
+# cmd_vel_watchdog's command_timeout_s default, mirrored here so the plant
+# coasts for exactly as long as the real one would and no longer.
+COMMAND_TIMEOUT_S = 0.40
+
+
 @pytest.mark.launch_test
 def generate_test_description():
     """Start the tracker in task-execution mode with faster test settling."""
@@ -94,6 +99,7 @@ class TestCoverageExecutor(unittest.TestCase):
         rclpy.init()
         self.node = rclpy.create_node('coverage_executor_test')
         self.command = Twist()
+        self.command_time = None
         self.feedback_segments = set()
         self.feedback_state = ExecuteCoverage.Feedback.WAITING
         self.lock = Lock()
@@ -121,6 +127,7 @@ class TestCoverageExecutor(unittest.TestCase):
     def _command_callback(self, message):
         with self.lock:
             self.command = message
+            self.command_time = time.monotonic()
 
     def _feedback_callback(self, message):
         with self.lock:
@@ -128,7 +135,19 @@ class TestCoverageExecutor(unittest.TestCase):
             self.feedback_state = message.feedback.state
 
     def _current_command(self):
+        """Return the command the wheels would actually be given."""
+        # The real robot never sees /control/cmd_vel directly: cmd_vel_watchdog
+        # sits in between and zeroes the output once commands stop arriving for
+        # command_timeout_s. A plant that instead integrates the last command
+        # forever credits the controller with motion nothing asked for, and
+        # turns any pause in the control loop into a silent overshoot rather
+        # than the stop the real machine would perform.
         with self.lock:
+            stale = (
+                self.command_time is None or
+                time.monotonic() - self.command_time > COMMAND_TIMEOUT_S)
+            if stale:
+                return (0.0, 0.0, self.feedback_state)
             return (self.command.linear.x, self.command.angular.z,
                     self.feedback_state)
 

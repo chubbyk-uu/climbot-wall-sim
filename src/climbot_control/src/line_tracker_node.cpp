@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "climbot_control/control_clock.hpp"
 #include "climbot_control/coverage_execution.hpp"
 #include "climbot_control/line_tracker.hpp"
 #include "climbot_control/segment_duration.hpp"
@@ -126,6 +127,22 @@ public:
     wheel_acceleration_limit_ = declare_parameter("wheel_acceleration_limit", -1.0);
     validateParameters();
 
+    // Everything this node measures a duration against runs on this clock, not
+    // on ROS time. See control_clock.hpp: off sim time the node clock is the
+    // settable system clock, and a backward step there stops the control timer
+    // for the length of the step while the robot keeps moving on its last
+    // command. Only message stamps stay on ROS time.
+    control_clock_ = climbot_control::controlClock(this);
+    const auto zero = zeroInstant();
+    alignment_profile_start_ = zero;
+    alignment_settle_start_ = zero;
+    arc_entry_start_time_ = zero;
+    goal_settle_start_ = zero;
+    last_pose_received_time_ = zero;
+    last_control_time_ = zero;
+    task_start_time_ = zero;
+    segment_start_time_ = zero;
+
     command_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/control/cmd_vel", 10);
     reference_publisher_ = create_publisher<nav_msgs::msg::Path>("/control/reference_path",
       rclcpp::QoS(1).reliable().transient_local());
@@ -156,7 +173,7 @@ public:
           *yaw};
         measured_linear_speed_ = std::hypot(linear.x, linear.y);
         measured_angular_speed_ = std::abs(angular.z);
-        last_pose_received_time_ = now();
+        last_pose_received_time_ = controlNow();
         have_pose_ = true;
       });
 
@@ -173,11 +190,25 @@ public:
     publishCompletion(false);
     const auto period = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::duration<double>(1.0 / control_frequency_hz_));
-    timer_ = rclcpp::create_timer(this, get_clock(), period,
+    timer_ = rclcpp::create_timer(this, control_clock_, period,
       std::bind(&LineTrackerNode::onTimer, this));
   }
 
 private:
+  /// Now, on the clock every duration in this node is measured against.
+  rclcpp::Time controlNow() const
+  {
+    return control_clock_->now();
+  }
+
+  /// The "not set yet" instant, carrying the control clock's type. Subtracting
+  /// two rclcpp::Time of different clock types throws, so the sentinel cannot
+  /// be a fixed RCL_ROS_TIME zero once the clock is chosen at runtime.
+  rclcpp::Time zeroInstant() const
+  {
+    return rclcpp::Time(0, 0, control_clock_->get_clock_type());
+  }
+
   static void requireFinite(const std::string & name, double value)
   {
     if (!std::isfinite(value)) {
@@ -368,7 +399,7 @@ private:
     active_task_ = goal->get_goal()->task;
     completed_segments_ = 0U;
     current_segment_ = 0U;
-    task_start_time_ = now();
+    task_start_time_ = controlNow();
     approaching_start_ = true;
     waiting_for_start_pose_ = !have_pose_;
     segment_start_time_ = task_start_time_;
@@ -436,7 +467,7 @@ private:
       case MotionState::ALIGN_PROFILE:
         return alignment_profile_.duration > 0.0 ?
                std::clamp(
-          (now() - alignment_profile_start_).seconds() / alignment_profile_.duration,
+          (controlNow() - alignment_profile_start_).seconds() / alignment_profile_.duration,
           0.0, 1.0) : 1.0;
       default:
         return 1.0;
@@ -570,9 +601,9 @@ private:
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
     previous_command_ = {};
     cross_integral_ = 0.0;
-    alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
-    goal_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
-    segment_start_time_ = now();
+    alignment_settle_start_ = zeroInstant();
+    goal_settle_start_ = zeroInstant();
+    segment_start_time_ = controlNow();
     alignment_origin_ = start_;
     arc_entry_active_ = false;
     reference_prepared_ = true;
@@ -596,9 +627,9 @@ private:
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
     previous_command_ = {};
     cross_integral_ = 0.0;
-    alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
-    goal_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
-    segment_start_time_ = now();
+    alignment_settle_start_ = zeroInstant();
+    goal_settle_start_ = zeroInstant();
+    segment_start_time_ = controlNow();
     alignment_origin_ = {pose_.x, pose_.y};
     arc_entry_active_ = false;
     oscillation_monitor_->reset();
@@ -672,7 +703,7 @@ private:
       return false;
     }
     arc_entry_active_ = true;
-    arc_entry_start_time_ = now();
+    arc_entry_start_time_ = controlNow();
     reference_prepared_ = true;
     RCLCPP_INFO(
       get_logger(),
@@ -722,7 +753,7 @@ private:
     }
     reference_prepared_ = true;
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
-    alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    alignment_settle_start_ = zeroInstant();
     cross_integral_ = 0.0;
     publishReferencePath();
     return DynamicReferenceResult::REALIGN;
@@ -740,7 +771,7 @@ private:
     result->result_code = code;
     result->message = message;
     result->completed_segments = completed_segments_;
-    result->elapsed_time_s = std::max(0.0, (now() - task_start_time_).seconds());
+    result->elapsed_time_s = std::max(0.0, (controlNow() - task_start_time_).seconds());
     if (code == ExecuteCoverage::Result::SUCCESS) {
       active_goal_->succeed(result);
     } else if (code == ExecuteCoverage::Result::CANCELED) {
@@ -847,7 +878,7 @@ private:
 
   void onTimer()
   {
-    const auto current_time = now();
+    const auto current_time = controlNow();
     if (!standalone_mode_) {
       if (!active_goal_) {
         previous_command_ = {};
@@ -873,13 +904,14 @@ private:
       if (motion_state_ != MotionState::SEGMENT_COMPLETE) {
         motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
       }
-      alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
-      goal_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+      alignment_settle_start_ = zeroInstant();
+      goal_settle_start_ = zeroInstant();
       last_control_time_ = current_time;
       geometry_msgs::msg::Twist stop;
       command_publisher_->publish(stop);
       RCLCPP_WARN_THROTTLE(
-        get_logger(), *get_clock(), 2000, "Filtered odometry is unavailable or stale; stopping.");
+        get_logger(), *control_clock_, 2000,
+        "Filtered odometry is unavailable or stale; stopping.");
       if (!standalone_mode_) {
         if (!have_pose_ &&
           (current_time - task_start_time_).seconds() <= odometry_timeout_s_)
@@ -957,7 +989,7 @@ private:
         }
         motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
         alignment_origin_ = {pose_.x, pose_.y};
-        alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+        alignment_settle_start_ = zeroInstant();
         cross_integral_ = 0.0;
         publishFeedback(arc_command);
         return;
@@ -1068,7 +1100,7 @@ private:
       heading_error <= goal_heading_exit_tolerance_ && stopped;
 
     if (!relaxed_goal) {
-      goal_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+      goal_settle_start_ = zeroInstant();
       return false;
     }
     if (!strict_goal) {
@@ -1114,7 +1146,7 @@ private:
           limitAndPublish(command, dt, max_turn_angular_acceleration_);
           if (elapsed >= alignment_profile_.duration) {
             motion_state_ = MotionState::ALIGN_SETTLE;
-            alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+            alignment_settle_start_ = zeroInstant();
           }
           return;
         }
@@ -1123,7 +1155,7 @@ private:
           if (std::abs(line_command.heading_error) <= alignment_tolerance_) {
             command.angular = 0.0;
           } else {
-            alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+            alignment_settle_start_ = zeroInstant();
             command.angular = std::clamp(
             turn_heading_gain_ * line_command.heading_error,
             -max_turn_angular_speed_, max_turn_angular_speed_);
@@ -1169,7 +1201,7 @@ private:
         line_command.heading_error, max_turn_angular_speed_,
         max_turn_angular_acceleration_);
       alignment_profile_start_ = current_time;
-      alignment_settle_start_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+      alignment_settle_start_ = zeroInstant();
       motion_state_ = alignment_profile_.duration > 0.0 ?
         MotionState::ALIGN_PROFILE : MotionState::ALIGN_SETTLE;
     }
@@ -1270,14 +1302,18 @@ private:
   MotionState motion_state_{MotionState::WAITING_FOR_ALIGNMENT};
   climbot_control::TurnProfile alignment_profile_;
   double alignment_start_yaw_{0.0};
-  rclcpp::Time alignment_profile_start_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time alignment_settle_start_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time arc_entry_start_time_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time goal_settle_start_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time last_pose_received_time_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time last_control_time_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time task_start_time_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time segment_start_time_{0, 0, RCL_ROS_TIME};
+  // Instants on control_clock_, whose type is only known once the constructor
+  // has read use_sim_time, so all of these are assigned there. Subtracting two
+  // rclcpp::Time of different clock types throws, which is what a leftover
+  // RCL_ROS_TIME default here would eventually cause.
+  rclcpp::Time alignment_profile_start_;
+  rclcpp::Time alignment_settle_start_;
+  rclcpp::Time arc_entry_start_time_;
+  rclcpp::Time goal_settle_start_;
+  rclcpp::Time last_pose_received_time_;
+  rclcpp::Time last_control_time_;
+  rclcpp::Time task_start_time_;
+  rclcpp::Time segment_start_time_;
   std::optional<climbot_interfaces::msg::CoverageTask> active_task_;
   std::shared_ptr<GoalHandle> active_goal_;
   std::unique_ptr<climbot_control::CrossTrackOscillationMonitor> oscillation_monitor_;
@@ -1286,6 +1322,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr completion_publisher_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
   rclcpp_action::Server<ExecuteCoverage>::SharedPtr action_server_;
+  rclcpp::Clock::SharedPtr control_clock_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 

@@ -96,6 +96,30 @@ RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出�
 脚本和自动控制器均发布 `/control/cmd_vel`。当前采用单一上游来源规则；需要遥控抢占
 自动任务时再增加带明确优先级的仲裁器。
 
+### 控制环时钟
+
+`line_tracker_node`、`cmd_vel_watchdog_node` 和 `coverage_manager_node` 的定时器
+和**所有时长测量**都不走节点默认时钟，而是走 `climbot_control/control_clock.hpp`
+里的 `controlClock()`：
+
+| `use_sim_time` | 用哪个时钟 | 理由 |
+| --- | --- | --- |
+| `true` | 节点时钟（`RCL_ROS_TIME`，跟 `/clock`） | 仿真时间是被控对象自己的时间轴，控制环必须跟着它走 |
+| `false` | `RCL_STEADY_TIME` | 唯一不会被设置、不会倒退的时钟 |
+
+节点默认时钟是 `RCL_ROS_TIME`，**在仿真时间未激活时会退化为系统时钟**。系统时钟
+可以被设置、可以往回跳（WSL2 每约 30 s 对宿主机重同步一次，实测回跳
+`1.2～1.7 s`）。建在它上面的定时器在回跳期间**根本不触发**——跟踪器整段时间一条
+指令都不发，而机器人还按最后一条指令在走；同时所有 `now()` 差值都会**变小**，
+把"数据过期"这类判断压下去而不是报出来。
+
+消息时间戳（`/control/reference_path`、`/coverage/manager_status` 的 `header.stamp`）
+仍用 ROS 时间，保证与 TF 和 bag 对齐。
+
+`use_sim_time=true` 时 `controlClock()` 返回的就是节点时钟本身，仿真行为与改动前
+逐位一致（实测：`/clock` 按 0.5× 真实时间推进时，控制环仍为 `49.7 Hz` 仿真时间 /
+`25.0 Hz` 墙钟）。
+
 当前 EKF 以 `50 Hz` 发布 `/odometry/filtered`，阶段 E 控制器默认也以 `50 Hz`
 运行。全站仪 `12 Hz` 只表示绝对位置更新频率，控制器不得将每个 50 Hz EKF
 输出误认为新的独立绝对测量。

@@ -104,6 +104,10 @@ C++ 轨迹控制和速度安全：
 - `line_tracker`：任意二维直线的沿轨、横轨和航向闭环及联合轮速限幅；
 - `line_tracker_node`：融合位姿输入、定位超时停车和单段参考显示；
 - `cmd_vel_watchdog_node`：`/control/cmd_vel` 到 `/cmd_vel` 的唯一安全出口；
+- `include/climbot_control/control_clock.hpp`：控制环和安全兜底该用哪个时钟。
+  节点默认时钟在非仿真时间下退化为**可被设置、可倒退**的系统时钟，定时器建在
+  它上面会在时钟回跳期间停止触发。仿真时间激活时跟节点时钟，否则用单调时钟；
+  消息时间戳仍用 ROS 时间。详见 [INTERFACES.md](INTERFACES.md) 的"控制环时钟"；
 - `config/control.yaml`：正常作业限幅、控制增益和超时；
 - `launch/line_tracker.launch.py`：从共享机器人描述注入轮距和轮缘硬限值。
 
