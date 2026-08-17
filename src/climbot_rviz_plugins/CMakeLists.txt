@@ -41,6 +41,10 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   ament_add_gtest(test_coverage_panel_plugin test/test_coverage_panel_plugin.cpp)
   ament_target_dependencies(test_coverage_panel_plugin pluginlib rviz_common)
+  ament_add_gtest(test_coverage_panel_layout test/test_coverage_panel_layout.cpp)
+  target_link_libraries(test_coverage_panel_layout climbot_rviz_plugins)
+  ament_target_dependencies(test_coverage_panel_layout
+    climbot_interfaces rclcpp rviz_common)
 endif()
 
 ament_export_include_directories(include)

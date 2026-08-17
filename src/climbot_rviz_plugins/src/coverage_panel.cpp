@@ -1,9 +1,15 @@
 #include "climbot_rviz_plugins/coverage_panel.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 
+#include <QFont>
+#include <QFontMetrics>
+#include <QFrame>
 #include <QGridLayout>
+#include <QScrollArea>
+#include <QSizePolicy>
 #include <QVBoxLayout>
 
 #include "rviz_common/display_context.hpp"
@@ -34,48 +40,106 @@ QString stateName(uint8_t state)
   }
 }
 
+/// A label that wraps instead of widening the dock it lives in.
+///
+/// The default policy makes a label demand its whole string on one line, and a
+/// QGridLayout hands that demand straight to the dock. With a task id and three
+/// full sentences on show that came to 566 px, far more than the dock beside the
+/// render view gets, so RViz cut the text off rather than honour it. Ignored
+/// means the label accepts whatever width the panel has and answers for its own
+/// height through heightForWidth.
+QLabel * makeValue(const char * name)
+{
+  auto * label = new QLabel("-");
+  label->setObjectName(name);
+  label->setWordWrap(true);
+  label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum);
+  label->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  return label;
+}
+
+/// Caption for a message that is too long to sit beside its name.
+QLabel * makeCaption(const QString & text)
+{
+  auto * caption = new QLabel(text);
+  QFont font = caption->font();
+  font.setBold(true);
+  caption->setFont(font);
+  return caption;
+}
+
+QFrame * makeSeparator()
+{
+  auto * line = new QFrame();
+  line->setFrameShape(QFrame::HLine);
+  line->setFrameShadow(QFrame::Sunken);
+  return line;
+}
+
 }  // namespace
+
+QString wrappableText(const QString & text)
+{
+  // A zero-width space is a break opportunity the line breaker takes only when
+  // the line would otherwise overflow, so a wide dock still shows an id whole.
+  QString broken;
+  broken.reserve(text.size() * 2);
+  for (const QChar character : text) {
+    broken.append(character);
+    if (character == '_' || character == '/' || character == '-') {
+      broken.append(QChar(0x200B));
+    }
+  }
+  return broken;
+}
 
 CoveragePanel::CoveragePanel(QWidget * parent)
 : rviz_common::Panel(parent)
 {
-  state_label_ = new QLabel(tr("Waiting for the coverage manager."));
-  task_label_ = new QLabel("-");
-  segment_label_ = new QLabel("-");
-  message_label_ = new QLabel("-");
-  message_label_->setWordWrap(true);
-  planner_label_ = new QLabel("-");
-  planner_label_->setWordWrap(true);
-  response_label_ = new QLabel("-");
-  response_label_->setWordWrap(true);
+  state_label_ = makeValue("state_value");
+  task_label_ = makeValue("task_value");
+  segment_label_ = makeValue("segment_value");
+  message_label_ = makeValue("manager_value");
+  planner_label_ = makeValue("planner_value");
+  response_label_ = makeValue("response_value");
 
   progress_bar_ = new QProgressBar();
+  progress_bar_->setObjectName("progress_value");
   progress_bar_->setRange(0, 100);
   progress_bar_->setValue(0);
+  progress_bar_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
 
   replan_button_ = new QPushButton(tr("Replan"));
   clear_button_ = new QPushButton(tr("Clear points"));
   start_button_ = new QPushButton(tr("Start"));
   cancel_button_ = new QPushButton(tr("Cancel / Stop"));
+  // The buttons keep their default policy, unlike the labels. A label with no
+  // room wraps; a button label with no room is simply cut, and "Cancel / Sto"
+  // is not a control an operator should have to act on. So the buttons are
+  // what sets the floor on how narrow this dock may go.
 
+  // Short values keep their name beside them. The name column is sized from
+  // its own text so it never grows with the value.
   auto * fields = new QGridLayout();
   fields->addWidget(new QLabel(tr("State")), 0, 0);
   fields->addWidget(state_label_, 0, 1);
-  fields->addWidget(new QLabel(tr("Task")), 1, 0);
-  fields->addWidget(task_label_, 1, 1);
-  fields->addWidget(new QLabel(tr("Segment")), 2, 0);
-  fields->addWidget(segment_label_, 2, 1);
-  fields->addWidget(new QLabel(tr("Progress")), 3, 0);
-  fields->addWidget(progress_bar_, 3, 1);
-  fields->addWidget(new QLabel(tr("Manager")), 4, 0);
-  fields->addWidget(message_label_, 4, 1);
-  // The manager cannot tell a cleared selection from a failed plan: both
-  // arrive as an empty task. Only the planner knows which, so show it.
-  fields->addWidget(new QLabel(tr("Planner")), 5, 0);
-  fields->addWidget(planner_label_, 5, 1);
-  fields->addWidget(new QLabel(tr("Last request")), 6, 0);
-  fields->addWidget(response_label_, 6, 1);
+  fields->addWidget(new QLabel(tr("Segment")), 1, 0);
+  fields->addWidget(segment_label_, 1, 1);
+  fields->addWidget(new QLabel(tr("Progress")), 2, 0);
+  fields->addWidget(progress_bar_, 2, 1);
   fields->setColumnStretch(1, 1);
+  // A grid hands the value column whatever the name column leaves, which in a
+  // narrow dock was less than the word "Executing" needs. State names have no
+  // break opportunity inside them, so the floor is the widest one, measured in
+  // the theme's own font rather than guessed in pixels.
+  const QFontMetrics metrics(state_label_->font());
+  int widest_state = 0;
+  for (const auto & name : {tr("Executing"), tr("Finished"), tr("Starting"),
+      tr("Invalid"), tr("preview"), tr("approach"), tr("connected")})
+  {
+    widest_state = std::max(widest_state, metrics.horizontalAdvance(name));
+  }
+  fields->setColumnMinimumWidth(1, widest_state);
 
   auto * buttons = new QGridLayout();
   buttons->addWidget(replan_button_, 0, 0);
@@ -83,11 +147,46 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   buttons->addWidget(start_button_, 1, 0);
   buttons->addWidget(cancel_button_, 1, 1);
 
+  // Task ids and manager sentences are longer than any dock is wide, so they
+  // get the full width with the name above rather than a column beside them.
+  auto * body = new QVBoxLayout();
+  body->addLayout(fields);
+  body->addWidget(makeCaption(tr("Task")));
+  body->addWidget(task_label_);
+  body->addWidget(makeCaption(tr("Manager")));
+  body->addWidget(message_label_);
+  // The manager cannot tell a cleared selection from a failed plan: both
+  // arrive as an empty task. Only the planner knows which, so show it.
+  body->addWidget(makeCaption(tr("Planner")));
+  body->addWidget(planner_label_);
+  body->addWidget(makeCaption(tr("Last request")));
+  body->addWidget(response_label_);
+  body->addStretch(1);
+
+  auto * content = new QWidget();
+  content->setLayout(body);
+
+  // A dock can be short as easily as it can be narrow, and three sentences
+  // stacked up outgrow it. Scrolling keeps the text reachable; without this
+  // the bottom rows are simply cut away.
+  auto * scroll = new QScrollArea();
+  scroll->setObjectName("content_scroll");
+  scroll->setWidget(content);
+  scroll->setWidgetResizable(true);
+  scroll->setFrameShape(QFrame::NoFrame);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
   auto * layout = new QVBoxLayout();
-  layout->addLayout(fields);
+  layout->addWidget(scroll, 1);
+  layout->addWidget(makeSeparator());
+  // The buttons stay outside the scroll area: an operator reaching for Cancel
+  // must not have to scroll to find it.
   layout->addLayout(buttons);
-  layout->addStretch(1);
   setLayout(layout);
+  // No explicit minimum width. An explicit one overrides the layout's own, so
+  // naming a number below what the rows actually need lets a dock shrink the
+  // panel into the clipping this layout exists to prevent. The layout knows
+  // the real figure; RViz clamps the dock to it.
 
   connect(replan_button_, &QPushButton::clicked, this, &CoveragePanel::onReplan);
   connect(clear_button_, &QPushButton::clicked, this, &CoveragePanel::onClearPoints);
@@ -173,11 +272,15 @@ void CoveragePanel::onCancel()
 
 void CoveragePanel::renderDisconnected()
 {
-  state_label_->setText(tr("No coverage manager status received."));
+  // The State row is a narrow column beside its name, so it holds the state
+  // and nothing else. The sentence explaining it belongs in the full-width
+  // Manager row, which is where every other manager message already goes.
+  state_label_->setText(tr("Not connected"));
   task_label_->setText("-");
   segment_label_->setText("-");
   progress_bar_->setValue(0);
-  message_label_->setText("-");
+  message_label_->setText(
+    tr("No status received from the coverage manager yet."));
   // Replan and clear only change the preview, never the running task, so they
   // stay available. Start and cancel follow the manager's own permissions,
   // which are unknown until it publishes: offering them here would let a click
@@ -194,9 +297,10 @@ void CoveragePanel::renderStatus(const Status & status)
   task_label_->setText(
     status.task_id.empty() ?
     tr("none") :
-    tr("%1  revision %2")
-    .arg(QString::fromStdString(status.task_id))
-    .arg(status.revision));
+    wrappableText(
+      tr("%1  revision %2")
+      .arg(QString::fromStdString(status.task_id))
+      .arg(status.revision)));
 
   if (status.total_segments == 0U) {
     segment_label_->setText("-");
@@ -208,7 +312,8 @@ void CoveragePanel::renderStatus(const Status & status)
   }
 
   progress_bar_->setValue(static_cast<int>(status.progress * 100.0F + 0.5F));
-  message_label_->setText(QString::fromStdString(status.message));
+  // Manager sentences quote the task id, so they need the same treatment.
+  message_label_->setText(wrappableText(QString::fromStdString(status.message)));
 
   // The manager publishes what it would accept, so this panel renders that
   // decision rather than deriving one from the state. Deriving it is how a
@@ -239,8 +344,8 @@ void CoveragePanel::refresh()
   } else {
     renderDisconnected();
   }
-  planner_label_->setText(planner.isEmpty() ? "-" : planner);
-  response_label_->setText(response.isEmpty() ? "-" : response);
+  planner_label_->setText(planner.isEmpty() ? "-" : wrappableText(planner));
+  response_label_->setText(response.isEmpty() ? "-" : wrappableText(response));
 }
 
 }  // namespace climbot_rviz_plugins

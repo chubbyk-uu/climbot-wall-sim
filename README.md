@@ -218,7 +218,10 @@ Start 和 Cancel 的置灰由管理器发布的 `can_start` / `can_cancel` 决�
 
 面板由 `climbot_rviz_plugins` 提供，已写入 `coverage.rviz`，随 launch 自动出现；
 若被关掉，用 RViz 菜单 `Panels → Add New Panel → climbot_rviz_plugins/Coverage`
-恢复。
+恢复。面板可以随 dock 拖窄到约 240 px：长消息整行换行，任务号在下划线处折行，
+正文放不下时滚动，按钮固定在底部不参与滚动。更窄 RViz 会拒绝，因为再窄按钮上的
+字就要被裁掉了。排版细节见
+[`src/climbot_rviz_plugins/README.md`](src/climbot_rviz_plugins/README.md)。
 
 同样的操作也可以走命令行，两者等价：
 

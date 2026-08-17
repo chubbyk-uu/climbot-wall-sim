@@ -20,15 +20,30 @@
 namespace climbot_rviz_plugins
 {
 
+/// Text a narrow dock can break, whatever is in it.
+///
+/// Word wrapping only breaks at spaces, so an identifier such as
+/// coverage_20260817_143512_rectangle is cut off mid-token in a dock narrower
+/// than the id. This adds a break opportunity after each separator, which the
+/// line breaker uses only when the line would otherwise overflow.
+QString wrappableText(const QString & text);
+
 /// Operator panel for planning, starting and stopping a coverage task.
 class CoveragePanel : public rviz_common::Panel
 {
   Q_OBJECT
 
 public:
+  using Status = climbot_interfaces::msg::CoverageStatus;
+
   explicit CoveragePanel(QWidget * parent = nullptr);
 
   void onInitialize() override;
+
+  /// Paint one manager status. Public so the layout test can drive the real
+  /// render path rather than a copy of it.
+  void renderStatus(const Status & status);
+  void renderDisconnected();
 
 private Q_SLOTS:
   void onReplan();
@@ -38,13 +53,10 @@ private Q_SLOTS:
   void refresh();
 
 private:
-  using Status = climbot_interfaces::msg::CoverageStatus;
   using Trigger = std_srvs::srv::Trigger;
 
   void call(const rclcpp::Client<Trigger>::SharedPtr & client, const QString & label);
   void note(const QString & text);
-  void renderStatus(const Status & status);
-  void renderDisconnected();
 
   QLabel * state_label_{nullptr};
   QLabel * task_label_{nullptr};
