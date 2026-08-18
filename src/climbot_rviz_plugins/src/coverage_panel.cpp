@@ -80,10 +80,19 @@ QString clockText(double seconds)
 }
 
 /// The schedule row: how long the task was planned to take, how much is left,
-/// and how far behind it is running. A dash whenever there is no schedule to
-/// report - before a task starts, and throughout a run in distance mode, which
-/// has none.
-QString scheduleText(const climbot_interfaces::msg::CoverageStatus & status)
+/// and how far behind it is running. A dash before a task starts, when there
+/// is nothing to report yet.
+///
+/// The duration model predicts both modes and its per-segment overheads were
+/// in fact fitted on distance-mode runs, so the total is no less accurate
+/// there. What differs is whether anything answers for it. In time mode the
+/// robot is driven from this schedule and the residual is measured and
+/// reported, so the figure is a commitment. In distance mode nothing enforces
+/// or observes it: a robot that slips more than the model assumed simply runs
+/// late and says nothing. That is worth telling an operator, and it is a
+/// different statement from the number being imprecise.
+QString scheduleText(
+  const climbot_interfaces::msg::CoverageStatus & status, const QString & tracking_mode)
 {
   if (!(status.planned_total_s > 0.0)) {
     return QStringLiteral("-");
@@ -91,6 +100,9 @@ QString scheduleText(const climbot_interfaces::msg::CoverageStatus & status)
   QString text = QObject::tr("total %1  ·  left ~%2")
     .arg(clockText(status.planned_total_s))
     .arg(clockText(status.estimated_remaining_s));
+  if (tracking_mode == QLatin1String("distance")) {
+    return text + QObject::tr("  ·  estimate only");
+  }
   // Under a tenth of a second is the measurement floor, not a schedule
   // deviation worth showing.
   if (std::abs(status.schedule_lag_s) >= 0.1) {
@@ -540,7 +552,15 @@ void CoveragePanel::renderStatus(const Status & status)
   }
 
   progress_bar_->setValue(static_cast<int>(status.progress * 100.0F + 0.5F));
-  schedule_label_->setText(scheduleText(status));
+  schedule_label_->setText(scheduleText(status, rendered_tracking_mode_));
+  schedule_label_->setToolTip(
+    rendered_tracking_mode_ == QLatin1String("distance") ?
+    tr("Predicted from the segment geometry. Nothing measures whether the run "
+    "keeps to it, so a robot losing ground runs late without reporting it. "
+    "Switch the algorithm to Timed trajectory for a schedule the controller "
+    "follows and reports against.") :
+    tr("The schedule the controller is driving from. The figure after it is "
+    "how far behind that schedule the robot currently is."));
   // Manager sentences quote the task id, so they need the same treatment.
   message_label_->setText(wrappableText(QString::fromStdString(status.message)));
 
@@ -581,6 +601,10 @@ void CoveragePanel::refresh()
   if (tracking_mode.isEmpty()) {
     readTrackingMode();
   }
+  // Handed to renderStatus through a member rather than an argument because
+  // the layout test drives that function directly, with no refresh to pass it
+  // through. Set before rendering, so the label never trails by a tick.
+  rendered_tracking_mode_ = tracking_mode;
   if (status) {
     renderStatus(*status);
   } else {

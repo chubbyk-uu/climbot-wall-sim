@@ -85,6 +85,9 @@ private:
   QPushButton * start_button_{nullptr};
   QPushButton * cancel_button_{nullptr};
   QTimer * refresh_timer_{nullptr};
+  // Qt-thread only: the mode the last refresh painted with, so renderStatus
+  // can label the schedule without reaching for the guarded copy.
+  QString rendered_tracking_mode_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<Status>::SharedPtr status_subscription_;
