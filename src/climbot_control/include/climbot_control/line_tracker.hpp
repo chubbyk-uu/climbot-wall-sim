@@ -54,6 +54,13 @@ struct Command
 
 double wrapAngle(double angle);
 std::optional<double> yawFromQuaternion(double x, double y, double z, double w) noexcept;
+/// The two guards trackLine puts on a commanded speed, on their own so the
+/// time-parameterised path can reuse them. They are safety limits rather than
+/// tracking terms: a large cross-track error means the robot is not on the
+/// line it is being asked to drive along, and a heading outside the alignment
+/// threshold means it is not even pointing at it. Both hold whichever way the
+/// speed itself was arrived at.
+double guardSpeed(double speed, double cross, double heading_error, const Limits & limits);
 Command trackLine(
   const Point2 & start, const Point2 & end, const Pose2 & pose,
   double cruise_speed, double cross_gain, double heading_gain, const Limits & limits,

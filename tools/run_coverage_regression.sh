@@ -14,9 +14,10 @@
 # running one at a time.
 #
 # Usage:
-#   tools/run_coverage_regression.sh [-j lanes] [-t tag] [-k] [case ...]
+#   tools/run_coverage_regression.sh [-j lanes] [-t tag] [-m mode] [-k] [case ...]
 #     -j  lanes to run in parallel (default 4)
 #     -t  tag for the output file names (default today, YYYY-MM-DD)
+#     -m  tracking mode: distance (default) or time
 #     -k  keep trajectories uncompressed (default: gzip them)
 #     case names default to all eight; see CASES below
 set -u
@@ -43,11 +44,13 @@ horizontal            coverage_horizontal_demo.yaml             rectangle horizo
 
 LANES=4
 TAG=$(date +%F)
+MODE=distance
 COMPRESS=1
-while getopts 'j:t:kh' opt; do
+while getopts 'j:t:m:kh' opt; do
   case $opt in
     j) LANES=$OPTARG ;;
     t) TAG=$OPTARG ;;
+    m) MODE=$OPTARG ;;
     k) COMPRESS=0 ;;
     h) sed -n '2,24p' "$0"; exit 0 ;;
     *) exit 2 ;;
@@ -73,6 +76,7 @@ done > "$QUEUE"
 echo "workspace : $WS"
 echo "lanes     : $LANES"
 echo "tag       : $TAG"
+echo "mode      : $MODE"
 echo "cases     : $(wc -l < "$QUEUE")"
 echo "logs      : $RUN_DIR"
 echo
@@ -153,7 +157,7 @@ run_lane() {
     disown
     sleep 10
     setsid ros2 launch climbot_control coverage_executor.launch.py \
-      use_sim_time:=true > "$log/executor.log" 2>&1 &
+      use_sim_time:=true tracking_mode:="$MODE" > "$log/executor.log" 2>&1 &
     disown
     sleep 10
 

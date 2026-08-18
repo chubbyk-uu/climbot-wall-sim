@@ -11,6 +11,7 @@
 #include "climbot_control/coverage_execution.hpp"
 #include "climbot_control/line_tracker.hpp"
 #include "climbot_control/segment_duration.hpp"
+#include "climbot_control/travel_profile.hpp"
 #include "climbot_control/turn_profile.hpp"
 #include "climbot_interfaces/action/execute_coverage.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -120,6 +121,35 @@ public:
 
     linear_acceleration_ = declare_parameter("max_linear_acceleration", 0.20);
     angular_acceleration_ = declare_parameter("max_angular_acceleration", 0.80);
+
+    // Time-parameterised tracking. The rated operating point is deliberately
+    // the same in both modes - the profile below is planned from cruise_speed
+    // and the two time_profile_* rates - so what separates them is how the
+    // speed is arrived at, not how fast the robot is allowed to be. The
+    // catch_up_* limits are the room the correction has to work in above that
+    // rated point; they are what makes a late robot able to catch up instead
+    // of only able to observe that it is late.
+    const std::string tracking_mode =
+      declare_parameter("tracking_mode", std::string("distance"));
+    if (tracking_mode == "distance") {
+      tracking_mode_ = TrackingMode::DISTANCE;
+    } else if (tracking_mode == "time") {
+      tracking_mode_ = TrackingMode::TIME;
+    } else {
+      throw std::invalid_argument("tracking_mode must be \"distance\" or \"time\".");
+    }
+    time_along_gain_ = declare_parameter("time_along_gain", 1.0);
+    time_along_integral_gain_ = declare_parameter("time_along_integral_gain", 0.0);
+    time_along_integral_limit_ = declare_parameter("time_along_integral_limit_m_s", 0.05);
+    time_profile_acceleration_ = declare_parameter("time_profile_acceleration", 0.20);
+    time_profile_deceleration_ = declare_parameter("time_profile_deceleration", 0.20);
+    catch_up_max_linear_speed_ = declare_parameter("catch_up_max_linear_speed", 0.35);
+    catch_up_max_linear_acceleration_ = declare_parameter(
+      "catch_up_max_linear_acceleration", 0.35);
+    time_axis_stretch_enabled_ = declare_parameter("time_axis_stretch_enabled", false);
+    time_axis_stretch_lag_ = declare_parameter("time_axis_stretch_lag_m", 0.05);
+    time_mode_final_approach_enabled_ = declare_parameter(
+      "time_mode_final_approach_enabled", false);
     wheel_separation_ = declare_parameter("wheel_separation", -1.0);
     wheel_speed_limit_ = declare_parameter("wheel_speed_limit", -1.0);
     wheel_acceleration_limit_ = declare_parameter("wheel_acceleration_limit", -1.0);
@@ -134,6 +164,7 @@ public:
     const auto zero = zeroInstant();
     alignment_profile_start_ = zero;
     alignment_settle_start_ = zero;
+    travel_start_ = zero;
     arc_entry_start_time_ = zero;
     goal_settle_start_ = zero;
     last_pose_received_time_ = zero;
@@ -357,6 +388,21 @@ private:
     limits_.gravity_direction.y /= gravity_norm;
     requirePositive("max_linear_acceleration", linear_acceleration_);
     requirePositive("max_angular_acceleration", angular_acceleration_);
+    requirePositive("time_profile_acceleration", time_profile_acceleration_);
+    requirePositive("time_profile_deceleration", time_profile_deceleration_);
+    requirePositive("catch_up_max_linear_speed", catch_up_max_linear_speed_);
+    requirePositive("catch_up_max_linear_acceleration", catch_up_max_linear_acceleration_);
+    requirePositive("time_axis_stretch_lag_m", time_axis_stretch_lag_);
+    requireFinite("time_along_gain", time_along_gain_);
+    requireFinite("time_along_integral_gain", time_along_integral_gain_);
+    requirePositive("time_along_integral_limit_m_s", time_along_integral_limit_);
+    if (time_along_gain_ < 0.0 || time_along_integral_gain_ < 0.0) {
+      throw std::invalid_argument("time_along gains must be non-negative.");
+    }
+    if (catch_up_max_linear_speed_ < cruise_speed_) {
+      throw std::invalid_argument(
+              "catch_up_max_linear_speed must leave room above cruise_speed.");
+    }
     requirePositive("wheel_separation", wheel_separation_);
     requirePositive("wheel_speed_limit", wheel_speed_limit_);
     requirePositive("wheel_acceleration_limit", wheel_acceleration_limit_);
@@ -595,6 +641,91 @@ private:
   /// saturates at max_heading_correction and still cannot work it off, which
   /// is what puts the first scan line off nominal. Scan and transition
   /// segments get the equivalent treatment from prepareDynamicReference().
+  /// Plans the speed curve the time-parameterised mode drives from, at the
+  /// instant the robot starts driving the segment rather than when it was
+  /// handed one. What is left to travel is measured here and not taken from
+  /// the nominal length: the alignment that just finished moved the robot, and
+  /// lockParallelScanLine may have replaced the segment outright while it was
+  /// turning. Both the ordinary path and the one out of an arc entry come
+  /// through ALIGN_SETTLE, so this is the only place that has to plan.
+  void beginTravel(const rclcpp::Time & current_time)
+  {
+    travel_start_ = current_time;
+    travel_stretch_credit_ = 0.0;
+    time_along_integral_ = 0.0;
+    schedule_lag_ = 0.0;
+    const double dx = end_.x - start_.x;
+    const double dy = end_.y - start_.y;
+    const double length = std::hypot(dx, dy);
+    if (length <= 1e-9) {
+      travel_profile_ = {};
+      travel_start_along_ = 0.0;
+      return;
+    }
+    travel_start_along_ =
+      ((pose_.x - start_.x) * dx + (pose_.y - start_.y) * dy) / length;
+    travel_profile_ = climbot_control::planTravel(
+      length - travel_start_along_, cruise_speed_,
+      time_profile_acceleration_, time_profile_deceleration_);
+    if (tracking_mode_ == TrackingMode::TIME) {
+      RCLCPP_INFO(
+        get_logger(), "Segment %zu scheduled over %.2f s for %.3f m remaining.",
+        current_segment_, travel_profile_.duration, travel_profile_.distance);
+    }
+  }
+
+  /// The commanded speed in time mode: the profile's own speed as feedforward,
+  /// corrected by how far behind the schedule the robot actually is. The
+  /// guards trackLine puts on a speed still apply, because they are about
+  /// whether the robot is on the line at all rather than about how the speed
+  /// was chosen.
+  double timeReferenceSpeed(
+    const rclcpp::Time & current_time, double dt, const climbot_control::Command & command)
+  {
+    const double elapsed = (current_time - travel_start_).seconds() - travel_stretch_credit_;
+    const auto sample = climbot_control::sampleTravel(travel_profile_, elapsed);
+    schedule_lag_ = sample.distance - (command.along - travel_start_along_);
+
+    // Holding the reference clock while the robot is far behind turns an
+    // unrecoverable schedule into a recoverable one, at the cost of no longer
+    // finishing on time. Off by default: the point of the first pass is to
+    // find out how far behind it actually gets.
+    if (time_axis_stretch_enabled_ && schedule_lag_ > time_axis_stretch_lag_) {
+      travel_stretch_credit_ += dt;
+    }
+
+    double integral_term = 0.0;
+    if (time_along_integral_gain_ > 0.0) {
+      const bool at_ceiling = previous_command_.linear >= catch_up_max_linear_speed_ - 1e-9;
+      const bool at_floor = previous_command_.linear <= 1e-9;
+      const bool would_wind_up = (at_ceiling && schedule_lag_ > 0.0) ||
+        (at_floor && schedule_lag_ < 0.0);
+      if (!would_wind_up) {
+        const double bound = time_along_integral_limit_ / time_along_integral_gain_;
+        time_along_integral_ = std::clamp(
+          time_along_integral_ + schedule_lag_ * dt, -bound, bound);
+      }
+      integral_term = time_along_integral_gain_ * time_along_integral_;
+    }
+
+    const double raw = sample.speed + time_along_gain_ * schedule_lag_ + integral_term;
+    return climbot_control::guardSpeed(
+      std::clamp(raw, 0.0, catch_up_max_linear_speed_),
+      command.cross, command.heading_error, limits_);
+  }
+
+  double linearAccelerationLimit() const
+  {
+    return tracking_mode_ == TrackingMode::TIME ?
+           catch_up_max_linear_acceleration_ : linear_acceleration_;
+  }
+
+  double linearDecelerationLimit() const
+  {
+    return tracking_mode_ == TrackingMode::TIME ?
+           catch_up_max_linear_acceleration_ : limits_.max_deceleration;
+  }
+
   void reanchorStartApproach()
   {
     if (!approaching_start_ || start_approach_reanchored_) {
@@ -1124,8 +1255,20 @@ private:
     }
     // After the cross-track integral update, which rebuilds the whole command:
     // clamping before it left final_approach_speed_mps with no effect at all.
-    if (motion_state_ == MotionState::FINAL_APPROACH) {
-      desired.linear = std::min(desired.linear, final_approach_speed_);
+    //
+    // Time mode replaces exactly one signal here and leaves the rest of the
+    // command as trackLine built it, so an A/B against distance mode can only
+    // differ through the linear speed. The final-approach fallback hands the
+    // last few centimetres back to the distance-to-stop curve; it is off by
+    // default so the first pass measures what the schedule alone lands.
+    const bool distance_drives_linear = tracking_mode_ == TrackingMode::DISTANCE ||
+      (motion_state_ == MotionState::FINAL_APPROACH && time_mode_final_approach_enabled_);
+    if (distance_drives_linear) {
+      if (motion_state_ == MotionState::FINAL_APPROACH) {
+        desired.linear = std::min(desired.linear, final_approach_speed_);
+      }
+    } else {
+      desired.linear = timeReferenceSpeed(current_time, dt, desired);
     }
     if (oscillation_monitor_->update(desired.cross, desired.along) &&
       !oscillation_warning_emitted_)
@@ -1239,8 +1382,12 @@ private:
                 }
               }
               reanchorStartApproach();
-              motion_state_ = arc_entry_active_ ?
-                MotionState::ARC_ENTRY : MotionState::TRACK_LINE;
+              if (arc_entry_active_) {
+                motion_state_ = MotionState::ARC_ENTRY;
+              } else {
+                beginTravel(current_time);
+                motion_state_ = MotionState::TRACK_LINE;
+              }
               cross_integral_ = 0.0;
             }
           }
@@ -1273,7 +1420,7 @@ private:
     const climbot_control::Command & desired, double dt, double angular_acceleration)
   {
     previous_command_ = climbot_control::rateLimit(
-      desired, previous_command_, dt, linear_acceleration_, limits_.max_deceleration,
+      desired, previous_command_, dt, linearAccelerationLimit(), linearDecelerationLimit(),
       angular_acceleration, wheel_separation_, wheel_speed_limit_,
       wheel_acceleration_limit_);
     geometry_msgs::msg::Twist command;
@@ -1281,6 +1428,12 @@ private:
     command.angular.z = previous_command_.angular;
     command_publisher_->publish(command);
   }
+
+  enum class TrackingMode
+  {
+    DISTANCE,
+    TIME,
+  };
 
   enum class MotionState
   {
@@ -1295,6 +1448,23 @@ private:
   };
 
   bool have_pose_{false};
+  TrackingMode tracking_mode_{TrackingMode::DISTANCE};
+  double time_along_gain_{1.0};
+  double time_along_integral_gain_{0.0};
+  double time_along_integral_limit_{0.05};
+  double time_along_integral_{0.0};
+  double time_profile_acceleration_{0.20};
+  double time_profile_deceleration_{0.20};
+  double catch_up_max_linear_speed_{0.35};
+  double catch_up_max_linear_acceleration_{0.35};
+  bool time_axis_stretch_enabled_{false};
+  double time_axis_stretch_lag_{0.05};
+  bool time_mode_final_approach_enabled_{false};
+  climbot_control::TravelProfile travel_profile_{};
+  rclcpp::Time travel_start_;
+  double travel_start_along_{0.0};
+  double travel_stretch_credit_{0.0};
+  double schedule_lag_{0.0};
   double cruise_speed_{0.20};
   double cross_gain_{1.0};
   double cross_integral_gain_{0.30};

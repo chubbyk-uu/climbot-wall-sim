@@ -27,6 +27,7 @@ def generate_launch_description():
         parameters=[LaunchConfiguration('config_file'), {
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'standalone_mode': LaunchConfiguration('standalone_mode'),
+            'tracking_mode': LaunchConfiguration('tracking_mode'),
             'wheel_separation': float(wheel['separation_m']),
             'wheel_speed_limit': float(drive['max_linear_velocity_mps']),
             'wheel_acceleration_limit': float(
@@ -38,6 +39,10 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('standalone_mode', default_value='true'),
+        # Deliberately an argument and not a config entry: an A/B run switches
+        # it per launch, and a value in control.yaml would be overridden here
+        # without saying so.
+        DeclareLaunchArgument('tracking_mode', default_value='distance'),
         DeclareLaunchArgument('config_file', default_value=default_config),
         tracker,
     ])

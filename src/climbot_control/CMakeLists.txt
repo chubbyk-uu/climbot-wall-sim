@@ -11,7 +11,7 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
 add_library(line_tracker src/line_tracker.cpp src/command_watchdog.cpp src/coverage_execution.cpp
-  src/turn_profile.cpp src/segment_duration.cpp)
+  src/turn_profile.cpp src/travel_profile.cpp src/segment_duration.cpp)
 target_compile_features(line_tracker PUBLIC cxx_std_17)
 target_include_directories(line_tracker PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -52,6 +52,8 @@ if(BUILD_TESTING)
   target_include_directories(test_control_clock PRIVATE include)
   ament_add_gtest(test_segment_duration test/test_segment_duration.cpp)
   target_link_libraries(test_segment_duration line_tracker)
+  ament_add_gtest(test_travel_profile test/test_travel_profile.cpp)
+  target_link_libraries(test_travel_profile line_tracker)
   target_link_libraries(test_line_tracker line_tracker)
   target_include_directories(test_line_tracker PRIVATE include)
   # Every launch test gets its own ROS_DOMAIN_ID. They all start real nodes on
@@ -70,6 +72,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_manager_executor_loss.py TIMEOUT 120 ENV ROS_DOMAIN_ID=49)
   add_launch_test(test/test_coverage_executor_config.py TIMEOUT 60 ENV ROS_DOMAIN_ID=50)
   add_launch_test(test/test_coverage_arc_entry.py TIMEOUT 90 ENV ROS_DOMAIN_ID=51)
+  add_launch_test(test/test_line_tracker_time_mode.py TIMEOUT 90 ENV ROS_DOMAIN_ID=52)
 endif()
 
 ament_export_include_directories(include)

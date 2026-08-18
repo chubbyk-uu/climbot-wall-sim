@@ -23,6 +23,21 @@ std::optional<double> yawFromQuaternion(double x, double y, double z, double w) 
   return std::atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z));
 }
 
+double guardSpeed(double speed, double cross, double heading_error, const Limits & limits)
+{
+  if (std::abs(cross) > limits.cross_slowdown_start) {
+    const double ratio = (limits.cross_slowdown_full - std::abs(cross)) /
+      (limits.cross_slowdown_full - limits.cross_slowdown_start);
+    const double scale = std::clamp(
+      ratio, limits.cross_slowdown_min_scale, 1.0);
+    speed *= scale;
+  }
+  if (std::abs(heading_error) > limits.alignment_threshold) {
+    return 0.0;
+  }
+  return speed;
+}
+
 Command trackLine(
   const Point2 & start, const Point2 & end, const Pose2 & pose,
   double cruise_speed, double cross_gain, double heading_gain, const Limits & limits,
@@ -53,18 +68,9 @@ Command trackLine(
   const double remaining = length - along;
   const double braking_speed = std::sqrt(std::max(0.0,
       2.0 * limits.braking_deceleration * std::max(0.0, remaining)));
-  double linear = std::clamp(std::min(cruise_speed, braking_speed),
-    0.0, limits.max_linear);
-  if (std::abs(cross) > limits.cross_slowdown_start) {
-    const double ratio = (limits.cross_slowdown_full - std::abs(cross)) /
-      (limits.cross_slowdown_full - limits.cross_slowdown_start);
-    const double scale = std::clamp(
-      ratio, limits.cross_slowdown_min_scale, 1.0);
-    linear *= scale;
-  }
-  if (std::abs(heading_error) > limits.alignment_threshold) {
-    linear = 0.0;
-  }
+  const double linear = guardSpeed(
+    std::clamp(std::min(cruise_speed, braking_speed), 0.0, limits.max_linear),
+    cross, heading_error, limits);
   const bool correction_saturated =
     gravity_feedforward != raw_gravity_feedforward || cross_feedback != raw_cross_feedback ||
     heading_correction != raw_heading_correction;

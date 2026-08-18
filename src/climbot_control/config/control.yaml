@@ -69,6 +69,33 @@ line_tracker:
     goal_settle_duration_s: 0.30
     max_linear_acceleration: 0.20
     max_linear_deceleration: 0.25
+    # Time-parameterised tracking. The mode itself is a launch argument rather
+    # than a value here: an A/B run has to switch it without editing a shipped
+    # config, and a setting in both places would silently disagree.
+    #
+    # The profile rates are symmetric and equal to the rated acceleration, so
+    # both modes plan from the same operating point and their nominal segment
+    # durations differ by under 2%. The catch_up_* pair is the room the
+    # correction works in above that: the profile has to ask for less than the
+    # rate limiter can deliver, or the command trails the curve the whole way
+    # down with nothing left for the correction - which is the same reason
+    # braking_profile_deceleration above sits below max_linear_deceleration.
+    time_profile_acceleration: 0.20
+    time_profile_deceleration: 0.20
+    catch_up_max_linear_speed: 0.35
+    catch_up_max_linear_acceleration: 0.35
+    # Feedforward carries the motion; this only removes the residual lag. Pure
+    # P until a run shows a steady-state lag it cannot close.
+    time_along_gain: 1.0
+    time_along_integral_gain: 0.0
+    time_along_integral_limit_m_s: 0.05
+    # Both off for the first pass: the point is to measure what the schedule
+    # alone does, not to hide its failure modes. The first holds the reference
+    # clock while the robot is far behind, the second hands the last few
+    # centimetres back to the distance-to-stop curve.
+    time_axis_stretch_enabled: false
+    time_axis_stretch_lag_m: 0.05
+    time_mode_final_approach_enabled: false
     # Deliberately below max_linear_deceleration: the distance-to-stop profile
     # has to ask for less than the rate limiter can deliver, or the command
     # trails the profile all the way down and passes the endpoint. Braking

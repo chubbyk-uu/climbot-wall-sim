@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "climbot_control/travel_profile.hpp"
 #include "climbot_control/turn_profile.hpp"
 
 namespace climbot_control
@@ -25,19 +26,13 @@ double estimateTravelDuration(double length, const DurationModel & model)
   {
     return 0.0;
   }
-  const double accel = model.cruise_speed / model.linear_acceleration;
-  const double brake = model.cruise_speed / model.braking_deceleration;
-  const double ramp_distance = 0.5 * model.cruise_speed * (accel + brake);
-  if (length >= ramp_distance) {
-    return accel + brake + (length - ramp_distance) / model.cruise_speed;
-  }
-  // Too short to reach cruise speed: it accelerates to a lower peak and brakes
-  // straight back down, so solve for the peak the two ramps can share.
-  const double harmonic =
-    model.linear_acceleration * model.braking_deceleration /
-    (model.linear_acceleration + model.braking_deceleration);
-  const double peak = std::sqrt(2.0 * harmonic * length);
-  return peak / model.linear_acceleration + peak / model.braking_deceleration;
+  // The same curve the time-parameterised controller drives from, only asked
+  // for the pair of ramps the distance-based controller actually produces: it
+  // accelerates at the rate limiter's bound and brakes on the far gentler
+  // distance-to-stop curve.
+  return planTravel(
+    length, model.cruise_speed, model.linear_acceleration,
+    model.braking_deceleration).duration;
 }
 
 double estimateSegmentDuration(double length, double turn_angle, const DurationModel & model)
