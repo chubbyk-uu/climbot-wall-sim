@@ -92,10 +92,20 @@ line_tracker:
     # acceleration for the whole ramp - 16 mm a segment, the entire startup
     # shortfall - so the curve's acceleration is fed forward as well.
     time_speed_lag_s: 0.08
-    # Feedforward carries the motion; this only removes the residual lag. Pure
-    # P: the cruise phase tracks the commanded speed to within a percent, so
-    # there is no steady-state error for an integral term to remove.
-    time_along_gain: 1.0
+    # Feedforward carries the motion; this only removes the residual lag, and
+    # the gain was chosen from both ends of its range rather than tuned by eye.
+    # At 0 the vertical rectangle fails outright: with the linear channel open
+    # loop, a climb loses along-track distance to gravity, the curve runs out
+    # while the robot is still short, the command goes to zero and the segment
+    # times out 174 mm from its endpoint. At 3 the peak lag halves against 1
+    # and the endpoints are no worse. At 6 nothing improves - same lag, same
+    # endpoints - while the command works 5.7 times as hard as at 1. So 3 is
+    # the knee, and what it buys is margin against the one disturbance that has
+    # actually been seen to break this mode, not a better acceptance number.
+    #
+    # Pure P: the cruise phase tracks the commanded speed to within a percent,
+    # so there is no steady-state error for an integral term to remove.
+    time_along_gain: 3.0
     time_along_integral_gain: 0.0
     time_along_integral_limit_m_s: 0.05
     # Both off for the first pass: the point is to measure what the schedule
