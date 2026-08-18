@@ -110,14 +110,6 @@
       </geometry>
       <material name="body_orange"/>
     </visual>
-    <visual>
-      <origin xyz="${base_x + length / 2.0 - 0.03} ${base_y}
-                   ${base_z + thickness / 2.0 + 0.011}"/>
-      <geometry>
-        <box size="0.07 ${width * 0.41} 0.025"/>
-      </geometry>
-      <material name="marker_dark"/>
-    </visual>
     <collision>
       <origin xyz="${base_x} ${base_y} ${base_z}"/>
       <geometry>
@@ -125,6 +117,27 @@
       </geometry>
     </collision>
   </link>
+
+  <!-- The heading marker is its own link only because RViz paints every
+       visual of a link with one material: as a second visual on base_link it
+       came out the same orange as the chassis and stopped showing which way
+       the robot faces. Gazebo does honour per-visual materials, so in
+       model.sdf.xacro it stays a visual on the chassis and no massless link
+       is added to the physics model. Geometry and pose are the same in both. -->
+  <link name="front_marker_link">
+    <visual>
+      <geometry>
+        <box size="0.07 ${width * 0.41} 0.025"/>
+      </geometry>
+      <material name="marker_dark"/>
+    </visual>
+  </link>
+  <joint name="front_marker_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_marker_link"/>
+    <origin xyz="${base_x + length / 2.0 - 0.03} ${base_y}
+                 ${base_z + thickness / 2.0 + 0.011}"/>
+  </joint>
 
   <!-- The IMU is co-located with base_link, so this frame is coincident
        with it. It exists so an offset mount only needs robot.yaml changed. -->
