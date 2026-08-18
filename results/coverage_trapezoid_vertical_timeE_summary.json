@@ -1,0 +1,543 @@
+{
+  "completed": true,
+  "completed_segments": 19,
+  "coverage": {
+    "covered_area_m2": 9.113000000000001,
+    "covered_cells": 91130,
+    "missed_ratio": 0.013744588744588726,
+    "ratio": 0.9862554112554113,
+    "region_area_m2": 9.24,
+    "region_cells": 92400,
+    "resolution_m": 0.01
+  },
+  "elapsed_time_s": 290.552,
+  "execution_quality": {
+    "actual_path_length_m": 30.777257217603307,
+    "actual_to_planned_length_ratio": 1.0279578674006147,
+    "maximum_endpoint_error_m": 0.003860277329600358,
+    "maximum_heading_compensation_deg": 7.023786372665144,
+    "maximum_horizontal_height_drift_m": null,
+    "maximum_tracking_angular_speed_rps": 0.036265778649727125,
+    "maximum_turn_end_heading_error_deg": 0.9648421404959641,
+    "planned_path_length_m": 29.940193264369295,
+    "segments": [
+      {
+        "endpoint_error_m": 0.0019396929005851284,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.6893442949902095,
+        "maximum_tracking_angular_speed_rps": 0.03050853203257109,
+        "segment": 0,
+        "turn_end_heading_error_deg": 0.7297080632707066
+      },
+      {
+        "endpoint_error_m": 0.0022698473055283207,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 1.5702300652941135,
+        "maximum_tracking_angular_speed_rps": 0.01597109260382412,
+        "segment": 1,
+        "turn_end_heading_error_deg": 0.009087220361413089
+      },
+      {
+        "endpoint_error_m": 0.0022044957189612567,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.6532035265481975,
+        "maximum_tracking_angular_speed_rps": 0.026370483885186584,
+        "segment": 2,
+        "turn_end_heading_error_deg": 0.6290430977468991
+      },
+      {
+        "endpoint_error_m": 0.0022711885264836053,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 7.023786372665144,
+        "maximum_tracking_angular_speed_rps": 0.03360029934951503,
+        "segment": 3,
+        "turn_end_heading_error_deg": 0.9648421404959641
+      },
+      {
+        "endpoint_error_m": 0.002201163060092204,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.8650283987463754,
+        "maximum_tracking_angular_speed_rps": 0.03524973646440754,
+        "segment": 4,
+        "turn_end_heading_error_deg": 0.7470470693247382
+      },
+      {
+        "endpoint_error_m": 0.0030627559161323825,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 6.90884988808747,
+        "maximum_tracking_angular_speed_rps": 0.02857321825084713,
+        "segment": 5,
+        "turn_end_heading_error_deg": 0.6847553602779487
+      },
+      {
+        "endpoint_error_m": 0.0015760443906705044,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.864676036899944,
+        "maximum_tracking_angular_speed_rps": 0.029741175602675526,
+        "segment": 6,
+        "turn_end_heading_error_deg": 0.7092934982015865
+      },
+      {
+        "endpoint_error_m": 0.002728748131676986,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 6.780795457333176,
+        "maximum_tracking_angular_speed_rps": 0.028645654131500883,
+        "segment": 7,
+        "turn_end_heading_error_deg": 0.7254781121467907
+      },
+      {
+        "endpoint_error_m": 0.0018738409219973605,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.9892922450542972,
+        "maximum_tracking_angular_speed_rps": 0.03475722345801957,
+        "segment": 8,
+        "turn_end_heading_error_deg": 0.7992226530337173
+      },
+      {
+        "endpoint_error_m": 0.0030317738553591106,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 6.9096889018933805,
+        "maximum_tracking_angular_speed_rps": 0.027332660770926092,
+        "segment": 9,
+        "turn_end_heading_error_deg": 0.6915358828594715
+      },
+      {
+        "endpoint_error_m": 0.0025116840609084668,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.9291530488239851,
+        "maximum_tracking_angular_speed_rps": 0.036265778649727125,
+        "segment": 10,
+        "turn_end_heading_error_deg": 0.7552327721626667
+      },
+      {
+        "endpoint_error_m": 0.0018923171461681437,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 6.893463195675934,
+        "maximum_tracking_angular_speed_rps": 0.03161821853083746,
+        "segment": 11,
+        "turn_end_heading_error_deg": 0.8822925181032204
+      },
+      {
+        "endpoint_error_m": 0.0022107281109084932,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.8209652624245249,
+        "maximum_tracking_angular_speed_rps": 0.02333676991817679,
+        "segment": 12,
+        "turn_end_heading_error_deg": 0.8919850278054723
+      },
+      {
+        "endpoint_error_m": 0.0023956915713526897,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 6.88731952296843,
+        "maximum_tracking_angular_speed_rps": 0.03133031257150354,
+        "segment": 13,
+        "turn_end_heading_error_deg": 0.7204854369664457
+      },
+      {
+        "endpoint_error_m": 0.0021928197158485657,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.8716759645645961,
+        "maximum_tracking_angular_speed_rps": 0.03584217375344511,
+        "segment": 14,
+        "turn_end_heading_error_deg": 0.7482901536394404
+      },
+      {
+        "endpoint_error_m": 0.0021696713311054362,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 6.8254448321231305,
+        "maximum_tracking_angular_speed_rps": 0.032106030085953134,
+        "segment": 15,
+        "turn_end_heading_error_deg": 0.6219543234149096
+      },
+      {
+        "endpoint_error_m": 0.001976134695726154,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.8150219089317485,
+        "maximum_tracking_angular_speed_rps": 0.030112990419283385,
+        "segment": 16,
+        "turn_end_heading_error_deg": 0.685345983587297
+      },
+      {
+        "endpoint_error_m": 0.0018021497076240443,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 1.847653939745,
+        "maximum_tracking_angular_speed_rps": 0.017961928754386406,
+        "segment": 17,
+        "turn_end_heading_error_deg": 0.19337677095377476
+      },
+      {
+        "endpoint_error_m": 0.003860277329600358,
+        "horizontal_height_drift_m": null,
+        "maximum_heading_compensation_deg": 0.781956412527625,
+        "maximum_tracking_angular_speed_rps": 0.03144407861759113,
+        "segment": 18,
+        "turn_end_heading_error_deg": 0.7916343447287317
+      }
+    ]
+  },
+  "passed": true,
+  "provenance": {
+    "evaluator_parameters": {
+      "case": "planned_task",
+      "coverage_grid_resolution_m": 0.01,
+      "execution_timeout_s": 900.0,
+      "maximum_cross_error_m": 0.05,
+      "maximum_cross_rms_m": 0.02,
+      "maximum_endpoint_error_m": 0.03,
+      "maximum_heading_range_deg": 5.0,
+      "maximum_horizontal_height_drift_m": 0.03,
+      "maximum_scan_line_spacing_error_m": 0.02,
+      "maximum_turn_end_heading_error_deg": 2.0,
+      "maximum_visible_reversals": 0,
+      "minimum_actual_coverage_ratio": 0.95,
+      "startup_timeout_s": 90.0,
+      "summary_json": "results/coverage_trapezoid_vertical_timeE_summary.json",
+      "trajectory_csv": "results/coverage_trapezoid_vertical_timeE_trajectory.csv",
+      "visible_excursion_m": 0.02
+    },
+    "git": {
+      "branch": "feature/time-parameterized-control",
+      "commit": "4321cd7092d95315ebf060725e128bae988b47e5",
+      "source_modified": true
+    },
+    "recorded_utc": "2026-08-18T12:33:26.204360+00:00"
+  },
+  "result_code": 0,
+  "result_message": "Coverage task completed.",
+  "revision": 1,
+  "scan_line_spacing": {
+    "crossing_scan_lines": 0,
+    "maximum_scan_line_offset_m": 0.0033752192791571822,
+    "maximum_scan_line_spacing_error_m": 0.004343772445082994,
+    "scan_line_offsets_m": [
+      0.00045802370095293643,
+      0.00041026448816070676,
+      0.0019664506630186485,
+      0.0025438963463951803,
+      0.0033752192791571822,
+      0.003054883844471945,
+      -0.001288888600611049,
+      0.002183893774007295,
+      0.0024033220126566945,
+      -0.000622252893104136
+    ],
+    "scan_line_spacing_errors_m": [
+      -4.775921279220885e-05,
+      0.0015561861748579209,
+      0.0005774456833765318,
+      0.000831322932762002,
+      -0.0003203354346852372,
+      -0.004343772445082994,
+      0.003472782374618344,
+      0.00021942823864939953,
+      -0.0030255749057608305
+    ]
+  },
+  "schedule": {
+    "planned_total_s": 290.38594706327945,
+    "schedule_lag_max_s": 0.05094837998679491,
+    "schedule_lag_min_s": -0.048478575044828
+  },
+  "segment_metrics": [
+    {
+      "heading_range_deg": 0.7306631832360997,
+      "maximum": 0.0009198951791651311,
+      "reversals": 0,
+      "rms": 0.0003297410404574074,
+      "samples": 640,
+      "segment": 0
+    },
+    {
+      "heading_range_deg": 0.32196957060246867,
+      "maximum": 0.001541451621473792,
+      "reversals": 0,
+      "rms": 0.0011112666702995345,
+      "samples": 970,
+      "segment": 1
+    },
+    {
+      "heading_range_deg": 0.8278665873267707,
+      "maximum": 0.001690807507995766,
+      "reversals": 0,
+      "rms": 0.0009002416259367945,
+      "samples": 1407,
+      "segment": 2
+    },
+    {
+      "heading_range_deg": 0.8846511096380099,
+      "maximum": 0.003957741072609476,
+      "reversals": 0,
+      "rms": 0.0025485070406830734,
+      "samples": 360,
+      "segment": 3
+    },
+    {
+      "heading_range_deg": 0.9444147025793417,
+      "maximum": 0.0024160005195258405,
+      "reversals": 0,
+      "rms": 0.00031681196443482097,
+      "samples": 1546,
+      "segment": 4
+    },
+    {
+      "heading_range_deg": 0.7120289059786674,
+      "maximum": 0.004984470675304131,
+      "reversals": 0,
+      "rms": 0.003342159967238316,
+      "samples": 363,
+      "segment": 5
+    },
+    {
+      "heading_range_deg": 0.9541367599980423,
+      "maximum": 0.0023786561786584004,
+      "reversals": 0,
+      "rms": 0.000453542957683446,
+      "samples": 1530,
+      "segment": 6
+    },
+    {
+      "heading_range_deg": 0.7563329535966594,
+      "maximum": 0.0024676856254840607,
+      "reversals": 0,
+      "rms": 0.001483749561997777,
+      "samples": 367,
+      "segment": 7
+    },
+    {
+      "heading_range_deg": 1.0854667968430727,
+      "maximum": 0.0031607711573060637,
+      "reversals": 0,
+      "rms": 0.00048318694192869127,
+      "samples": 1540,
+      "segment": 8
+    },
+    {
+      "heading_range_deg": 0.7371157117741088,
+      "maximum": 0.004950419291511214,
+      "reversals": 0,
+      "rms": 0.003217522464939902,
+      "samples": 366,
+      "segment": 9
+    },
+    {
+      "heading_range_deg": 1.0434398414891703,
+      "maximum": 0.0009492173045009267,
+      "reversals": 0,
+      "rms": 0.0005379448071680629,
+      "samples": 1531,
+      "segment": 10
+    },
+    {
+      "heading_range_deg": 0.7668801270560645,
+      "maximum": 0.003954204406351487,
+      "reversals": 0,
+      "rms": 0.002552108493968636,
+      "samples": 372,
+      "segment": 11
+    },
+    {
+      "heading_range_deg": 0.920805412676279,
+      "maximum": 0.003063374259501428,
+      "reversals": 0,
+      "rms": 0.0011097196126978609,
+      "samples": 1544,
+      "segment": 12
+    },
+    {
+      "heading_range_deg": 0.6880204214792155,
+      "maximum": 0.005058063542701524,
+      "reversals": 0,
+      "rms": 0.0033429027908078025,
+      "samples": 374,
+      "segment": 13
+    },
+    {
+      "heading_range_deg": 1.0112238991270985,
+      "maximum": 0.0014298271482480198,
+      "reversals": 0,
+      "rms": 0.0005274167714006465,
+      "samples": 1530,
+      "segment": 14
+    },
+    {
+      "heading_range_deg": 0.7040623133415875,
+      "maximum": 0.0040665598168907816,
+      "reversals": 0,
+      "rms": 0.0027225522628026326,
+      "samples": 363,
+      "segment": 15
+    },
+    {
+      "heading_range_deg": 0.9283945049383896,
+      "maximum": 0.0006717863008409708,
+      "reversals": 0,
+      "rms": 0.0004236792064091411,
+      "samples": 1421,
+      "segment": 16
+    },
+    {
+      "heading_range_deg": 0.2637444662605551,
+      "maximum": 0.001142016003897526,
+      "reversals": 0,
+      "rms": 0.0008882554710002383,
+      "samples": 890,
+      "segment": 17
+    },
+    {
+      "heading_range_deg": 0.8788975054720177,
+      "maximum": 0.0007412396518118314,
+      "reversals": 0,
+      "rms": 0.0004975947248185111,
+      "samples": 636,
+      "segment": 18
+    }
+  ],
+  "task": {
+    "coverage_region": [
+      [
+        -0.6000000238418579,
+        1.399999976158142
+      ],
+      [
+        3.4000000953674316,
+        1.399999976158142
+      ],
+      [
+        2.700000047683716,
+        4.199999809265137
+      ],
+      [
+        0.10000000149011612,
+        4.199999809265137
+      ]
+    ],
+    "detection_length_m": 0.01,
+    "detection_width_m": 0.5,
+    "motion_region": [
+      [
+        -4.45188570022583,
+        0.5481141209602356
+      ],
+      [
+        4.45188570022583,
+        0.5481141209602356
+      ],
+      [
+        4.45188570022583,
+        7.45188570022583
+      ],
+      [
+        -4.45188570022583,
+        7.45188570022583
+      ]
+    ],
+    "revision": 1,
+    "segment_types": [
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1
+    ],
+    "sweep_direction": 2,
+    "task_id": "trapezoid-vertical-demo",
+    "waypoints": [
+      [
+        -0.35,
+        1.395
+      ],
+      [
+        -0.35,
+        2.4050000000000002
+      ],
+      [
+        0.03888888888888892,
+        3.960555555555557
+      ],
+      [
+        0.03888888888888892,
+        1.395
+      ],
+      [
+        0.4277777777777778,
+        1.395
+      ],
+      [
+        0.4277777777777778,
+        4.205
+      ],
+      [
+        0.8166666666666668,
+        4.205
+      ],
+      [
+        0.8166666666666668,
+        1.395
+      ],
+      [
+        1.2055555555555557,
+        1.395
+      ],
+      [
+        1.2055555555555557,
+        4.205
+      ],
+      [
+        1.5944444444444446,
+        4.205
+      ],
+      [
+        1.5944444444444446,
+        1.395
+      ],
+      [
+        1.9833333333333334,
+        1.395
+      ],
+      [
+        1.9833333333333334,
+        4.205
+      ],
+      [
+        2.3722222222222222,
+        4.205
+      ],
+      [
+        2.3722222222222222,
+        1.395
+      ],
+      [
+        2.761111111111111,
+        1.395
+      ],
+      [
+        2.761111111111111,
+        3.9605555555555565
+      ],
+      [
+        3.15,
+        2.4050000000000002
+      ],
+      [
+        3.15,
+        1.395
+      ]
+    ]
+  },
+  "task_id": "trapezoid-vertical-demo",
+  "trajectory_samples": 29055
+}
