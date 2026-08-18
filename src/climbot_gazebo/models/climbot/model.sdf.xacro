@@ -177,8 +177,8 @@
           </box>
         </geometry>
         <material>
-          <ambient>0.08 0.22 0.55 1</ambient>
-          <diffuse>0.10 0.32 0.80 1</diffuse>
+          <ambient>0.66 0.31 0.03 1</ambient>
+          <diffuse>0.95 0.45 0.05 1</diffuse>
           <specular>0.25 0.25 0.25 1</specular>
         </material>
       </visual>
@@ -189,9 +189,11 @@
             <size>0.07 ${width * 0.41} 0.025</size>
           </box>
         </geometry>
+        <!-- Dark, not orange: it has to stay readable against the orange
+             chassis. Matches marker_dark in climbot.urdf.xacro. -->
         <material>
-          <ambient>0.9 0.25 0.05 1</ambient>
-          <diffuse>1.0 0.32 0.05 1</diffuse>
+          <ambient>0.08 0.09 0.10 1</ambient>
+          <diffuse>0.12 0.13 0.15 1</diffuse>
         </material>
       </visual>
 
