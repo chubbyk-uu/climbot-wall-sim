@@ -182,6 +182,13 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   clear_button_ = new QPushButton(tr("Clear points"));
   start_button_ = new QPushButton(tr("Start"));
   cancel_button_ = new QPushButton(tr("Cancel / Stop"));
+  // Named so a test can reach them. Without names the one test that already
+  // checked a button's state had to guard against not finding it, which turned
+  // the check into a no-op.
+  replan_button_->setObjectName("replan_button");
+  clear_button_->setObjectName("clear_button");
+  start_button_->setObjectName("start_button");
+  cancel_button_->setObjectName("cancel_button");
   // The buttons keep their default policy, unlike the labels. A label with no
   // room wraps; a button label with no room is simply cut, and "Cancel / Sto"
   // is not a control an operator should have to act on. So the buttons are
@@ -488,7 +495,7 @@ void CoveragePanel::renderConfig(const Config & config)
     tr("from configuration file"));
   // Point selection is meaningless outside rviz input mode, and so is the
   // button that consumes it.
-  clear_button_->setEnabled(clicking);
+  clear_button_->setEnabled(clicking && !task_running_);
 }
 
 void CoveragePanel::onReplan()
@@ -516,6 +523,7 @@ void CoveragePanel::renderDisconnected()
   // The State row is a narrow column beside its name, so it holds the state
   // and nothing else. The sentence explaining it belongs in the full-width
   // Manager row, which is where every other manager message already goes.
+  task_running_ = false;
   state_label_->setText(tr("Not connected"));
   task_label_->setText("-");
   segment_label_->setText("-");
@@ -575,8 +583,21 @@ void CoveragePanel::renderStatus(const Status & status)
   // preview, so they are never withheld here.
   start_button_->setEnabled(status.can_start);
   cancel_button_->setEnabled(status.can_cancel);
-  replan_button_->setEnabled(true);
-  clear_button_->setEnabled(true);
+  // Everything that shapes a task is frozen while one is running, so the only
+  // thing left to do to a running task is stop it. These controls were left
+  // live on the grounds that they only touch the preview and never the running
+  // task, which is true of the messages they send and false of what an
+  // operator sees: the preview is the trajectory drawn over the robot, and
+  // changing the shape now withdraws it mid-drive, which reads as the mission
+  // having been altered or lost.
+  task_running_ = status.can_cancel;
+  replan_button_->setEnabled(!task_running_);
+  clear_button_->setEnabled(!task_running_);
+  if (task_running_) {
+    region_box_->setEnabled(false);
+    sweep_box_->setEnabled(false);
+    algorithm_box_->setEnabled(false);
+  }
 }
 
 void CoveragePanel::refresh()
@@ -621,14 +642,12 @@ void CoveragePanel::refresh()
   }
   // Enabled only once the planner has answered, so a second choice cannot be
   // made against a configuration that is still being decided.
-  region_box_->setEnabled(!pending && config != nullptr);
-  sweep_box_->setEnabled(!pending && config != nullptr);
+  region_box_->setEnabled(!task_running_ && !pending && config != nullptr);
+  sweep_box_->setEnabled(!task_running_ && !pending && config != nullptr);
   // The executor refuses a change while a task is running, so the box says so
-  // in advance instead of letting a click be turned down. can_cancel is the
-  // manager's own answer to "is something running", which keeps this from
-  // becoming a second opinion that could disagree with it.
-  const bool running = status && status->can_cancel;
-  algorithm_box_->setEnabled(!tracking_pending && !tracking_mode.isEmpty() && !running);
+  // in advance instead of letting a click be turned down.
+  algorithm_box_->setEnabled(
+    !task_running_ && !tracking_pending && !tracking_mode.isEmpty());
   if (!tracking_mode.isEmpty()) {
     const QSignalBlocker blocker(algorithm_box_);
     const int index = algorithm_box_->findData(tracking_mode);
@@ -638,7 +657,7 @@ void CoveragePanel::refresh()
   }
   // Replanning is refused without enough points; say so before it is pressed
   // rather than only in the response line afterwards.
-  replan_button_->setEnabled(config == nullptr || config->can_plan);
+  replan_button_->setEnabled(!task_running_ && (config == nullptr || config->can_plan));
   planner_label_->setText(planner.isEmpty() ? "-" : wrappableText(planner));
   response_label_->setText(response.isEmpty() ? "-" : wrappableText(response));
 }

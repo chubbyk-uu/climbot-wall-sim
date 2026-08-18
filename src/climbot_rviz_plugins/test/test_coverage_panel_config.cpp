@@ -48,6 +48,18 @@ QComboBox * box(climbot_rviz_plugins::CoveragePanel & panel, const char * name)
   return panel.findChild<QComboBox *>(name);
 }
 
+climbot_rviz_plugins::CoveragePanel::Status runningStatus(bool running)
+{
+  climbot_rviz_plugins::CoveragePanel::Status status;
+  status.state = running ?
+    climbot_rviz_plugins::CoveragePanel::Status::EXECUTING :
+    climbot_rviz_plugins::CoveragePanel::Status::READY;
+  status.total_segments = 4U;
+  status.can_start = !running;
+  status.can_cancel = running;
+  return status;
+}
+
 }  // namespace
 
 TEST(CoveragePanelConfig, showsWhatThePlannerPublished)
@@ -113,9 +125,38 @@ TEST(CoveragePanelConfig, hidesPointCountingWhenTheRegionComesFromAFile)
   ASSERT_NE(selection, nullptr);
   EXPECT_FALSE(selection->text().contains("selected"));
   auto * clear = panel.findChild<QPushButton *>("clear_button");
-  if (clear != nullptr) {
-    EXPECT_FALSE(clear->isEnabled());
-  }
+  ASSERT_NE(clear, nullptr);
+  EXPECT_FALSE(clear->isEnabled());
+}
+
+// Every one of these sends a request that reshapes the task being previewed.
+// They were left live during a run because none of them touches the running
+// goal, which is true of the messages and false of what the operator sees: the
+// preview is the trajectory drawn over the robot, so reshaping it mid-drive
+// reads as the mission having changed.
+TEST(CoveragePanelConfig, freezesEveryPlanningControlWhileATaskRuns)
+{
+  application();
+  climbot_rviz_plugins::CoveragePanel panel;
+  panel.renderStatus(runningStatus(true));
+  panel.renderConfig(makeConfig("rectangle", "horizontal", 2, 2, true));
+  EXPECT_FALSE(box(panel, "region_box")->isEnabled());
+  EXPECT_FALSE(box(panel, "sweep_box")->isEnabled());
+  EXPECT_FALSE(box(panel, "algorithm_box")->isEnabled());
+  EXPECT_FALSE(panel.findChild<QPushButton *>("replan_button")->isEnabled());
+  EXPECT_FALSE(panel.findChild<QPushButton *>("clear_button")->isEnabled());
+  EXPECT_TRUE(panel.findChild<QPushButton *>("cancel_button")->isEnabled());
+}
+
+TEST(CoveragePanelConfig, releasesThePlanningControlsWhenTheTaskStops)
+{
+  application();
+  climbot_rviz_plugins::CoveragePanel panel;
+  panel.renderStatus(runningStatus(true));
+  panel.renderStatus(runningStatus(false));
+  panel.renderConfig(makeConfig("rectangle", "horizontal", 2, 2, true));
+  EXPECT_TRUE(panel.findChild<QPushButton *>("replan_button")->isEnabled());
+  EXPECT_TRUE(panel.findChild<QPushButton *>("clear_button")->isEnabled());
 }
 
 TEST(CoveragePanelConfig, theBoxesCarryValuesThePlannerValidates)

@@ -88,6 +88,10 @@ private:
   // Qt-thread only: the mode the last refresh painted with, so renderStatus
   // can label the schedule without reaching for the guarded copy.
   QString rendered_tracking_mode_;
+  // Qt-thread only. Set from the manager's own can_cancel rather than from a
+  // state comparison here, so the panel and the manager cannot disagree about
+  // whether something is running.
+  bool task_running_{false};
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<Status>::SharedPtr status_subscription_;
