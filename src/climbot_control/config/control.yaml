@@ -95,7 +95,26 @@ line_tracker:
     # centimetres back to the distance-to-stop curve.
     time_axis_stretch_enabled: false
     time_axis_stretch_lag_m: 0.05
-    time_mode_final_approach_enabled: false
+    # On, and the first run is why. Without it the eight-case set landed 10.9
+    # to 15.4 mm from its endpoints against 2.6 to 5.0 in distance mode, and
+    # bigV's scan line spacing reached 17.6 mm against a 20 mm limit. The peak
+    # schedule lag was 0.08 s, which at the cruise speed is 16 mm: a controller
+    # that stops when the schedule says so turns the lag it still carries into
+    # endpoint error, where a distance-to-stop curve does not stop until the
+    # position is right. The schedule still governs the whole segment; only the
+    # last final_approach_distance_m goes back to the distance curve.
+    time_mode_final_approach_enabled: true
+    # Measured, not assumed. The eight baseline trajectories were split by
+    # controller state and compared against what the model predicts for each:
+    # convergence into the 1 degree alignment deadband costs 1.24 s a segment
+    # beyond the configured hold (sd 0.14), waiting out the previous command
+    # before the turn starts costs 0.43 (sd 0.17), and the final-approach speed
+    # cap with the decay to a standstill costs 0.13 (sd 0.06). Entering them
+    # moves the prediction from 10.6% short (sd 2.4) to 0.4% long (sd 1.2),
+    # worst case 3.0% on the smallest task, where per-segment terms dominate.
+    schedule_align_converge_s: 1.24
+    schedule_goal_stop_s: 0.13
+    schedule_handshake_s: 0.43
     # Deliberately below max_linear_deceleration: the distance-to-stop profile
     # has to ask for less than the rate limiter can deliver, or the command
     # trails the profile all the way down and passes the endpoint. Braking

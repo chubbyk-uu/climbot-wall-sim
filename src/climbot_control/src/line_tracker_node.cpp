@@ -472,8 +472,15 @@ private:
   {
     climbot_control::DurationModel model;
     model.cruise_speed = cruise_speed_;
-    model.linear_acceleration = linear_acceleration_;
-    model.braking_deceleration = limits_.braking_deceleration;
+    // Whichever ramps the robot is actually going to run. In distance mode the
+    // command steps to the cruise speed and the rate limiter shapes the ramp,
+    // while braking follows the much gentler distance-to-stop curve; in time
+    // mode both ramps are the profile's own. Predicting one while executing
+    // the other would leave the reported schedule wrong by the difference.
+    const bool time_mode = tracking_mode_ == TrackingMode::TIME;
+    model.linear_acceleration = time_mode ? time_profile_acceleration_ : linear_acceleration_;
+    model.braking_deceleration = time_mode ?
+      time_profile_deceleration_ : limits_.braking_deceleration;
     model.max_turn_rate = max_turn_angular_speed_;
     model.turn_acceleration = max_turn_angular_acceleration_;
     model.align_settle_s = alignment_settle_duration_;
