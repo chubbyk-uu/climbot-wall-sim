@@ -11,16 +11,16 @@ C++ 墙面覆盖路径规划器，支持矩形、等腰梯形、横向/纵向弓
 ros2 launch climbot_coverage coverage_planner.launch.py
 ```
 
-联合墙面仿真，只预览不执行：
+联合墙面仿真，只预览不执行（组合 launch 属于 `climbot_bringup`）：
 
 ```bash
-ros2 launch climbot_coverage coverage_sim.launch.py
+ros2 launch climbot_bringup coverage_sim.launch.py
 ```
 
 仿真、规划器、RViz、跟踪器和任务管理器一并启动，默认在 RViz 中点选区域：
 
 ```bash
-ros2 launch climbot_coverage coverage_mission.launch.py
+ros2 launch climbot_bringup coverage_mission.launch.py
 ```
 
 大区域参数式演示配置：
@@ -30,8 +30,8 @@ ros2 launch climbot_coverage coverage_mission.launch.py
 - `config/coverage_trapezoid_horizontal_demo.yaml`：大型等腰梯形横向任务；
 - `config/coverage_trapezoid_vertical_demo.yaml`：同一梯形竖向任务。
 
-通过 `config_file:=<配置绝对路径>` 选择配置，两个联合 launch 都接受该参数。
-用 `coverage_sim.launch.py` 时还需另行启动
+通过 `config_file:=<配置绝对路径>` 选择配置（`coverage_mission.launch.py` 用
+`planner_config_file`）。用 `coverage_sim.launch.py` 时还需另行启动
 `climbot_control/coverage_executor.launch.py` 才能执行；`coverage_mission.launch.py`
 已经包含它。完整命令见仓库根目录 [README](../../README.md)。
 
@@ -73,7 +73,7 @@ safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 
 ```bash
 # 强制追加（验收发现顶部漏扫时用这个重新规划）
-ros2 launch climbot_coverage coverage_mission.launch.py \
+ros2 launch climbot_bringup coverage_mission.launch.py \
   sweep_direction:=vertical \
   planner_config_file:=<带 top_edge_scan: always 的配置>
 ```

@@ -40,22 +40,25 @@ climbot_sim/
     ├── climbot_interfaces/      覆盖任务消息与执行 Action
     ├── climbot_coverage/        C++ 覆盖规划与 RViz
     ├── climbot_rviz_plugins/    RViz 操作面板
-    └── climbot_control/         C++ 轨迹跟踪和速度安全
+    ├── climbot_control/         C++ 轨迹跟踪和速度安全
+    └── climbot_bringup/         整系统组合 launch
 ```
 
 依赖方向为：
 
 ```text
-climbot_interfaces
-      ^        ^
-      │        │
-climbot_coverage  climbot_control（多段覆盖 Action 与直线跟踪）
-      │        │
-      └──> climbot_description <── climbot_gazebo
+                climbot_bringup（只有组合 launch）
+      ┌────────────────┼────────────────┐
+      ↓                ↓                ↓
+climbot_coverage  climbot_control  climbot_gazebo
+      │                │                │
+      ├──> climbot_interfaces <──┤       │
+      └──> climbot_description <─┴───────┘
 ```
 
 规划器和控制器都不读取 Gazebo 真值或仿真专有参数；Gazebo 包仅因仿真组合 launch
-依赖控制包。
+依赖控制包。组合入口集中在 `climbot_bringup`，它点名下游三个包而没有任何包依赖
+它，因此算法包的依赖表里不会出现启动编排带来的依赖。
 
 ## 环境安装
 
@@ -184,7 +187,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args \
 启动仿真、覆盖规划器和 RViz（只能预览，不能执行）：
 
 ```bash
-ros2 launch climbot_coverage coverage_sim.launch.py
+ros2 launch climbot_bringup coverage_sim.launch.py
 ```
 
 使用独立规划器或等腰梯形的命令见
@@ -195,7 +198,7 @@ ros2 launch climbot_coverage coverage_sim.launch.py
 一条命令启动仿真、规划器、RViz、跟踪器和任务管理器：
 
 ```bash
-ros2 launch climbot_coverage coverage_mission.launch.py
+ros2 launch climbot_bringup coverage_mission.launch.py
 ```
 
 在 RViz 工具栏选择 `Publish Point`，按下表顺序点击区域角点。每次点击
@@ -289,13 +292,13 @@ ros2 topic echo /coverage/config
 
 ```bash
 # 矩形 + 竖向扫描（点 2 下）
-ros2 launch climbot_coverage coverage_mission.launch.py sweep_direction:=vertical
+ros2 launch climbot_bringup coverage_mission.launch.py sweep_direction:=vertical
 
 # 梯形 + 横向扫描（点 3 下）
-ros2 launch climbot_coverage coverage_mission.launch.py region_type:=trapezoid
+ros2 launch climbot_bringup coverage_mission.launch.py region_type:=trapezoid
 
 # 梯形 + 竖向扫描（点 3 下）
-ros2 launch climbot_coverage coverage_mission.launch.py \
+ros2 launch climbot_bringup coverage_mission.launch.py \
   region_type:=trapezoid sweep_direction:=vertical
 ```
 
@@ -307,7 +310,7 @@ C `(3.4, 1.4)`，即底边 `4.00 m`、上底 `2.60 m`、高 `2.80 m`。梯形横
 跳过点选、直接用配置里的角点启动同一条链：
 
 ```bash
-ros2 launch climbot_coverage coverage_mission.launch.py \
+ros2 launch climbot_bringup coverage_mission.launch.py \
   input_mode:=parameters region_type:=trapezoid sweep_direction:=vertical \
   planner_config_file:="$(pwd)/src/climbot_coverage/config/coverage_trapezoid_vertical_demo.yaml"
 ```
@@ -330,7 +333,7 @@ ros2 launch climbot_coverage coverage_mission.launch.py \
 ```bash
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-ros2 launch climbot_coverage coverage_sim.launch.py \
+ros2 launch climbot_bringup coverage_sim.launch.py \
   config_file:="$(pwd)/src/climbot_coverage/config/coverage_horizontal_demo.yaml" \
   input_mode:=parameters region_type:=rectangle sweep_direction:=horizontal
 ```

@@ -8,8 +8,8 @@
 | --- | --- |
 | `ros2 launch climbot_gazebo climbot_wall.launch.py` | Gazebo、桥接、TF、传感器适配和 EKF |
 | `ros2 launch climbot_coverage coverage_planner.launch.py` | 独立覆盖规划器和可选 RViz |
-| `ros2 launch climbot_coverage coverage_sim.launch.py` | 联合启动仿真、规划器和 RViz；**不含执行器**，只能预览 |
-| `ros2 launch climbot_coverage coverage_mission.launch.py` | 完整任务入口：仿真、规划器、RViz、跟踪器和管理器 |
+| `ros2 launch climbot_bringup coverage_sim.launch.py` | 联合启动仿真、规划器和 RViz；**不含执行器**，只能预览 |
+| `ros2 launch climbot_bringup coverage_mission.launch.py` | 完整任务入口：仿真、规划器、RViz、跟踪器和管理器 |
 | `ros2 launch climbot_control line_tracker.launch.py` | 单段直线跟踪器；从共享描述注入轮距和轮缘硬限值 |
 | `ros2 launch climbot_control coverage_executor.launch.py` | 多段覆盖 Action 执行器；不接入 Nav2 |
 

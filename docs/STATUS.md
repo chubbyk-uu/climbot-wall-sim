@@ -1,6 +1,6 @@
 # 实施状态与待办
 
-更新日期：2026-08-17。
+更新日期：2026-08-18。
 
 本文档只记录当前实现状态。目标、算法约束和验收阈值以
 [PROJECT_GUIDE.md](../PROJECT_GUIDE.md) 为准。
@@ -219,7 +219,7 @@
 `ros2 topic info /coverage/manager_status -v` 显示 `rviz` 节点已按正确类型订阅，
 `ros2 node info /rviz` 列出四个 Trigger 服务客户端，即 `onInitialize()` 已执行且
 接线正确。**面板的实际视觉布局和按钮点击行为未经自动化验证**，需人工确认。
-（布局部分已由 2026-08-17 一节闭合。）
+（布局部分已由 2026-08-17 一节闭合，点击行为已于 2026-08-18 人工确认。）
 
 全量 261 项测试通过，19 项按环境跳过。
 
@@ -808,6 +808,25 @@ if (std::abs(line_command.heading_error) <= alignment_tolerance_) {
 的发现机制，缺了后者两路会互相驱动对方的机器人且不报错。实时因子 `0.85~0.94`，与
 串行一致。
 
+## 2026-08-18 面板按钮人工确认与 `climbot_bringup`
+
+面板的按钮点击行为已人工确认，未发现问题。至此阶段 3 的面板三个部分全部闭合：
+插件加载由 `test_coverage_panel_plugin` 覆盖，视觉布局由 `test_coverage_panel_layout`
+覆盖，点击行为人工验证。这也是新建 `climbot_bringup` 的触发条件。
+
+| 项目 | 状态 | 结果 |
+| --- | --- | --- |
+| 组合 launch 移出算法包 | 已完成 | `coverage_sim.launch.py` 和 `coverage_mission.launch.py` 移到 `climbot_bringup/launch/`，启动命令改为 `ros2 launch climbot_bringup ...`。`climbot_coverage` 的 `exec_depend` 相应去掉 `climbot_gazebo` 和 `climbot_control` |
+| 依赖方向 | 已完成 | `climbot_bringup → {gazebo, coverage, control}` 单向，没有任何包依赖 bringup。此前规划器包因为这两个编排文件而运行时依赖仿真包和控制包，依赖表读起来像规划算法依赖 Gazebo；bringup 只有 launch，没有节点、算法和参数文件，可以随意点名下游包 |
+| `ekf_wall.yaml` 不移动 | 已完成 | 它是 `climbot_wall.launch.py` 里 EKF 节点的参数，和喂给它的仿真传感器同属定位链路，不是编排文件。只移 YAML 会让 `climbot_gazebo` 反向依赖 bringup；把 EKF 节点一起移走则 `ros2 launch climbot_gazebo climbot_wall.launch.py` 单独启动时没有定位，而 `tools/run_coverage_regression.sh` 和标定脚本用的正是这条单包入口 |
+| 单包入口保持不变 | 已完成 | `climbot_gazebo/climbot_wall.launch.py`、`climbot_coverage/coverage_planner.launch.py`、`climbot_control/coverage_executor.launch.py` 留在各自包内，bringup 不重复封装 |
+
+实测：`ros2 launch climbot_bringup coverage_mission.launch.py headless:=true
+rviz:=false input_mode:=parameters` 起来后 `/coverage/task` 发布 `rectangle`、
+`/coverage/manager_status` 进入 `Ready`，说明三个包的 share 目录在运行时都解析
+正确。全量 390 项测试通过（bringup 的 7 项 lint 为新增），26 项按环境跳过。
+`tools/run_coverage_regression.sh` 用的是三条单包入口，未受影响。
+
 ## 当前未决事项
 
 ### 1. WheelSlip 法向载荷局限
@@ -815,27 +834,15 @@ if (std::abs(line_command.heading_error) <= alignment_tolerance_) {
 Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点的瞬时载荷变化。
 这是已知模型保真度限制；第一阶段接受该限制，但真机参数解释时必须保留差异。
 
-### 2. 集成 launch 和定位配置归属
-
-`coverage_sim.launch.py`、`coverage_mission.launch.py` 和 `ekf_wall.yaml` 目前仍放在
-各自阶段包中，其中前两个使 `climbot_coverage` 运行时依赖 `climbot_gazebo` 和
-`climbot_control`。待 RViz 操作面板落地后，再决定是否新增 `climbot_bringup` 承载
-组合 launch，把这些编排依赖从算法包里移出。
-
 ## 下一步顺序
 
 1. 补齐 §15 剩余三项测试场景：单段水平/竖直/斜向直线（§15.7，已有零散实测但无
    归档结果）、全站仪噪声与频率扫描（§15.9）、固定随机种子的任务级重复性
    （§15.11，`total_station_sim` 与 `wall_imu_adapter` 的种子参数已具备）；
-2. 人工确认面板的按钮点击行为，这是阶段 3 唯一无法自动验证的部分（视觉布局已由
-   `test_coverage_panel_layout` 闭合）；
-3. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
+2. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
    工况的可重复回归；不可进入和定位超时停车的 Gazebo 基线已经通过；
-4. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
-5. 决定是否新建 `climbot_bringup`。触发条件（RViz 操作面板落地）已经满足，
-   `climbot_coverage` 目前因两个组合 launch 运行时依赖 `climbot_gazebo` 和
-   `climbot_control`；
-6. 第一阶段闭环后进入 `climbot_inspection`：先为 Gazebo 墙面增加不影响碰撞参数的
+3. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
+4. 第一阶段闭环后进入 `climbot_inspection`：先为 Gazebo 墙面增加不影响碰撞参数的
    可配置视觉贴图，再加面阵相机、位置触发拍照及图像—融合位姿关联。相机几何安装
    关系属于 `climbot_description`，仿真相机与墙面纹理属于 `climbot_gazebo`，触发
    逻辑消费冻结后的执行参考和融合位姿，不得用真值决定拍照。

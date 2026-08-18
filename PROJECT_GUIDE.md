@@ -77,13 +77,13 @@
 当前工作区采用以下包结构：
 
 ```text
-climbot_interfaces   覆盖任务消息和执行 Action
-        ↑                          ↑
-climbot_coverage              climbot_control
-        │                          │
-        └──────> climbot_description <──────┘
-                         ↑
-                  climbot_gazebo
+                 climbot_bringup   组合 launch，只有编排
+        ┌────────────────┼────────────────┐
+        ↓                ↓                ↓
+climbot_coverage   climbot_control   climbot_gazebo
+        │                │                │
+        ├──> climbot_interfaces <──┤       │
+        └──> climbot_description <─┴───────┘
 ```
 
 `climbot_interfaces` 只定义 ROS 接口，不依赖描述、规划、控制或仿真包。依赖必须
@@ -98,8 +98,10 @@ climbot_coverage              climbot_control
 - 覆盖区域和扫描参数属于 `climbot_coverage`；
 - 轨迹跟踪、状态机、安全超时和控制增益属于 `climbot_control`。
 
-第一阶段暂不单独建立 `climbot_bringup`。阶段 E 出现控制器和完整系统组合入口后，
-再统一评估 launch 与 `ekf_wall.yaml` 的归属。
+组合 launch 属于 `climbot_bringup`：它只有启动编排，没有节点、算法和参数文件，
+可以点名任意下游包，而任何包都不得依赖它。各包的单包 launch 入口留在各自包内。
+`ekf_wall.yaml` 是定位链路配置而非编排文件，与喂给它的仿真传感器一同留在
+`climbot_gazebo`。
 
 ## 4. 坐标系约定
 

@@ -7,17 +7,17 @@
 ## 包依赖方向
 
 ```text
-                    climbot_interfaces
-                    ^      ^        ^
-                    │      │        │
-climbot_rviz_plugins┘  climbot_coverage  climbot_control
-                       │          │
-                       v          v
-                    climbot_description
-                            ^
-                            │
-                     climbot_gazebo
+                      climbot_bringup
+                     /       │        \
+                    v        v         v
+climbot_rviz_plugins   climbot_coverage  climbot_control   climbot_gazebo
+                    \        │        /                    /
+                     v       v       v                    v
+                    climbot_interfaces        climbot_description
 ```
+
+自上而下读：`climbot_bringup` 只有组合 launch，在运行时点名下游三个包；
+`climbot_interfaces` 和 `climbot_description` 是两个共享上游。
 
 `climbot_rviz_plugins` 只依赖 `climbot_interfaces`、`std_srvs` 和 RViz/Qt，不依赖
 规划或控制实现。`climbot_coverage` 运行时依赖它，是因为 `coverage.rviz` 载入该面板。
@@ -26,13 +26,12 @@ climbot_rviz_plugins┘  climbot_coverage  climbot_control
 `climbot_description` 是共享物理描述的唯一上游。规划器和控制器不得依赖
 `climbot_gazebo`，也不得读取 Gazebo 真值或仿真专有参数。
 
-`climbot_coverage/launch/coverage_sim.launch.py` 和 `coverage_mission.launch.py`
-是当前阶段的临时集成入口，会在运行时查找 `climbot_gazebo`，`coverage_mission`
-还查找 `climbot_control`。二者都只是启动编排，不代表规划器算法依赖 Gazebo 或
-控制器。`climbot_gazebo` 为启动速度看门狗而运行时依赖 `climbot_control`，同样
-只属于仿真编排；控制包不反向依赖 Gazebo。这些组合 launch 现在集中在
-`climbot_coverage`，等 RViz 操作面板落地后再评估是否抽出独立的
-`climbot_bringup` 统一承载。
+组合入口 `coverage_sim.launch.py` 和 `coverage_mission.launch.py` 集中在
+`climbot_bringup`。它们在运行时查找 `climbot_gazebo`、`climbot_coverage` 和
+`climbot_control`，这是启动编排，不是算法依赖；把它们放在 `climbot_coverage` 里
+会让规划器包的依赖表读起来像规划算法依赖 Gazebo 和控制器，因此单独成包，且没有
+任何包依赖 `climbot_bringup`。`climbot_gazebo` 为启动速度看门狗而运行时依赖
+`climbot_control`，同样只属于仿真编排；控制包不反向依赖 Gazebo。
 
 ## 包职责
 
@@ -79,8 +78,6 @@ C++ 覆盖规划器和 RViz 可视化：
 - `coverage_planner_node`：参数或 RViz 点选输入、路径与状态发布、重规划服务；
 - `config/`：默认矩形和等腰梯形任务；
 - `launch/coverage_planner.launch.py`：独立规划入口；
-- `launch/coverage_sim.launch.py`：仿真加规划器的预览入口；
-- `launch/coverage_mission.launch.py`：再加跟踪器和管理器的完整任务入口；
 - `rviz/`：墙面、区域和路径显示配置。
 
 规划器读取 `climbot_description` 的墙面尺寸和机器人轮廓，不读取任何
@@ -113,6 +110,18 @@ C++ 轨迹控制和速度安全：
 
 控制包不得读取 Gazebo 真值、WheelSlip 或吸附参数。
 
+### `climbot_bringup`
+
+整系统启动入口，只有 launch 编排：
+
+- `launch/coverage_sim.launch.py`：仿真加规划器加 RViz 的预览入口；
+- `launch/coverage_mission.launch.py`：再加跟踪器和管理器的完整任务入口。
+
+本包不含节点、算法和参数文件，只把各阶段包自己的单包入口组合起来；单包入口
+（`climbot_wall.launch.py`、`coverage_planner.launch.py`、
+`coverage_executor.launch.py`）留在各自包内，不在此重复封装。没有任何包依赖
+`climbot_bringup`，因此这里点名下游包不会污染算法包的依赖表。
+
 ## 配置归属
 
 | 配置 | 所有者 | 消费者 | 说明 |
@@ -120,7 +129,7 @@ C++ 轨迹控制和速度安全：
 | `robot.yaml` | description | Gazebo、coverage、未来 control | 真实物理属性和保守规划轮廓 |
 | `wall.yaml` | description | Gazebo、coverage、定位、未来实机 | `world → wall` 基准和作业面尺寸 |
 | `simulation.yaml` | gazebo | 仅 Gazebo | 吸附、摩擦、WheelSlip、出生位姿、仿真噪声 |
-| `ekf_wall.yaml` | gazebo（暂定） | `robot_localization` | 随未来 bringup 一并评估外移 |
+| `ekf_wall.yaml` | gazebo | `robot_localization` | 定位链路配置，随喂给它的仿真传感器留在 gazebo；不属于编排，未随 bringup 外移 |
 | `coverage_*.yaml` | coverage | 覆盖规划器 | 区域输入和扫描参数 |
 | `control.yaml` | control | 直线跟踪器、速度看门狗 | 作业速度、控制增益、软件限幅和超时；不复制机器人硬件属性 |
 
@@ -180,9 +189,7 @@ C++ 通用直线段跟踪、任务状态机、
 的覆盖路径共用同一控制器，只由规划结果和段类型驱动。控制器保留名义覆盖路径，
 并在转向后根据 EKF 实际位置冻结单独的平行直线执行参考：小偏差直接接受为平行
 扫描线，较大但可恢复的偏差先执行一次前进小弧线再冻结直线。横向保留第二次转向
-下滑预补偿，竖向不预补偿且不逐列倒车。暂不新建
-`climbot_bringup`；等控制器和完整启动组合出现后再拆，
-避免只为一个 launch 提前增加空包。
+下滑预补偿，竖向不预补偿且不逐列倒车。
 
 `coverage_manager_node` 已订阅 `/coverage/task` 并缓存最新有效预览，只有收到操作员
 明确的 `/coverage/start` 后才复制并锁定 `task_id + revision`、发送 Action Goal。
@@ -191,8 +198,8 @@ C++ 通用直线段跟踪、任务状态机、
 使界面无需自行拼装状态；规划器不直接调用控制器，
 RViz 面板也不直接实现安全状态机。执行器在首条扫描前完成采集关闭的起点进入：一条直线开到首个路点，
 终点按该处转向的预计下坠抬高，与换道段共用同一套预留；首条扫描随后复用统一的动态
-入轨判据。首点之外的直线不计入覆盖段。管理器当前位于 `climbot_control`，统一系统入口形成后再评估
-是否迁入 `climbot_bringup`。
+入轨判据。首点之外的直线不计入覆盖段。管理器留在 `climbot_control`：它是任务状态机和 Action 客户端，
+不是启动编排，而 `climbot_bringup` 只放 launch。
 
 未来面阵相机及位置触发采集归属于独立的 `climbot_inspection`。它消费冻结后的动态
 执行参考、任务状态、EKF 位姿和相机图像，生成触发事件及带位姿的检测数据；不参与

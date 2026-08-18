@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>climbot_bringup</name>
+  <version>0.1.0</version>
+  <description>
+    System entry points for the wall-climbing robot. Holds only launch
+    orchestration: it composes the simulation, planner and executor packages
+    and owns no node, algorithm or parameter file of its own. Nothing depends
+    on this package, so the composition can name every stage package without
+    making any of them depend on each other.
+  </description>
+  <maintainer email="dk.illidan@gmail.com">jerry</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>climbot_gazebo</exec_depend>
+  <exec_depend>climbot_coverage</exec_depend>
+  <exec_depend>climbot_control</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
