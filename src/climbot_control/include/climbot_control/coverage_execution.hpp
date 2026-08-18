@@ -38,6 +38,15 @@ std::optional<ExecutionSegment> parallelScanSegment(
 // robot has swept past the band, so only the heading it *starts* from matters.
 // See results/turn_band.csv.
 //
+// The band is the drive wheels running out of Coulomb friction: turning on the
+// spot shifts load onto the freely rolling caster, which takes normal force
+// without returning any grip, and how much it takes depends on where gravity
+// points in the body frame - that is, on the heading. The suction force sits
+// close enough to the limit that 5 N less drops the robot off the wall
+// entirely, so raising it removes the band outright. See results/band_variants/
+// and the sweep in docs/STATUS.md; this lead-out is only needed while the
+// suction stays where it is.
+//
 // Returns the signed angle to turn first - nose up, out of the band - so the
 // real turn begins from a heading that grips. Zero when the turn is already
 // safe. The band edges are the measured ones plus a margin.

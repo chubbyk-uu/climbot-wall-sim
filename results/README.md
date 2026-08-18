@@ -279,6 +279,42 @@ ros2 run climbot_gazebo measure_turn_band.py --ros-args \
 24°（即 114°/66°/246°/294°）。`climbot_control` 的 `turnLeadOut()` 就按这两份 CSV
 标定，改墙面、摩擦或 WheelSlip 参数后必须重扫。
 
+### 带的成因：主动轮摩擦饱和
+
+`results/band_variants/` 是把吸附力和摩擦系数当自变量的对照扫描，每个变体在
+`100/105/110/114/120/125°` 起转 `+30°`。复现方式是改
+`src/climbot_gazebo/config/simulation.yaml`（`install/` 是符号链接，不必重编），
+每个变体重启一次仿真后：
+
+```bash
+ros2 run climbot_gazebo measure_turn_band.py --ros-args \
+  -p use_sim_time:=true \
+  -p output_csv:=results/band_variants/<变体名>.csv \
+  -p headings_deg:='[100.0, 105.0, 110.0, 114.0, 120.0, 125.0]' \
+  -p angles_deg:='[30.0]'
+```
+
+| 变体 | 峰值 mm/度 |
+| --- | ---: |
+| `baseline`（220 N，`wheel_mu` 1.1） | 2.536 |
+| `lateral_0`（`slip_lateral` → 0） | 2.637 |
+| `longitudinal_0`（`slip_longitudinal` → 0） | 2.530 |
+| `caster_mu_1p1`（0.35 → 1.1） | 2.536 |
+| `wheel_mu_2.2`（墙面与主动轮同时 1.1 → 2.2） | 0.416 |
+| `wheel_mu_0.7` | 整机脱落 |
+| `suction_210` / `suction_215` | 整机脱落 |
+| `suction_222` | 1.270 |
+| `suction_225` / `230` / `240` / `260` | 0.531 / 0.525 / 0.519 / 0.508 |
+| `suction_440` / `880` | 0.416 / 0.338 |
+
+`wheel_mu` 加倍与吸附力加倍给出**逐点相同**的曲线，所以支配量是乘积 `μN`，带是
+主动轮的库仑摩擦饱和。万向轮 μ 无关——它是滚动的球，只抢载荷不出切向力。
+
+`suction_210` 与 `suction_215` 的 CSV 里 `slide_mm` 是几百米到几千公里、
+`wall_height_m` 一路变负，那是脱落后的自由落体，不是量测量，只用来定脱落门槛。
+
+详细核算见 `docs/STATUS.md` 的「220 N 贴在脱落悬崖边」。
+
 ## 当前侧滑基线
 
 2026-08-13 在全新启动的无界面仿真中完成一次正式实验。参数为横向 WheelSlip
