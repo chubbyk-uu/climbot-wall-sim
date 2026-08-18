@@ -165,8 +165,11 @@ float64 schedule_lag_s         # 正 = 落后计划
 float64 estimated_remaining_s  # ETA，每周期更新
 ```
 
-面板在进度条下增加一行：`总计 6:30 · 剩余约 4:12 · 滞后 +1.3 s`，
-distance 模式显示 `—`。
+面板在进度条下增加一行。**实现后与此处的设想有两处出入，以实现为准**：
+`planned_total_s` 和 `estimated_remaining_s` 在 distance 模式下同样有效——时长模型
+预测的是两种模式，且它的每段开销常数本来就是从 distance 运行数据标定的——所以那一
+行照常显示，只是末尾写 `estimate only` 而不是滞后，说明没有任何东西执行或监测它。
+真正只在 time 模式有意义的是 `schedule_lag_s`。
 
 `planned_total_s` 现在其实已经在算（`total_duration_estimate_`），只是纯估计、
 无人保证执行按它走，所以从未对外发布。time 模式使它成为**下发的时间表**，
@@ -306,7 +309,7 @@ time_mode_final_approach_enabled: false
 
 - `ExecuteCoverage.action` feedback 与 `CoverageStatus.msg` 增加 3.9 的三个字段；
 - `coverage_manager` 透传；
-- `coverage_panel` 在进度条下增加一行，distance 模式显示 `—`；
+- `coverage_panel` 在进度条下增加一行，distance 模式末尾写 `estimate only`；
 - `DurationModel` 按 3.10 拆分固定开销，并把起始接近腿计入 `planned_total_s`；
 - `evaluate_coverage_execution.py` 的 `summary_json` 增加 `planned_total_s`、
   `max_along_lag_m`、`linear_saturation_fraction`；回归汇总表相应加列。
@@ -459,8 +462,11 @@ schedule_handshake_s: 0.43
 
 ### 8.6 仍然开着的问题
 
-- `tracking_mode` 默认仍是 `distance`。两种模式在所有验收指标上已经等价，
-  time 模式额外给出可用的任务时长预测，但切默认值是产品决定，留待确认。
+- `tracking_mode` 默认仍是 `distance`，运行时可从面板的 Algorithm 下拉框或
+  `ros2 param set` 切换，启动时可用 launch 参数指定。两种模式在所有验收指标上已经
+  等价，time 模式额外给出可用的任务时长预测，但切默认值是产品决定，留待确认。
+- **标定值写入配置后尚未跑过 distance 模式的回归。** 8.4 的精度是样本内的离线
+  拟合，不是实测；补一轮八用例 distance 回归即可闭合。
 - 起步 12% 的加速亏欠是 profile 与实际执行的模型误差，目前由 P 环和终点兜底
   共同吸收。更彻底的做法是按实测起步特性规划 profile，或让时间轴在机器人真正
   起步时才开始计时；本轮不做。

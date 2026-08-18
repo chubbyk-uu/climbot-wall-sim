@@ -33,7 +33,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 通过 `config_file:=<配置绝对路径>` 选择配置（`coverage_mission.launch.py` 用
 `planner_config_file`）。用 `coverage_sim.launch.py` 时还需另行启动
 `climbot_control/coverage_executor.launch.py` 才能执行；`coverage_mission.launch.py`
-已经包含它。完整命令见仓库根目录 [README](../../README.md)。
+已经包含它。完整命令见 [docs/OPERATION.md](../../docs/OPERATION.md)。
 
 等腰梯形点选顺序为 A（左下）、B（右上）、C（右下）；矩形只使用 A、B。点选工具
 发布的点必须在规划器的 `frame_id`（默认 `odom`，即墙面平面）中，其他坐标系的点
@@ -43,7 +43,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 
 - `/coverage/task`：权威 `CoverageTask` 预览，包含路径、线段类型、区域和检测足迹；
 - `/coverage/path`：从任务派生、带逐段目标航向的 `nav_msgs/Path`，用于通用显示；
-- `/coverage/markers`：墙面、原始/有效区域、路径和方向；
+- `/coverage/markers`：墙面、可达区域（绿框，墙面按安全边距内缩，与点选无关，
+  从启动起常驻）、点选区域、路径和方向；
 - `/coverage/status`：规划状态和错误原因；
 - `/coverage/clear_points`：清空 RViz 点选；
 - `/coverage/replan`：使用当前输入重新规划。

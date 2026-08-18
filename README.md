@@ -8,6 +8,9 @@
 转向下坠处理和速度安全链，不使用 Nav2。横向与竖向弓字任务共用控制器：转后小
 偏差冻结为平行扫描线，较大偏差先执行一次前进小弧线，正式扫描段始终保持直线。
 
+直线段有两种可切换的控制律：按剩余距离制动的位置控制，和按时间参数化速度曲线
+行驶的时间点控制。两者验收指标等价，后者额外给出误差约 `2%` 的任务时长预测。
+
 ## 文档导航
 
 | 文档 | 用途 |
@@ -15,6 +18,7 @@
 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 项目目标、设计约束、实施阶段和最终验收标准 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 包职责、依赖方向、配置归属和运行时数据流 |
 | [docs/INTERFACES.md](docs/INTERFACES.md) | launch、话题、服务、参数和 TF |
+| [docs/OPERATION.md](docs/OPERATION.md) | 操作手册：启动、点选、面板、算法切换和回归 |
 | [docs/STATUS.md](docs/STATUS.md) | 阶段完成度、review 闭环和下一步 |
 | [results/README.md](results/README.md) | 实验结果用途、有效性和重新生成方法 |
 
@@ -31,8 +35,9 @@
 ```text
 climbot_sim/
 ├── PROJECT_GUIDE.md             总指导规范
-├── README.md                    项目入口与快速启动
-├── docs/                        架构、接口和状态
+├── README.md                    项目入口、安装与构建
+├── docs/                        操作手册、架构、接口和状态
+├── tools/                       并行回归脚本
 ├── results/                     可追溯实验输出
 └── src/
     ├── climbot_description/     共享机器人与墙面描述
@@ -155,212 +160,22 @@ colcon test-result --verbose
 `use_sim_time` 下、由测试自己发布 `/clock` 并以 `10×` 推进:控制环仍是 `50 Hz`
 **仿真时间**,所有超时也仍以仿真秒计,只是墙钟等待没有了。
 
-## 快速启动
-
-启动墙面仿真、传感器和 EKF：
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch climbot_gazebo climbot_wall.launch.py
-```
-
-WSL2 默认自动使用 Mesa D3D12 GPU 后端。如果自动检测不符合当前环境，可指定：
-
-```bash
-ros2 launch climbot_gazebo climbot_wall.launch.py gpu_backend:=wsl_d3d12
-```
-
-键盘控制在另一个终端运行：
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args \
-  -r /cmd_vel:=/control/cmd_vel \
-  -p speed:=0.15 -p turn:=0.8
-```
-
-机器人初始朝墙面水平方向。水平行驶时应在重力作用下逐渐下降，停车后由静摩擦
-基本保持高度。
-
-启动仿真、覆盖规划器和 RViz（只能预览，不能执行）：
-
-```bash
-ros2 launch climbot_bringup coverage_sim.launch.py
-```
-
-使用独立规划器或等腰梯形的命令见
-[climbot_coverage/README.md](src/climbot_coverage/README.md)。
-
-### 在 RViz 中点选区域并执行
+## 启动
 
 一条命令启动仿真、规划器、RViz、跟踪器和任务管理器：
 
 ```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
 ros2 launch climbot_bringup coverage_mission.launch.py
 ```
 
-在 RViz 工具栏选择 `Publish Point`，按下表顺序点击区域角点。每次点击
-`/coverage/status` 都会回显它认成了哪个角和坐标，用来确认没有因为相机视角
-而选反方向：
+在 RViz 的 `Publish Point` 工具下点选区域角点，然后用左侧 **Coverage Task**
+面板的 Start 按钮执行。
 
-| 区域 | 点击顺序 |
-| --- | --- |
-| `rectangle`（默认） | A 左下 → B 右上 |
-| `trapezoid` | A 左下 → **B 右上** → C 右下 |
+只看仿真、只预览规划、参数式演示、切换扫描方向与控制算法、批量回归，以及面板
+每一行的含义，见 **[docs/OPERATION.md](docs/OPERATION.md)**。
 
-梯形第二下是右上、第三下才是右下，容易顺手点成逆时针。手点两个底角不可能等高，
-规划器会取均值，差超过 `bottom_warning_tolerance`（默认 `50 mm`）时状态里会多一句
-`Bottom clicks differed by ... and were corrected to their mean height.`，这是提示
-不是错误。
-
-最后一次点击后 RViz 中出现规划路径，左侧 **Coverage Task** 面板的 State 变为
-`Ready` 并显示任务名与 revision。确认路径正确后直接点面板上的按钮：
-
-| 按钮 | 作用 |
-| --- | --- |
-| **Start** | 开始执行，State 转为 `Executing`，进度条和 Segment 随之更新 |
-| **Cancel / Stop** | 中途停车 |
-| **Clear points** | 点错角点时清空重选 |
-| **Replan** | 用当前角点重新规划 |
-
-Start 和 Cancel 的置灰由管理器发布的 `can_start` / `can_cancel` 决定，不是面板
-自己推断的；Replan 和 Clear points 始终可用，它们只改预览，不影响正在执行的任务。
-无论面板显示什么，非法请求都由管理器拒绝，原因显示在 Last request 一行。
-
-几个容易踩的点：
-
-- 取消或跑完之后 **Start 仍然可用**，再按一次就重跑同一个任务；
-- 执行中重新规划或清除点选**不会影响正在跑的任务**，只更新下一次要跑的预览，
-  面板的 State 和任务号仍然指向正在执行的那个；
-- 点选模式下**没选够点时 Replan 会被拒绝**，因为配置文件里的角点仍在，否则会规划出
-  一块没人选过的区域；
-- Planner 一行显示规划器自己的状态——规划失败和"没选区域"在管理器看来都是空任务，
-  只有这一行能区分。
-
-面板由 `climbot_rviz_plugins` 提供，已写入 `coverage.rviz`，随 launch 自动出现；
-若被关掉，用 RViz 菜单 `Panels → Add New Panel → climbot_rviz_plugins/Coverage`
-恢复。面板可以随 dock 拖窄到约 240 px：长消息整行换行，任务号在下划线处折行，
-正文放不下时滚动，按钮固定在底部不参与滚动。更窄 RViz 会拒绝，因为再窄按钮上的
-字就要被裁掉了。排版细节见
-[`src/climbot_rviz_plugins/README.md`](src/climbot_rviz_plugins/README.md)。
-
-同样的操作也可以走命令行，两者等价：
-
-```bash
-ros2 service call /coverage/start std_srvs/srv/Trigger
-ros2 service call /coverage/cancel std_srvs/srv/Trigger
-ros2 service call /coverage/clear_points std_srvs/srv/Trigger
-
-# 只看人类可读的一行，等价于原来的 std_msgs/String
-ros2 topic echo /coverage/manager_status --field message
-
-# 看完整状态：state、task_id、revision、current_segment/total_segments、progress
-ros2 topic echo /coverage/manager_status
-```
-
-#### 切换区域形状与扫描方向
-
-面板上的 **Region** 和 **Sweep** 两个下拉框直接切换,不用重启 launch。切换后若点数
-够就立即重新规划,不够就在 **Points** 一行显示还差几个点,同时把 Replan 置灰。
-
-几条防呆约定,都由规划器保证而不是界面自己判断:
-
-- **切形状不会丢点**。矩形选好 2 点再切梯形,那 2 点留着,只等第 3 点——A、B 在两种
-  形状里是同一个角。切回矩形立刻又能规划。
-- **梯形 3 点切回矩形**会用前 2 点,并在状态里说明第 3 点被忽略。
-- **没选点就切构型**只改构型,不会规划出一块没人选过的区域。
-- **请求被拒时下拉框弹回**规划器实际生效的值,不会停在一个规划器从未同意的显示上。
-- 执行中切换只影响**下一次**预览,不动正在跑的任务。
-
-命令行等价写法:
-
-```bash
-ros2 service call /coverage/configure climbot_interfaces/srv/ConfigureCoverage \
-  "{region_type: trapezoid, sweep_direction: vertical}"
-
-# 只改一项:留空的字段保持不变
-ros2 service call /coverage/configure climbot_interfaces/srv/ConfigureCoverage \
-  "{sweep_direction: horizontal}"
-
-# 当前构型(latched,后启动的客户端也能拿到)
-ros2 topic echo /coverage/config
-```
-
-启动时仍可用 launch 参数指定初值：
-
-```bash
-# 矩形 + 竖向扫描（点 2 下）
-ros2 launch climbot_bringup coverage_mission.launch.py sweep_direction:=vertical
-
-# 梯形 + 横向扫描（点 3 下）
-ros2 launch climbot_bringup coverage_mission.launch.py region_type:=trapezoid
-
-# 梯形 + 竖向扫描（点 3 下）
-ros2 launch climbot_bringup coverage_mission.launch.py \
-  region_type:=trapezoid sweep_direction:=vertical
-```
-
-想和 `results/` 中的基线对照，可直接点选基线几何：矩形取
-`(0.005, 1.75)`–`(4.305, 3.45)`；梯形取 A `(-0.6, 1.4)`、B `(2.7, 4.2)`、
-C `(3.4, 1.4)`，即底边 `4.00 m`、上底 `2.60 m`、高 `2.80 m`。梯形横向约
-`232 s`、13 段，梯形竖向约 `284 s`、19 段，竖向工况接近五分钟，不是卡住。
-
-跳过点选、直接用配置里的角点启动同一条链：
-
-```bash
-ros2 launch climbot_bringup coverage_mission.launch.py \
-  input_mode:=parameters region_type:=trapezoid sweep_direction:=vertical \
-  planner_config_file:="$(pwd)/src/climbot_coverage/config/coverage_trapezoid_vertical_demo.yaml"
-```
-
-该 launch 的规划器与控制器参数文件分别叫 `planner_config_file` 和
-`control_config_file`，不能都写成 `config_file`：被包含的 launch 会继承父作用域的
-同名参数，一个 `config_file` 会同时落到两个节点上，使跟踪器退回内置默认值。
-
-### 完整覆盖任务演示
-
-仓库提供矩形和等腰梯形参数式演示：
-
-- `coverage_vertical_demo.yaml`：`3.30 × 4.50 m`，8 条竖向扫描线；
-- `coverage_horizontal_demo.yaml`：`4.30 × 1.70 m`，4 条横向扫描线。
-- `coverage_trapezoid_horizontal_demo.yaml`：底边 `4.00 m`、上底 `2.60 m`、高 `2.80 m`，横向扫描；
-- `coverage_trapezoid_vertical_demo.yaml`：同一梯形，竖向扫描。
-
-以下示例运行横向长扁矩形。终端 1 启动仿真、规划器和 RViz：
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch climbot_bringup coverage_sim.launch.py \
-  config_file:="$(pwd)/src/climbot_coverage/config/coverage_horizontal_demo.yaml" \
-  input_mode:=parameters region_type:=rectangle sweep_direction:=horizontal
-```
-
-终端 2 启动覆盖执行器：
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch climbot_control coverage_executor.launch.py use_sim_time:=true
-```
-
-终端 3 将规划器发布的任务发送给 Action，并用 Gazebo 真值评价轨迹：
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
-  -p use_sim_time:=true -p case:=planned_task \
-  -p startup_timeout_s:=20.0 -p execution_timeout_s:=600.0 \
-  -p trajectory_csv:=results/coverage_trajectory.csv.gz \
-  -p summary_json:=results/coverage_summary.json
-```
-
-竖向演示只需在终端 1 改用 `coverage_vertical_demo.yaml`，并把
-`sweep_direction` 改为 `vertical`。评价工具默认的 `120 s` 是整任务等待时间，
-大区域演示必须显式提高；它与控制器每段的安全超时不是同一个参数。
 
 ## 当前状态
 
@@ -368,7 +183,7 @@ ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
 - 阶段 B：运动侧滑——完成；
 - 阶段 C：传感器与定位融合——完成；
 - 阶段 D：覆盖路径规划——完成；
-- 阶段 E：自定义轨迹跟踪——进行中（多段 Action、动态换道、转后平行扫描和小弧线入轨已完成，最终系统评价待完成）；
+- 阶段 E：自定义轨迹跟踪——进行中（多段 Action、动态换道、转后平行扫描、小弧线入轨和时间点控制已完成，最终系统评价待完成）；
 - 阶段 F：系统测试与数据评价——进行中（横/竖向大型矩形与横/竖向等腰梯形四份覆盖基线、§14.4 侧滑补偿专项验收已完成，均在同一提交的干净工作树上产出；单段直线、定位噪声和固定种子重复性三项测试场景待补）。
 
 详细证据和待办见 [docs/STATUS.md](docs/STATUS.md)。
@@ -379,8 +194,7 @@ Gazebo DiffDrive 会持续执行最后收到的 `/cmd_vel`，因此仿真 launch
 看门狗，并由它作为 `/cmd_vel` 的唯一发布者。键盘、实验脚本和自动控制统一发布到
 `/control/cmd_vel`；当前一次只能运行一个上游控制源，不要同时启动键盘和自动任务。
 
-控制环和看门狗的定时器**不使用节点默认时钟**。节点默认时钟在非仿真时间下就是
-系统时钟，可以被设置、可以往回跳（WSL2 每约 30 s 回跳 1～2 s），建在它上面的
-定时器在回跳期间不触发——控制器整段不发指令，而机器人还在按最后一条指令走。
-仿真时间激活时跟 `/clock`，否则用单调时钟，见
+控制环和看门狗的定时器**不使用节点默认时钟**，因为系统时钟在 WSL2 下会往回跳，
+建在它上面的定时器在回跳期间不触发。详见
+[docs/OPERATION.md](docs/OPERATION.md) 的"安全提示"和
 [docs/INTERFACES.md](docs/INTERFACES.md) 的"控制环时钟"。

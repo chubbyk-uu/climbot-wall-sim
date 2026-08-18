@@ -14,13 +14,25 @@
 
 | 字段 | 来源 |
 | --- | --- |
+| Region / Sweep | `CoverageConfig`，可写，调 `/coverage/configure` |
+| Algorithm | `/line_tracker` 的 `tracking_mode` 参数，可写 |
+| Points | `selected_points` / `required_points`，点选模式下才有意义 |
 | State | `CoverageStatus.state` |
-| Task | `task_id` 与 `revision` |
 | Segment | `current_segment + 1` / `total_segments`；接近首点期间显示 `approach of N` |
 | Progress | `progress`，百分比进度条 |
+| Schedule | `planned_total_s` / `estimated_remaining_s` / `schedule_lag_s` |
+| Task | `task_id` 与 `revision` |
 | Manager | `message`，与管理器日志同一行 |
 | Planner | 规划器的 `/coverage/status`：点击被接受的坐标、规划失败原因、清空确认 |
 | Last request | 最近一次按钮调用的服务响应 |
+
+Progress 和 Schedule 分开是有意的。Progress 说**做完了多少工作量**，机器人卡住时
+它正确地停住不动；Schedule 说**跟不跟得上计划**。把时间折进进度条会让一台卡死的
+机器人把条走到 100%。位置控制模式下 Schedule 末尾写 `estimate only`——不是说这个
+数不准，而是说没有任何东西执行或监测它；时间点控制模式下写的是实时滞后。
+
+Algorithm 走参数接口而不是 `/coverage/configure`，因为后者是规划器的服务，
+`tracking_mode` 是执行器的配置。
 
 规划失败与"未选择区域"在管理器看来都是空任务，无法区分，都会报 `Idle`。
 真正的原因只在 Planner 一行。
@@ -38,8 +50,10 @@
 `can_cancel`——由管理器按自己服务的前置条件计算，面板不做推断。面板自行从
 `state` 推断正是"取消后无法重新开始"那个 bug 的成因。
 
-`Replan` 与 `Clear points` 始终可用：它们是规划器的服务，只改预览，不影响正在
-执行的任务，管理器无权替其决定，面板更无权。
+**任务运行期间，Region、Sweep、Algorithm、Replan、Clear points 五个控件全部置灰**，
+只留 Cancel。它们发出的请求确实只改预览、不动运行中的 Goal，但预览就是画在机器人
+身上的那条轨迹，运行中改它看起来就像任务被换掉了；换形状还会直接把它撤掉。置灰
+同样取自 `can_cancel`，面板不另立一套"是否在运行"的判断。
 
 这些都是提示而非校验：无论面板显示什么，非法请求都由管理器或规划器拒绝，并把
 原因显示在 Last request 一行。

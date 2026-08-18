@@ -12,6 +12,7 @@
 | `ros2 launch climbot_bringup coverage_mission.launch.py` | 完整任务入口：仿真、规划器、RViz、跟踪器和管理器 |
 | `ros2 launch climbot_control line_tracker.launch.py` | 单段直线跟踪器；从共享描述注入轮距和轮缘硬限值 |
 | `ros2 launch climbot_control coverage_executor.launch.py` | 多段覆盖 Action 执行器；不接入 Nav2 |
+| `tools/run_coverage_regression.sh -j 4 -t <tag> [-m time]` | 八个验收工况并行回归，每条 lane 独占 `ROS_DOMAIN_ID` 与 `GZ_PARTITION` |
 
 已提供两个参数式完整任务演示配置：
 
@@ -37,10 +38,15 @@
 | `control_config_file` | `control.yaml` | 跟踪器参数 |
 | `region_type` | `rectangle` | `rectangle` 需两点，`trapezoid` 需三点 |
 | `sweep_direction` | `horizontal` | 扫描方向 |
+| `tracking_mode` | `distance` | 直线段控制律：`distance` 或 `time` |
 
-launch 参数只给这两项定初值。运行中改用 `/coverage/configure` 或面板上的
-Region / Sweep 下拉框，不必重启，见下面的"运行时构型"。`ros2 param set` 仍然不
-生效——参数只在构造时读一次。
+launch 参数只给这三项定初值。`region_type` 和 `sweep_direction` 运行中改用
+`/coverage/configure` 或面板上的下拉框，见下面的"运行时构型"；规划器的其余参数
+只在构造时读一次，`ros2 param set` 不生效。
+
+`tracking_mode` 是例外：它**是**运行时可写的参数，用
+`ros2 param set /line_tracker tracking_mode time` 或面板上的 Algorithm 下拉框，
+执行器只在没有任务运行时接受。见"直线段控制律与时间参数化"。
 
 两个参数文件名字不同且各自显式传递。被包含的 launch 会继承父作用域的同名参数，
 且 `DeclareLaunchArgument` 的默认值对父作用域已设定的名字不生效，因此一个共用的
@@ -195,7 +201,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `standalone_mode` | `true` | `true` 执行参数单段；Action launch 将其设为 `false` |
 | `line_tracker` | `segment_timeout_s` | `120 s` | 单段超过该时间则停车并以 `CONTROL_TIMEOUT` 终止任务 |
 | `line_tracker` | `motion_region_tolerance_m` | `0.02 m` | 融合位置越出安全运动区域的数值容差 |
-| `line_tracker` | `turn_slip_per_degree_m` | `0.0005 m/°` | 横向换道终点为第二次转向预留的标定下滑系数；**壁面相关**，随摩擦与 WheelSlip 变化，换墙必须用 `measure_turn_slip.py` 重标定 |
+| `line_tracker` | `turn_slip_per_degree_m` | `0.00041 m/°` | 横向换道终点为第二次转向预留的标定下滑系数；**壁面相关**，随摩擦与 WheelSlip 变化，换墙必须用 `measure_turn_slip.py` 重标定 |
 | `line_tracker` | `parallel_scan_offset_m` | `0.045 m` | 首条或转后偏差不超过此值时直接冻结实测位置对应的平行扫描线 |
 | `line_tracker` | `maximum_scan_offset_m` | `0.12 m` | 转后可尝试单次前进小弧线入轨的最大法向偏差 |
 | `line_tracker` | `arc_entry_finish_offset_m` | `0.012 m` | 小弧线结束、重新对齐并冻结平行扫描线的法向偏差门限；直接决定该扫描线冻结在何处，因此必须落在 §14.3 的 `20 mm` 间距预算内 |
@@ -205,7 +211,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `arc_entry_max_angular_speed` | `0.25 rad/s` | 小弧线最大角速度 |
 | `line_tracker` | `arc_entry_timeout_s` | `15 s` | 小弧线未收敛时的停车失败门限 |
 | `line_tracker` | `cruise_speed` | `0.20 m/s` | 扫描和换道期望巡航速度 |
-| `line_tracker` | `max_linear_speed` | `0.25 m/s` | 控制器线速度上限，高于巡航值以容纳上爬打滑 |
+| `line_tracker` | `max_linear_speed` | `0.25 m/s` | 位置控制模式的线速度上限，高于巡航值以容纳上爬打滑 |
 | `line_tracker` | `visible_oscillation_amplitude_m` | `0.03 m` | 仅记录肉眼可见幅度的横轨往复；小误差反复过零不算故障 |
 | `line_tracker` | `control_frequency_hz` | `50 Hz` | 直线跟踪控制频率 |
 | `line_tracker` | `cross_gain` | `1.0 rad/m` | 横轨比例反馈增益 |
@@ -214,10 +220,19 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `cross_slowdown_start_m` | `0.03 m` | 超过此横轨误差后开始连续降速 |
 | `line_tracker` | `cross_slowdown_full_m` | `0.08 m` | 到此误差后保持最小缩放速度，不完全停车 |
 | `line_tracker` | `cross_slowdown_min_scale` | `0.25` | 大横轨误差下的最小线速度比例 |
+| `line_tracker` | `heading_gain` | `2.0` | 直线跟踪的航向内环增益 |
+| `line_tracker` | `arc_entry_heading_gain` | `2.0` | 小弧线入轨的航向增益 |
+| `line_tracker` | `max_angular_speed` | `0.35 rad/s` | 直线跟踪角速度上限（原地转向另有 `max_turn_angular_speed`） |
+| `line_tracker` | `max_linear_acceleration` | `0.20 m/s²` | 速率限幅器的加速权限，位置控制模式 |
+| `line_tracker` | `max_angular_acceleration` | `0.80 rad/s²` | 直线跟踪的角加速度权限 |
+| `line_tracker` | `gravity_slip_ratio` | `0.1042` | 单位前进距离的下滑比，决定重力前馈角 `atan(ratio·投影)`；**壁面相关**，换墙须用 `calibrate_wall_slip.py` 重标定 |
+| `line_tracker` | `gravity_down_x` / `gravity_down_y` | `0.0` / `-1.0` | 作业平面内的重力方向单位向量 |
+| `line_tracker` | `visible_oscillation_minimum_travel_m` | `0.10 m` | 判定横轨振荡前必须走过的最短距离 |
+| `line_tracker` | `visible_oscillation_reversals` | `4` | 判定为可见振荡所需的往复次数 |
 | `line_tracker` | `max_gravity_feedforward_deg` | `8°` | 重力前馈独立限幅 |
 | `line_tracker` | `max_cross_feedback_deg` | `8°` | 横轨 PI 反馈独立限幅 |
 | `line_tracker` | `max_heading_correction_deg` | `12°` | 前馈与反馈相加后的总航向硬限幅 |
-| `line_tracker` | `alignment_tolerance_deg` | `2°` | 进入直线跟踪前的航向稳定误差 |
+| `line_tracker` | `alignment_tolerance_deg` | `1°` | 进入直线跟踪前的航向稳定误差；这是死区不是收敛目标，必须明显小于 §14.3 接受的 `2.0°` 转向落点误差 |
 | `line_tracker` | `alignment_settle_duration_s` | `0.50 s` | 航向和角速度连续稳定时间 |
 | `line_tracker` | `alignment_threshold_deg` | `10°` | 直线前进许可门限 |
 | `line_tracker` | `alignment_reentry_threshold_deg` | `12°` | 超过时停车并重新进入 `ALIGN` |
@@ -239,6 +254,57 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `cmd_vel_watchdog` | `command_timeout_s` | `0.40 s` | 上游速度指令超时后持续发布零速 |
 | `cmd_vel_watchdog` | `publish_rate_hz` | `50 Hz` | 向执行器重发安全速度的频率 |
 
+#### 直线段控制律与时间参数化
+
+`tracking_mode` 决定直线段线速度**怎么算出来**，其余控制链路两种模式完全一致：
+角速度双环、横轨 PI、重力前馈、以及"航向超阈值则线速度归零"都不随模式变化。
+原地转向段本来就是时间参数化的（`planTurn`），也不随模式变化。
+
+`tracking_mode` 是唯一可以在**运行时**改的控制参数，因为它是操作面板上的一个下拉
+框而不是 launch 里的一行。执行器**只在没有任务运行时接受**这个写入，运行中拒绝并
+在 `SetParametersResult.reason` 里说明——控制律换了而时间表还是按旧律排的，那是
+危险的。
+
+| 节点 | 参数 | 默认值 | 行为 |
+| --- | --- | ---: | --- |
+| `line_tracker` | `tracking_mode` | `distance` | `distance` 按剩余距离制动；`time` 按时间参数化速度曲线行驶。非法值拒绝。**不在 `control.yaml` 里**：它是 launch 参数兼运行时可写参数，两处都写会静默互相覆盖 |
+| `line_tracker` | `time_profile_acceleration` | `0.20 m/s²` | 时间曲线的加速段斜率，与额定线加速度相同 |
+| `line_tracker` | `time_profile_deceleration` | `0.20 m/s²` | 时间曲线的减速段斜率，对称 |
+| `line_tracker` | `time_speed_lag_s` | `0.08 s` | 执行机构速度环滞后，作为加速度前馈的系数：`v_cmd += τ·v̇`。实测 `0.0799 s`（sd `0.0193`，124 段） |
+| `line_tracker` | `time_along_gain` | `2.5` | 沿轨滞后的比例增益。`0` 时竖向段开环超时失败，`6` 相对 `2.5` 无收益而指令抖动翻倍 |
+| `line_tracker` | `time_along_integral_gain` | `0.0` | 沿轨积分增益。巡航段无稳态速度误差，默认不启用 |
+| `line_tracker` | `time_along_integral_limit_m_s` | `0.05 m/s` | 积分项对线速度的贡献上限 |
+| `line_tracker` | `catch_up_max_linear_speed` | `0.35 m/s` | 时间模式的线速度上限，即修正量可用的余量 |
+| `line_tracker` | `catch_up_max_linear_acceleration` | `0.35 m/s²` | 时间模式速率限幅器的加减速权限 |
+| `line_tracker` | `time_mode_final_approach_enabled` | `true` | 终点前 `final_approach_distance_m` 交回距离制动曲线 |
+| `line_tracker` | `time_axis_stretch_enabled` | `false` | 沿轨滞后超阈值时冻结参考时钟推进 |
+| `line_tracker` | `time_axis_stretch_lag_m` | `0.05 m` | 上一项的触发阈值 |
+
+曲线始终按**额定工作点**规划（`cruise_speed` 与两个 `time_profile_*`），
+`catch_up_*` 只是修正量的活动余量。这条区分是必需的：曲线要求的必须小于限幅器能
+给的，否则指令一路贴着限幅器走，修正一点也送不进去——`braking_profile_deceleration`
+低于 `max_linear_deceleration` 是同一个道理。
+
+轮级饱和会按相同比例缩放左右轮，所以线速度顶到轮速上限时会**连带压掉角速度修正**。
+必须满足 `v_max ≤ 轮速上限 − ω_max·轮距/2`；轮速上限来自
+`climbot_description/config/robot.yaml`，见"配置文件"。
+
+`time_mode_final_approach_enabled` 默认打开，因为时间参考按计划时刻停车，会把残余
+滞后原样变成落点误差（实测 `10.9~15.4 mm`），而距离曲线是位置的函数，位置不到就
+不停（实测恢复到 `2.50~3.42 mm`）。
+
+时长模型的每段固定开销，实测标定：
+
+| 节点 | 参数 | 默认值 | 行为 |
+| --- | --- | ---: | --- |
+| `line_tracker` | `schedule_align_converge_s` | `1.24 s` | `ALIGN_SETTLE` 收敛到航向死区的每段耗时 |
+| `line_tracker` | `schedule_handshake_s` | `0.43 s` | 转向开始前等待上一条指令衰减的每段耗时 |
+| `line_tracker` | `schedule_goal_stop_s` | `0.13 s` | 终点限速与减速到静止的每段额外耗时 |
+
+这三项由八条基线轨迹按控制状态拆分实测得到，只进入进度权重和 `planned_total_s`，
+**不参与任何控制指令**。全为 `0` 时预测比实际短 `10.6%`；代入后 `act/plan` 落在
+`0.981~1.017`。
+
 两个节点都拒绝非有限输入。直线跟踪器在启动时校验线段、增益、速度、加速度、
 轮距、重力方向和坐标系参数；非法配置直接启动失败，不进入周期回调。轮距、轮缘
 速度硬限值和轮缘加速度硬限值不存放在 `control.yaml`，由标准 launch 从
@@ -248,7 +314,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 条件积分抗饱和，但重力前馈达到自身独立限幅不会阻止 PI 修正剩余误差。
 
 `ALIGN` 先制动到线速度为零，再跟踪自动选择的三角形/梯形角速度曲线；曲线结束后
-在 `2°` 航向容差内稳定 `0.50 s` 才允许直行。`10°/12°` 的退出/重入门限提供迟滞。
+在 `1°` 航向容差内稳定 `0.50 s` 才允许直行。`10°/12°` 的退出/重入门限提供迟滞。
 终点低速段只在空间剩余距离触发；完成判据同时使用二维位置、补偿后航向和
 `/odometry/filtered` 的融合速度，不使用预定运行时间。完成后状态和零速输出锁存。
 
@@ -260,10 +326,15 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | --- | --- | --- | --- |
 | `/clicked_point` | `geometry_msgs/msg/PointStamped` | depth 10 | RViz `Publish Point` 输入 |
 | `/coverage/path` | `nav_msgs/msg/Path` | transient local, depth 1 | 墙面覆盖路径；失败或清空时发布空路径 |
-| `/coverage/markers` | `visualization_msgs/msg/MarkerArray` | transient local, depth 1 | 墙面、原始区域、有效区域、路径和方向 |
+| `/coverage/markers` | `visualization_msgs/msg/MarkerArray` | transient local, depth 1 | 墙面、可达区域、点选区域、路径和方向 |
 | `/coverage/status` | `std_msgs/msg/String` | transient local, depth 1 | 等待、成功和失败原因 |
 
 所有覆盖接口默认使用 `odom`。RViz 点选消息的 `frame_id` 不匹配时会被拒绝。
+
+`effective` 命名空间里的**绿色可达区域**是墙面按 `safety_margin` 内缩的结果，
+与点选的角点无关，因此从节点启动起就一直发布，包括一个点都没选、以及规划失败时。
+它曾经只在规划成功后才画出来——也就是在操作员最需要它的时刻藏起来：点在它外面
+正是规划失败的原因。
 
 ### 服务
 
@@ -306,19 +377,26 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 
 ### 操作在各状态下的行为
 
-| 状态 | Start | Cancel | Replan / Clear points |
+| 状态 | Start | Cancel | Replan / Clear points / Region / Sweep / Algorithm |
 | --- | --- | --- | --- |
 | `IDLE` | 拒绝，无有效任务 | 拒绝，无执行中任务 | 允许；`Replan` 在点选模式下需先选够点 |
 | `INVALID` | 拒绝，无有效任务 | 拒绝 | 同上 |
 | `READY` | **接受**，发送 Goal | 拒绝 | 允许，重新生成预览 |
-| `STARTING` | 拒绝，已有任务在启动 | 拒绝，Goal 仍在接受中 | 允许；只改预览，不影响在途 Goal |
-| `EXECUTING` | 拒绝 | **接受**，请求取消 | 允许；只改预览，运行中的任务继续 |
+| `STARTING` | 拒绝，已有任务在启动 | 拒绝，Goal 仍在接受中 | **面板置灰**；服务层仍会受理，只改预览 |
+| `EXECUTING` | 拒绝 | **接受**，请求取消 | **面板置灰**；`tracking_mode` 由执行器直接拒绝 |
 | `FINISHED` | **接受**（若仍有缓存任务），重跑该任务 | 拒绝 | 允许 |
 
-执行中收到新预览（重新规划、清除点选，或在 RViz 里重新点选）只更新缓存，不改变
-`state`，也不改变 `task_id`/`revision`——它们始终标识**当前 `state` 所描述的那个
-任务**。否则运行中的机器人会被报成 `Ready` 或 `Idle`，取消按钮随之消失。执行器
-在接受 Goal 时已复制任务，运行中的任务本身不受预览影响。
+任务运行期间面板冻结全部五个规划控件，只留 Cancel。它们发出的请求确实只改预览、
+不动运行中的 Goal，但**预览就是画在机器人身上的那条轨迹**，运行中改它看起来就像
+任务被换掉了；换形状还会直接把它撤掉。置灰取自管理器自己发布的 `can_cancel`，
+面板不另立一套"是否在运行"的判断。
+
+`tracking_mode` 是唯一一个在**服务层**也拒绝的：执行器只在没有任务运行时接受它。
+
+执行中若仍有客户端绕过面板送来新预览，只更新缓存，不改变 `state`，也不改变
+`task_id`/`revision`——它们始终标识**当前 `state` 所描述的那个任务**。否则运行中的
+机器人会被报成 `Ready` 或 `Idle`，取消按钮随之消失。执行器在接受 Goal 时已复制
+任务，运行中的任务本身不受预览影响。
 
 规划失败与"未选择区域"在管理器看来都是空任务，它无法区分，因此都报
 `IDLE: no coverage region selected.`。真正的原因只在规划器的 `/coverage/status`
@@ -387,9 +465,16 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 | `can_plan` | 现在重新规划会不会被接受 |
 | `message` | `can_plan` 为假时的原因 |
 
+`CoverageStatus` 同步转发执行器反馈里的 `planned_total_s`、`schedule_lag_s` 和
+`estimated_remaining_s`，定义以 `ExecuteCoverage.action` 为准。
+
+**换形状会撤掉当前预览。** 任务被清空、标记线被删除,要按 `Replan` 用现有点重建,
+或清点重选。下拉框是在问"这些点是什么形状",不是在下令规划——梯形 3 点切回矩形时
+它曾经悄悄按前 2 点画出一条谁也没要求过的新轨迹。换扫描方向不撤预览:它不改变
+区域本身,只是换个方向画同一块地。
+
 **换形状不丢点。** A、B 两点在矩形和梯形里是同一个角,所以矩形选好 2 点后切到梯形
-只是等第 3 点,切回来立刻恢复可规划;梯形 3 点切回矩形则用前 2 点并说明多余的那个
-被忽略。丢点会让下拉框上的一次误点变成不可逆操作。
+只是等第 3 点。丢点会让下拉框上的一次误点变成不可逆操作。
 
 `can_plan` 是**提示不是保证**:请求仍可能被拒,原因在服务响应里。判定只写在规划器的
 `planBlockedReason()` 一处,由 Replan 守卫、`configure` 响应和面板置灰共用,三者不可能
@@ -625,7 +710,24 @@ float64 cross_track_error
 float64 heading_error
 float64 remaining_distance
 float32 progress
+float64 planned_total_s
+float64 schedule_lag_s
+float64 estimated_remaining_s
 ```
+
+时间三项与 `progress` 并列而不是合并进去，因为它们回答的是两个不同问题：
+`progress` 说**做完了多少工作量**，机器人卡住时它正确地停住不动；后三项说
+**跟不跟得上计划**，一个由 elapsed 驱动的进度条会在机器人卡死时照样走到 100%。
+
+| 字段 | 含义 |
+| --- | --- |
+| `planned_total_s` | 任务开始时算定，全程不变，含到第一个路点的接近段 |
+| `schedule_lag_s` | 正数为落后计划。`distance` 模式恒为 `0`——没有时间表就谈不上落后 |
+| `estimated_remaining_s` | 每周期更新并带上当前累计滞后，所以落后时它变长而不是匀速递减 |
+
+接近段在 `planned_total_s` 里计入，但**不进入 `progress` 的分母**——进度条数的是任务
+的段，接近段不是其中之一。该段的转向和直线各自按自己的完成度递减，否则倒计时会
+在整条腿上纹丝不动、到达时再一次性跳掉一整段。
 
 `current_segment = -1` 表示尚未进入任何线段。误差单位分别为米、米、弧度和米；
 `progress` 范围为 `[0, 1]`，只用于显示，不作为任务完成判据。

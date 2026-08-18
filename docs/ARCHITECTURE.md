@@ -87,25 +87,33 @@ Gazebo 接触参数。
 
 C++ RViz 操作面板：
 
-- `CoveragePanel`：重新规划/清除点选/开始/取消·停车按钮，以及状态、任务版本、
-  段进度和最近一次请求结果的显示。
+- `CoveragePanel`：区域形状/扫描方向/直线控制算法三个下拉框，重新规划/清除点选/
+  开始/取消·停车四个按钮，以及状态、任务版本、段进度、时间表和最近一次请求结果的
+  显示。
 
-面板只订阅 `/coverage/manager_status` 并调用管理器服务，自身不保存任务状态，
-因此任务锁定、版本检查和安全状态转换不会被分叉到界面里。Qt 与 pluginlib 依赖
-集中在本包，控制包保持无界面依赖。
+面板只订阅 `/coverage/manager_status`、调用管理器与规划器的服务、并读写执行器的
+`tracking_mode` 参数，自身不保存任务状态，因此任务锁定、版本检查和安全状态转换
+不会被分叉到界面里。控件的置灰一律取自被调用方发布的许可位（`can_start`、
+`can_cancel`、`can_plan`），面板不另立一套状态判断，否则两边会得出不同结论。
+Qt 与 pluginlib 依赖集中在本包，控制包保持无界面依赖。
+
+`tracking_mode` 直接走参数接口而不是 `/coverage/configure`：后者是规划器的服务，
+把控制器的配置塞进去会让两个包的职责混在一条请求里。
 
 ### `climbot_control`
 
 C++ 轨迹控制和速度安全：
 
 - `line_tracker`：任意二维直线的沿轨、横轨和航向闭环及联合轮速限幅；
+- `turn_profile` / `travel_profile`：原地转向与直线段的梯形/三角形时间参数化曲线，
+  纯函数，两者对称；`segment_duration` 由它们推导每段耗时，用于进度权重和时间表；
 - `line_tracker_node`：融合位姿输入、定位超时停车和单段参考显示；
 - `cmd_vel_watchdog_node`：`/control/cmd_vel` 到 `/cmd_vel` 的唯一安全出口；
 - `include/climbot_control/control_clock.hpp`：控制环和安全兜底该用哪个时钟。
   节点默认时钟在非仿真时间下退化为**可被设置、可倒退**的系统时钟，定时器建在
   它上面会在时钟回跳期间停止触发。仿真时间激活时跟节点时钟，否则用单调时钟；
   消息时间戳仍用 ROS 时间。详见 [INTERFACES.md](INTERFACES.md) 的"控制环时钟"；
-- `config/control.yaml`：正常作业限幅、控制增益和超时；
+- `config/control.yaml`：正常作业限幅、控制增益、超时，以及两种直线控制律的参数；
 - `launch/line_tracker.launch.py`：从共享机器人描述注入轮距和轮缘硬限值。
 
 控制包不得读取 Gazebo 真值、WheelSlip 或吸附参数。
