@@ -103,14 +103,16 @@ QString scheduleText(
   if (tracking_mode == QLatin1String("distance")) {
     return text + QObject::tr("  ·  estimate only");
   }
-  // Under a tenth of a second is the measurement floor, not a schedule
-  // deviation worth showing.
-  if (std::abs(status.schedule_lag_s) >= 0.1) {
-    text += QObject::tr("  ·  %1%2 s")
-      .arg(status.schedule_lag_s > 0.0 ? QStringLiteral("+") : QStringLiteral("-"))
-      .arg(std::abs(status.schedule_lag_s), 0, 'f', 1);
-  }
-  return text;
+  // Always, and to two decimals. A threshold below which the lag was hidden
+  // was set before the lag had been measured, and the acceleration feedforward
+  // then brought its peak to 0.03-0.05 s - under any such threshold, so the
+  // figure never appeared and there was no way to tell a run that was on
+  // schedule from a feature that was not working. A live number that moves is
+  // the evidence that the schedule is being followed, and it grows on its own
+  // when it stops being.
+  return text + QObject::tr("  ·  %1%2 s")
+         .arg(status.schedule_lag_s < 0.0 ? QStringLiteral("-") : QStringLiteral("+"))
+         .arg(std::abs(status.schedule_lag_s), 0, 'f', 2);
 }
 
 QFrame * makeSeparator()
@@ -560,7 +562,9 @@ void CoveragePanel::renderStatus(const Status & status)
     "Switch the algorithm to Timed trajectory for a schedule the controller "
     "follows and reports against.") :
     tr("The schedule the controller is driving from. The figure after it is "
-    "how far behind that schedule the robot currently is."));
+    "how far behind that schedule the robot currently is; a negative value "
+    "means it is ahead. It stays within a few hundredths of a second while "
+    "the run is going to plan."));
   // Manager sentences quote the task id, so they need the same treatment.
   message_label_->setText(wrappableText(QString::fromStdString(status.message)));
 
