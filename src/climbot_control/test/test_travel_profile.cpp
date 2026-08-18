@@ -99,6 +99,26 @@ TEST(TravelProfile, the_sampled_distance_never_goes_backwards)
   }
 }
 
+TEST(TravelProfile, the_sampled_acceleration_follows_the_phase)
+{
+  const auto trapezoid = climbot_control::planTravel(4.31, kCruise, kRated, kBraking);
+  EXPECT_DOUBLE_EQ(
+    climbot_control::sampleTravel(trapezoid, 0.5).acceleration, kRated);
+  EXPECT_DOUBLE_EQ(
+    climbot_control::sampleTravel(trapezoid, 5.0).acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(
+    climbot_control::sampleTravel(trapezoid, trapezoid.duration - 0.1).acceleration,
+    -kBraking);
+  EXPECT_DOUBLE_EQ(
+    climbot_control::sampleTravel(trapezoid, trapezoid.duration + 1.0).acceleration, 0.0);
+  // A triangular curve has no coasting phase to report zero from.
+  const auto triangle = climbot_control::planTravel(0.10, kCruise, kRated, kRated);
+  EXPECT_DOUBLE_EQ(
+    climbot_control::sampleTravel(triangle, triangle.duration * 0.25).acceleration, kRated);
+  EXPECT_DOUBLE_EQ(
+    climbot_control::sampleTravel(triangle, triangle.duration * 0.75).acceleration, -kRated);
+}
+
 TEST(TravelProfile, before_the_start_it_reads_as_standstill_at_the_origin)
 {
   const auto profile = climbot_control::planTravel(4.31, kCruise, kRated, kBraking);

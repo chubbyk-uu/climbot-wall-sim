@@ -52,27 +52,30 @@ TravelSample sampleTravel(const TravelProfile & profile, double elapsed)
     throw std::invalid_argument("Travel profile elapsed time must be finite.");
   }
   if (!(profile.duration > 0.0)) {
-    return {profile.distance, 0.0};
+    return {profile.distance, 0.0, 0.0};
   }
   const double time = std::max(0.0, elapsed);
   const double acceleration_distance =
     0.5 * profile.peak_speed * profile.acceleration_duration;
   const double coast_distance = profile.peak_speed * profile.coast_duration;
   if (time < profile.acceleration_duration) {
-    return {0.5 * profile.acceleration * time * time, profile.acceleration * time};
+    return {
+      0.5 * profile.acceleration * time * time, profile.acceleration * time,
+      profile.acceleration};
   }
   if (time < profile.acceleration_duration + profile.coast_duration) {
     const double coasted = time - profile.acceleration_duration;
     return {
-      acceleration_distance + profile.peak_speed * coasted, profile.peak_speed};
+      acceleration_distance + profile.peak_speed * coasted, profile.peak_speed, 0.0};
   }
   if (time < profile.duration) {
     const double tail = time - profile.acceleration_duration - profile.coast_duration;
     return {
       acceleration_distance + coast_distance + profile.peak_speed * tail -
       0.5 * profile.deceleration * tail * tail,
-      profile.peak_speed - profile.deceleration * tail};
+      profile.peak_speed - profile.deceleration * tail,
+      -profile.deceleration};
   }
-  return {profile.distance, 0.0};
+  return {profile.distance, 0.0, 0.0};
 }
 }  // namespace climbot_control

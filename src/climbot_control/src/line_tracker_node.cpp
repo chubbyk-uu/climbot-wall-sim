@@ -138,6 +138,7 @@ public:
     } else {
       throw std::invalid_argument("tracking_mode must be \"distance\" or \"time\".");
     }
+    time_speed_lag_ = declare_parameter("time_speed_lag_s", 0.08);
     time_along_gain_ = declare_parameter("time_along_gain", 1.0);
     time_along_integral_gain_ = declare_parameter("time_along_integral_gain", 0.0);
     time_along_integral_limit_ = declare_parameter("time_along_integral_limit_m_s", 0.05);
@@ -403,6 +404,10 @@ private:
     requirePositive("catch_up_max_linear_speed", catch_up_max_linear_speed_);
     requirePositive("catch_up_max_linear_acceleration", catch_up_max_linear_acceleration_);
     requirePositive("time_axis_stretch_lag_m", time_axis_stretch_lag_);
+    requireFinite("time_speed_lag_s", time_speed_lag_);
+    if (time_speed_lag_ < 0.0) {
+      throw std::invalid_argument("time_speed_lag_s must be non-negative.");
+    }
     requireFinite("time_along_gain", time_along_gain_);
     requireFinite("time_along_integral_gain", time_along_integral_gain_);
     requirePositive("time_along_integral_limit_m_s", time_along_integral_limit_);
@@ -743,7 +748,15 @@ private:
       integral_term = time_along_integral_gain_ * time_along_integral_;
     }
 
-    const double raw = sample.speed + time_along_gain_ * schedule_lag_ + integral_term;
+    // Acceleration feedforward. The plant reaches a commanded speed only after
+    // a lag, so commanding the curve's speed alone leaves it behind by that lag
+    // times the acceleration for the whole ramp - measured at 16 mm per
+    // segment, which is the entire startup shortfall. Telling it where the
+    // speed is going removes that before the proportional term ever sees it,
+    // and a gain cannot do the same job: it can only react once the error
+    // exists, and paying it back later is what overshoots the far end.
+    const double raw = sample.speed + time_speed_lag_ * sample.acceleration +
+      time_along_gain_ * schedule_lag_ + integral_term;
     return climbot_control::guardSpeed(
       std::clamp(raw, 0.0, catch_up_max_linear_speed_),
       command.cross, command.heading_error, limits_);
@@ -1511,6 +1524,7 @@ private:
 
   bool have_pose_{false};
   TrackingMode tracking_mode_{TrackingMode::DISTANCE};
+  double time_speed_lag_{0.08};
   double time_along_gain_{1.0};
   double time_along_integral_gain_{0.0};
   double time_along_integral_limit_{0.05};

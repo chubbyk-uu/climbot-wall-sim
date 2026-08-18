@@ -84,8 +84,17 @@ line_tracker:
     time_profile_deceleration: 0.20
     catch_up_max_linear_speed: 0.35
     catch_up_max_linear_acceleration: 0.35
+    # How long the plant takes to actually have a speed it has been commanded,
+    # measured at 0.0799 s (sd 0.0193) over 124 segments of the eight-case set
+    # and consistent across them: 0.084-0.086 on horizontal scans, 0.076-0.077
+    # on vertical ones, which fits horizontal travel working across gravity.
+    # Commanding the curve's speed alone therefore falls short by lag times
+    # acceleration for the whole ramp - 16 mm a segment, the entire startup
+    # shortfall - so the curve's acceleration is fed forward as well.
+    time_speed_lag_s: 0.08
     # Feedforward carries the motion; this only removes the residual lag. Pure
-    # P until a run shows a steady-state lag it cannot close.
+    # P: the cruise phase tracks the commanded speed to within a percent, so
+    # there is no steady-state error for an integral term to remove.
     time_along_gain: 1.0
     time_along_integral_gain: 0.0
     time_along_integral_limit_m_s: 0.05

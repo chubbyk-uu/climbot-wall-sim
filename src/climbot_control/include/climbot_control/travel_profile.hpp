@@ -31,6 +31,11 @@ struct TravelSample
 {
   double distance{0.0};
   double speed{0.0};
+  /// Signed rate of change of the curve at this instant: the acceleration
+  /// while ramping up, zero while coasting, minus the deceleration while
+  /// braking. A plant that reaches a commanded speed only after a lag needs
+  /// this to be told where the speed is going, not just where it is.
+  double acceleration{0.0};
 };
 
 /// Plans the curve for one straight segment. A distance that is not finite or
