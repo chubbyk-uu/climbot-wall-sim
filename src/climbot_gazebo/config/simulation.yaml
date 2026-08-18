@@ -12,13 +12,30 @@ simulation:
     height_m: 2.0
 
   suction:
-    force_n: 220.0
+    # Sized against sliding, not against peeling. The drive wheels carry 66.7%
+    # of this (measured, results/normal_loads_400N.csv), so their Coulomb limit
+    # is mu * 0.667 * force_n and the static safety factor against a 142 N robot
+    # is force_n / 194. At the old 220 N that factor was 1.13, and turning on
+    # the spot - which shifts load onto the freely rolling caster - pushed the
+    # instantaneous limit below the robot's own weight for part of the heading
+    # circle. 400 N gives 2.06, and 1.81 once a 2 kg camera is fitted. Below
+    # 225 N the slip band comes back and below 215 N the robot falls off the
+    # wall outright: see results/band_variants/ and docs/STATUS.md.
+    force_n: 400.0
 
   drive_wheel:
     mu: 1.1
-    slip_lateral: 0.12
-    slip_longitudinal: 0.04
-    nominal_normal_force_n: 77.0
+    # Quoted at nominal_normal_force_n below. WheelSlip only ever uses the
+    # ratio compliance/nominal, so 0.208 at 133.3 N is the same tyre as the
+    # 0.12 at 77 N these were carried at while the suction was 220 N - all 48
+    # headings of results/band_variants/optionB_map.csv match the unscaled
+    # run to 0.001 mm/deg. The pair is restated at the load the wheels
+    # actually carry so the numbers mean something on their own.
+    slip_lateral: 0.208
+    slip_longitudinal: 0.069
+    # The load the compliances above are quoted at: half the wheels' measured
+    # 66.7% share of the suction force (results/normal_loads_400N.csv).
+    nominal_normal_force_n: 133.3
 
   caster:
     mu: 0.35

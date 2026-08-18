@@ -626,7 +626,6 @@ private:
     goal_settle_start_ = zeroInstant();
     segment_start_time_ = controlNow();
     alignment_origin_ = start_;
-    alignment_turn_ = 0.0;
     arc_entry_active_ = false;
     reference_prepared_ = true;
     oscillation_monitor_->reset();
@@ -651,7 +650,6 @@ private:
     goal_settle_start_ = zeroInstant();
     segment_start_time_ = controlNow();
     alignment_origin_ = {pose_.x, pose_.y};
-    alignment_turn_ = 0.0;
     arc_entry_active_ = false;
     oscillation_monitor_->reset();
     oscillation_warning_emitted_ = false;
@@ -1052,7 +1050,6 @@ private:
         }
         motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
         alignment_origin_ = {pose_.x, pose_.y};
-        alignment_turn_ = 0.0;
         alignment_settle_start_ = zeroInstant();
         cross_integral_ = 0.0;
         publishFeedback(arc_command);
@@ -1209,11 +1206,7 @@ private:
           -max_turn_angular_speed_, max_turn_angular_speed_);
           limitAndPublish(command, dt, max_turn_angular_acceleration_);
           if (elapsed >= alignment_profile_.duration) {
-            // The lead-out only moved the robot out of the band; the alignment
-            // it was making room for still has to be planned, from here.
-            motion_state_ = alignment_lead_out_ ?
-              MotionState::ALIGN_BRAKE : MotionState::ALIGN_SETTLE;
-            alignment_lead_out_ = false;
+            motion_state_ = MotionState::ALIGN_SETTLE;
             alignment_settle_start_ = zeroInstant();
           }
           return;
@@ -1264,29 +1257,10 @@ private:
     if (std::abs(previous_command_.linear) <= 1e-4 &&
       std::abs(previous_command_.angular) <= 1e-3)
     {
-      // A turn out of the measured slip band is driven on its own first, so
-      // the real one starts from a heading that grips. The band is left in the
-      // nose-up direction, which never slips, and costs a rotation the
-      // transition reserve already accounts for.
-      const double lead_out = climbot_control::turnLeadOut(
-        pose_.yaw, line_command.heading_error);
-      alignment_lead_out_ = lead_out != 0.0;
-      if (alignment_lead_out_) {
-        RCLCPP_INFO(
-          get_logger(),
-          "Turning %.1f deg clear of the slip band at %.1f deg before the "
-          "%.1f deg alignment.",
-          lead_out * 180.0 / M_PI, pose_.yaw * 180.0 / M_PI,
-          line_command.heading_error * 180.0 / M_PI);
-      }
-      const double planned = alignment_lead_out_ ?
-        lead_out : line_command.heading_error;
       alignment_start_yaw_ = pose_.yaw;
-      // The drop this is later compared against spans the whole alignment,
-      // so a lead-out and the turn it makes room for both count towards it.
-      alignment_turn_ += std::abs(planned);
+      alignment_turn_ = std::abs(line_command.heading_error);
       alignment_profile_ = climbot_control::planTurn(
-        planned, max_turn_angular_speed_,
+        line_command.heading_error, max_turn_angular_speed_,
         max_turn_angular_acceleration_);
       alignment_profile_start_ = current_time;
       alignment_settle_start_ = zeroInstant();
@@ -1388,8 +1362,6 @@ private:
   MotionState motion_state_{MotionState::WAITING_FOR_ALIGNMENT};
   climbot_control::TurnProfile alignment_profile_;
   double alignment_start_yaw_{0.0};
-  // Set while the profile being driven is the lead-out, not the alignment.
-  bool alignment_lead_out_{false};
   double alignment_turn_{0.0};
   // Instants on control_clock_, whose type is only known once the constructor
   // has read use_sim_time, so all of these are assigned there. Subtracting two

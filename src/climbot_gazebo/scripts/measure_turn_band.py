@@ -2,11 +2,17 @@
 """Sweep in-place turns over start heading, turn angle and turn direction."""
 
 # measure_turn_slip.py answers "what does a turn cost per degree", and it turns
-# from wherever the robot happens to be facing. That hid a slip band: a turn
-# started 12 to 40 degrees off vertical, in the direction that keeps lowering
-# the robot's nose, slides about 68 mm on the spot whatever angle it goes on to
-# turn. This script holds the start heading fixed so the band shows up, and it
-# is what turnLeadOut() in climbot_control is calibrated against.
+# from wherever the robot happens to be facing. That hid a slip band: at 220 N
+# of suction, a turn started 12 to 40 degrees off vertical in the direction
+# that keeps lowering the robot's nose slid about 68 mm on the spot whatever
+# angle it went on to turn. This script holds the start heading fixed so the
+# band shows up.
+#
+# The band was the drive wheels running out of Coulomb friction, and raising
+# the suction to 400 N removed it: the whole heading circle now reads 0.392 to
+# 0.440 mm/deg. Re-run this sweep after any change to the suction force, the
+# friction coefficients or the robot's mass, and check the circle stays flat.
+# See results/band_variants/ and docs/STATUS.md.
 
 import csv
 import math

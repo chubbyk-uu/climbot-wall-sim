@@ -364,13 +364,8 @@ void expectSelfConsistentReserve(
   const double next_line = std::atan2(
     next_end.y - nominal_end.y, next_end.x - nominal_end.x);
   const double difference = heldYaw(next_line, limits) - heldYaw(driven, limits);
-  const double turn = std::atan2(std::sin(difference), std::cos(difference));
-  // A turn that starts inside the slip band is led out of it nose-up first and
-  // then given that rotation back, so the robot turns twice the lead-out
-  // further than the alignment alone asks for.
-  const double lead_out = turnLeadOut(heldYaw(driven, limits), turn);
-  const double turn_degrees =
-    (std::abs(turn) + 2.0 * std::abs(lead_out)) * 180.0 / std::acos(-1.0);
+  const double turn_degrees = std::abs(
+    std::atan2(std::sin(difference), std::cos(difference))) * 180.0 / std::acos(-1.0);
   EXPECT_NEAR(lift, slip_per_degree * turn_degrees, 1e-4);
 }
 }  // namespace
@@ -467,12 +462,7 @@ TEST(CoverageExecution, ReserveFollowsTheTurnAngleNotThePreviousTurn)
   // The trapezoid case that made the old observed-drop floor wrong: the robot
   // has just swung 166 degrees onto a slanted transition, then only needs 14
   // degrees onto the last column. Reserving the previous turn's drop would
-  // lift the end by 83 mm.
-  //
-  // That 14 degree turn starts 15 degrees off vertical and lowers the nose, so
-  // it also sits inside the slip band and is led out of it first. The lift is
-  // the 73 degrees the robot then actually rotates through, not the 14 the
-  // alignment asks for - but still nothing like the previous turn's 166.
+  // lift the end by 83 mm instead of 7 mm.
   auto task = validTask();
   using Task = climbot_interfaces::msg::CoverageTask;
   task.sweep_direction = Task::SWEEP_VERTICAL;
@@ -494,7 +484,7 @@ TEST(CoverageExecution, ReserveFollowsTheTurnAngleNotThePreviousTurn)
   const auto limits = slipLimits(0.1056);
   const auto segment = dynamicTransitionSegment(
     task, 1U, {2.761, 3.878}, 0.0005, limits);
-  EXPECT_LT(segment.end.y - third.position.y, 0.045);
+  EXPECT_LT(segment.end.y - third.position.y, 0.020);
   expectSelfConsistentReserve(task, 1U, {2.761, 3.878}, 0.0005, limits);
 }
 
@@ -573,66 +563,4 @@ TEST(CommandWatchdog, RejectsNonFiniteCommandsAndTimes)
   EXPECT_TRUE(watchdog.timedOut(1.1));
   EXPECT_FALSE(watchdog.accept({.1, .2}, std::numeric_limits<double>::quiet_NaN()));
   EXPECT_TRUE(watchdog.timedOut(1.2));
-}
-
-// The bare-wall sweep behind these cases is in results/turn_band.csv: at every
-// heading a 30 degree turn slides about 15.7 mm, except starting 12 to 40
-// degrees off vertical and turning nose-down, where it slides 30 to 77 mm.
-namespace
-{
-constexpr double kDeg = 0.017453292519943295;
-}
-
-TEST(TurnLeadOut, LeavesSafeTurnsAlone)
-{
-  // Turning nose-up out of the band's centre is the direction that grips.
-  EXPECT_DOUBLE_EQ(turnLeadOut(114.0 * kDeg, -30.0 * kDeg), 0.0);
-  // Square to gravity, where the sweep reads 0.523 mm/deg either way.
-  EXPECT_DOUBLE_EQ(turnLeadOut(90.0 * kDeg, 30.0 * kDeg), 0.0);
-  EXPECT_DOUBLE_EQ(turnLeadOut(-90.0 * kDeg, -30.0 * kDeg), 0.0);
-  // Well past the band: 135 deg reads 0.511 mm/deg nose-down.
-  EXPECT_DOUBLE_EQ(turnLeadOut(135.0 * kDeg, 30.0 * kDeg), 0.0);
-  // Along a horizontal scan line, which is where most turns start.
-  EXPECT_DOUBLE_EQ(turnLeadOut(6.0 * kDeg, 115.0 * kDeg), 0.0);
-  EXPECT_DOUBLE_EQ(turnLeadOut(174.0 * kDeg, -115.0 * kDeg), 0.0);
-}
-
-TEST(TurnLeadOut, TurnsNoseUpOutOfTheBandAboveTheWaist)
-{
-  // The failing case: the large trapezoid holds 114.4 deg at a transition end
-  // and turns 59 deg nose-down onto the next scan line.
-  const double lead = turnLeadOut(114.4 * kDeg, 59.0 * kDeg);
-  EXPECT_LT(lead, 0.0) << "the lead-out has to raise the nose";
-  // 114.4 is 24.4 deg off vertical; leaving by the near edge lands on 8 deg.
-  EXPECT_NEAR(lead, -16.4 * kDeg, 1e-9);
-  // And from there the turn is safe, so the robot does not lead out twice.
-  EXPECT_DOUBLE_EQ(turnLeadOut(114.4 * kDeg + lead, 59.0 * kDeg - lead), 0.0);
-}
-
-TEST(TurnLeadOut, TurnsNoseUpOutOfTheBandBelowTheWaist)
-{
-  // Nose-down below the waist means turning towards straight down, so the
-  // near edge of the band is the far one from vertical.
-  const double lead = turnLeadOut(-120.0 * kDeg, 30.0 * kDeg);
-  EXPECT_LT(lead, 0.0) << "nose-up below the waist turns away from vertical";
-  // 120 deg down is 30 deg off vertical; the far edge of the band is at 44.
-  EXPECT_NEAR(lead, -14.0 * kDeg, 1e-9);
-  EXPECT_DOUBLE_EQ(turnLeadOut(-120.0 * kDeg + lead, 30.0 * kDeg - lead), 0.0);
-  // Its mirror, which the sweep also reads as unsafe.
-  EXPECT_GT(turnLeadOut(-60.0 * kDeg, -30.0 * kDeg), 0.0);
-}
-
-TEST(TurnLeadOut, CoversEveryHeadingTheSweepReadsAsUnsafe)
-{
-  // 60 and 75 deg turning nose-down, and their reflections, are the remaining
-  // entries the sweep marks: every one must produce a lead-out.
-  EXPECT_NE(turnLeadOut(60.0 * kDeg, -30.0 * kDeg), 0.0);
-  EXPECT_NE(turnLeadOut(75.0 * kDeg, -30.0 * kDeg), 0.0);
-  EXPECT_NE(turnLeadOut(105.0 * kDeg, 30.0 * kDeg), 0.0);
-  EXPECT_NE(turnLeadOut(120.0 * kDeg, 30.0 * kDeg), 0.0);
-  // Non-finite inputs must not produce a turn command.
-  EXPECT_DOUBLE_EQ(
-    turnLeadOut(std::numeric_limits<double>::quiet_NaN(), 30.0 * kDeg), 0.0);
-  EXPECT_DOUBLE_EQ(
-    turnLeadOut(114.0 * kDeg, std::numeric_limits<double>::infinity()), 0.0);
 }

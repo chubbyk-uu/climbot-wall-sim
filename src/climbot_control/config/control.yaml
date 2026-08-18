@@ -10,7 +10,7 @@ line_tracker:
     standalone_mode: true
     segment_timeout_s: 120.0
     motion_region_tolerance_m: 0.02
-    turn_slip_per_degree_m: 0.0005
+    turn_slip_per_degree_m: 0.00041
     parallel_scan_offset_m: 0.045
     maximum_scan_offset_m: 0.12
     # Bounds where a scan line entered by arc is frozen, so it has to sit
@@ -66,7 +66,7 @@ line_tracker:
     # starts at cruise_speed^2 / (2 * 0.12) = 0.167 m.
     braking_profile_deceleration: 0.12
     max_angular_acceleration: 0.80
-    gravity_slip_ratio: 0.1056
+    gravity_slip_ratio: 0.1042
     gravity_down_x: 0.0
     gravity_down_y: -1.0
 
