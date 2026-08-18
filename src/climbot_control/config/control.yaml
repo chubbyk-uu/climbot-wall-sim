@@ -36,7 +36,16 @@ line_tracker:
     cross_slowdown_full_m: 0.08
     cross_slowdown_min_scale: 0.25
     alignment_reentry_threshold_deg: 12.0
-    alignment_tolerance_deg: 2.0
+    # A deadband, not a convergence target: inside it ALIGN_SETTLE commands
+    # zero angular velocity and stops correcting, so whatever error the robot
+    # carried across the edge is what it starts the scan line with. It has to
+    # stay well under the 2.0 deg maximum_turn_end_heading_error_deg that
+    # PROJECT_GUIDE 14.3 accepts - at 2.0 the two were the same number and the
+    # residual sat at 1.5 to 1.8 deg with no margin at all. 0.5 measured clean
+    # too (107 settles, never more than one command reversal in any of them),
+    # but 1.0 keeps a 2x margin without asking a real robot's heading estimate
+    # to hold a deadband that narrow.
+    alignment_tolerance_deg: 1.0
     alignment_settle_duration_s: 0.50
     turn_heading_gain: 2.0
     max_turn_angular_speed: 0.60

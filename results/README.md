@@ -10,8 +10,17 @@
 > 0.208/0.069）。原因是 220 N 下主动轮摩擦饱和，见 `docs/STATUS.md`。
 >
 > **凡是文件名日期早于 `2026-08-18b` 的，都产生于 220 N 配置，不能与之后的结果
-> 直接比较，也不能用来标定当前配置。** 它们保留下来是为了说明改动前后的差别。
-> 当前正式基线是 `*_2026-08-18b_*` 那八份、`turn_slip.csv` 和 `turn_map.csv`。
+> 直接比较，也不能用来标定当前配置。**
+>
+> 覆盖归档一共三批，配置各不相同：
+>
+> | 标签 | 吸附力 | `alignment_tolerance_deg` | 地位 |
+> | --- | ---: | ---: | --- |
+> | `2026-08-18b` | 400 N | 2.0 | 历史对照 |
+> | `2026-08-18c` | 400 N | 0.5 | 历史对照（收窄死区的中间验证，5 个工况） |
+> | **`2026-08-18d`** | **400 N** | **1.0** | **当前正式基线（8 个工况）** |
+>
+> 标定基线是 `turn_slip.csv` 和 `turn_map.csv`，两者都在 400 N 下重测。
 
 > **四份覆盖基线已于 2026-08-17 在提交 `6227a3c` 的干净工作树上重跑。** 每份摘要
 > 的 `provenance.git` 都是 `commit=6227a3c`、`source_modified=false`，此后不会再
@@ -32,7 +41,9 @@
 | `turn_slip_2026-08-13_uncorrected.csv` | 历史对照，**不可用于标定** | 采集时参考点在主动轮轴后约 `79 mm`，逐角度、逐方向的数值混着运动学摆动 |
 | `wall_slip_trajectory.csv.gz` | 当前正式基线 | 10209 行；真值时间戳去重；包含真值与融合航向 |
 | `wall_slip.png` | 当前正式基线 | 由当前侧滑轨迹 CSV 生成 |
-| `coverage_*_2026-08-18b_*` | **当前正式基线（400 N）** | 八工况，全部 `passed=true`，见下表 |
+| `coverage_*_2026-08-18d_*` | **当前正式基线** | 400 N + 1.0° 死区，八工况全部 `passed=true`，见下表 |
+| `coverage_*_2026-08-18c_*` | 历史对照 | 400 N + 0.5° 死区，收窄死区的中间验证，5 个工况 |
+| `coverage_*_2026-08-18b_*` | 历史对照 | 400 N + 2.0° 死区，八工况 |
 | `coverage_*_2026-08-17_*` | 历史对照（220 N） | 原始四工况的 220 N 版本 |
 | `coverage_big*_2026-08-18_*` | 历史对照（220 N + `turnLeadOut()`） | 放大四工况；`turnLeadOut()` 已删除，这批不可复现 |
 | `slip_compensation_off_2026-08-17_*` | §14.4 正式结果 | 横轨闭环关闭的三次水平直线 |
@@ -68,47 +79,81 @@
 
 ## 覆盖基线（八工况）
 
-2026-08-18 在 **400 N** 配置下重跑，每个工况都从新启动的无界面世界开始。原始四个
-工况为矩形 `4.30 × 1.70 m` 横向、`3.30 × 4.50 m` 竖向，以及底边 `4.00 m`、上底
+2026-08-18 在 **400 N 吸附力 + 1.0° 对齐死区**下重跑，四路并行、每路独立世界。原始
+四个工况为矩形 `4.30 × 1.70 m` 横向、`3.30 × 4.50 m` 竖向，以及底边 `4.00 m`、上底
 `2.60 m`、高 `2.80 m` 的等腰梯形横向和竖向；放大四个为矩形 `5.70 × 3.60 m` 和斜边
 `58°` 的梯形。全部用 `0.50 × 0.01 m` 检测足迹和 `10 mm` 覆盖栅格，只累计正式
 `SCAN` 直线。
 
 | 指标 | 矩形横 | 矩形竖 | 梯形横 | 梯形竖 | 大矩横 | 大矩竖 | 大梯横 | 大梯竖 | §14.3 阈值 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 覆盖率 % | 99.94 | 100.00 | 99.76 | 98.63 | 99.98 | 100.00 | 99.34 | 98.98 | ≥ 95 |
-| 最大动态终点误差 mm | 2.72 | 3.28 | 3.03 | 4.31 | 3.12 | 3.50 | 3.16 | 4.27 | ≤ 30 |
-| 最大转向结束航向误差 ° | 1.682 | 1.811 | 1.763 | 1.851 | 1.777 | 1.991 | 1.781 | 1.844 | ≤ 2.0 |
-| 最大相邻扫描线间距误差 mm | 3.41 | 4.31 | 2.81 | 3.16 | 1.65 | 4.91 | 2.28 | 6.63 | ≤ 20 |
-| 最大扫描线偏离名义 mm | 4.42 | 5.25 | 3.30 | 4.76 | 1.42 | 5.06 | 3.93 | 4.82 | — |
-| 最大机体航向补偿角 ° | 6.85 | 7.65 | 6.53 | 7.74 | 6.63 | 7.68 | 6.50 | 7.43 | — |
-| 实际/名义线段总长比 | 1.0240 | 1.0182 | 1.0376 | 1.0280 | 1.0213 | 1.0167 | 1.0273 | 1.0377 | — |
-| 执行时间 s | 131.9 | 292.4 | 221.9 | 282.2 | 283.2 | 400.0 | 240.9 | 375.1 | — |
+| 覆盖率 % | 99.94 | 100.00 | 99.75 | 98.63 | 99.94 | 100.00 | 99.33 | 98.97 | ≥ 95 |
+| 最大动态终点误差 mm | 3.54 | 3.67 | 3.03 | 3.48 | 2.91 | 3.90 | 3.05 | 4.65 | ≤ 30 |
+| 最大转向结束航向误差 ° | 0.723 | 0.913 | 0.793 | 0.851 | 0.934 | 0.876 | 0.868 | 0.873 | ≤ 2.0 |
+| 最大相邻扫描线间距误差 mm | 3.59 | 2.20 | 3.00 | 4.07 | 3.47 | 4.82 | 3.25 | 5.47 | ≤ 20 |
+| 最大扫描线偏离名义 mm | 3.79 | 4.13 | 2.56 | 4.18 | 4.35 | 5.11 | 3.31 | 4.48 | — |
+| 最大机体航向补偿角 ° | 6.84 | 6.89 | 6.57 | 6.93 | 6.54 | 6.93 | 6.53 | 6.96 | — |
+| 实际/名义线段总长比 | 1.0246 | 1.0180 | 1.0374 | 1.0276 | 1.0214 | 1.0165 | 1.0273 | 1.0376 | — |
+| 执行时间 s | 138.5 | 301.2 | 228.0 | 292.4 | 289.4 | 409.1 | 247.3 | 398.3 | — |
 | 可见反向往复 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 **八个工况全部通过评价器的每一项门限**（`passed=true`）。
 
-相对 220 N 时代最直接的对照是间距误差：大梯形横向从 **43.09 mm**（超标）降到
-**2.28 mm**，大梯形竖向从 **26.87 mm** 降到 **6.63 mm**，大矩形竖向从 10.11 mm 降到
-**4.91 mm**。前两个当初是靠 `turnLeadOut()` 绕开滑移带才达标的（1.52 / 8.39 mm），
-现在绕行已删除，达标靠的是全圆滑移散布从 275% 收到 11.8% 之后单常数补偿模型本身
-变准——第三个工况从头到尾没触发过绕行，它的改善只能来自这里。
+### 相对 220 N 的改善
 
-**转向结束航向误差仍然贴着阈值**：八个工况落在 `1.68°~1.99°`，阈值 `2.0°`，其中
-大矩形竖向 `1.991°`。提高吸附力**没有**改善这一项，说明它与摩擦余量无关，属另一个
-未决问题，见 `docs/STATUS.md` 的当前未决事项第 0 条。
+| 工况 | 220 N | 400 N | 400 N + 1.0° 死区 |
+| --- | ---: | ---: | ---: |
+| 大梯形横向 间距误差 | **43.09 mm**（超标） | 2.28 mm | **3.25 mm** |
+| 大梯形竖向 间距误差 | **26.87 mm**（超标） | 6.63 mm | **5.47 mm** |
+| 大矩形竖向 转向结束航向 | 2.028°（超标） | 1.991° | **0.876°** |
+
+前两行靠提高吸附力消除主动轮摩擦饱和解决；第三行与摩擦无关，靠把
+`alignment_tolerance_deg` 从 2.0 收到 1.0 解决——它原本与 §14.3 的验收阈值取同一个
+数，余量结构性为零。八个工况的航向误差现在是 `0.723~0.934°`，余量 53%~64%。
+
+`ALIGN_SETTLE` 是死区不是收敛目标：误差一进死区就把角速度指令置零、不再纠正，所以
+残差是穿过边界那一刻的余量。收窄死区没有引发振荡——八个工况共 **182 次整定，单次
+角速度符号翻转从未超过 1 次**（1 次是冲过头后的正常单次回调，振荡需要 ≥2 次）。
+代价是整定均值从 0.80 s 升到约 1.15 s。
 
 ## 重新生成覆盖基线
 
-每次正式实验都从全新启动的无界面仿真开始。`climbot_wall.launch.py` 不启动规划器
-和执行器，需分别启动；三个工况只有 `--params-file` 与输出文件名不同：
+```bash
+tools/run_coverage_regression.sh                    # 全八工况，四路并行，标签用今天日期
+tools/run_coverage_regression.sh -j 6               # 六路
+tools/run_coverage_regression.sh -t 2026-08-18d     # 指定标签
+tools/run_coverage_regression.sh bigV bigTH         # 只跑指定工况
+tools/run_coverage_regression.sh -k                 # 保留未压缩轨迹
+```
+
+脚本从新启动的无界面世界执行每个工况，写出 `results/coverage_<工况>_<标签>_*`，
+末尾打印验收汇总表；**任一工况不达标返回退出码 1** 并列出工况名，可直接进 CI。
+八个工况四路并行约 11 分钟，串行约 70 分钟。
+
+### 并行需要两层隔离，不是一层
+
+`ROS_DOMAIN_ID` 只隔离 DDS。Gazebo 走的是 **gz-transport**，一套独立的发现机制，
+两个实例的话题路径（`/world/climbot_wall/model/climbot/...`）完全相同，不设
+`GZ_PARTITION` 就会让桥接订阅到另一个世界。**这个故障不会崩溃**——数据看起来正常，
+只是来自别人的仿真，比直接报错危险得多。脚本给每路配一组
+`ROS_DOMAIN_ID` + `GZ_PARTITION`，收尾时读每个进程自己的 `/proc/<pid>/environ`
+匹配分区来定位，一条路杀不到另一条路。
+
+隔离验证：同一工况并行与串行的**覆盖率逐位相同**（`99.93%` / `99.74%`），这是整条
+轨迹在 10 mm 栅格上的积分，任何串台都会立刻体现。
+
+并行不降速：瓶颈是 1 ms 物理步长的单线程串行，四个实例各占约 70% 的一个核，实时
+因子 `0.85~0.94`，与单独运行的 `0.84~0.94` 一致。24 核机器上还有余量再加路。
+
+### 逐工况手动运行
+
+需要单独调试某个工况时，四个终端分别启动：
 
 ```bash
 # 终端 1：仿真、TF、传感器、EKF 和速度看门狗
-ros2 launch climbot_gazebo climbot_wall.launch.py \
-  use_sim_time:=true headless:=true
+ros2 launch climbot_gazebo climbot_wall.launch.py use_sim_time:=true headless:=true
 
-# 终端 2：规划器（四个工况只有这一行的配置和 sweep_direction 不同）
+# 终端 2：规划器（工况之间只有这一行的配置和 sweep_direction 不同）
 ros2 launch climbot_coverage coverage_planner.launch.py \
   use_sim_time:=true rviz:=false \
   config_file:="$(pwd)/src/climbot_coverage/config/coverage_horizontal_demo.yaml" \
@@ -121,11 +166,11 @@ ros2 launch climbot_control coverage_executor.launch.py use_sim_time:=true
 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
   -p use_sim_time:=true -p case:=planned_task \
   -p startup_timeout_s:=30.0 -p execution_timeout_s:=600.0 \
-  -p trajectory_csv:=results/coverage_horizontal_2026-08-17_trajectory.csv.gz \
-  -p summary_json:=results/coverage_horizontal_2026-08-17_summary.json
+  -p trajectory_csv:=results/coverage_horizontal_manual_trajectory.csv \
+  -p summary_json:=results/coverage_horizontal_manual_summary.json
 ```
 
-四个工况的配置与扫描方向：
+八个工况的配置与扫描方向：
 
 | 工况 | `config_file` | `region_type` | `sweep_direction` |
 | --- | --- | --- | --- |
@@ -133,15 +178,18 @@ ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
 | 矩形竖向 | `coverage_vertical_demo.yaml` | `rectangle` | `vertical` |
 | 梯形横向 | `coverage_trapezoid_horizontal_demo.yaml` | `trapezoid` | `horizontal` |
 | 梯形竖向 | `coverage_trapezoid_vertical_demo.yaml` | `trapezoid` | `vertical` |
+| 大矩形横向 | `coverage_horizontal_large.yaml` | `rectangle` | `horizontal` |
+| 大矩形竖向 | `coverage_vertical_large.yaml` | `rectangle` | `vertical` |
+| 大梯形横向 | `coverage_trapezoid_horizontal_large.yaml` | `trapezoid` | `horizontal` |
+| 大梯形竖向 | `coverage_trapezoid_vertical_large.yaml` | `trapezoid` | `vertical` |
 
-必须用 `planner_config_file` / `control_config_file` 这类互不冲突的名字，或者像
-上面这样分别启动：被包含的 launch 会继承父作用域的同名参数，一个 `config_file`
-会同时落到规划器和跟踪器上，使后者静默退回内置默认值（包括侧滑补偿为 `0`）。
+必须用 `planner_config_file` / `control_config_file` 这类互不冲突的名字，或者像上面
+这样分别启动：被包含的 launch 会继承父作用域的同名参数，一个 `config_file` 会同时
+落到规划器和跟踪器上，使后者静默退回内置默认值（包括侧滑补偿为 `0`）。
 
 评价器在任一验收项不达标时返回失败，但无论成功、超时还是异常都会先写出 CSV 和
 摘要；失败运行的摘要里 `completed=false` 并记录 `failure_reason`，不要把这类文件
-当作基线。摘要的 `provenance.git.source_modified` 为 `true` 表示该结果产生时
-`src` 有未提交改动，此时记录的提交号只是父提交。
+当作基线。
 
 ## §14.4 侧滑补偿专项验收
 
