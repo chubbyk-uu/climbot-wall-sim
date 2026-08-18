@@ -590,13 +590,19 @@ private:
     // the schedule reported alongside the bar does include it.
     const auto & first = waypoints.front().position;
     const double approach_length = std::hypot(first.x - pose_.x, first.y - pose_.y);
-    start_approach_estimate_ = approach_length <= goal_position_tolerance_ ? 0.0 :
-      climbot_control::estimateSegmentDuration(
-      approach_length,
-      std::atan2(
-        std::sin(std::atan2(first.y - pose_.y, first.x - pose_.x) - pose_.yaw),
-        std::cos(std::atan2(first.y - pose_.y, first.x - pose_.x) - pose_.yaw)),
-      model);
+    if (approach_length <= goal_position_tolerance_) {
+      start_approach_turn_estimate_ = 0.0;
+      start_approach_travel_estimate_ = 0.0;
+      return;
+    }
+    const double approach_heading = std::atan2(first.y - pose_.y, first.x - pose_.x);
+    // Kept as its two parts rather than one total, because the estimate has to
+    // be counted down while the leg runs and its turn and its drive finish at
+    // different times.
+    start_approach_turn_estimate_ = climbot_control::estimateTurnDuration(
+      climbot_control::wrapAngle(approach_heading - pose_.yaw), model);
+    start_approach_travel_estimate_ =
+      climbot_control::estimateTravelDuration(approach_length, model);
   }
 
   /// How much of the current segment's turn is done. The alignment profile is
@@ -1125,15 +1131,37 @@ private:
     return schedule_lag_ / cruise_speed_;
   }
 
+  /// What is left of the drive to the first waypoint. The progress bar reads
+  /// zero throughout this leg on purpose - it counts the task's segments and
+  /// this is not one of them - so the estimate cannot be derived from it, and
+  /// carrying the leg as a block that only disappears on arrival left the
+  /// countdown standing still and then jumping by the whole leg at once.
+  double startApproachRemaining(const climbot_control::Command & command) const
+  {
+    const double total = start_approach_turn_estimate_ + start_approach_travel_estimate_;
+    if (waiting_for_start_pose_ || !(total > 0.0)) {
+      return total;
+    }
+    // Measured against the current anchoring rather than the length this leg
+    // started with: reanchorStartApproach moves the origin to wherever the
+    // robot ended its turn, and a fraction of the original length would step
+    // when it does.
+    const double length = std::hypot(end_.x - start_.x, end_.y - start_.y);
+    const double left = length > 0.0 ?
+      std::clamp(command.remaining / length, 0.0, 1.0) : 0.0;
+    return start_approach_turn_estimate_ * (1.0 - alignmentFraction()) +
+           start_approach_travel_estimate_ * left;
+  }
+
   /// What is left, carrying the lag. The progress fraction is already the
   /// share of planned time spent, so the remaining segments come straight from
   /// it rather than from a second traversal that could disagree with the bar.
-  double estimatedRemaining(float progress) const
+  double estimatedRemaining(float progress, const climbot_control::Command & command) const
   {
     const double segments = total_duration_estimate_ *
       std::clamp(1.0 - static_cast<double>(progress), 0.0, 1.0);
     const double approach = approaching_start_ || waiting_for_start_pose_ ?
-      start_approach_estimate_ : 0.0;
+      startApproachRemaining(command) : 0.0;
     return std::max(0.0, segments + approach + scheduleLagSeconds());
   }
 
@@ -1154,9 +1182,10 @@ private:
     feedback->heading_error = command.heading_error;
     feedback->remaining_distance = command.remaining;
     feedback->progress = before_first_segment ? 0.0F : taskProgress(command);
-    feedback->planned_total_s = total_duration_estimate_ + start_approach_estimate_;
+    feedback->planned_total_s = total_duration_estimate_ +
+      start_approach_turn_estimate_ + start_approach_travel_estimate_;
     feedback->schedule_lag_s = scheduleLagSeconds();
-    feedback->estimated_remaining_s = estimatedRemaining(feedback->progress);
+    feedback->estimated_remaining_s = estimatedRemaining(feedback->progress, command);
     active_goal_->publish_feedback(feedback);
   }
 
@@ -1651,7 +1680,8 @@ private:
   double schedule_align_converge_s_{0.0};
   double schedule_goal_stop_s_{0.0};
   double schedule_handshake_s_{0.0};
-  double start_approach_estimate_{0.0};
+  double start_approach_turn_estimate_{0.0};
+  double start_approach_travel_estimate_{0.0};
   std::vector<double> segment_turn_estimates_;
   std::vector<double> segment_travel_estimates_;
   double total_duration_estimate_{0.0};
