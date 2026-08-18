@@ -874,6 +874,13 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 负载下不够，而这些用例共用一个已启动的管理器，所以第一处失败会把状态留给第二处。
 不影响功能，但把超时窗口放宽、或让每个用例自己重置管理器状态，会更稳。
 
+### 3. README 的 RViz 截图早于"运行中冻结规划控件"
+
+`docs/images/rviz_coverage_task.png` 摄于 `21:27`，冻结那次提交在 `21:30`，所以图里
+`State: Executing` 的同时 Region、Sweep、Replan、Clear points 仍是可点的，只有
+Algorithm 是灰的。与 `OPERATION.md` 里"运行期间五个控件全部置灰"矛盾。下次跑任务
+时在执行中重截一张替换即可。
+
 ## 下一步顺序
 
 1. 补一轮八用例的 distance 模式回归，闭合位置控制的时长预测实测值；随后决定

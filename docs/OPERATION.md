@@ -77,6 +77,8 @@ RViz 里从启动起就画着一个**绿色边框**，那是墙面按机器人�
 
 ### 面板
 
+![Coverage Task 面板](images/rviz_coverage_task.png)
+
 | 行 | 内容 |
 | --- | --- |
 | **Region** / **Sweep** | 区域形状与扫描方向，见下节 |
