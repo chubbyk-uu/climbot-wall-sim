@@ -827,16 +827,26 @@ rviz:=false input_mode:=parameters` 起来后 `/coverage/task` 发布 `rectangle
 正确。全量 390 项测试通过（bringup 的 7 项 lint 为新增），26 项按环境跳过。
 `tools/run_coverage_regression.sh` 用的是三条单包入口，未受影响。
 
-## 进行中：基于时间点的轨迹控制
+## 2026-08-18 基于时间点的轨迹控制
 
 分支 `feature/time-parameterized-control`。把 Word 文档 §5.3 的时间参数化控制
 （梯形/三角形速度曲线前馈 + 位置偏差闭环）引入直线段——转向段的
-`ALIGN_PROFILE` 本来就已经是该算法，缺的是直线段。设计结论、实施阶段、测试计划
-和风险门禁见 [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md)。
+`ALIGN_PROFILE` 本来就已经是该算法，缺的是直线段。设计结论、实施阶段、实测结果
+见 [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md)。
 
-要点：额定工作点不变、只抬高执行机构上限留追赶余量；time 模式只覆盖
-`desired.linear` 一个信号以保证 A/B 可归因；进度条口径不变，另加
-`planned_total_s / schedule_lag_s / estimated_remaining_s` 三个时间字段。
+| 项目 | 状态 | 结果 |
+| --- | --- | --- |
+| `travel_profile` 与 `planTurn` 对称 | 已完成 | `estimateTravelDuration` 改为委托后，与旧公式在 254 万采样长度上逐位一致，进度条口径未动 |
+| time 模式接入 | 已完成 | 只覆盖 `desired.linear` 一个信号，其余命令仍由 `trackLine` 构造，A/B 差异可唯一归因 |
+| 抬高执行机构上限门禁 | 已通过 | 八个用例覆盖率保持到小数点后两位完全一致，落点与转向无系统性偏移 |
+| 八用例 A/B | 已完成 | time + 终点兜底的落点 `2.50~3.42 mm`、道间距 `2.51~5.11 mm`，与 distance 模式等价；任务时长一致快 `0.2~1.9%` |
+| 任务时长预测 | 已完成 | 三个每段开销常数实测标定后，`act/plan` 落在 `0.977~1.015`，均值 `1.003` |
+
+裸算法（未开兜底）落点 `10.9~15.4 mm`：滞后几乎全部在起步第一秒内建立
+（profile 假设从静止按额定加速度起步，实际差约 12%），P 环随后过度补偿，
+段末反而超前 `7~13 mm`，落点误差是**超冲**。交出最后 50 mm 给距离制动即消除。
+
+`tracking_mode` 默认仍为 `distance`，切换默认值待确认。
 
 ## 当前未决事项
 
@@ -847,8 +857,9 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 
 ## 下一步顺序
 
-1. 完成基于时间点的轨迹控制（分支 `feature/time-parameterized-control`，
-   计划见 [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md)）；
+1. 决定 `tracking_mode` 的默认值是否切到 `time`；两种模式的验收指标已等价，
+   time 模式额外给出 1.5% 量级的任务时长预测（见
+   [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md) 第 8 节）；
 2. 补齐 §15 剩余三项测试场景：单段水平/竖直/斜向直线（§15.7，已有零散实测但无
    归档结果）、全站仪噪声与频率扫描（§15.9）、固定随机种子的任务级重复性
    （§15.11，`total_station_sim` 与 `wall_imu_adapter` 的种子参数已具备）；
