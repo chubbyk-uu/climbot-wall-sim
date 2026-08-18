@@ -150,6 +150,16 @@ public:
     time_axis_stretch_lag_ = declare_parameter("time_axis_stretch_lag_m", 0.05);
     time_mode_final_approach_enabled_ = declare_parameter(
       "time_mode_final_approach_enabled", false);
+
+    // Fixed per-segment costs the duration model cannot derive: how long the
+    // heading takes to converge into the alignment deadband, how long the
+    // speed takes to decay below the standstill threshold, and the executor
+    // round trip between segments. All three default to zero, so the shipped
+    // configuration predicts exactly what it predicted before they existed and
+    // a measured shortfall has to be entered deliberately.
+    schedule_align_converge_s_ = declare_parameter("schedule_align_converge_s", 0.0);
+    schedule_goal_stop_s_ = declare_parameter("schedule_goal_stop_s", 0.0);
+    schedule_handshake_s_ = declare_parameter("schedule_handshake_s", 0.0);
     wheel_separation_ = declare_parameter("wheel_separation", -1.0);
     wheel_speed_limit_ = declare_parameter("wheel_speed_limit", -1.0);
     wheel_acceleration_limit_ = declare_parameter("wheel_acceleration_limit", -1.0);
@@ -466,7 +476,11 @@ private:
     model.braking_deceleration = limits_.braking_deceleration;
     model.max_turn_rate = max_turn_angular_speed_;
     model.turn_acceleration = max_turn_angular_acceleration_;
-    model.settle_duration = alignment_settle_duration_ + goal_settle_duration_;
+    model.align_settle_s = alignment_settle_duration_;
+    model.align_converge_s = schedule_align_converge_s_;
+    model.goal_settle_s = goal_settle_duration_;
+    model.goal_stop_s = schedule_goal_stop_s_;
+    model.handshake_s = schedule_handshake_s_;
     return model;
   }
 
@@ -496,6 +510,20 @@ private:
       total_duration_estimate_ +=
         segment_turn_estimates_[index] + segment_travel_estimates_[index];
     }
+    // Deliberately outside total_duration_estimate_, which is the progress
+    // bar's denominator and has to keep meaning what it meant: the bar counts
+    // the segments and reads zero until the first one starts. The approach to
+    // the first waypoint is real time the operator waits through, though, so
+    // the schedule reported alongside the bar does include it.
+    const auto & first = waypoints.front().position;
+    const double approach_length = std::hypot(first.x - pose_.x, first.y - pose_.y);
+    start_approach_estimate_ = approach_length <= goal_position_tolerance_ ? 0.0 :
+      climbot_control::estimateSegmentDuration(
+      approach_length,
+      std::atan2(
+        std::sin(std::atan2(first.y - pose_.y, first.x - pose_.x) - pose_.yaw),
+        std::cos(std::atan2(first.y - pose_.y, first.x - pose_.x) - pose_.yaw)),
+      model);
   }
 
   /// How much of the current segment's turn is done. The alignment profile is
@@ -1004,6 +1032,30 @@ private:
     return static_cast<float>(std::clamp(spent / total_duration_estimate_, 0.0, 1.0));
   }
 
+  /// The lag expressed in seconds, at the rated cruise speed. The reference
+  /// speed itself would be the exact divisor but it is zero at both ends of
+  /// every segment, where the lag is most worth reporting; a fixed divisor
+  /// keeps the number monotonic in the lag and comparable between segments.
+  double scheduleLagSeconds() const
+  {
+    if (tracking_mode_ != TrackingMode::TIME || !(cruise_speed_ > 0.0)) {
+      return 0.0;
+    }
+    return schedule_lag_ / cruise_speed_;
+  }
+
+  /// What is left, carrying the lag. The progress fraction is already the
+  /// share of planned time spent, so the remaining segments come straight from
+  /// it rather than from a second traversal that could disagree with the bar.
+  double estimatedRemaining(float progress) const
+  {
+    const double segments = total_duration_estimate_ *
+      std::clamp(1.0 - static_cast<double>(progress), 0.0, 1.0);
+    const double approach = approaching_start_ || waiting_for_start_pose_ ?
+      start_approach_estimate_ : 0.0;
+    return std::max(0.0, segments + approach + scheduleLagSeconds());
+  }
+
   void publishFeedback(const climbot_control::Command & command)
   {
     if (!active_goal_) {
@@ -1021,6 +1073,9 @@ private:
     feedback->heading_error = command.heading_error;
     feedback->remaining_distance = command.remaining;
     feedback->progress = before_first_segment ? 0.0F : taskProgress(command);
+    feedback->planned_total_s = total_duration_estimate_ + start_approach_estimate_;
+    feedback->schedule_lag_s = scheduleLagSeconds();
+    feedback->estimated_remaining_s = estimatedRemaining(feedback->progress);
     active_goal_->publish_feedback(feedback);
   }
 
@@ -1517,6 +1572,10 @@ private:
   bool waiting_for_start_pose_{false};
   bool oscillation_warning_emitted_{false};
   uint32_t completed_segments_{0U};
+  double schedule_align_converge_s_{0.0};
+  double schedule_goal_stop_s_{0.0};
+  double schedule_handshake_s_{0.0};
+  double start_approach_estimate_{0.0};
   std::vector<double> segment_turn_estimates_;
   std::vector<double> segment_travel_estimates_;
   double total_duration_estimate_{0.0};

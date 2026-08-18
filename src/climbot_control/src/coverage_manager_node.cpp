@@ -245,6 +245,9 @@ private:
         status_.current_segment = feedback->current_segment;
         status_.progress = feedback->progress;
         status_.executor_state = feedback->state;
+        status_.planned_total_s = feedback->planned_total_s;
+        status_.schedule_lag_s = feedback->schedule_lag_s;
+        status_.estimated_remaining_s = feedback->estimated_remaining_s;
         publishProgress();
       };
     options.result_callback = [this](const GoalHandle::WrappedResult & result) {
@@ -264,6 +267,9 @@ private:
     status_.total_segments = static_cast<uint32_t>(goal.task.segment_types.size());
     status_.current_segment = -1;
     status_.progress = 0.0F;
+    status_.planned_total_s = 0.0;
+    status_.schedule_lag_s = 0.0;
+    status_.estimated_remaining_s = 0.0;
     status_.executor_state = ExecuteCoverage::Feedback::WAITING;
     start_pending_since_ = control_clock_->now();
     // Announce STARTING before sending, so the goal response can never be

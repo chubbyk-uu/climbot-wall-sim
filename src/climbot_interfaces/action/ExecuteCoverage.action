@@ -32,3 +32,17 @@ float64 cross_track_error
 float64 heading_error
 float64 remaining_distance
 float32 progress
+
+# The schedule, alongside the progress fraction rather than instead of it.
+# progress answers how much of the work is done and never moves while the robot
+# is stuck; these answer whether the work is on time, which is a different
+# question and would be misleading if folded into the bar.
+#
+# planned_total_s is fixed when the task starts and covers the approach to the
+# first waypoint as well as the segments. schedule_lag_s is positive when the
+# robot is behind, and is zero throughout in distance mode, which has no
+# schedule to be behind. estimated_remaining_s carries the accumulated lag, so
+# it grows when the run falls behind instead of counting steadily down.
+float64 planned_total_s
+float64 schedule_lag_s
+float64 estimated_remaining_s

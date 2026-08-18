@@ -17,7 +17,8 @@ climbot_control::DurationModel model()
   value.braking_deceleration = 0.12;
   value.max_turn_rate = 0.35;
   value.turn_acceleration = 1.00;
-  value.settle_duration = 0.80;
+  value.align_settle_s = 0.50;
+  value.goal_settle_s = 0.30;
   return value;
 }
 

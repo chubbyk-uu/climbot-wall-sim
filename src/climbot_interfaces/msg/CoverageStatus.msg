@@ -29,6 +29,14 @@ uint32 total_segments
 # Fraction of the task the executor reports as complete, 0 to 1.
 float32 progress
 
+# The schedule as reported by the executor; see ExecuteCoverage.action, which
+# stays the authoritative definition. Only meaningful while state is EXECUTING,
+# and schedule_lag_s is zero throughout when the executor runs in distance
+# mode, which has no schedule to be behind.
+float64 planned_total_s
+float64 schedule_lag_s
+float64 estimated_remaining_s
+
 # Motion state reported by the executor. The values mirror the constants in
 # ExecuteCoverage.action's feedback, which stays the authoritative definition:
 # WAITING, ALIGN, TURN_SETTLE, TRACK_LINE, FINAL_APPROACH, STOPPED,

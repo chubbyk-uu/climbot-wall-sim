@@ -18,11 +18,20 @@ robot:
     mass_kg: 0.5
     centre_x_m: -0.33
 
+  # The actuator envelope, not the operating point. Both controllers still
+  # cruise at 0.20 m/s and plan their profiles from the same rated
+  # accelerations; what these bound is how much room a correction has above
+  # that. Without headroom a robot that falls behind its schedule can only
+  # observe that it is late, and the wheel-level saturation in rateLimit
+  # scales linear and angular together, so a linear command sitting on the
+  # ceiling takes the heading correction down with it just when it is needed.
+  # 0.45 m/s clears the worst combination of cruise speed and a saturated
+  # angular correction (0.20 + 0.35 * 0.215 = 0.275) with margin to spare.
   drive:
-    max_linear_velocity_mps: 0.30
+    max_linear_velocity_mps: 0.45
     max_angular_velocity_rps: 1.20
-    max_linear_acceleration_mps2: 0.40
-    max_angular_acceleration_rps2: 1.50
+    max_linear_acceleration_mps2: 0.70
+    max_angular_acceleration_rps2: 2.20
     joint_effort_nm: 80.0
     joint_velocity_rps: 30.0
 

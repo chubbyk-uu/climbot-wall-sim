@@ -69,6 +69,7 @@ private:
   QLabel * state_label_{nullptr};
   QLabel * task_label_{nullptr};
   QLabel * segment_label_{nullptr};
+  QLabel * schedule_label_{nullptr};
   QProgressBar * progress_bar_{nullptr};
   QLabel * message_label_{nullptr};
   QLabel * planner_label_{nullptr};

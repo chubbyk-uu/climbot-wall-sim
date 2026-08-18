@@ -12,10 +12,10 @@ namespace climbot_control
 double estimateTurnDuration(double turn_angle, const DurationModel & model)
 {
   if (!std::isfinite(turn_angle)) {
-    return model.settle_duration;
+    return model.segmentOverhead();
   }
   const auto profile = planTurn(turn_angle, model.max_turn_rate, model.turn_acceleration);
-  return profile.duration + model.settle_duration;
+  return profile.duration + model.segmentOverhead();
 }
 
 double estimateTravelDuration(double length, const DurationModel & model)

@@ -1,6 +1,7 @@
 #include "climbot_rviz_plugins/coverage_panel.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <string>
 
@@ -69,6 +70,37 @@ QLabel * makeCaption(const QString & text)
   return caption;
 }
 
+/// A duration as an operator reads a clock, not as a count of seconds.
+QString clockText(double seconds)
+{
+  const int rounded = static_cast<int>(seconds + 0.5);
+  return QStringLiteral("%1:%2")
+         .arg(rounded / 60)
+         .arg(rounded % 60, 2, 10, QLatin1Char('0'));
+}
+
+/// The schedule row: how long the task was planned to take, how much is left,
+/// and how far behind it is running. A dash whenever there is no schedule to
+/// report - before a task starts, and throughout a run in distance mode, which
+/// has none.
+QString scheduleText(const climbot_interfaces::msg::CoverageStatus & status)
+{
+  if (!(status.planned_total_s > 0.0)) {
+    return QStringLiteral("-");
+  }
+  QString text = QObject::tr("total %1  ·  left ~%2")
+    .arg(clockText(status.planned_total_s))
+    .arg(clockText(status.estimated_remaining_s));
+  // Under a tenth of a second is the measurement floor, not a schedule
+  // deviation worth showing.
+  if (std::abs(status.schedule_lag_s) >= 0.1) {
+    text += QObject::tr("  ·  %1%2 s")
+      .arg(status.schedule_lag_s > 0.0 ? QStringLiteral("+") : QStringLiteral("-"))
+      .arg(std::abs(status.schedule_lag_s), 0, 'f', 1);
+  }
+  return text;
+}
+
 QFrame * makeSeparator()
 {
   auto * line = new QFrame();
@@ -103,6 +135,8 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   message_label_ = makeValue("manager_value");
   planner_label_ = makeValue("planner_value");
   response_label_ = makeValue("response_value");
+
+  schedule_label_ = makeValue("schedule_value");
 
   progress_bar_ = new QProgressBar();
   progress_bar_->setObjectName("progress_value");
@@ -146,6 +180,11 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   fields->addWidget(segment_label_, 4, 1);
   fields->addWidget(new QLabel(tr("Progress")), 5, 0);
   fields->addWidget(progress_bar_, 5, 1);
+  // Beneath the bar rather than inside it: the bar says how much of the work
+  // is done, this row says whether it is on time. Folding the two together
+  // would let a stuck robot show a bar that keeps filling.
+  fields->addWidget(new QLabel(tr("Schedule")), 6, 0);
+  fields->addWidget(schedule_label_, 6, 1);
   fields->setColumnStretch(1, 1);
   // A combo box will happily grow to its widest item and drag the dock with
   // it; it may elide instead, like the labels around it.
@@ -385,6 +424,7 @@ void CoveragePanel::renderDisconnected()
   task_label_->setText("-");
   segment_label_->setText("-");
   progress_bar_->setValue(0);
+  schedule_label_->setText("-");
   message_label_->setText(
     tr("No status received from the coverage manager yet."));
   // Replan and clear only change the preview, never the running task, so they
@@ -418,6 +458,7 @@ void CoveragePanel::renderStatus(const Status & status)
   }
 
   progress_bar_->setValue(static_cast<int>(status.progress * 100.0F + 0.5F));
+  schedule_label_->setText(scheduleText(status));
   // Manager sentences quote the task id, so they need the same treatment.
   message_label_->setText(wrappableText(QString::fromStdString(status.message)));
 

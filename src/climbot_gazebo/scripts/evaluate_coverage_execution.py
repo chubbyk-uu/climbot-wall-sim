@@ -91,6 +91,9 @@ class CoverageExecutionEvaluator(Node):
         self.executed_task = None
         self.segment = -1
         self.state = ExecuteCoverage.Feedback.WAITING
+        self.planned_total_s = 0.0
+        self.schedule_lag_max_s = 0.0
+        self.schedule_lag_min_s = 0.0
         self.heading_error = math.nan
         self.command_linear = 0.0
         self.command_angular = 0.0
@@ -126,6 +129,15 @@ class CoverageExecutionEvaluator(Node):
         self.segment = message.feedback.current_segment
         self.state = message.feedback.state
         self.heading_error = message.feedback.heading_error
+        # planned_total_s is fixed for the run, so the last value seen is the
+        # value. The lag is tracked at its extremes: the peak is what the
+        # schedule has to absorb, and the signed maximum separately from the
+        # magnitude tells a robot that ran late from one that ran early.
+        self.planned_total_s = message.feedback.planned_total_s
+        self.schedule_lag_max_s = max(
+            self.schedule_lag_max_s, message.feedback.schedule_lag_s)
+        self.schedule_lag_min_s = min(
+            self.schedule_lag_min_s, message.feedback.schedule_lag_s)
 
     def _command_callback(self, message):
         self.command_linear = message.linear.x
@@ -539,6 +551,15 @@ class CoverageExecutionEvaluator(Node):
              for pose in goal.task.waypoints],
             CoverageTask.SEGMENT_SCAN)
         self.summary['scan_line_spacing'] = spacing
+        # What the schedule predicted against what the run took. The ratio is
+        # the number the duration model is calibrated on; the lag bounds say
+        # how much of the difference the controller was already correcting for
+        # while it ran.
+        self.summary['schedule'] = {
+            'planned_total_s': self.planned_total_s,
+            'schedule_lag_max_s': self.schedule_lag_max_s,
+            'schedule_lag_min_s': self.schedule_lag_min_s,
+        }
         self.get_logger().info(
             'scan_line_offset_max=%.2f mm spacing_error_max=%.2f mm '
             'offsets=[%s] mm' % (

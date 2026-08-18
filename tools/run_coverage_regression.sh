@@ -212,8 +212,9 @@ def get(d, path, default=None):
     return cur
 
 limits = {'endpoint': 30.0, 'turn': 2.0, 'spacing': 20.0, 'coverage': 95.0}
-head = ('case', 'pass', 'endpt_mm', 'turn_deg', 'spacing_mm', 'cover_%', 'sim_s', 'RTF')
-print('%-22s %-5s %9s %9s %11s %8s %8s %6s' % head)
+head = ('case', 'pass', 'endpt_mm', 'turn_deg', 'spacing_mm', 'cover_%',
+        'sim_s', 'plan_s', 'act/plan', 'lag_s', 'RTF')
+print('%-22s %-5s %9s %9s %11s %8s %8s %8s %9s %7s %6s' % head)
 failed = []
 for name in names:
     path = os.path.join(ws, 'results', 'coverage_%s_%s_summary.json' % (name, tag))
@@ -225,12 +226,15 @@ for name in names:
     ok = bool(get(d, 'passed'))
     if not ok:
         failed.append(name)
-    print('%-22s %-5s %9.2f %9.3f %11.2f %8.2f %8.1f %6s' % (
+    planned = get(d, 'schedule.planned_total_s', 0.0)
+    lag = get(d, 'schedule.schedule_lag_max_s', 0.0)
+    print('%-22s %-5s %9.2f %9.3f %11.2f %8.2f %8.1f %8.1f %9s %7.2f %6s' % (
         name, 'yes' if ok else 'NO',
         1000 * get(d, 'execution_quality.maximum_endpoint_error_m', float('nan')),
         get(d, 'execution_quality.maximum_turn_end_heading_error_deg', float('nan')),
         1000 * get(d, 'scan_line_spacing.maximum_scan_line_spacing_error_m', float('nan')),
-        100 * get(d, 'coverage.ratio', float('nan')), sim,
+        100 * get(d, 'coverage.ratio', float('nan')), sim, planned,
+        ('%.3f' % (sim / planned)) if planned else '-', lag,
         ('%.2f' % (sim / w)) if w else '-'))
     reason = get(d, 'failure_reason')
     if reason:
