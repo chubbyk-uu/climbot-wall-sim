@@ -827,6 +827,17 @@ rviz:=false input_mode:=parameters` 起来后 `/coverage/task` 发布 `rectangle
 正确。全量 390 项测试通过（bringup 的 7 项 lint 为新增），26 项按环境跳过。
 `tools/run_coverage_regression.sh` 用的是三条单包入口，未受影响。
 
+## 进行中：基于时间点的轨迹控制
+
+分支 `feature/time-parameterized-control`。把 Word 文档 §5.3 的时间参数化控制
+（梯形/三角形速度曲线前馈 + 位置偏差闭环）引入直线段——转向段的
+`ALIGN_PROFILE` 本来就已经是该算法，缺的是直线段。设计结论、实施阶段、测试计划
+和风险门禁见 [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md)。
+
+要点：额定工作点不变、只抬高执行机构上限留追赶余量；time 模式只覆盖
+`desired.linear` 一个信号以保证 A/B 可归因；进度条口径不变，另加
+`planned_total_s / schedule_lag_s / estimated_remaining_s` 三个时间字段。
+
 ## 当前未决事项
 
 ### 1. WheelSlip 法向载荷局限
@@ -836,13 +847,15 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 
 ## 下一步顺序
 
-1. 补齐 §15 剩余三项测试场景：单段水平/竖直/斜向直线（§15.7，已有零散实测但无
+1. 完成基于时间点的轨迹控制（分支 `feature/time-parameterized-control`，
+   计划见 [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md)）；
+2. 补齐 §15 剩余三项测试场景：单段水平/竖直/斜向直线（§15.7，已有零散实测但无
    归档结果）、全站仪噪声与频率扫描（§15.9）、固定随机种子的任务级重复性
    （§15.11，`total_station_sim` 与 `wall_imu_adapter` 的种子参数已具备）；
-2. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
+3. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
    工况的可重复回归；不可进入和定位超时停车的 Gazebo 基线已经通过；
-3. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
-4. 第一阶段闭环后进入 `climbot_inspection`：先为 Gazebo 墙面增加不影响碰撞参数的
+4. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
+5. 第一阶段闭环后进入 `climbot_inspection`：先为 Gazebo 墙面增加不影响碰撞参数的
    可配置视觉贴图，再加面阵相机、位置触发拍照及图像—融合位姿关联。相机几何安装
    关系属于 `climbot_description`，仿真相机与墙面纹理属于 `climbot_gazebo`，触发
    逻辑消费冻结后的执行参考和融合位姿，不得用真值决定拍照。
