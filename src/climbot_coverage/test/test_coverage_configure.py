@@ -191,16 +191,37 @@ class TestConfigure(unittest.TestCase):
         self.assertTrue(config.can_plan)
         self.assertGreater(len(self.task.waypoints), 2)
 
-    def test_switching_to_a_smaller_shape_reports_the_surplus_point(self):
+    # Three trapezoid points are enough for a rectangle, so this used to
+    # reinterpret them as two and draw a different trajectory the moment the
+    # shape changed. The points survive - a mis-click on a drop-down should not
+    # cost a selection - but the task does not, until the operator asks for it.
+    def test_switching_to_a_smaller_shape_withdraws_the_preview(self):
+        """The drop-down must not plan something nobody asked for."""
         self._set(region='trapezoid')
         self._call(self.clear, Trigger.Request())
         self._click(-0.6, 1.4, expect=1)
         self._click(2.7, 4.2, expect=2)
         self._click(3.4, 1.4, expect=3)
+        self.assertGreater(len(self.task.waypoints), 2)
         response = self._set(region='rectangle')
         self.assertTrue(response.success)
         self.assertTrue(response.config.can_plan)
-        self.assertIn('first 2 of 3', response.message)
+        self.assertEqual(response.config.selected_points, 3)
+        self.assertIn('Preview withdrawn', response.message)
+        self.assertEqual(len(self.task.waypoints), 0)
+
+    def test_replanning_after_a_shape_change_rebuilds_from_the_same_points(self):
+        """Withdrawing the preview must not strand the points that made it."""
+        self._set(region='trapezoid')
+        self._call(self.clear, Trigger.Request())
+        self._click(-0.6, 1.4, expect=1)
+        self._click(2.7, 4.2, expect=2)
+        self._click(3.4, 1.4, expect=3)
+        self._set(region='rectangle')
+        self.assertEqual(len(self.task.waypoints), 0)
+        response = self._call(self.replan, Trigger.Request())
+        self.assertTrue(response.success)
+        self.assertGreater(len(self.task.waypoints), 2)
 
     def test_configuring_with_no_points_never_produces_a_startable_task(self):
         """The failure mode that once planned a region nobody selected."""

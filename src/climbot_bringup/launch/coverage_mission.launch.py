@@ -49,6 +49,7 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': 'true',
             'control_config_file': LaunchConfiguration('control_config_file'),
+            'tracking_mode': LaunchConfiguration('tracking_mode'),
         }.items(),
     )
 
@@ -90,6 +91,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument('region_type', default_value='rectangle'),
         DeclareLaunchArgument('sweep_direction', default_value='horizontal'),
+        DeclareLaunchArgument(
+            'tracking_mode',
+            default_value='distance',
+            description='Straight-line control: distance or time. The panel '
+                        'can also switch it while no task is running.',
+        ),
         simulation,
         planning,
         execution,

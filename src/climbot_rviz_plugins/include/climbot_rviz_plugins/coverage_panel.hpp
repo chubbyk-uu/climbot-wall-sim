@@ -57,6 +57,7 @@ private Q_SLOTS:
   void onStart();
   void onCancel();
   void onConfigurationChosen();
+  void onAlgorithmChosen();
   void refresh();
 
 private:
@@ -64,6 +65,7 @@ private:
   using Configure = climbot_interfaces::srv::ConfigureCoverage;
 
   void call(const rclcpp::Client<Trigger>::SharedPtr & client, const QString & label);
+  void readTrackingMode();
   void note(const QString & text);
 
   QLabel * state_label_{nullptr};
@@ -76,6 +78,7 @@ private:
   QLabel * response_label_{nullptr};
   QComboBox * region_box_{nullptr};
   QComboBox * sweep_box_{nullptr};
+  QComboBox * algorithm_box_{nullptr};
   QLabel * selection_label_{nullptr};
   QPushButton * replan_button_{nullptr};
   QPushButton * clear_button_{nullptr};
@@ -92,6 +95,9 @@ private:
   rclcpp::Client<Trigger>::SharedPtr clear_client_;
   rclcpp::Client<Trigger>::SharedPtr start_client_;
   rclcpp::Client<Trigger>::SharedPtr cancel_client_;
+  // The tracking mode is a parameter of the executor, not part of the planner's
+  // configuration service, so it is read and written where it actually lives.
+  rclcpp::AsyncParametersClient::SharedPtr tracking_client_;
 
   // Written by the ROS executor thread and read by the Qt thread, so every
   // access is guarded. Widgets are only ever touched from the refresh timer.
@@ -103,6 +109,10 @@ private:
   // Set while a configure request is in flight so a second one cannot be
   // launched from a control the first has not finished answering for.
   bool configure_pending_{false};
+  // Empty until the executor has answered once; the box shows nothing
+  // selectable until then rather than a guess that may be wrong.
+  QString tracking_mode_;
+  bool tracking_pending_{false};
 };
 
 }  // namespace climbot_rviz_plugins

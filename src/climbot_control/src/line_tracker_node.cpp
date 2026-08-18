@@ -30,6 +30,15 @@ public:
   using ExecuteCoverage = climbot_interfaces::action::ExecuteCoverage;
   using GoalHandle = rclcpp_action::ServerGoalHandle<ExecuteCoverage>;
 
+  /// Which control law drives the straight leg's linear speed. Declared up
+  /// here rather than beside MotionState because parseTrackingMode names it in
+  /// a return type, which is looked up where it is written.
+  enum class TrackingMode
+  {
+    DISTANCE,
+    TIME,
+  };
+
   enum class DynamicReferenceResult
   {
     FAILED,
@@ -129,15 +138,12 @@ public:
     // catch_up_* limits are the room the correction has to work in above that
     // rated point; they are what makes a late robot able to catch up instead
     // of only able to observe that it is late.
-    const std::string tracking_mode =
-      declare_parameter("tracking_mode", std::string("distance"));
-    if (tracking_mode == "distance") {
-      tracking_mode_ = TrackingMode::DISTANCE;
-    } else if (tracking_mode == "time") {
-      tracking_mode_ = TrackingMode::TIME;
-    } else {
+    const auto tracking_mode = parseTrackingMode(
+      declare_parameter("tracking_mode", std::string("distance")));
+    if (!tracking_mode.has_value()) {
       throw std::invalid_argument("tracking_mode must be \"distance\" or \"time\".");
     }
+    tracking_mode_ = tracking_mode.value();
     time_speed_lag_ = declare_parameter("time_speed_lag_s", 0.08);
     time_along_gain_ = declare_parameter("time_along_gain", 1.0);
     time_along_integral_gain_ = declare_parameter("time_along_integral_gain", 0.0);
@@ -171,6 +177,50 @@ public:
     // settable system clock, and a backward step there stops the control timer
     // for the length of the step while the robot keeps moving on its last
     // command. Only message stamps stay on ROS time.
+    // tracking_mode is the one parameter an operator changes from the panel
+    // rather than from a launch file, so it accepts a runtime write - but only
+    // between tasks. Swapping the linear channel's whole control law while a
+    // robot is driving a segment would leave a schedule planned under one law
+    // being followed under another; refusing is the only safe answer, and it
+    // has to be an explicit refusal rather than a silent one so the panel can
+    // say why the drop-down did not take.
+    validate_parameters_callback_ = add_on_set_parameters_callback(
+      [this](const std::vector<rclcpp::Parameter> & parameters) {
+        rcl_interfaces::msg::SetParametersResult result;
+        result.successful = true;
+        for (const auto & parameter : parameters) {
+          if (parameter.get_name() != "tracking_mode") {
+            continue;
+          }
+          if (!parseTrackingMode(parameter.as_string()).has_value()) {
+            result.successful = false;
+            result.reason = "tracking_mode must be \"distance\" or \"time\".";
+            return result;
+          }
+          if (active_goal_) {
+            result.successful = false;
+            result.reason = "tracking_mode cannot change while a coverage task is running.";
+            return result;
+          }
+        }
+        return result;
+      });
+    apply_parameters_callback_ = add_post_set_parameters_callback(
+      [this](const std::vector<rclcpp::Parameter> & parameters) {
+        for (const auto & parameter : parameters) {
+          if (parameter.get_name() != "tracking_mode") {
+            continue;
+          }
+          const auto mode = parseTrackingMode(parameter.as_string());
+          if (mode.has_value() && mode.value() != tracking_mode_) {
+            tracking_mode_ = mode.value();
+            RCLCPP_INFO(
+              get_logger(), "Straight-line tracking switched to %s.",
+              parameter.as_string().c_str());
+          }
+        }
+      });
+
     control_clock_ = climbot_control::controlClock(this);
     const auto zero = zeroInstant();
     alignment_profile_start_ = zero;
@@ -262,6 +312,17 @@ private:
     if (value <= 0.0) {
       throw std::invalid_argument(name + " must be positive.");
     }
+  }
+
+  static std::optional<TrackingMode> parseTrackingMode(const std::string & value)
+  {
+    if (value == "distance") {
+      return TrackingMode::DISTANCE;
+    }
+    if (value == "time") {
+      return TrackingMode::TIME;
+    }
+    return std::nullopt;
   }
 
   static double degreesToRadians(double degrees)
@@ -1504,12 +1565,6 @@ private:
     command_publisher_->publish(command);
   }
 
-  enum class TrackingMode
-  {
-    DISTANCE,
-    TIME,
-  };
-
   enum class MotionState
   {
     WAITING_FOR_ALIGNMENT,
@@ -1634,6 +1689,10 @@ private:
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
   rclcpp_action::Server<ExecuteCoverage>::SharedPtr action_server_;
   rclcpp::Clock::SharedPtr control_clock_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
+    validate_parameters_callback_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr
+    apply_parameters_callback_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 

@@ -154,6 +154,14 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   sweep_box_->setObjectName("sweep_box");
   sweep_box_->addItem(tr("Horizontal"), QStringLiteral("horizontal"));
   sweep_box_->addItem(tr("Vertical"), QStringLiteral("vertical"));
+  // Belongs to the executor rather than the planner, and sits with the other
+  // drop-downs anyway: an operator choosing what to sweep and how to drive it
+  // is making one decision, and splitting the two across the panel would only
+  // reflect which node happens to own each.
+  algorithm_box_ = new QComboBox();
+  algorithm_box_->setObjectName("algorithm_box");
+  algorithm_box_->addItem(tr("Position only"), QStringLiteral("distance"));
+  algorithm_box_->addItem(tr("Timed trajectory"), QStringLiteral("time"));
   selection_label_ = makeValue("selection_value");
 
   replan_button_ = new QPushButton(tr("Replan"));
@@ -172,23 +180,25 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   fields->addWidget(region_box_, 0, 1);
   fields->addWidget(new QLabel(tr("Sweep")), 1, 0);
   fields->addWidget(sweep_box_, 1, 1);
-  fields->addWidget(new QLabel(tr("Points")), 2, 0);
-  fields->addWidget(selection_label_, 2, 1);
-  fields->addWidget(new QLabel(tr("State")), 3, 0);
-  fields->addWidget(state_label_, 3, 1);
-  fields->addWidget(new QLabel(tr("Segment")), 4, 0);
-  fields->addWidget(segment_label_, 4, 1);
-  fields->addWidget(new QLabel(tr("Progress")), 5, 0);
-  fields->addWidget(progress_bar_, 5, 1);
+  fields->addWidget(new QLabel(tr("Algorithm")), 2, 0);
+  fields->addWidget(algorithm_box_, 2, 1);
+  fields->addWidget(new QLabel(tr("Points")), 3, 0);
+  fields->addWidget(selection_label_, 3, 1);
+  fields->addWidget(new QLabel(tr("State")), 4, 0);
+  fields->addWidget(state_label_, 4, 1);
+  fields->addWidget(new QLabel(tr("Segment")), 5, 0);
+  fields->addWidget(segment_label_, 5, 1);
+  fields->addWidget(new QLabel(tr("Progress")), 6, 0);
+  fields->addWidget(progress_bar_, 6, 1);
   // Beneath the bar rather than inside it: the bar says how much of the work
   // is done, this row says whether it is on time. Folding the two together
   // would let a stuck robot show a bar that keeps filling.
-  fields->addWidget(new QLabel(tr("Schedule")), 6, 0);
-  fields->addWidget(schedule_label_, 6, 1);
+  fields->addWidget(new QLabel(tr("Schedule")), 7, 0);
+  fields->addWidget(schedule_label_, 7, 1);
   fields->setColumnStretch(1, 1);
   // A combo box will happily grow to its widest item and drag the dock with
   // it; it may elide instead, like the labels around it.
-  for (auto * box : {region_box_, sweep_box_}) {
+  for (auto * box : {region_box_, sweep_box_, algorithm_box_}) {
     box->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
   }
   // A grid hands the value column whatever the name column leaves, which in a
@@ -259,6 +269,9 @@ CoveragePanel::CoveragePanel(QWidget * parent)
       box, QOverload<int>::of(&QComboBox::activated), this,
       [this](int) {onConfigurationChosen();});
   }
+  connect(
+    algorithm_box_, QOverload<int>::of(&QComboBox::activated), this,
+    [this](int) {onAlgorithmChosen();});
   connect(replan_button_, &QPushButton::clicked, this, &CoveragePanel::onReplan);
   connect(clear_button_, &QPushButton::clicked, this, &CoveragePanel::onClearPoints);
   connect(start_button_, &QPushButton::clicked, this, &CoveragePanel::onStart);
@@ -298,6 +311,7 @@ void CoveragePanel::onInitialize()
   start_client_ = node_->create_client<Trigger>("/coverage/start");
   cancel_client_ = node_->create_client<Trigger>("/coverage/cancel");
   configure_client_ = node_->create_client<Configure>("/coverage/configure");
+  tracking_client_ = std::make_shared<rclcpp::AsyncParametersClient>(node_, "/line_tracker");
 
   // Subscription and service callbacks run on the executor thread, which must
   // never touch widgets. The timer runs on the Qt thread and is the only place
@@ -370,6 +384,74 @@ void CoveragePanel::onConfigurationChosen()
       config_ = std::make_unique<Config>(response->config);
       response_ = tr("Configuration: %1").arg(
         QString::fromStdString(response->message));
+    });
+}
+
+void CoveragePanel::onAlgorithmChosen()
+{
+  if (tracking_pending_) {
+    note(tr("Algorithm: previous change still pending."));
+    return;
+  }
+  if (!tracking_client_ || !tracking_client_->service_is_ready()) {
+    note(tr("Algorithm: executor unavailable."));
+    return;
+  }
+  const std::string wanted = algorithm_box_->currentData().toString().toStdString();
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    tracking_pending_ = true;
+    response_ = tr("Algorithm: sent.");
+  }
+  algorithm_box_->setEnabled(false);
+  tracking_client_->set_parameters(
+    {rclcpp::Parameter("tracking_mode", wanted)},
+    [this, wanted](
+      std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+      const auto results = future.get();
+      const bool accepted = !results.empty() && results.front().successful;
+      const std::lock_guard<std::mutex> lock(mutex_);
+      tracking_pending_ = false;
+      // The executor refuses while a task is running, so a refused change has
+      // to put the box back to what is actually in force rather than leave it
+      // showing a mode nobody is driving in.
+      response_ = accepted ?
+      tr("Algorithm: set.") :
+      tr("Algorithm: %1").arg(
+        results.empty() ?
+        tr("no answer from the executor.") :
+        QString::fromStdString(results.front().reason));
+      if (accepted) {
+        tracking_mode_ = QString::fromStdString(wanted);
+      } else {
+        tracking_mode_.clear();
+      }
+    });
+}
+
+/// Asks the executor which mode is in force. Called from the refresh timer
+/// whenever the answer is unknown - at startup, and after a refused change -
+/// so the box never shows a mode the executor did not confirm.
+void CoveragePanel::readTrackingMode()
+{
+  if (tracking_pending_ || !tracking_client_ || !tracking_client_->service_is_ready()) {
+    return;
+  }
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    tracking_pending_ = true;
+  }
+  tracking_client_->get_parameters(
+    {"tracking_mode"},
+    [this](std::shared_future<std::vector<rclcpp::Parameter>> future) {
+      const auto parameters = future.get();
+      const std::lock_guard<std::mutex> lock(mutex_);
+      tracking_pending_ = false;
+      if (!parameters.empty() &&
+      parameters.front().get_type() == rclcpp::ParameterType::PARAMETER_STRING)
+      {
+        tracking_mode_ = QString::fromStdString(parameters.front().as_string());
+      }
     });
 }
 
@@ -480,6 +562,8 @@ void CoveragePanel::refresh()
   QString response;
   std::unique_ptr<Config> config;
   bool pending = false;
+  bool tracking_pending = false;
+  QString tracking_mode;
   {
     const std::lock_guard<std::mutex> lock(mutex_);
     if (status_) {
@@ -491,6 +575,11 @@ void CoveragePanel::refresh()
     planner = planner_;
     response = response_;
     pending = configure_pending_;
+    tracking_pending = tracking_pending_;
+    tracking_mode = tracking_mode_;
+  }
+  if (tracking_mode.isEmpty()) {
+    readTrackingMode();
   }
   if (status) {
     renderStatus(*status);
@@ -506,6 +595,19 @@ void CoveragePanel::refresh()
   // made against a configuration that is still being decided.
   region_box_->setEnabled(!pending && config != nullptr);
   sweep_box_->setEnabled(!pending && config != nullptr);
+  // The executor refuses a change while a task is running, so the box says so
+  // in advance instead of letting a click be turned down. can_cancel is the
+  // manager's own answer to "is something running", which keeps this from
+  // becoming a second opinion that could disagree with it.
+  const bool running = status && status->can_cancel;
+  algorithm_box_->setEnabled(!tracking_pending && !tracking_mode.isEmpty() && !running);
+  if (!tracking_mode.isEmpty()) {
+    const QSignalBlocker blocker(algorithm_box_);
+    const int index = algorithm_box_->findData(tracking_mode);
+    if (index >= 0) {
+      algorithm_box_->setCurrentIndex(index);
+    }
+  }
   // Replanning is refused without enough points; say so before it is pressed
   // rather than only in the response line afterwards.
   replan_button_->setEnabled(config == nullptr || config->can_plan);

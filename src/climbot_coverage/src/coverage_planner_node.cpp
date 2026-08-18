@@ -155,7 +155,7 @@ public:
       publishStatus("Waiting for RViz points: A=lower-left, B=upper-right" +
         std::string(region_type_ == "trapezoid" ? ", C=lower-right." : "."));
       publishTask(emptyTask());
-      publishMarkers({}, {}, {});
+      publishMarkers({}, {});
     }
   }
 
@@ -228,7 +228,7 @@ private:
     }
     clicked_points_.push_back({message->point.x, message->point.y});
     publishTask(emptyTask());
-    publishMarkers({}, {}, {});
+    publishMarkers({}, {});
     // The coordinates are logged so a mirrored or rotated RViz camera is
     // visible immediately instead of surfacing later as a geometry error.
     const std::vector<std::string> roles{"A lower-left", "B upper-right", "C lower-right"};
@@ -315,19 +315,40 @@ private:
       return;
     }
     const bool unchanged = region == region_type_ && sweep == sweep_direction_;
+    const bool shape_changed = region != region_type_;
     region_type_ = region;
     sweep_direction_ = sweep;
 
     std::ostringstream note;
     note << (unchanged ? "Configuration unchanged: " : "Configuration set to ") <<
       sweep << " " << region << ".";
-    // Points are never discarded by a shape change. A and B mean the same
-    // corner in both shapes, so switching to the trapezoid keeps them and only
-    // waits for C, and switching back makes the extra point surplus rather
-    // than wrong. Clearing here would punish a mis-click on a drop-down.
+    // A shape change keeps the points; see the withdrawal below for why.
     const std::string blocked = planBlockedReason();
     if (!blocked.empty()) {
       note << " " << blocked;
+      response->success = true;
+      response->message = note.str();
+      response->config = currentConfig(response->message);
+      publishConfig(response->message);
+      publishStatus(response->message);
+      return;
+    }
+    // A shape change never builds a preview on its own, even when the points
+    // already in hand would be enough for the new shape. Going from trapezoid
+    // to rectangle silently reinterpreted three clicks as two and drew a
+    // different trajectory, which reads as the drop-down having planned
+    // something nobody asked for. The points survive - clearing them would
+    // punish a mis-click on a drop-down, and A and B mean the same corner in
+    // both shapes - but the trajectory is withdrawn until the operator either
+    // finishes selecting or asks for a replan.
+    if (shape_changed && input_mode_ == "rviz") {
+      publishTask(emptyTask());
+      publishMarkers({}, {});
+      last_error_.clear();
+      note << " Preview withdrawn: press Replan to rebuild it from the " <<
+        clicked_points_.size() << " selected point" <<
+        (clicked_points_.size() == 1U ? "" : "s") <<
+        ", or clear them and select again.";
       response->success = true;
       response->message = note.str();
       response->config = currentConfig(response->message);
@@ -368,7 +389,7 @@ private:
   {
     clicked_points_.clear();
     publishTask(emptyTask());
-    publishMarkers({}, {}, {});
+    publishMarkers({}, {});
     response->success = true;
     response->message = "Clicked points cleared.";
     publishStatus(response->message);
@@ -426,7 +447,7 @@ private:
         throw std::invalid_argument(reason.str());
       }
       publishTask(makeTask(region.polygon, motion, path));
-      publishMarkers(region.polygon, motion, path);
+      publishMarkers(region.polygon, path);
       std::ostringstream status;
       status << "Generated " << sweep_direction_ << " " << region_type_ <<
         " coverage path with " << path.size() << " waypoints; row spacing <= " <<
@@ -445,7 +466,7 @@ private:
     } catch (const std::exception & exception) {
       last_error_ = exception.what();
       publishTask(emptyTask());
-      publishMarkers({}, {}, {});
+      publishMarkers({}, {});
       publishStatus("Planning failed: " + last_error_);
       return false;
     }
@@ -566,8 +587,13 @@ private:
     path_publisher_->publish(path);
   }
 
+  /// The motion region is deliberately not taken from the caller. It is the
+  /// wall inset by the safety margin and does not depend on what was clicked,
+  /// so it is the one thing an operator needs to see *before* clicking - a
+  /// point outside it yields a region the footprint cannot cover, and drawing
+  /// the boundary only once a plan succeeds hid it exactly when it was needed.
   void publishMarkers(
-    const Polygon & original, const Polygon & effective,
+    const Polygon & original,
     const std::vector<Point2> & path)
   {
     visualization_msgs::msg::MarkerArray markers;
@@ -618,8 +644,9 @@ private:
         markers.markers.push_back(label);
       }
     }
-    if (!effective.empty()) {
-      markers.markers.push_back(lineMarker(effective, header, 0, "effective", 0.1F, 1.0F, 0.3F,
+    const auto reachable = motionRegion();
+    if (!reachable.empty()) {
+      markers.markers.push_back(lineMarker(reachable, header, 0, "effective", 0.1F, 1.0F, 0.3F,
           0.04));
     }
     if (!path.empty()) {
