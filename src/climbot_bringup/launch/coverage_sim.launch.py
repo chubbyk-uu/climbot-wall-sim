@@ -17,7 +17,11 @@ def generate_launch_description():
     simulation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(gazebo_share, 'launch', 'climbot_wall.launch.py')),
-        launch_arguments={'use_sim_time': 'true'}.items(),
+        launch_arguments={
+            'use_sim_time': 'true',
+            'headless': LaunchConfiguration('headless'),
+            'gpu_backend': LaunchConfiguration('gpu_backend'),
+        }.items(),
     )
     coverage = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -36,6 +40,19 @@ def generate_launch_description():
     default_config = os.path.join(
         coverage_share, 'config', 'coverage_rectangle.yaml')
     return LaunchDescription([
+        # The wall launch this includes supports both, and coverage_mission
+        # declares both. Without them the two combined entry points differ in
+        # what they can do for no reason an operator can see.
+        DeclareLaunchArgument(
+            'headless',
+            default_value='false',
+            description='Run Gazebo without its GUI; RViz still opens.',
+        ),
+        DeclareLaunchArgument(
+            'gpu_backend',
+            default_value='auto',
+            description='Rendering backend: auto, wsl_d3d12, or native.',
+        ),
         DeclareLaunchArgument('config_file', default_value=default_config),
         DeclareLaunchArgument('input_mode', default_value='parameters'),
         DeclareLaunchArgument('region_type', default_value='rectangle'),

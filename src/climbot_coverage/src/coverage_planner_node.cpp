@@ -232,9 +232,14 @@ private:
     // The coordinates are logged so a mirrored or rotated RViz camera is
     // visible immediately instead of surfacing later as a geometry error.
     const std::vector<std::string> roles{"A lower-left", "B upper-right", "C lower-right"};
+    // requiredPoints() returns 2 or 3 today, so the index is always in range;
+    // at() rather than [] so that a fourth shape needing a fourth point fails
+    // where it is introduced instead of reading past this vector.
+    const std::size_t role = clicked_points_.size() - 1U;
     std::ostringstream accepted;
     accepted << "Accepted point " << clicked_points_.size() << " of " << required_points <<
-      " (" << roles[clicked_points_.size() - 1U] << ") at " << frame_id_ << " (" <<
+      " (" << (role < roles.size() ? roles.at(role) : std::string("unnamed")) <<
+      ") at " << frame_id_ << " (" <<
       message->point.x << ", " << message->point.y << ").";
     publishStatus(accepted.str());
     if (clicked_points_.size() == required_points) {
@@ -625,8 +630,14 @@ private:
     if (!original.empty()) {
       markers.markers.push_back(lineMarker(original, header, 0, "original", 1.0F, 0.45F, 0.05F,
           0.03));
+      // A rectangle and a trapezoid both come out of the planner with four
+      // vertices, so this covers every shape there is; the bound stops a fifth
+      // one from labelling itself out of range rather than assuming there
+      // will never be one.
       const std::vector<std::string> labels{"A", "C", "B", "D"};
-      for (std::size_t index = 0; index < original.size(); ++index) {
+      for (std::size_t index = 0; index < std::min(original.size(), labels.size());
+        ++index)
+      {
         visualization_msgs::msg::Marker label;
         label.header = header;
         label.ns = "vertex_labels";

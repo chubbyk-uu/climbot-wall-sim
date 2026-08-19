@@ -311,6 +311,8 @@ def launch_setup(context, *args, **kwargs):
             'publish_rate_hz': LaunchConfiguration('total_station_rate_hz'),
             'position_stddev_m': LaunchConfiguration('total_station_stddev_m'),
             'fixed_delay_s': LaunchConfiguration('total_station_delay_s'),
+            'drop_probability': LaunchConfiguration('total_station_drop_probability'),
+            'random_seed': LaunchConfiguration('total_station_seed'),
         }],
         output='screen',
     ))
@@ -337,6 +339,7 @@ def launch_setup(context, *args, **kwargs):
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'orientation_stddev_rad': LaunchConfiguration(
                 'imu_orientation_stddev_rad'),
+            'random_seed': LaunchConfiguration('imu_seed'),
         }],
         output='screen',
     ))
@@ -402,6 +405,26 @@ def generate_launch_description():
             'imu_orientation_stddev_rad',
             default_value='0.00174532925',
             description='IMU attitude one-sigma uncertainty in radians.',
+        ),
+        # The nodes have always had these; without the pass-through they could
+        # only be reached by bypassing this launch with --ros-args -p, which
+        # the regression script cannot do. A repeatability run needs to set
+        # both seeds and hold everything else fixed. Defaults match the node
+        # defaults, so declaring them changes no existing behaviour.
+        DeclareLaunchArgument(
+            'total_station_seed',
+            default_value='42',
+            description='Seed for the total-station noise and dropouts.',
+        ),
+        DeclareLaunchArgument(
+            'total_station_drop_probability',
+            default_value='0.0',
+            description='Fraction of total-station observations to drop.',
+        ),
+        DeclareLaunchArgument(
+            'imu_seed',
+            default_value='17',
+            description='Seed for the IMU attitude noise.',
         ),
         OpaqueFunction(function=launch_setup),
     ])
