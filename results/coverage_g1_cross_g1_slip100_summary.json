@@ -1,0 +1,173 @@
+{
+  "completed": true,
+  "completed_segments": 1,
+  "coverage": {
+    "covered_area_m2": 1.7,
+    "covered_cells": 17000,
+    "missed_ratio": 0.0,
+    "ratio": 1.0,
+    "region_area_m2": 1.7,
+    "region_cells": 17000,
+    "resolution_m": 0.01
+  },
+  "elapsed_time_s": 38.318,
+  "execution_quality": {
+    "actual_path_length_m": 3.571405849737529,
+    "actual_to_planned_length_ratio": 1.0204016713535797,
+    "maximum_endpoint_error_m": 0.002204003601496534,
+    "maximum_heading_compensation_deg": 6.589277592190913,
+    "maximum_horizontal_height_drift_m": 0.0011940400045311605,
+    "maximum_tracking_angular_speed_rps": 0.03191278023707304,
+    "maximum_turn_end_heading_error_deg": 0.6874300619740423,
+    "planned_path_length_m": 3.5,
+    "segments": [
+      {
+        "endpoint_error_m": 0.002204003601496534,
+        "horizontal_height_drift_m": 0.0011940400045311605,
+        "maximum_heading_compensation_deg": 6.589277592190913,
+        "maximum_tracking_angular_speed_rps": 0.03191278023707304,
+        "segment": 0,
+        "turn_end_heading_error_deg": 0.6874300619740423
+      }
+    ]
+  },
+  "passed": true,
+  "provenance": {
+    "control_parameters": {
+      "line_tracker": {
+        "arc_entry_finish_offset_m": 0.012,
+        "cruise_speed": 0.2,
+        "maximum_scan_offset_m": 0.12,
+        "parallel_scan_offset_m": 0.045,
+        "tracking_mode": "time",
+        "turn_slip_per_degree_m": 0.00041
+      }
+    },
+    "evaluator_parameters": {
+      "case": "straight_line",
+      "coverage_grid_resolution_m": 0.01,
+      "execution_timeout_s": 900.0,
+      "execution_timeout_wall_factor": 4.0,
+      "maximum_cross_error_m": 0.05,
+      "maximum_cross_rms_m": 0.02,
+      "maximum_endpoint_error_m": 0.03,
+      "maximum_heading_range_deg": 5.0,
+      "maximum_horizontal_height_drift_m": 0.03,
+      "maximum_scan_line_spacing_error_m": 0.02,
+      "maximum_turn_end_heading_error_deg": 2.0,
+      "maximum_visible_reversals": 0,
+      "minimum_actual_coverage_ratio": 0.95,
+      "startup_timeout_s": 90.0,
+      "straight_line_approach_bearing_deg": 180.0,
+      "straight_line_bearing_deg": 0.0,
+      "straight_line_length_m": 3.5,
+      "straight_line_start_offset_m": 0.6,
+      "summary_json": "results/coverage_g1_cross_g1_slip100_summary.json",
+      "trajectory_csv": "results/coverage_g1_cross_g1_slip100_trajectory.csv",
+      "visible_excursion_m": 0.02
+    },
+    "git": {
+      "branch": "main",
+      "commit": "51f4f1a301ea2a3fca076b2d239dad4ffdb57eed",
+      "source_modified": false,
+      "traceable": true
+    },
+    "noise_sources": {
+      "total_station_sim": {
+        "drop_probability": 0.0,
+        "fixed_delay_s": 0.05,
+        "position_stddev_m": 0.001,
+        "publish_rate_hz": 12.0,
+        "random_seed": 42
+      },
+      "wall_imu_adapter": {
+        "orientation_stddev_rad": 0.00174532925,
+        "random_seed": 17
+      }
+    },
+    "recorded_utc": "2026-08-19T09:35:03.858031+00:00"
+  },
+  "result_code": 0,
+  "result_message": "Coverage task completed.",
+  "revision": 1,
+  "scan_line_spacing": {
+    "crossing_scan_lines": 0,
+    "maximum_scan_line_offset_m": NaN,
+    "maximum_scan_line_spacing_error_m": NaN,
+    "scan_line_offsets_m": [],
+    "scan_line_spacing_errors_m": []
+  },
+  "schedule": {
+    "planned_total_s": 33.60501330728154,
+    "schedule_lag_max_s": 0.021694860528339577,
+    "schedule_lag_min_s": -0.01730492062696487
+  },
+  "segment_metrics": [
+    {
+      "heading_range_deg": 1.343504363679665,
+      "maximum": 0.002195906205578968,
+      "reversals": 0,
+      "rms": 0.0013214490253492194,
+      "samples": 1900,
+      "segment": 0
+    }
+  ],
+  "task": {
+    "coverage_region": [
+      [
+        -0.5494618955245888,
+        2.249983084052663
+      ],
+      [
+        2.8505381044754112,
+        2.249983084052663
+      ],
+      [
+        2.8505381044754112,
+        1.7499830840526631
+      ],
+      [
+        -0.5494618955245888,
+        1.7499830840526631
+      ]
+    ],
+    "detection_length_m": 0.1,
+    "detection_width_m": 0.5,
+    "motion_region": [
+      [
+        -4.6,
+        0.4
+      ],
+      [
+        4.6,
+        0.4
+      ],
+      [
+        4.6,
+        7.6
+      ],
+      [
+        -4.6,
+        7.6
+      ]
+    ],
+    "revision": 1,
+    "segment_types": [
+      1
+    ],
+    "sweep_direction": 1,
+    "task_id": "evaluation-straight-line",
+    "waypoints": [
+      [
+        -0.5994618955245888,
+        1.9999830840526631
+      ],
+      [
+        2.900538104475411,
+        1.9999830840526631
+      ]
+    ]
+  },
+  "task_id": "evaluation-straight-line",
+  "trajectory_samples": 3840
+}

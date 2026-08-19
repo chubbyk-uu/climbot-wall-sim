@@ -1046,6 +1046,14 @@ private:
     const double observed_turn_drop = std::max(0.0,
         (pose_.x - alignment_origin_.x) * limits_.gravity_direction.x +
         (pose_.y - alignment_origin_.y) * limits_.gravity_direction.y);
+    // Every turn, not only the ones a transition follows. The constant is what
+    // reservedTurnDrop() lifts the start approach by, so a wrong one leaves the
+    // first scan line offset by the error - measured at 72 mm across the line
+    // with the constant at zero, which costs 8.7% of the coverage a correct one
+    // gets (results/README.md, tag g1_slip000). That is the case most worth
+    // reporting, and it was the one case this check could not see: a task whose
+    // only turn is the alignment onto segment zero has no transition in it.
+    warnIfTurnSlipLooksStale(observed_turn_drop);
     if (segment_type == Task::SEGMENT_TRANSITION) {
       const auto dynamic = climbot_control::dynamicTransitionSegment(
         *active_task_, current_segment_, {pose_.x, pose_.y},
@@ -1054,7 +1062,6 @@ private:
         get_logger(),
         "Prepared dynamic transition after observing %.1f mm downward motion during alignment.",
         observed_turn_drop * 1000.0);
-      warnIfTurnSlipLooksStale(observed_turn_drop);
       if (!climbot_control::pointInPolygon(
           dynamic.end.x, dynamic.end.y, active_task_->motion_region, 1e-6))
       {
