@@ -14,12 +14,21 @@
 # running one at a time.
 #
 # Usage:
-#   tools/run_coverage_regression.sh [-j lanes] [-t tag] [-m mode] [-k] [case ...]
+#   tools/run_coverage_regression.sh [-j lanes] [-t tag] [-m mode] [-s seed]
+#                                    [-i seed] [-k] [case ...]
 #     -j  lanes to run in parallel (default 4)
 #     -t  tag for the output file names (default today, YYYY-MM-DD)
 #     -m  tracking mode: time (default) or distance
+#     -s  total-station noise seed (default 42, the launch default)
+#     -i  IMU attitude noise seed (default 17, the launch default)
 #     -k  keep trajectories uncompressed (default: gzip them)
 #     case names default to all eight; see CASES below
+#
+# The two seeds are separate rather than one number driving both, so that the
+# defaults reproduce the ordinary baseline configuration exactly and a
+# repeatability run is a comparison against it rather than against a third
+# thing. The evaluator records what the noise sources were actually running
+# with, read off the nodes, so a seed that never reached them is visible.
 set -u
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -45,14 +54,18 @@ horizontal            coverage_horizontal_demo.yaml             rectangle horizo
 LANES=4
 TAG=$(date +%F)
 MODE=time
+TOTAL_STATION_SEED=42
+IMU_SEED=17
 COMPRESS=1
-while getopts 'j:t:m:kh' opt; do
+while getopts 'j:t:m:s:i:kh' opt; do
   case $opt in
     j) LANES=$OPTARG ;;
     t) TAG=$OPTARG ;;
     m) MODE=$OPTARG ;;
+    s) TOTAL_STATION_SEED=$OPTARG ;;
+    i) IMU_SEED=$OPTARG ;;
     k) COMPRESS=0 ;;
-    h) sed -n '2,24p' "$0"; exit 0 ;;
+    h) sed -n '2,31p' "$0"; exit 0 ;;
     *) exit 2 ;;
   esac
 done
@@ -98,6 +111,7 @@ echo "workspace : $WS"
 echo "lanes     : $LANES"
 echo "tag       : $TAG"
 echo "mode      : $MODE"
+echo "seeds     : total_station=$TOTAL_STATION_SEED imu=$IMU_SEED"
 echo "cases     : $(wc -l < "$QUEUE")"
 echo "logs      : $RUN_DIR"
 echo
@@ -156,7 +170,9 @@ run_lane() {
     lane_teardown "$lane"
 
     setsid ros2 launch climbot_gazebo climbot_wall.launch.py \
-      use_sim_time:=true headless:=true > "$log/sim.log" 2>&1 &
+      use_sim_time:=true headless:=true \
+      total_station_seed:="$TOTAL_STATION_SEED" imu_seed:="$IMU_SEED" \
+      > "$log/sim.log" 2>&1 &
     disown
     local deadline=$((SECONDS + 180)) up=0
     while [ $SECONDS -lt $deadline ]; do

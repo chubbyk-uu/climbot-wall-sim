@@ -26,10 +26,12 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
+from rcl_interfaces.srv import GetParameters
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
 from rclpy.node import Node
+from rclpy.parameter import parameter_value_to_python
 from rclpy.qos import DurabilityPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import ReliabilityPolicy
@@ -76,6 +78,18 @@ class CoverageExecutionEvaluator(Node):
         ('coverage_grid_resolution_m', 0.01),
         ('trajectory_csv', ''),
         ('summary_json', ''),
+    )
+
+    #: The nodes whose randomness decides how much of a run repeats, and the
+    #: parameters of each that decide it. Recorded by asking the running nodes
+    #: rather than by repeating what a launch file was told: a repeatability
+    #: claim is about what actually produced the numbers, and a seed passed to
+    #: a node that never started would otherwise read as a seed that was used.
+    NOISE_SOURCES = (
+        ('/total_station_sim',
+         ('random_seed', 'position_stddev_m', 'publish_rate_hz',
+          'fixed_delay_s', 'drop_probability')),
+        ('/wall_imu_adapter', ('random_seed', 'orientation_stddev_rad')),
     )
 
     def __init__(self):
@@ -372,11 +386,47 @@ class CoverageExecutionEvaluator(Node):
                 'traceable': False,
             }
 
+    def _noise_sources(self):
+        """Ask each noise source what it is actually running with."""
+        state = {}
+        for node_name, names in self.NOISE_SOURCES:
+            state[node_name.lstrip('/')] = self._remote_parameters(
+                node_name, names)
+        return state
+
+    def _remote_parameters(self, node_name, names):
+        """Read parameters off another node, or null if it cannot be asked."""
+        client = self.create_client(
+            GetParameters, node_name + '/get_parameters')
+        try:
+            if not client.wait_for_service(timeout_sec=2.0):
+                return None
+            future = client.call_async(
+                GetParameters.Request(names=list(names)))
+            deadline = time.monotonic() + 2.0
+            while not future.done() and time.monotonic() < deadline:
+                rclpy.spin_once(self, timeout_sec=0.05)
+            response = future.result() if future.done() else None
+            if response is None or len(response.values) != len(names):
+                return None
+            return {
+                name: parameter_value_to_python(value)
+                for name, value in zip(names, response.values)}
+        except Exception:
+            # Provenance is written from a finally block that may be running
+            # because something already went wrong, including a context that
+            # is on its way down. Losing the seeds is worth reporting; losing
+            # the summary that reports them is not.
+            return None
+        finally:
+            self.destroy_client(client)
+
     def _provenance(self):
         """Record what a later reader needs to reproduce or discard this run."""
         return {
             'recorded_utc': datetime.now(timezone.utc).isoformat(),
             'git': self._git_state(),
+            'noise_sources': self._noise_sources(),
             'evaluator_parameters': {
                 name: self.get_parameter(name).value
                 for name, _ in self.PARAMETERS},
@@ -451,6 +501,14 @@ class CoverageExecutionEvaluator(Node):
                     'differs from that commit, so this result cannot be tied '
                     'to a source state and must not be filed as a baseline.'
                     % (git.get('commit') or '?')[:12])
+            # Same reasoning as the line above: a repeatability comparison is
+            # only about seeds if the seeds are known, and a missing answer
+            # here means the noise source was not running to be asked.
+            for name, values in self.summary['provenance']['noise_sources'].items():
+                self.get_logger().info(
+                    '%s seed=%s' % (
+                        name,
+                        'UNKNOWN' if values is None else values['random_seed']))
             self._write_csv(
                 str(self.get_parameter('trajectory_csv').value), self.trajectory)
             self._write_json(
