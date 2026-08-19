@@ -742,12 +742,6 @@ private:
     return false;
   }
 
-  /// Restart an approach leg from where the alignment turn actually left the
-  /// robot. The leg is captured before that turn, so the turn slip appears as
-  /// an initial cross-track error; on a short leg the cross-track term
-  /// saturates at max_heading_correction and still cannot work it off, which
-  /// is what puts the first scan line off nominal. Scan and transition
-  /// segments get the equivalent treatment from prepareDynamicReference().
   /// Plans the speed curve the time-parameterised mode drives from, at the
   /// instant the robot starts driving the segment rather than when it was
   /// handed one. What is left to travel is measured here and not taken from
@@ -841,6 +835,12 @@ private:
            catch_up_max_linear_acceleration_ : limits_.max_deceleration;
   }
 
+  /// Restart an approach leg from where the alignment turn actually left the
+  /// robot. The leg is captured before that turn, so the turn slip appears as
+  /// an initial cross-track error; on a short leg the cross-track term
+  /// saturates at max_heading_correction and still cannot work it off, which
+  /// is what puts the first scan line off nominal. Scan and transition
+  /// segments get the equivalent treatment from prepareDynamicReference().
   void reanchorStartApproach()
   {
     if (!approaching_start_ || start_approach_reanchored_) {

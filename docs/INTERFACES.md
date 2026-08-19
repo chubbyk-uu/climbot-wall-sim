@@ -245,7 +245,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `goal_position_exit_tolerance_m` | `0.04 m` | 终点候选状态退出门限 |
 | `line_tracker` | `start_approach_tolerance_m` | `0.05 m` | 采集关闭的起点进入位置门限 |
 | `line_tracker` | `start_approach_exit_tolerance_m` | `0.06 m` | 起点进入候选状态退出门限 |
-| `line_tracker` | `goal_heading_exit_tolerance_deg` | `3°` | 航向候选状态退出门限；严格门限沿用 `2°` |
+| `line_tracker` | `goal_heading_exit_tolerance_deg` | `3°` | 航向候选状态退出门限；严格门限是 `alignment_tolerance_deg`，`control.yaml` 里为 `1°` |
 | `line_tracker` | `stopped_linear_speed_mps` | `0.01 m/s` | 完成时融合线速度上限 |
 | `line_tracker` | `stopped_angular_speed_rps` | `0.02 rad/s` | 完成时融合角速度上限 |
 | `line_tracker` | `goal_settle_duration_s` | `0.30 s` | 位置、航向和停车状态稳定时间 |
@@ -303,7 +303,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 
 这三项由八条基线轨迹按控制状态拆分实测得到，只进入进度权重和 `planned_total_s`，
 **不参与任何控制指令**。全为 `0` 时预测比实际短 `10.6%`；代入后 `act/plan` 落在
-`0.981~1.017`。
+`0.981~1.015`（`timeE` 八工况实测，见 `results/README.md`）。
 
 两个节点都拒绝非有限输入。直线跟踪器在启动时校验线段、增益、速度、加速度、
 轮距、重力方向和坐标系参数；非法配置直接启动失败，不进入周期回调。轮距、轮缘
