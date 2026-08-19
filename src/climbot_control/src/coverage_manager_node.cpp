@@ -105,7 +105,10 @@ public:
       [this](const std_srvs::srv::Trigger::Request::SharedPtr,
       const std_srvs::srv::Trigger::Response::SharedPtr response) {cancel(response);});
     // Steady time, and a wall timer, so a paused or stopped simulation clock
-    // cannot freeze the checks that release a stuck task.
+    // cannot freeze either of the checks that release a stuck task: an
+    // unanswered start request and a vanished executor. Both measure their own
+    // elapsed time on std::chrono::steady_clock rather than on control_clock_,
+    // which follows simulation time whenever it is active.
     supervision_timer_ = create_wall_timer(500ms, [this]() {superviseExecution();});
     publishStatus(Status::IDLE, "Idle: waiting for a valid coverage preview.");
   }
@@ -176,14 +179,20 @@ private:
       return;
     }
     executor_missing_since_.reset();
+    // Asked to stop before the handle is dropped. The server being
+    // undiscoverable is what brought us here, so this often goes nowhere - but
+    // when the cause was a discovery hiccup rather than a dead executor, the
+    // robot is still driving, and releasing the handle silently would leave it
+    // driving a task this manager has already called finished.
+    action_client_->async_cancel_goal(active_goal_);
     active_goal_.reset();
-    status_.result_code = ExecuteCoverage::Result::CONTROL_TIMEOUT;
+    status_.result_code = ExecuteCoverage::Result::EXECUTOR_LOST;
     status_.current_segment = -1;
     status_.executor_state = ExecuteCoverage::Feedback::STOPPED;
     publishStatus(
       Status::FINISHED,
-      "Executor disappeared while running " + status_.task_id +
-      "; released the task so it can be started again.");
+      "Lost contact with the executor while running " + status_.task_id +
+      "; asked it to cancel and released the task so it can be started again.");
   }
 
   /// Release a start request whose goal response never arrived, so a crashed or
@@ -193,7 +202,14 @@ private:
     if (!start_pending_since_) {
       return;
     }
-    if ((control_clock_->now() - *start_pending_since_).seconds() <
+    // Steady time, like the executor check above and for the same reason. This
+    // used to be the node clock, which under use_sim_time is the simulation
+    // clock: a paused simulation still fires this wall timer but stops the
+    // difference from growing, so a start request that had already gone
+    // unanswered would never expire - exactly what the comment on the timer
+    // says is avoided.
+    if (std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - *start_pending_since_).count() <
       start_response_timeout_s_)
     {
       return;
@@ -271,7 +287,7 @@ private:
     status_.schedule_lag_s = 0.0;
     status_.estimated_remaining_s = 0.0;
     status_.executor_state = ExecuteCoverage::Feedback::WAITING;
-    start_pending_since_ = control_clock_->now();
+    start_pending_since_ = std::chrono::steady_clock::now();
     // Announce STARTING before sending, so the goal response can never be
     // overtaken by this line and leave a live goal reported as still starting.
     publishStatus(
@@ -307,7 +323,7 @@ private:
   // ROS time; only the elapsed-time arithmetic moves.
   rclcpp::Clock::SharedPtr control_clock_;
   rclcpp::Time last_publish_;
-  std::optional<rclcpp::Time> start_pending_since_;
+  std::optional<std::chrono::steady_clock::time_point> start_pending_since_;
   std::optional<std::chrono::steady_clock::time_point> executor_missing_since_;
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;
   GoalHandle::SharedPtr active_goal_;
