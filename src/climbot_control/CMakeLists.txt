@@ -73,6 +73,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_executor_config.py TIMEOUT 60 ENV ROS_DOMAIN_ID=50)
   add_launch_test(test/test_coverage_arc_entry.py TIMEOUT 90 ENV ROS_DOMAIN_ID=51)
   add_launch_test(test/test_line_tracker_time_mode.py TIMEOUT 90 ENV ROS_DOMAIN_ID=52)
+  add_launch_test(test/test_coverage_schedule_pose.py TIMEOUT 60 ENV ROS_DOMAIN_ID=53)
 endif()
 
 ament_export_include_directories(include)

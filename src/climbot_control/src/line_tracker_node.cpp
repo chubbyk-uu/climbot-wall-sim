@@ -522,7 +522,21 @@ private:
     approaching_start_ = true;
     waiting_for_start_pose_ = !have_pose_;
     segment_start_time_ = task_start_time_;
-    planSegmentDurations();
+    // Cleared here and planned in configureStartApproach() instead, because
+    // planSegmentDurations() reads pose_ for the first segment's turn and for
+    // the length of the drive to the first waypoint. When the goal arrives
+    // before the first pose does, pose_ is still the default-constructed
+    // origin, and there is no second call site to correct it once the pose
+    // lands: the schedule would be wrong from the first feedback message and
+    // stay wrong for the whole task. Zero is not a guess, and the panel
+    // renders a zero planned_total_s as "-", so the schedule reads as unknown
+    // for the few cycles the wait lasts rather than carrying the previous
+    // task's numbers or an estimate measured from the origin.
+    segment_turn_estimates_.clear();
+    segment_travel_estimates_.clear();
+    total_duration_estimate_ = 0.0;
+    start_approach_turn_estimate_ = 0.0;
+    start_approach_travel_estimate_ = 0.0;
     // Log before configuring: configureStartApproach() may finish the goal and
     // release active_task_, and acceptance is what this line reports anyway.
     RCLCPP_INFO(
@@ -626,6 +640,10 @@ private:
 
   void configureStartApproach()
   {
+    // Both ways in reach here - the goal that already had a pose, and the one
+    // that had to wait for one - so this is where the schedule can be planned
+    // against a pose that is real.
+    planSegmentDurations();
     const auto & first = active_task_->waypoints.front().position;
     if (!climbot_control::pointInPolygon(
         pose_.x, pose_.y, active_task_->motion_region, motion_region_tolerance_) ||
