@@ -61,7 +61,7 @@ def generate_test_description():
             'max_turn_angular_speed': 0.80,
             'max_turn_angular_acceleration': 2.0,
             'wheel_separation': 0.43,
-            'wheel_speed_limit': 0.30,
+            'wheel_speed_limit': 0.45,
             'wheel_acceleration_limit': 0.40,
         }],
     )

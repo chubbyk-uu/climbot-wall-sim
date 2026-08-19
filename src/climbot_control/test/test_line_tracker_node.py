@@ -28,7 +28,7 @@ def generate_test_description():
             'end_y': 0.0,
             'odometry_timeout_s': 0.15,
             'wheel_separation': 0.43,
-            'wheel_speed_limit': 0.30,
+            'wheel_speed_limit': 0.45,
             'wheel_acceleration_limit': 0.40,
         }],
     )

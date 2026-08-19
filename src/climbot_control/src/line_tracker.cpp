@@ -158,4 +158,13 @@ Command rateLimit(
   output.angular = (right - left) / wheel_separation;
   return output;
 }
+
+double peakWheelSpeed(
+  double max_linear_speed, double max_angular_speed, double wheel_separation)
+{
+  if (wheel_separation <= 0.0) {
+    throw std::invalid_argument("Invalid limits.");
+  }
+  return std::abs(max_linear_speed) + std::abs(max_angular_speed) * wheel_separation / 2.0;
+}
 }  // namespace climbot_control

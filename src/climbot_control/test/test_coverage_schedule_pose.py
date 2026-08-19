@@ -40,7 +40,7 @@ def generate_test_description():
                 'segment_timeout_s': 60.0,
                 'alignment_settle_duration_s': 0.05,
                 'wheel_separation': 0.43,
-                'wheel_speed_limit': 0.30,
+                'wheel_speed_limit': 0.45,
                 'wheel_acceleration_limit': 0.40,
             }]),
         launch_ros.actions.Node(

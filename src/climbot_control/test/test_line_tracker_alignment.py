@@ -30,7 +30,7 @@ def generate_test_description():
             'odometry_timeout_s': 0.15,
             'alignment_settle_duration_s': 0.10,
             'wheel_separation': 0.43,
-            'wheel_speed_limit': 0.30,
+            'wheel_speed_limit': 0.45,
             'wheel_acceleration_limit': 0.40,
         }],
     )

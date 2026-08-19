@@ -4,6 +4,7 @@
 #include "climbot_control/turn_profile.hpp"
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 #include "gtest/gtest.h"
 using namespace climbot_control;
 
@@ -217,6 +218,32 @@ TEST(LineTracker, WheelSpeedSaturationDoesNotBreakTheWheelAccelerationLimit)
   EXPECT_LE(std::abs(right), kSpeedLimit + 1e-9);
   EXPECT_LE(std::abs(left - previous_left), kAccelerationLimit * kDt + 1e-9);
   EXPECT_LE(std::abs(right - previous_right), kAccelerationLimit * kDt + 1e-9);
+}
+
+TEST(LineTracker, PeakWheelSpeedIsWhereRateLimitStartsTakingTheCorrectionDown)
+{
+  constexpr double kSeparation = .43;
+  constexpr double kLinear = .35;
+  constexpr double kAngular = .35;
+  constexpr double kDt = .1;
+  const double peak = peakWheelSpeed(kLinear, kAngular, kSeparation);
+  EXPECT_NEAR(peak, kLinear + kAngular * kSeparation / 2., 1e-12);
+  EXPECT_THROW(peakWheelSpeed(kLinear, kAngular, 0.), std::invalid_argument);
+
+  // What the startup check is buying, stated against rateLimit itself: a wheel
+  // limit at the peak passes the fastest command through untouched, and a
+  // limit below it takes the angular correction down along with the linear
+  // speed, quietly. Generous linear, angular, and acceleration limits, so the
+  // wheel-speed clamp is the only one that can move anything.
+  const Command previous{kLinear, kAngular};
+  const auto inside = rateLimit(
+    {kLinear, kAngular}, previous, kDt, 10., 10., 100., kSeparation, peak, 100.);
+  EXPECT_NEAR(inside.linear, kLinear, 1e-9);
+  EXPECT_NEAR(inside.angular, kAngular, 1e-9);
+  const auto outside = rateLimit(
+    {kLinear, kAngular}, previous, kDt, 10., 10., 100., kSeparation, peak - .01, 100.);
+  EXPECT_LT(outside.linear, kLinear - 1e-9);
+  EXPECT_LT(outside.angular, kAngular - 1e-9);
 }
 
 TEST(LineTracker, ExtractsYawFromGeneralNormalizedQuaternion)

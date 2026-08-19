@@ -26,7 +26,12 @@ robot:
   # scales linear and angular together, so a linear command sitting on the
   # ceiling takes the heading correction down with it just when it is needed.
   # 0.45 m/s clears the worst combination of cruise speed and a saturated
-  # angular correction (0.20 + 0.35 * 0.215 = 0.275) with margin to spare.
+  # angular correction (0.20 + 0.35 * 0.215 = 0.275) with margin to spare, and
+  # also the worst the tracker can command at all, which is the catch-up
+  # ceiling rather than the cruise speed (0.35 + 0.35 * 0.215 = 0.425). That
+  # second sum is the one line_tracker now checks at startup, so lowering this
+  # number without lowering catch_up_max_linear_speed or max_angular_speed
+  # stops the node instead of quietly costing it the correction.
   drive:
     max_linear_velocity_mps: 0.45
     max_angular_velocity_rps: 1.20

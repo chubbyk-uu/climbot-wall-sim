@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -482,6 +483,27 @@ private:
     requirePositive("wheel_separation", wheel_separation_);
     requirePositive("wheel_speed_limit", wheel_speed_limit_);
     requirePositive("wheel_acceleration_limit", wheel_acceleration_limit_);
+    // Both tracking modes are reachable while the node runs, so the ceiling to
+    // check is whichever of them drives the faster straight line: distance mode
+    // stops at max_linear_speed, and time mode clamps to
+    // catch_up_max_linear_speed without passing through max_linear_speed at
+    // all. A configuration that cannot deliver its own fastest command fails
+    // silently rather than loudly - see peakWheelSpeed - so it is refused here
+    // instead of being discovered as a lag the robot can never work off.
+    const double peak_wheel_speed = climbot_control::peakWheelSpeed(
+      std::max(limits_.max_linear, catch_up_max_linear_speed_), limits_.max_angular,
+      wheel_separation_);
+    if (peak_wheel_speed > wheel_speed_limit_) {
+      std::ostringstream message;
+      message << "The fastest command these limits allow needs " << peak_wheel_speed
+              << " m/s at a wheel, above the wheel_speed_limit of " << wheel_speed_limit_
+              << " m/s. Raise wheel_speed_limit, or lower max_angular_speed ("
+              << limits_.max_angular << " rad/s over a wheel_separation of "
+              << wheel_separation_ << " m) or the faster of max_linear_speed ("
+              << limits_.max_linear << " m/s) and catch_up_max_linear_speed ("
+              << catch_up_max_linear_speed_ << " m/s).";
+      throw std::invalid_argument(message.str());
+    }
     if (frame_id_.empty()) {
       throw std::invalid_argument("frame_id cannot be empty.");
     }

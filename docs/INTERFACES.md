@@ -287,7 +287,11 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 
 轮级饱和会按相同比例缩放左右轮，所以线速度顶到轮速上限时会**连带压掉角速度修正**。
 必须满足 `v_max ≤ 轮速上限 − ω_max·轮距/2`；轮速上限来自
-`climbot_description/config/robot.yaml`，见"配置文件"。
+`climbot_description/config/robot.yaml`，见"配置文件"。这条**在启动时校验**，不满足
+直接拒绝启动并报出各项数值：缩放不会报任何错，时间模式下的表现只是一个永远追不回来
+的滞后，靠看日志发现不了。`v_max` 取两种模式里更快的那个——`distance` 模式受
+`max_linear_speed` 约束，`time` 模式钳到 `catch_up_max_linear_speed` 而**不经过**
+`max_linear_speed`，且模式可在运行时切换，所以两者都要满足。
 
 `time_mode_final_approach_enabled` 默认打开，因为时间参考按计划时刻停车，会把残余
 滞后原样变成落点误差（实测 `10.9~15.4 mm`），而距离曲线是位置的函数，位置不到就

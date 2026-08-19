@@ -74,5 +74,13 @@ Command rateLimit(
   const Command & desired, const Command & previous, double dt,
   double linear_acceleration, double linear_deceleration, double angular_acceleration,
   double wheel_separation, double wheel_speed_limit, double wheel_acceleration_limit);
+/// The fastest a wheel can be asked to turn by a command that stays inside the
+/// given linear and angular limits, so a configuration can be checked against
+/// wheel_speed_limit before it is used. rateLimit answers a command over that
+/// limit by scaling both wheels by one factor, which keeps the curvature but
+/// takes the linear speed and the heading correction down together and reports
+/// nothing - and the moment it happens is the moment the correction was needed.
+double peakWheelSpeed(
+  double max_linear_speed, double max_angular_speed, double wheel_separation);
 }  // namespace climbot_control
 #endif
