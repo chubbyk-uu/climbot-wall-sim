@@ -881,15 +881,51 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 Algorithm 是灰的。与 `OPERATION.md` 里"运行期间五个控件全部置灰"矛盾。下次跑任务
 时在执行中重截一张替换即可。
 
+### 4. 15 个归档标签不可追溯，且无法补救
+
+`results/README.md` 的标签索引列出全部 18 个标签的 `provenance.git.source_modified`。
+只有 `2026-08-17`、`timeA`、`ceilgate2` 三个产自干净工作树；曾被指定为"当前正式
+基线"的 `2026-08-18d` 与"定版回归"的 `timeE` 都不在其中。产出机制已经修好（回归
+脚本脏树时给标签加 `-dirty` 并告警，评价器写 `traceable` 并在结束时打印），但已经
+归档的 15 个标签只能标注，不能补救。
+
+## 2026-08-19 全仓库 review 的修复
+
+见 [REVIEW_2026-08-19.md](REVIEW_2026-08-19.md)。20 条中 19 条实测属实，1 条（L4）
+结论属实但给的理由不完整。处理如下。
+
+| 条目 | 处理 | 说明 |
+| --- | --- | --- |
+| H1 溯源 | 已修机制 + 重跑 | 见上面未决事项 4 |
+| H2 阶段 F 表述 | 已完成 | `README.md` 与本文顶部的阶段表不再复述会过期的份数和"干净工作树"，改为指向 `results/README.md` |
+| M2 首位姿 | 已完成 | `planSegmentDurations()` 移到 `configureStartApproach()`；新增 `test_coverage_schedule_pose.py`，旧代码下两轮相差 `15.4 s` / `19.5 s` |
+| M3 挂起超时时钟 | 已完成 | `start_pending_since_` 改 `steady_clock`，与同一定时器里的执行器检查一致 |
+| M4 失联不取消 | 已完成 | 释放句柄前先 `async_cancel_goal()`；新增结果码 `EXECUTOR_LOST=7`，不再复用 `CONTROL_TIMEOUT` |
+| M5 面板 pending | 已完成 | 两个 pending 加发送时刻并按 `requestTimeout()` 释放；被守护成员移入 `shared_ptr<SharedState>`，回调按值持有，面板补上析构 |
+| M6 results 索引 | 已完成（不删文件） | `results/README.md` 补全 18 个标签一节；调参 CSV 保留，删除收不回 `.git` 里已有的 104 MB |
+| M7 cppcheck | 不做 | Ubuntu 24.04 的 cppcheck 2.13.0 触发 `ament_cmake_cppcheck` 上游跳过策略，29 个 skipped 全部是它。手工全量跑只有 3 条无害提示 |
+| M1 上帝类 | 不单独立项 | 下次动 `line_tracker_node.cpp` 功能时顺带 |
+| L1 注释错位 | 已完成 | 描述 `reanchorStartApproach()` 的注释移回该函数 |
+| L2 / L3 文档数字 | 已完成 | 严格门限 `2°`→`1°`；三处 `act/plan` 统一为 `timeE` 八份实测复算的 `0.981~1.015` |
+| L4 钳位顺序 | 已完成 | 轮速钳位移到轮加速度钳位之前。评审说"远低于"不确切：轮速峰值是 `0.35 + 0.35 × 0.215 = 0.425`，对 `0.45` 只余 `25 mm/s` |
+| L5 裸下标 | 已完成 | 顶点标签与点位角色加边界 |
+| L6 `SEGMENT_RETURN` | 不做 | 接口预留值，删除破坏消息兼容 |
+| L7 种子透传 | 已完成 | `climbot_wall.launch.py` 增加 `total_station_seed` / `total_station_drop_probability` / `imu_seed`，§15.11 的前置条件已具备 |
+| L8 评价器 | 已完成 | `execution_timeout_s` 改按仿真秒计（保留宽松墙钟兜底）。NaN 一条与评审判断不同：间距 NaN 是"少于两条平行扫描线，指标未定义"，落点 NaN 是"一段都没测到"，两者判定各自都对，只是编码看不出区别——已写明，并让"无任何分段"这一情形带理由判否而不是靠 NaN 比较的副作用 |
+| L9 launch 不对称 | 已完成 | `coverage_sim.launch.py` 补 `headless` / `gpu_backend` |
+| L10 许可头 | 不做 | 根目录已有 `LICENSE`；逐文件头留到开源发布前 |
+| L11 `lane_teardown` | 不做 | 需要操作员自己 `export GZ_PARTITION=laneN` 才会误杀，场景过窄 |
+
 ## 下一步顺序
 
-1. 补一轮八用例的 distance 模式回归，闭合位置控制的时长预测实测值；随后决定
+1. 在干净工作树上补一轮八用例的 distance 模式回归（同时闭合 H1 的可追溯基线和
+   位置控制的时长预测实测值）；随后决定
    `tracking_mode` 的默认值是否切到 `time`——两种模式的验收指标已等价，time 模式
    额外给出 `±2%` 量级的任务时长预测（见
    [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md) 第 8 节）；
 2. 补齐 §15 剩余三项测试场景：单段水平/竖直/斜向直线（§15.7，已有零散实测但无
    归档结果）、全站仪噪声与频率扫描（§15.9）、固定随机种子的任务级重复性
-   （§15.11，`total_station_sim` 与 `wall_imu_adapter` 的种子参数已具备）；
+   （§15.11，种子已由 `climbot_wall.launch.py` 的 `total_station_seed` / `imu_seed` 透传）；
 3. 将已人工验证的起点进入距离首点 `0.3/1/2 m` 扩展为不同方位、不同航向和边界
    工况的可重复回归；不可进入和定位超时停车的 Gazebo 基线已经通过；
 4. 补充不同初始横轨误差的 G-1 Gazebo 回归工况；
