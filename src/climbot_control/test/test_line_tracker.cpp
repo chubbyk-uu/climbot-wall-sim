@@ -191,6 +191,34 @@ TEST(LineTracker, JointWheelAccelerationIsLimited)
   EXPECT_LE(std::abs(right), .04 + 1e-9);
 }
 
+// The cycle in which the wheel speed limit first binds is the one that can
+// violate the wheel acceleration limit, because the speed clamp moves both
+// wheels again after the acceleration clamp has finished. Here the left wheel
+// is asked for -0.205 m/s of change against a 0.10 m/s budget: the
+// acceleration clamp brings it to -0.091, and a speed clamp applied afterwards
+// scales it back out to -0.149, half again over the limit.
+TEST(LineTracker, WheelSpeedSaturationDoesNotBreakTheWheelAccelerationLimit)
+{
+  constexpr double kSeparation = .43;
+  constexpr double kSpeedLimit = .45;
+  constexpr double kAccelerationLimit = 1.;
+  constexpr double kDt = .1;
+  const Command previous{.44, 0.};
+  // Large linear and angular limits, so the only clamps in play are the two
+  // wheel-level ones whose order is under test.
+  const auto command = rateLimit(
+    {.45, 1.}, previous, kDt, 10., 10., 100., kSeparation, kSpeedLimit,
+    kAccelerationLimit);
+  const double previous_left = previous.linear - previous.angular * kSeparation / 2.;
+  const double previous_right = previous.linear + previous.angular * kSeparation / 2.;
+  const double left = command.linear - command.angular * kSeparation / 2.;
+  const double right = command.linear + command.angular * kSeparation / 2.;
+  EXPECT_LE(std::abs(left), kSpeedLimit + 1e-9);
+  EXPECT_LE(std::abs(right), kSpeedLimit + 1e-9);
+  EXPECT_LE(std::abs(left - previous_left), kAccelerationLimit * kDt + 1e-9);
+  EXPECT_LE(std::abs(right - previous_right), kAccelerationLimit * kDt + 1e-9);
+}
+
 TEST(LineTracker, ExtractsYawFromGeneralNormalizedQuaternion)
 {
   const double roll = 0.2, pitch = -0.3, yaw = 0.7;

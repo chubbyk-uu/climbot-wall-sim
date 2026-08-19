@@ -136,16 +136,24 @@ Command rateLimit(
   const double previous_right = previous.linear + previous.angular * wheel_separation / 2.0;
   double left = output.linear - output.angular * wheel_separation / 2.0;
   double right = output.linear + output.angular * wheel_separation / 2.0;
+  // Wheel speed first, then wheel acceleration. The acceleration clamp returns
+  // a point between the previous wheel speeds and the requested ones, and the
+  // previous pair came out of this function already inside the speed limit, so
+  // clamping speed first is something the acceleration clamp cannot undo. The
+  // other order can be undone: scaling both wheels down to meet the speed
+  // limit moves each of them again, after the acceleration clamp has stopped
+  // bounding anything, so the cycle in which a command first reaches the speed
+  // ceiling can step a wheel further than the wheel is allowed to accelerate.
+  const double speed_scale = std::max(1.0,
+      std::max(std::abs(left), std::abs(right)) / wheel_speed_limit);
+  left /= speed_scale;
+  right /= speed_scale;
+
   const double acceleration_scale = std::max(1.0, std::max(
       std::abs(left - previous_left), std::abs(right - previous_right)) /
       (wheel_acceleration_limit * dt));
   left = previous_left + (left - previous_left) / acceleration_scale;
   right = previous_right + (right - previous_right) / acceleration_scale;
-
-  const double speed_scale = std::max(1.0,
-      std::max(std::abs(left), std::abs(right)) / wheel_speed_limit);
-  left /= speed_scale;
-  right /= speed_scale;
   output.linear = (left + right) / 2.0;
   output.angular = (right - left) / wheel_separation;
   return output;
