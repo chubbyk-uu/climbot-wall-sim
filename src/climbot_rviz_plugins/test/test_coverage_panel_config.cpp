@@ -8,6 +8,8 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
+
 #include <QApplication>
 #include <QComboBox>
 #include <QLabel>
@@ -157,6 +159,26 @@ TEST(CoveragePanelConfig, releasesThePlanningControlsWhenTheTaskStops)
   panel.renderConfig(makeConfig("rectangle", "horizontal", 2, 2, true));
   EXPECT_TRUE(panel.findChild<QPushButton *>("replan_button")->isEnabled());
   EXPECT_TRUE(panel.findChild<QPushButton *>("clear_button")->isEnabled());
+}
+
+// A configure or algorithm request disables the control that sent it and is
+// re-enabled only by the response. rclcpp never completes the future of a
+// service that died after service_is_ready() passed, so without an expiry the
+// region, sweep and algorithm boxes stay disabled until RViz itself restarts.
+TEST(CoveragePanelConfig, aRequestThatIsNeverAnsweredStopsBeingWaitedFor)
+{
+  const auto sent = std::chrono::steady_clock::now();
+  EXPECT_FALSE(climbot_rviz_plugins::requestHasExpired(sent, sent));
+  EXPECT_FALSE(
+    climbot_rviz_plugins::requestHasExpired(
+      sent, sent + climbot_rviz_plugins::requestTimeout()));
+  EXPECT_TRUE(
+    climbot_rviz_plugins::requestHasExpired(
+      sent, sent + climbot_rviz_plugins::requestTimeout() +
+      std::chrono::milliseconds{1}));
+  // A local service answers in milliseconds; a window that could be crossed by
+  // an ordinary answer would cancel live requests instead of dead ones.
+  EXPECT_GE(climbot_rviz_plugins::requestTimeout(), std::chrono::seconds{1});
 }
 
 TEST(CoveragePanelConfig, theBoxesCarryValuesThePlannerValidates)

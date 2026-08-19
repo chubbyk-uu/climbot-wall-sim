@@ -1,8 +1,8 @@
 #ifndef CLIMBOT_RVIZ_PLUGINS__COVERAGE_PANEL_HPP_
 #define CLIMBOT_RVIZ_PLUGINS__COVERAGE_PANEL_HPP_
 
+#include <chrono>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include <QComboBox>
@@ -31,6 +31,20 @@ namespace climbot_rviz_plugins
 /// line breaker uses only when the line would otherwise overflow.
 QString wrappableText(const QString & text);
 
+/// How long a request may go unanswered before the panel stops waiting.
+///
+/// A service that passes service_is_ready() and then dies leaves its future
+/// forever unfulfilled. Long enough that no answer from a live service is
+/// mistaken for none - these are local services answering in well under a
+/// tenth of it - and short enough that an operator whose planner died does not
+/// sit in front of frozen controls wondering which of them to press.
+std::chrono::milliseconds requestTimeout();
+
+/// Whether a request sent at `sent` has waited past that point.
+bool requestHasExpired(
+  std::chrono::steady_clock::time_point sent,
+  std::chrono::steady_clock::time_point now);
+
 /// Operator panel for planning, starting and stopping a coverage task.
 class CoveragePanel : public rviz_common::Panel
 {
@@ -41,6 +55,7 @@ public:
   using Config = climbot_interfaces::msg::CoverageConfig;
 
   explicit CoveragePanel(QWidget * parent = nullptr);
+  ~CoveragePanel() override;
 
   void onInitialize() override;
 
@@ -64,9 +79,27 @@ private:
   using Trigger = std_srvs::srv::Trigger;
   using Configure = climbot_interfaces::srv::ConfigureCoverage;
 
+  /// Everything the executor thread writes and the Qt thread reads, in one
+  /// object held by shared_ptr and captured by value in every callback.
+  ///
+  /// RViz may remove a panel at any time, and the node this panel spins on
+  /// belongs to RViz rather than to the panel, so there is no executor a
+  /// destructor could stop first and no point at which an in-flight callback
+  /// is known to be finished. A callback capturing the panel would then write
+  /// through a destroyed object; a weak_ptr sentinel only narrows that window,
+  /// because the panel can still be destroyed after the sentinel has been
+  /// locked. Callbacks therefore keep the state alive themselves, and a
+  /// callback that outlives its panel writes somewhere harmless.
+  struct SharedState;
+
   void call(const rclcpp::Client<Trigger>::SharedPtr & client, const QString & label);
   void readTrackingMode();
   void note(const QString & text);
+  /// Release a request whose answer never came. A service that passes
+  /// service_is_ready() and then dies leaves its future forever unfulfilled,
+  /// and the flags below are cleared only in the response callbacks, so the
+  /// controls they disable would stay disabled until RViz itself restarts.
+  void expireStalePendingRequests();
 
   QLabel * state_label_{nullptr};
   QLabel * task_label_{nullptr};
@@ -107,19 +140,9 @@ private:
   rclcpp::AsyncParametersClient::SharedPtr tracking_client_;
 
   // Written by the ROS executor thread and read by the Qt thread, so every
-  // access is guarded. Widgets are only ever touched from the refresh timer.
-  std::mutex mutex_;
-  std::unique_ptr<Status> status_;
-  std::unique_ptr<Config> config_;
-  QString planner_;
-  QString response_;
-  // Set while a configure request is in flight so a second one cannot be
-  // launched from a control the first has not finished answering for.
-  bool configure_pending_{false};
-  // Empty until the executor has answered once; the box shows nothing
-  // selectable until then rather than a guess that may be wrong.
-  QString tracking_mode_;
-  bool tracking_pending_{false};
+  // access is guarded by the mutex inside it. Widgets are only ever touched
+  // from the refresh timer.
+  std::shared_ptr<SharedState> state_;
 };
 
 }  // namespace climbot_rviz_plugins

@@ -1,8 +1,10 @@
 #include "climbot_rviz_plugins/coverage_panel.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include <QFont>
@@ -125,6 +127,21 @@ QFrame * makeSeparator()
 
 }  // namespace
 
+std::chrono::milliseconds requestTimeout()
+{
+  return std::chrono::seconds{3};
+}
+
+bool requestHasExpired(
+  std::chrono::steady_clock::time_point sent,
+  std::chrono::steady_clock::time_point now)
+{
+  // A clock that has not moved cannot have expired anything. sent is stamped
+  // from the same steady clock, so now is never before it, but reading the
+  // comparison as "elapsed" makes that assumption visible.
+  return now > sent && now - sent > requestTimeout();
+}
+
 QString wrappableText(const QString & text)
 {
   // A zero-width space is a break opportunity the line breaker takes only when
@@ -140,8 +157,27 @@ QString wrappableText(const QString & text)
   return broken;
 }
 
+struct CoveragePanel::SharedState
+{
+  std::mutex mutex;
+  std::unique_ptr<Status> status;
+  std::unique_ptr<Config> config;
+  QString planner;
+  QString response;
+  // Set while a configure request is in flight so a second one cannot be
+  // launched from a control the first has not finished answering for, with the
+  // instant it was sent so a request that is never answered can be released.
+  bool configure_pending{false};
+  std::chrono::steady_clock::time_point configure_sent{};
+  // Empty until the executor has answered once; the box shows nothing
+  // selectable until then rather than a guess that may be wrong.
+  QString tracking_mode;
+  bool tracking_pending{false};
+  std::chrono::steady_clock::time_point tracking_sent{};
+};
+
 CoveragePanel::CoveragePanel(QWidget * parent)
-: rviz_common::Panel(parent)
+: rviz_common::Panel(parent), state_(std::make_shared<SharedState>())
 {
   state_label_ = makeValue("state_value");
   task_label_ = makeValue("task_value");
@@ -301,31 +337,37 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   renderDisconnected();
 }
 
+// Out of line because SharedState is only complete here.
+CoveragePanel::~CoveragePanel() = default;
+
 void CoveragePanel::onInitialize()
 {
   node_ = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
 
+  // Every callback below captures the state rather than the panel: see
+  // SharedState. None of them touch a widget or any other member.
+  const auto state = state_;
   status_subscription_ = node_->create_subscription<Status>(
     "/coverage/manager_status", rclcpp::QoS(1).reliable().transient_local(),
-    [this](const Status::SharedPtr status) {
-      const std::lock_guard<std::mutex> lock(mutex_);
-      status_ = std::make_unique<Status>(*status);
+    [state](const Status::SharedPtr status) {
+      const std::lock_guard<std::mutex> lock(state->mutex);
+      state->status = std::make_unique<Status>(*status);
     });
   config_subscription_ = node_->create_subscription<Config>(
     "/coverage/config", rclcpp::QoS(1).reliable().transient_local(),
-    [this](const Config::SharedPtr config) {
-      const std::lock_guard<std::mutex> lock(mutex_);
+    [state](const Config::SharedPtr config) {
+      const std::lock_guard<std::mutex> lock(state->mutex);
       // A configure response in flight is newer than anything the topic can
       // carry, so it wins until it lands.
-      if (!configure_pending_) {
-        config_ = std::make_unique<Config>(*config);
+      if (!state->configure_pending) {
+        state->config = std::make_unique<Config>(*config);
       }
     });
   planner_subscription_ = node_->create_subscription<std_msgs::msg::String>(
     "/coverage/status", rclcpp::QoS(1).transient_local(),
-    [this](const std_msgs::msg::String::SharedPtr message) {
-      const std::lock_guard<std::mutex> lock(mutex_);
-      planner_ = QString::fromStdString(message->data);
+    [state](const std_msgs::msg::String::SharedPtr message) {
+      const std::lock_guard<std::mutex> lock(state->mutex);
+      state->planner = QString::fromStdString(message->data);
     });
   replan_client_ = node_->create_client<Trigger>("/coverage/replan");
   clear_client_ = node_->create_client<Trigger>("/coverage/clear_points");
@@ -344,8 +386,8 @@ void CoveragePanel::onInitialize()
 
 void CoveragePanel::note(const QString & text)
 {
-  const std::lock_guard<std::mutex> lock(mutex_);
-  response_ = text;
+  const std::lock_guard<std::mutex> lock(state_->mutex);
+  state_->response = text;
 }
 
 void CoveragePanel::call(
@@ -358,12 +400,12 @@ void CoveragePanel::call(
   note(tr("%1: sent.").arg(label));
   client->async_send_request(
     std::make_shared<Trigger::Request>(),
-    [this, label](rclcpp::Client<Trigger>::SharedFuture future) {
+    [state = state_, label](rclcpp::Client<Trigger>::SharedFuture future) {
       const auto response = future.get();
-      note(
-        tr("%1: %2 %3").arg(label)
-        .arg(response->success ? tr("ok") : tr("refused"))
-        .arg(QString::fromStdString(response->message)));
+      const std::lock_guard<std::mutex> lock(state->mutex);
+      state->response = tr("%1: %2 %3").arg(label)
+      .arg(response->success ? tr("ok") : tr("refused"))
+      .arg(QString::fromStdString(response->message));
     });
 }
 
@@ -372,9 +414,12 @@ void CoveragePanel::onConfigurationChosen()
   // activated() rather than currentIndexChanged(): only a human choosing an
   // item may send a request. renderConfig writes these boxes on every update,
   // and the change signal would turn each of those writes into another call.
-  if (configure_pending_) {
-    note(tr("Configuration: previous change still pending."));
-    return;
+  {
+    const std::lock_guard<std::mutex> lock(state_->mutex);
+    if (state_->configure_pending) {
+      state_->response = tr("Configuration: previous change still pending.");
+      return;
+    }
   }
   if (!configure_client_ || !configure_client_->service_is_ready()) {
     note(tr("Configuration: planner unavailable."));
@@ -387,32 +432,36 @@ void CoveragePanel::onConfigurationChosen()
   request->region_type = region_box_->currentData().toString().toStdString();
   request->sweep_direction = sweep_box_->currentData().toString().toStdString();
   {
-    const std::lock_guard<std::mutex> lock(mutex_);
-    configure_pending_ = true;
-    response_ = tr("Configuration: sent.");
+    const std::lock_guard<std::mutex> lock(state_->mutex);
+    state_->configure_pending = true;
+    state_->configure_sent = std::chrono::steady_clock::now();
+    state_->response = tr("Configuration: sent.");
   }
   region_box_->setEnabled(false);
   sweep_box_->setEnabled(false);
   configure_client_->async_send_request(
     request,
-    [this](rclcpp::Client<Configure>::SharedFuture future) {
+    [state = state_](rclcpp::Client<Configure>::SharedFuture future) {
       const auto response = future.get();
-      const std::lock_guard<std::mutex> lock(mutex_);
-      configure_pending_ = false;
+      const std::lock_guard<std::mutex> lock(state->mutex);
+      state->configure_pending = false;
       // The response carries the configuration actually in force, accepted or
       // not, so a refused change repaints the boxes back to the truth without
       // waiting for the topic.
-      config_ = std::make_unique<Config>(response->config);
-      response_ = tr("Configuration: %1").arg(
+      state->config = std::make_unique<Config>(response->config);
+      state->response = tr("Configuration: %1").arg(
         QString::fromStdString(response->message));
     });
 }
 
 void CoveragePanel::onAlgorithmChosen()
 {
-  if (tracking_pending_) {
-    note(tr("Algorithm: previous change still pending."));
-    return;
+  {
+    const std::lock_guard<std::mutex> lock(state_->mutex);
+    if (state_->tracking_pending) {
+      state_->response = tr("Algorithm: previous change still pending.");
+      return;
+    }
   }
   if (!tracking_client_ || !tracking_client_->service_is_ready()) {
     note(tr("Algorithm: executor unavailable."));
@@ -420,32 +469,33 @@ void CoveragePanel::onAlgorithmChosen()
   }
   const std::string wanted = algorithm_box_->currentData().toString().toStdString();
   {
-    const std::lock_guard<std::mutex> lock(mutex_);
-    tracking_pending_ = true;
-    response_ = tr("Algorithm: sent.");
+    const std::lock_guard<std::mutex> lock(state_->mutex);
+    state_->tracking_pending = true;
+    state_->tracking_sent = std::chrono::steady_clock::now();
+    state_->response = tr("Algorithm: sent.");
   }
   algorithm_box_->setEnabled(false);
   tracking_client_->set_parameters(
     {rclcpp::Parameter("tracking_mode", wanted)},
-    [this, wanted](
+    [state = state_, wanted](
       std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
       const auto results = future.get();
       const bool accepted = !results.empty() && results.front().successful;
-      const std::lock_guard<std::mutex> lock(mutex_);
-      tracking_pending_ = false;
+      const std::lock_guard<std::mutex> lock(state->mutex);
+      state->tracking_pending = false;
       // The executor refuses while a task is running, so a refused change has
       // to put the box back to what is actually in force rather than leave it
       // showing a mode nobody is driving in.
-      response_ = accepted ?
+      state->response = accepted ?
       tr("Algorithm: set.") :
       tr("Algorithm: %1").arg(
         results.empty() ?
         tr("no answer from the executor.") :
         QString::fromStdString(results.front().reason));
       if (accepted) {
-        tracking_mode_ = QString::fromStdString(wanted);
+        state->tracking_mode = QString::fromStdString(wanted);
       } else {
-        tracking_mode_.clear();
+        state->tracking_mode.clear();
       }
     });
 }
@@ -455,23 +505,27 @@ void CoveragePanel::onAlgorithmChosen()
 /// so the box never shows a mode the executor did not confirm.
 void CoveragePanel::readTrackingMode()
 {
-  if (tracking_pending_ || !tracking_client_ || !tracking_client_->service_is_ready()) {
+  if (!tracking_client_ || !tracking_client_->service_is_ready()) {
     return;
   }
   {
-    const std::lock_guard<std::mutex> lock(mutex_);
-    tracking_pending_ = true;
+    const std::lock_guard<std::mutex> lock(state_->mutex);
+    if (state_->tracking_pending) {
+      return;
+    }
+    state_->tracking_pending = true;
+    state_->tracking_sent = std::chrono::steady_clock::now();
   }
   tracking_client_->get_parameters(
     {"tracking_mode"},
-    [this](std::shared_future<std::vector<rclcpp::Parameter>> future) {
+    [state = state_](std::shared_future<std::vector<rclcpp::Parameter>> future) {
       const auto parameters = future.get();
-      const std::lock_guard<std::mutex> lock(mutex_);
-      tracking_pending_ = false;
+      const std::lock_guard<std::mutex> lock(state->mutex);
+      state->tracking_pending = false;
       if (!parameters.empty() &&
       parameters.front().get_type() == rclcpp::ParameterType::PARAMETER_STRING)
       {
-        tracking_mode_ = QString::fromStdString(parameters.front().as_string());
+        state->tracking_mode = QString::fromStdString(parameters.front().as_string());
       }
     });
 }
@@ -600,8 +654,23 @@ void CoveragePanel::renderStatus(const Status & status)
   }
 }
 
+void CoveragePanel::expireStalePendingRequests()
+{
+  const auto now = std::chrono::steady_clock::now();
+  const std::lock_guard<std::mutex> lock(state_->mutex);
+  if (state_->configure_pending && requestHasExpired(state_->configure_sent, now)) {
+    state_->configure_pending = false;
+    state_->response = tr("Configuration: no answer; released the controls.");
+  }
+  if (state_->tracking_pending && requestHasExpired(state_->tracking_sent, now)) {
+    state_->tracking_pending = false;
+    state_->response = tr("Algorithm: no answer; released the control.");
+  }
+}
+
 void CoveragePanel::refresh()
 {
+  expireStalePendingRequests();
   std::unique_ptr<Status> status;
   QString planner;
   QString response;
@@ -610,18 +679,18 @@ void CoveragePanel::refresh()
   bool tracking_pending = false;
   QString tracking_mode;
   {
-    const std::lock_guard<std::mutex> lock(mutex_);
-    if (status_) {
-      status = std::make_unique<Status>(*status_);
+    const std::lock_guard<std::mutex> lock(state_->mutex);
+    if (state_->status) {
+      status = std::make_unique<Status>(*state_->status);
     }
-    if (config_) {
-      config = std::make_unique<Config>(*config_);
+    if (state_->config) {
+      config = std::make_unique<Config>(*state_->config);
     }
-    planner = planner_;
-    response = response_;
-    pending = configure_pending_;
-    tracking_pending = tracking_pending_;
-    tracking_mode = tracking_mode_;
+    planner = state_->planner;
+    response = state_->response;
+    pending = state_->configure_pending;
+    tracking_pending = state_->tracking_pending;
+    tracking_mode = state_->tracking_mode;
   }
   if (tracking_mode.isEmpty()) {
     readTrackingMode();
