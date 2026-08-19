@@ -9,6 +9,12 @@ uint16 LOCALIZATION_TIMEOUT=3
 uint16 CONTROL_TIMEOUT=4
 uint16 OUT_OF_BOUNDS=5
 uint16 TRACKING_FAILED=6
+# The manager lost contact with this executor and released the goal on its own.
+# Distinct from CONTROL_TIMEOUT, which is a real timeout the executor itself
+# declares: reusing that code reported a cause that had not happened and left
+# an operator diagnosing the controller instead of the connection. Only the
+# manager ever publishes it; an executor never returns it.
+uint16 EXECUTOR_LOST=7
 
 uint16 result_code
 string message

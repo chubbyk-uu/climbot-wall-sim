@@ -404,7 +404,9 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 
 已接受的 Goal 只由结果回调结束，而执行器崩溃时结果永远不会到达。管理器以
 `executor_timeout_s`（默认 `5.0 s`）监视 Action 服务的存在：持续消失超过该时间即
-释放该 Goal，报 `FINISHED` 与 `CONTROL_TIMEOUT`，操作员无需重启管理器即可重新开始。
+释放该 Goal 前先发一次取消，然后报 `FINISHED` 与 `EXECUTOR_LOST`，操作员无需重启
+管理器即可重新开始。`EXECUTOR_LOST` 只由管理器发出，执行器自己永远不会返回它；
+先前这里复用 `CONTROL_TIMEOUT`，报的是一个并未发生的原因。
 实测从 `SIGKILL` 到释放约 `25 s`，其中约 `20 s` 是 DDS 摘除已死参与者所需的时间，
 正常退出会快得多。这期间机器人已由速度看门狗停住——指令一停它就发零速。
 
@@ -684,6 +686,7 @@ uint16 LOCALIZATION_TIMEOUT=3
 uint16 CONTROL_TIMEOUT=4
 uint16 OUT_OF_BOUNDS=5
 uint16 TRACKING_FAILED=6
+uint16 EXECUTOR_LOST=7
 
 uint16 result_code
 string message

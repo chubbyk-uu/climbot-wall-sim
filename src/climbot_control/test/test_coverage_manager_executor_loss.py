@@ -139,8 +139,11 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
         released = self._wait_until(
             lambda s: s.state == CoverageStatus.FINISHED,
             'the manager to release the goal after the executor vanished')
-        self.assertEqual(released.result_code, ExecuteCoverage.Result.CONTROL_TIMEOUT)
-        self.assertIn('Executor disappeared', released.message)
+        # Not CONTROL_TIMEOUT: no controller timed out here. That code named a
+        # cause that had not happened and sent an operator to look at the
+        # tracker instead of at the connection.
+        self.assertEqual(released.result_code, ExecuteCoverage.Result.EXECUTOR_LOST)
+        self.assertIn('Lost contact with the executor', released.message)
         self.assertTrue(
             released.can_start,
             'The operator must be able to start again without restarting the '
