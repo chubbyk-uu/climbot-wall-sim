@@ -60,12 +60,19 @@ WS=$(dirname "$SCRIPT_DIR")
 #
 # name  bearing_deg  length_m
 LINE_CASES="
-line_horizontal        0.0  4.0
-line_horizontal_back 180.0  4.0
-line_vertical         90.0  4.0
-line_diagonal         45.0  4.0
-line_diagonal_back   135.0  4.0
+line_horizontal        0.0  3.5
+line_horizontal_back 180.0  3.5
+line_vertical         90.0  3.5
+line_diagonal         45.0  3.5
+line_diagonal_back   135.0  3.5
 "
+
+# Where the line begins relative to the robot, so the start approach has
+# somewhere to happen that is not the line. Same for every bearing: the entry
+# arc's length is set by the alignment turn, and 180 degrees is the worst of
+# them at a measured 383 mm. 3.5 m of line after a 0.6 m offset keeps the
+# 180-degree case clear of the motion region edge at x = -4.6.
+LINE_START_OFFSET=0.6
 
 CASES="
 bigV                  coverage_vertical_large.yaml              rectangle vertical    # 409
@@ -257,7 +264,8 @@ run_lane() {
     local case_arguments
     if [ "$kind" = "line" ]; then
       case_arguments="-p case:=straight_line \
-        -p straight_line_bearing_deg:=$bearing -p straight_line_length_m:=$length"
+        -p straight_line_bearing_deg:=$bearing -p straight_line_length_m:=$length \
+        -p straight_line_start_offset_m:=$LINE_START_OFFSET"
     else
       case_arguments="-p case:=planned_task"
     fi

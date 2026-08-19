@@ -85,6 +85,14 @@ class CoverageExecutionEvaluator(Node):
         # angles somebody thought of.
         ('straight_line_bearing_deg', 0.0),
         ('straight_line_length_m', 2.0),
+        # How far ahead of the robot the line begins. Measured, not guessed: a
+        # line that starts exactly where the robot is leaves the start approach
+        # nowhere to happen, so the entry arc is taken out of the line itself -
+        # 383 mm of it after a 180 degree alignment turn, which is 8.6% of a 4 m
+        # line that never gets covered (results/README.md, tag line1). A real
+        # task never asks for that; the planner puts the approach before the
+        # first scan line. This restores that structure.
+        ('straight_line_start_offset_m', 0.6),
     )
 
     #: The nodes whose randomness decides how much of a run repeats, and the
@@ -297,6 +305,13 @@ class CoverageExecutionEvaluator(Node):
         along = (math.cos(bearing), math.sin(bearing))
         normal = (-along[1], along[0])
 
+        offset = float(
+            self.get_parameter('straight_line_start_offset_m').value)
+        if offset < 0.0 or not math.isfinite(offset):
+            raise ValueError(
+                'straight_line_start_offset_m must be zero or positive.')
+        start = (x + along[0] * offset, y + along[1] * offset)
+
         task = CoverageTask()
         task.task_id = 'evaluation-straight-line'
         # Only decides how the task is labelled: which metrics apply is decided
@@ -306,8 +321,10 @@ class CoverageExecutionEvaluator(Node):
             CoverageTask.SWEEP_VERTICAL
             if abs(along[1]) > abs(along[0]) else CoverageTask.SWEEP_HORIZONTAL)
         task.waypoints = [
-            make_pose(x, y, bearing),
-            make_pose(x + along[0] * length, y + along[1] * length, bearing)]
+            make_pose(start[0], start[1], bearing),
+            make_pose(
+                start[0] + along[0] * length,
+                start[1] + along[1] * length, bearing)]
         task.segment_types = [CoverageTask.SEGMENT_SCAN]
         task.detection_width = 0.5
         task.detection_length = 0.1
@@ -321,8 +338,8 @@ class CoverageExecutionEvaluator(Node):
         half = task.detection_width / 2.0
         task.coverage_region.points = [
             make_point(
-                x + along[0] * distance + normal[0] * half * side,
-                y + along[1] * distance + normal[1] * half * side)
+                start[0] + along[0] * distance + normal[0] * half * side,
+                start[1] + along[1] * distance + normal[1] * half * side)
             for distance, side in (
                 (inset, 1.0), (length - inset, 1.0),
                 (length - inset, -1.0), (inset, -1.0))]

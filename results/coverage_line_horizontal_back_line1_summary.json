@@ -1,0 +1,161 @@
+{
+  "completed": true,
+  "completed_segments": 1,
+  "coverage": {
+    "covered_area_m2": 1.7817000000000003,
+    "covered_cells": 17817,
+    "missed_ratio": 0.08630769230769231,
+    "ratio": 0.9136923076923077,
+    "region_area_m2": 1.95,
+    "region_cells": 19500,
+    "resolution_m": 0.01
+  },
+  "elapsed_time_s": 33.147,
+  "execution_quality": {
+    "actual_path_length_m": 4.0825550946572955,
+    "actual_to_planned_length_ratio": 1.0206387736643239,
+    "maximum_endpoint_error_m": 0.0012645985878489904,
+    "maximum_heading_compensation_deg": 6.377121186990128,
+    "maximum_horizontal_height_drift_m": 0.0014650861820650896,
+    "maximum_tracking_angular_speed_rps": 0.02965266208730014,
+    "maximum_turn_end_heading_error_deg": 0.3260856520181068,
+    "planned_path_length_m": 4.0,
+    "segments": [
+      {
+        "endpoint_error_m": 0.0012645985878489904,
+        "horizontal_height_drift_m": 0.0014650861820650896,
+        "maximum_heading_compensation_deg": 6.377121186990128,
+        "maximum_tracking_angular_speed_rps": 0.02965266208730014,
+        "segment": 0,
+        "turn_end_heading_error_deg": 0.3260856520181068
+      }
+    ]
+  },
+  "passed": false,
+  "provenance": {
+    "evaluator_parameters": {
+      "case": "straight_line",
+      "coverage_grid_resolution_m": 0.01,
+      "execution_timeout_s": 900.0,
+      "execution_timeout_wall_factor": 4.0,
+      "maximum_cross_error_m": 0.05,
+      "maximum_cross_rms_m": 0.02,
+      "maximum_endpoint_error_m": 0.03,
+      "maximum_heading_range_deg": 5.0,
+      "maximum_horizontal_height_drift_m": 0.03,
+      "maximum_scan_line_spacing_error_m": 0.02,
+      "maximum_turn_end_heading_error_deg": 2.0,
+      "maximum_visible_reversals": 0,
+      "minimum_actual_coverage_ratio": 0.95,
+      "startup_timeout_s": 90.0,
+      "straight_line_bearing_deg": 180.0,
+      "straight_line_length_m": 4.0,
+      "summary_json": "results/coverage_line_horizontal_back_line1_summary.json",
+      "trajectory_csv": "results/coverage_line_horizontal_back_line1_trajectory.csv",
+      "visible_excursion_m": 0.02
+    },
+    "git": {
+      "branch": "main",
+      "commit": "61bc47ea12bd20c21ceb58dbdcdfb4f25a08d5b6",
+      "source_modified": false,
+      "traceable": true
+    },
+    "noise_sources": {
+      "total_station_sim": {
+        "drop_probability": 0.0,
+        "fixed_delay_s": 0.05,
+        "position_stddev_m": 0.001,
+        "publish_rate_hz": 12.0,
+        "random_seed": 42
+      },
+      "wall_imu_adapter": {
+        "orientation_stddev_rad": 0.00174532925,
+        "random_seed": 17
+      }
+    },
+    "recorded_utc": "2026-08-19T06:57:54.389073+00:00"
+  },
+  "result_code": 0,
+  "result_message": "Coverage task completed.",
+  "revision": 1,
+  "scan_line_spacing": {
+    "crossing_scan_lines": 0,
+    "maximum_scan_line_offset_m": NaN,
+    "maximum_scan_line_spacing_error_m": NaN,
+    "scan_line_offsets_m": [],
+    "scan_line_spacing_errors_m": []
+  },
+  "schedule": {
+    "planned_total_s": 29.4335953215734,
+    "schedule_lag_max_s": 0.017728220352639015,
+    "schedule_lag_min_s": -0.02301762411363928
+  },
+  "segment_metrics": [
+    {
+      "heading_range_deg": 0.8573263724687886,
+      "maximum": 0.0011807087705979474,
+      "reversals": 0,
+      "rms": 0.00045456817175374846,
+      "samples": 1960,
+      "segment": 0
+    }
+  ],
+  "task": {
+    "coverage_region": [
+      [
+        -0.04950298187295039,
+        1.7499333705486684
+      ],
+      [
+        -3.9495029818729503,
+        1.7499333705486688
+      ],
+      [
+        -3.9495029818729503,
+        2.2499333705486686
+      ],
+      [
+        -0.04950298187295033,
+        2.2499333705486686
+      ]
+    ],
+    "detection_length_m": 0.1,
+    "detection_width_m": 0.5,
+    "motion_region": [
+      [
+        -4.6,
+        0.4
+      ],
+      [
+        4.6,
+        0.4
+      ],
+      [
+        4.6,
+        7.6
+      ],
+      [
+        -4.6,
+        7.6
+      ]
+    ],
+    "revision": 1,
+    "segment_types": [
+      1
+    ],
+    "sweep_direction": 1,
+    "task_id": "evaluation-straight-line",
+    "waypoints": [
+      [
+        0.0004970181270496408,
+        1.9999333705486684
+      ],
+      [
+        -3.99950298187295,
+        1.9999333705486688
+      ]
+    ]
+  },
+  "task_id": "evaluation-straight-line",
+  "trajectory_samples": 3323
+}
