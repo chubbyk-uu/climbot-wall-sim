@@ -35,7 +35,7 @@
 | `gpu_backend` | `auto` | 透传给 `climbot_wall.launch.py` |
 | `rviz` | `true` | 启动 RViz；点选工具由它提供 |
 | `input_mode` | `rviz` | `rviz` 点选或 `parameters` 配置区域 |
-| `planner_config_file` | `coverage_rectangle.yaml` | 规划器参数；点选模式下忽略其中的角点 |
+| `planner_config_file` | `coverage_interactive.yaml` | 规划器参数；点选模式下忽略其中的角点。该文件的 `task_id` 是 `rviz-selection`，不含形状——形状由面板在运行时决定，写进标识就会出现「梯形下面写着 Executing rectangle」 |
 | `control_config_file` | `control.yaml` | 跟踪器参数 |
 | `region_type` | `rectangle` | `rectangle` 需两点，`trapezoid` 需三点 |
 | `sweep_direction` | `horizontal` | 扫描方向 |
@@ -944,5 +944,6 @@ float64 estimated_remaining_s
 | `climbot_description/config/wall.yaml` | 工作坐标系、墙面宽高 |
 | `climbot_gazebo/config/simulation.yaml` | Gazebo 专有物理和传感器参数 |
 | `climbot_gazebo/config/ekf_wall.yaml` | EKF 状态选择、频率和协方差输入 |
-| `climbot_coverage/config/coverage_rectangle.yaml` | 默认矩形任务 |
+| `climbot_coverage/config/coverage_interactive.yaml` | RViz 点选工作流，`coverage_mission.launch.py` 的默认 |
+| `climbot_coverage/config/coverage_rectangle.yaml` | 参数模式的矩形任务 |
 | `climbot_coverage/config/coverage_trapezoid.yaml` | 默认等腰梯形任务 |

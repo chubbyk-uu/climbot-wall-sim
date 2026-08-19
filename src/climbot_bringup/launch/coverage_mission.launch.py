@@ -53,8 +53,10 @@ def generate_launch_description():
         }.items(),
     )
 
+    # This launch runs the RViz click workflow by default, where the shape is
+    # a runtime choice, so it needs a config whose task_id does not name one.
     default_planner_config = os.path.join(
-        coverage_share, 'config', 'coverage_rectangle.yaml')
+        coverage_share, 'config', 'coverage_interactive.yaml')
     default_control_config = os.path.join(
         control_share, 'config', 'control.yaml')
     return LaunchDescription([

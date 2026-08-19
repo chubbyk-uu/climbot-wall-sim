@@ -1,0 +1,30 @@
+# Planner settings for the RViz click-selection workflow, which is what
+# coverage_mission.launch.py runs by default.
+#
+# The shape and the sweep direction are chosen in the Coverage Task panel while
+# the planner runs, so nothing here may claim either of them as part of the
+# task's identity. coverage_rectangle.yaml used to fill this role and its
+# task_id said "rectangle", which the panel could then contradict on screen:
+# a trapezoid drawn under the words "Executing rectangle".
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    # Names where the region came from, not what shape it turned out to be.
+    task_id: rviz-selection
+    input_mode: rviz
+    # Starting position of the two panel boxes, not a commitment.
+    region_type: rectangle
+    sweep_direction: horizontal
+    start_corner: lower_left
+    # Ignored while input_mode is rviz, and kept valid anyway: input_mode is
+    # also a launch argument, so this file can be run in parameters mode by
+    # someone who did not open it first.
+    lower_left: [-3.0, 0.5]
+    upper_right: [3.0, 6.5]
+    lower_right: [3.0, 0.5]
+    detection_width: 0.50
+    # Conservative provisional value; replace with the calibrated payload length.
+    detection_length: 0.01
+    overlap_ratio: 0.20
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05
