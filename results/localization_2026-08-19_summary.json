@@ -1,0 +1,201 @@
+{
+  "final_ekf_position_error_m": 0.001643167630947928,
+  "final_wheel_dead_reckoning_error_m": 0.5115526803339341,
+  "legs": 4,
+  "maximum_ekf_position_error_m": 0.0026359777041599255,
+  "maximum_wheel_dead_reckoning_error_m": 0.5115526803339341,
+  "passed": true,
+  "provenance": {
+    "control_parameters": {
+      "line_tracker": null
+    },
+    "git": {
+      "branch": "main",
+      "commit": "66020fa509f8f25120f2c1dac9c134e31acd0cc0",
+      "source_modified": false,
+      "traceable": true
+    },
+    "noise_sources": {
+      "total_station_sim": {
+        "drop_probability": 0.0,
+        "fixed_delay_s": 0.05,
+        "position_stddev_m": 0.001,
+        "publish_rate_hz": 12.0,
+        "random_seed": 42
+      },
+      "wall_imu_adapter": {
+        "orientation_stddev_rad": 0.00174532925,
+        "random_seed": 17
+      }
+    },
+    "recorded_utc": "2026-08-19T09:47:59.452928+00:00"
+  },
+  "records": [
+    {
+      "ekf_position_error_m": 0.0024042916721919265,
+      "ekf_wall_m": [
+        0.002275529299146962,
+        1.999640721023842,
+        0.05066560224436628
+      ],
+      "ekf_yaw_deg": -0.11634383170167603,
+      "label": "start",
+      "truth_displacement_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "truth_wall_m": [
+        -3.334133466947886e-05,
+        1.9995589525489739,
+        0.04999998316577159
+      ],
+      "truth_yaw_deg": 0.00031195074051055735,
+      "wheel_dead_reckoning_error_m": 0.0,
+      "wheel_displacement_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "wheel_odom_m": [
+        -8.86291900982023e-14,
+        -1.1075101019510233e-22,
+        0.0
+      ],
+      "wheel_yaw_deg": 1.3933804742223672e-07
+    },
+    {
+      "ekf_position_error_m": 0.0026359777041599255,
+      "ekf_wall_m": [
+        1.1984841434799414,
+        1.87427009360845,
+        0.04837431173574538
+      ],
+      "ekf_yaw_deg": 0.539447282687312,
+      "label": "right_plus_x",
+      "truth_displacement_m": [
+        1.2002940027327051,
+        -0.12421668573781997,
+        -1.3270889942518238e-10
+      ],
+      "truth_wall_m": [
+        1.2002606613980358,
+        1.875342266811154,
+        0.04999998303306269
+      ],
+      "truth_yaw_deg": 0.5461050725764474,
+      "wheel_dead_reckoning_error_m": 0.07455391188643877,
+      "wheel_displacement_m": [
+        1.1985245011758485,
+        -0.049683775947505476,
+        0.0
+      ],
+      "wheel_odom_m": [
+        1.19852450117576,
+        -0.049683775947505476,
+        0.0
+      ],
+      "wheel_yaw_deg": -5.058555593893517
+    },
+    {
+      "ekf_position_error_m": 0.0024872328059093933,
+      "ekf_wall_m": [
+        1.2005275670141204,
+        2.997275075450932,
+        0.04979981431921893
+      ],
+      "ekf_yaw_deg": 89.95016258021576,
+      "label": "up_plus_y",
+      "truth_displacement_m": [
+        1.2027741995053538,
+        0.9965991623502943,
+        2.1131186800360524e-09
+      ],
+      "truth_wall_m": [
+        1.2027408581706842,
+        2.996158114899268,
+        0.04999998527889027
+      ],
+      "truth_yaw_deg": 89.98631978404136,
+      "wheel_dead_reckoning_error_m": 0.22342947073575004,
+      "wheel_displacement_m": [
+        1.376553747714668,
+        1.137032053858744,
+        0.0
+      ],
+      "wheel_odom_m": [
+        1.3765537477145795,
+        1.137032053858744,
+        0.0
+      ],
+      "wheel_yaw_deg": 81.53351730458083
+    },
+    {
+      "ekf_position_error_m": 0.0025227308759887975,
+      "ekf_wall_m": [
+        0.002938443648855746,
+        2.833929098410158,
+        0.050350228455547215
+      ],
+      "ekf_yaw_deg": 179.37849010578202,
+      "label": "left_minus_x",
+      "truth_displacement_m": [
+        0.002178701437620334,
+        0.8367392211461273,
+        -1.3297007939172545e-10
+      ],
+      "truth_wall_m": [
+        0.002145360102950855,
+        2.836298173695101,
+        0.04999998303280151
+      ],
+      "truth_yaw_deg": 179.45970772610687,
+      "wheel_dead_reckoning_error_m": 0.41452594952666544,
+      "wheel_displacement_m": [
+        0.1793732796830801,
+        1.2114842601678564,
+        0.0
+      ],
+      "wheel_odom_m": [
+        0.17937327968299147,
+        1.2114842601678564,
+        0.0
+      ],
+      "wheel_yaw_deg": 179.212898350144
+    },
+    {
+      "ekf_position_error_m": 0.001643167630947928,
+      "ekf_wall_m": [
+        0.0008369235111058812,
+        1.553133670654051,
+        0.04964573116568666
+      ],
+      "ekf_yaw_deg": -90.03374995180877,
+      "label": "down_minus_y",
+      "truth_displacement_m": [
+        0.0014270881934755897,
+        -0.444920471322801,
+        -2.420153855098306e-09
+      ],
+      "truth_wall_m": [
+        0.0013937468588061108,
+        1.5546384812261729,
+        0.049999980745617734
+      ],
+      "truth_yaw_deg": -90.00273364040467,
+      "wheel_dead_reckoning_error_m": 0.5115526803339341,
+      "wheel_displacement_m": [
+        0.23031207340751755,
+        0.012570302682970585,
+        0.0
+      ],
+      "wheel_odom_m": [
+        0.23031207340742893,
+        0.012570302682970585,
+        0.0
+      ],
+      "wheel_yaw_deg": -87.50133671392415
+    }
+  ],
+  "wheel_to_ekf_maximum_ratio": 194.06563246974187
+}
