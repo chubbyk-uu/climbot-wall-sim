@@ -1,6 +1,7 @@
 # ROS 2 接口与配置索引
 
-本文档记录当前已实现接口，以及已经冻结但尚未实现的阶段 E 第一版任务与控制接口。
+本文档记录当前已实现接口。阶段 E 的任务与控制接口原先在这里以"已冻结但尚未实现"
+列出，现已全部实现并有归档证据，见 `docs/STATUS.md` 的阶段状态表。
 
 ## 启动入口
 
@@ -147,6 +148,53 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 `failure_reason`，因此最需要现场数据的失败运行不会丢数据。摘要还带 `provenance`
 段，记录代码提交、分支、`src` 树是否有未提交改动、评价器全部参数和执行任务的
 名义几何，满足 §12 与 §14.6 对可追溯性的要求。
+
+`provenance` 有四个子段，共用 `climbot_gazebo.provenance`：
+
+| 子段 | 内容 | 来源 |
+| --- | --- | --- |
+| `git` | `commit`、`branch`、`source_modified`、`traceable` | 工作树 |
+| `noise_sources` | `total_station_sim` 的种子、`stddev`、频率、延迟、丢包率；`wall_imu_adapter` 的种子和 `stddev` | **向节点的参数服务问回来** |
+| `control_parameters` | `line_tracker` 的 `tracking_mode`、`cruise_speed`、`turn_slip_per_degree_m` 和三个扫描偏移门限 | **向节点的参数服务问回来** |
+| `evaluator_parameters` | 评价器自己的全部参数 | 自身 |
+
+后两段是问回来的而不是复述配置文件，因为**传给一个没起来的节点的参数，看起来和用过
+的一模一样**——和 `source_modified` 曾经被写下却没人读是同一类错误。问不到时写
+`null`，例如定位对照实验不起跟踪器，它的 `control_parameters.line_tracker` 就是
+`null`，而不是抄一份配置值冒充。
+
+`turn_slip_per_degree_m` 在 `control_parameters` 里，是因为 `reservedTurnDrop()` 用它
+抬高起点进入的终点，它直接决定第一条扫描线的初始横轨误差；三个偏移门限是那个误差
+随后被判定的梯子。实测见 `results/README.md`「G-1 不同初始横轨误差」。
+
+评价器的 `case` 决定它执行什么任务：
+
+| `case` | 任务来源 | 用途 |
+| --- | --- | --- |
+| `planned_task` | 订阅规划器发布的 `/coverage/task` | 八工况覆盖回归 |
+| `vertical_rectangle` | 评价器自建 | 紧凑三段竖向用例 |
+| `short_top_trapezoid` | 评价器自建 | 紧凑五段梯形用例 |
+| `straight_line` | 评价器自建 | 单段直线与起点进入（§15.7、阶段 E 第 8 项、G-1） |
+
+`straight_line` 由四个参数确定，全部相对机器人**当前**位姿：
+
+| 参数 | 默认值 | 行为 |
+| --- | ---: | --- |
+| `straight_line_bearing_deg` | `0.0` | 线本身的走向，墙面系。`0` 沿墙，`90` 朝上 |
+| `straight_line_length_m` | `2.0` | 线长 |
+| `straight_line_start_offset_m` | `0.6` | 线首点离机器人多远 |
+| `straight_line_approach_bearing_deg` | `NaN` | 首点在机器人的哪个方位；`NaN` 表示沿线方向 |
+
+**方位与走向是两个角，不能合并。** 偏置沿线方向取时机器人一开始就朝着首点，起点进入
+等于没被考验——这是一个角度唯一能表达的情形。
+
+**偏置也不能为零。** 线首点正好压在机器人身上时，起点进入无处可去，入线弧只能从线
+本身里扣：`180°` 转向后实测扣掉 `383 mm`，即 `4 m` 线的 `8.6%` 永远盖不到。真实任务里
+规划器把进入放在第一条扫描线之前，这个偏置就是把那个结构还原。见
+`results/README.md`「§15.7 单段直线」的 `line1`。
+
+覆盖区取扫掠带，两端各内缩半个足迹——足迹中心最远只到端点，那半个足迹是任何正确执行
+都盖不到的。
 
 轨迹 CSV 由 `climbot_gazebo.trajectory_io` 写出，**文件名以 `.gz` 结尾就自动 gzip
 压缩**，数值一律取到 `1e-6`（米/弧度/秒下的微米、微弧度、微秒）。§14.3 的验收
@@ -849,6 +897,35 @@ float64 estimated_remaining_s
 
 `minimum_measured_fraction` 是这条逻辑的护栏：任一被测扫描线的实测长度低于名义
 长度的该比例即失败，不会把半条线的结果混进平均值。它就是发现上述入轨消耗的原因。
+
+## 定位对照参数（§14.5）
+
+`evaluate_localization.py` 驱动一次四方向闭环行驶，逐段用 Gazebo 真值同时测融合位姿
+误差和轮式航位推算误差。它自己发 `/control/cmd_vel`，**不需要跟踪器**。
+
+| 参数 | 默认值 | 行为 |
+| --- | ---: | --- |
+| `segment_duration_s` | `8.0 s` | 每个方向的行驶时长 |
+| `linear_speed_mps` | `0.15 m/s` | 行驶速度 |
+| `turn_tolerance_deg` | `1.0°` | 方向切换的对准容差 |
+| `turn_timeout_s` | `25.0 s` | 单次对准超时 |
+| `settle_duration_s` | `1.0 s` | 段末静止等待，让 `12 Hz` 的延迟观测追上 |
+| `heading_hold_gain` | `1.5` | 行驶中的航向保持增益 |
+| `summary_json` | 空 | 非空时落盘逐段记录与判定摘要 |
+
+摘要里两个误差的**口径不同,不能互换**：
+
+- `ekf_position_error_m` 是**绝对位置**误差。融合位姿估计的就是墙面位姿本身；
+- `wheel_dead_reckoning_error_m` 是**位移**误差——航位推算认为自己走了多远，对上真值
+  实际走了多远。
+
+轮式里程计的 `odom` 锚在出生点，首采样是 `(0, 0, 0)` 而真值在 `(0, 2.0)`，按绝对位置
+比会在它还没动的时候先记上 `2 m` 的出生点偏置。摘要保留 `start` 一条记录作为坐标系
+自检：**融合从真值上开始，轮式从零开始**，两者一眼可辨。
+
+`passed` 为真只要求最大轮式位移误差大于最大融合误差；`wheel_to_ekf_maximum_ratio`
+给出倍数，实测 `194 倍`，见 `results/README.md`「§14.5 融合定位相对轮式里程计的
+优势」。
 
 ## TF
 

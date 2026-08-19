@@ -65,7 +65,10 @@ Gazebo 真值接口。
 - `config/ekf_wall.yaml`：当前阶段的 `robot_localization` 配置；
 - `worlds/`、`models/`：Gazebo 世界与 SDF 模型；
 - `launch/climbot_wall.launch.py`：墙面仿真、桥接、TF、传感器适配和 EKF；
-- `scripts/`：全站仪模拟、协方差适配、标定和评估工具。
+- `scripts/`：全站仪模拟、协方差适配、标定和评估工具；
+- `climbot_gazebo/provenance.py`：所有评估工具共用的溯源采集——git 状态，以及**向
+  运行中的节点问回来**的噪声源与跟踪器参数。问回来而不是复述配置，是因为传给一个
+  没起来的节点的参数在摘要里看起来和用过的一模一样。
 
 Gazebo 真值只能用于模拟传感器生成、记录和独立评价，不得反馈给规划器或
 未来控制闭环。

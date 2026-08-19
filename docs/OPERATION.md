@@ -292,12 +292,60 @@ ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
 隔离：
 
 ```bash
-tools/run_coverage_regression.sh -j 4 -t <tag>          # 位置控制
-tools/run_coverage_regression.sh -j 4 -t <tag> -m time  # 时间点控制
+tools/run_coverage_regression.sh -j 4 -t <tag>              # 默认时间点控制
+tools/run_coverage_regression.sh -j 4 -t <tag> -m distance  # 位置控制
 ```
 
 结果写进 `results/coverage_<case>_<tag>_summary.json` 和同名轨迹 CSV，汇总表附在
 命令输出末尾。用途和有效性见 [results/README.md](../results/README.md)。
+
+**跑正式基线前先把 `src/` 提交干净。** 脚本开跑前检查工作树，非干净时自动给标签加
+`-dirty` 后缀并打印醒目告警。带 `-dirty` 的结果只能当过程记录。
+
+### 工况有两张表
+
+`CASES` 是八个覆盖工况，经规划器分解区域。`LINE_CASES` 是单段直线和起点进入工况，
+**不起规划器**——评价器自己发布两路点任务，被测的是跟踪器在一条线上的表现，而不是
+区域分解：
+
+```bash
+tools/run_coverage_regression.sh -t <tag> -j 5 \
+    line_horizontal line_horizontal_back line_vertical \
+    line_diagonal line_diagonal_back                       # §15.7 单段直线
+tools/run_coverage_regression.sh -t <tag> -j 4 \
+    entry_near entry_mid entry_far entry_side entry_behind \
+    entry_vertical_side entry_diagonal                     # 阶段 E 第 8 项起点进入
+tools/run_coverage_regression.sh -t <tag> -j 1 \
+    -o "turn_slip_per_degree_m=0.0" g1_cross               # G-1 初始横轨误差
+```
+
+### 扫描用的开关
+
+| 开关 | 含义 | 默认 |
+| --- | --- | --- |
+| `-s` / `-i` | 全站仪 / IMU 噪声种子 | `42` / `17` |
+| `-n` | 全站仪位置噪声 `stddev`，米 | `0.001` |
+| `-r` | 全站仪发布频率，Hz | `12.0` |
+| `-d` | 全站仪丢包率 | `0.0` |
+| `-o` | 覆盖一个 `line_tracker` 参数，`name=value`，可重复 | 无 |
+
+默认值全部照抄 launch 文件的，所以不带开关跑出来就是普通配置，每个扫描点与基线只差
+一个数。`-o` 是拷一份 `control.yaml` 打补丁放进运行目录，不动工作树。
+
+**实际生效的值不靠转述**：评价器启动后向 `total_station_sim`、`wall_imu_adapter` 和
+`line_tracker` 的参数服务问回来，写进摘要的 `provenance.noise_sources` 和
+`provenance.control_parameters`。传给一个没起来的节点的参数，在摘要里看得出来。
+
+### §14.5 定位对照
+
+不走回归脚本，单独跑一次四方向闭环，逐段用真值同时测融合位姿误差和轮式航位推算
+误差：
+
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py use_sim_time:=true headless:=true
+ros2 run climbot_gazebo evaluate_localization.py --ros-args -p use_sim_time:=true \
+    -p summary_json:=results/localization_<tag>_summary.json
+```
 
 ## 安全提示
 
