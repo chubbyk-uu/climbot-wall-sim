@@ -28,6 +28,7 @@ from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy
 from rclpy.qos import QoSProfile
@@ -61,6 +62,7 @@ class CoverageExecutionEvaluator(Node):
         ('case', 'short_top_trapezoid'),
         ('startup_timeout_s', 10.0),
         ('execution_timeout_s', 120.0),
+        ('execution_timeout_wall_factor', 4.0),
         ('maximum_cross_rms_m', 0.020),
         ('maximum_cross_error_m', 0.050),
         ('visible_excursion_m', 0.020),
@@ -348,16 +350,27 @@ class CoverageExecutionEvaluator(Node):
 
         try:
             root = capture(['rev-parse', '--show-toplevel'])
+            # Restricted to src so untracked notes and build outputs do not
+            # mark an otherwise reproducible run as modified.
+            modified = bool(capture(
+                ['-C', root, 'status', '--porcelain', '--', 'src']))
             return {
                 'commit': capture(['rev-parse', 'HEAD']),
                 'branch': capture(['rev-parse', '--abbrev-ref', 'HEAD']),
-                # Restricted to src so untracked notes and build outputs do not
-                # mark an otherwise reproducible run as modified.
-                'source_modified': bool(capture(
-                    ['-C', root, 'status', '--porcelain', '--', 'src'])),
+                'source_modified': modified,
+                # The question source_modified was added to answer, stated as
+                # the answer rather than as its input. A field nobody reads
+                # cannot stop an untraceable run from being filed as a
+                # baseline, and both of the archives named as baselines in
+                # results/README.md and PLAN_2026-08-18_time_control.md were
+                # produced on modified trees without anything saying so.
+                'traceable': not modified,
             }
         except (OSError, subprocess.SubprocessError):
-            return {'commit': None, 'branch': None, 'source_modified': None}
+            return {
+                'commit': None, 'branch': None, 'source_modified': None,
+                'traceable': False,
+            }
 
     def _provenance(self):
         """Record what a later reader needs to reproduce or discard this run."""
@@ -425,6 +438,19 @@ class CoverageExecutionEvaluator(Node):
             self.recording = False
             self.summary['trajectory_samples'] = len(self.trajectory)
             self.summary['provenance'] = self._provenance()
+            # Said out loud, at the end, where whoever is watching the run
+            # sees it. Buried three levels into a JSON file it went unread
+            # through eighteen archived tags.
+            git = self.summary['provenance']['git']
+            if git.get('traceable'):
+                self.get_logger().info(
+                    'traceable=true commit=%s' % (git['commit'] or '?')[:12])
+            else:
+                self.get_logger().warning(
+                    'traceable=FALSE commit=%s: the working tree under src '
+                    'differs from that commit, so this result cannot be tied '
+                    'to a source state and must not be filed as a baseline.'
+                    % (git.get('commit') or '?')[:12])
             self._write_csv(
                 str(self.get_parameter('trajectory_csv').value), self.trajectory)
             self._write_json(
@@ -460,14 +486,30 @@ class CoverageExecutionEvaluator(Node):
         self.summary['task'] = self._task_record(goal.task)
         self.recording = True
         result_future = handle.get_result_async()
-        deadline = time.monotonic() + float(
-            self.get_parameter('execution_timeout_s').value)
-        while not result_future.done() and time.monotonic() < deadline:
+        # Budgeted in the robot's own seconds, not the operator's. Every task
+        # this judges is timed against a simulated clock, and the regression
+        # script sets 900 s meaning 900 s of task time; measuring it on a wall
+        # clock instead makes the real budget depend on whatever real-time
+        # factor the machine happened to sustain, which moved the acceptance
+        # boundary between a quiet run and eight parallel lanes.
+        timeout = float(self.get_parameter('execution_timeout_s').value)
+        deadline = self.get_clock().now() + Duration(seconds=timeout)
+        # A stopped simulation clock never reaches that deadline, and this
+        # process would then wait for a robot that cannot move. The wall clock
+        # only backstops that case, so its factor is deliberately loose enough
+        # never to be the limit that fires on a merely slow machine.
+        wall_factor = float(self.get_parameter('execution_timeout_wall_factor').value)
+        wall_deadline = time.monotonic() + timeout * wall_factor
+        while not result_future.done() and time.monotonic() < wall_deadline:
+            if self.get_clock().now() >= deadline:
+                break
             rclpy.spin_once(self, timeout_sec=0.02)
         if not result_future.done():
             handle.cancel_goal_async()
             self.recording = False
-            raise RuntimeError('Coverage evaluation timed out.')
+            raise RuntimeError(
+                'Coverage evaluation timed out after %.0f s of task time '
+                '(wall backstop %.0f s).' % (timeout, timeout * wall_factor))
         self.recording = False
         wrapped = result_future.result()
         result = wrapped.result
@@ -569,10 +611,23 @@ class CoverageExecutionEvaluator(Node):
                          for value in spacing['scan_line_offsets_m'])))
         maximum_spacing_error = float(
             self.get_parameter('maximum_scan_line_spacing_error_m').value)
+        # NaN here is "undefined", not "bad": scan_line_spacing returns it when
+        # the task has fewer than two parallel scan lines, and spacing between
+        # adjacent lines is not a property such a task has. The endpoint check
+        # below treats its own NaN as a failure, and the difference is
+        # deliberate - there NaN means no segment was measured at all, which is
+        # a run that produced no evidence rather than a metric that does not
+        # apply. Both are spelled out because relying on NaN comparison
+        # semantics to encode the difference reads as an accident.
+        spacing_error = spacing['maximum_scan_line_spacing_error_m']
+        spacing_applies = not math.isnan(spacing_error)
         passed = passed and (
-            math.isnan(spacing['maximum_scan_line_spacing_error_m']) or
-            spacing['maximum_scan_line_spacing_error_m'] <=
-            maximum_spacing_error)
+            not spacing_applies or spacing_error <= maximum_spacing_error)
+        if not quality['segments']:
+            self.get_logger().error(
+                'No segment was measured, so no endpoint, heading or drift '
+                'evidence exists for this run.')
+            passed = False
         horizontal_drift = quality['maximum_horizontal_height_drift_m']
         self.get_logger().info(
             'endpoint_max=%.2f mm turn_end_max=%.2f deg '

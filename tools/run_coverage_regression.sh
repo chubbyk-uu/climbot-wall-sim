@@ -63,6 +63,27 @@ if [ ${#WANTED[@]} -eq 0 ]; then
   mapfile -t WANTED < <(awk 'NF {print $1}' <<<"$CASES")
 fi
 
+# A result is only evidence if it can be tied back to the source that produced
+# it. The evaluator has always recorded whether src was modified, but a boolean
+# three levels into a JSON file stopped nothing: two archives were promoted to
+# "current baseline" and "final regression" from modified trees. Putting it in
+# the tag puts it in every file name, where it cannot be missed and cannot be
+# filed as a baseline by accident. Only src counts - untracked notes, results
+# and build outputs do not make a run irreproducible.
+if [ -n "$(git -C "$WS" status --porcelain -- src 2>/dev/null)" ]; then
+  TAG="${TAG}-dirty"
+  cat >&2 <<WARN
+================================================================================
+  The working tree under src/ has uncommitted changes.
+
+  Results are being written with the tag "$TAG" and must not be filed as a
+  baseline: nothing records what the source actually was. Commit or stash
+  first if this run is meant to be citable.
+WARN
+  git -C "$WS" status --short -- src >&2
+  echo "================================================================================" >&2
+fi
+
 RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/coverage_regression_XXXXXX")
 QUEUE=$RUN_DIR/queue
 LOCK=$RUN_DIR/lock
