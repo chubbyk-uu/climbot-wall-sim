@@ -894,12 +894,15 @@ Gazebo WheelSlip 按配置的标称法向力缩放柔度，不随三个接触点
 数据确定后再冻结"。实测值离阈值都还有大余量（落点 `2.5 mm` 对 `30 mm`），按实测收紧
 还是维持建议值，需要产品侧决定。
 
-### 4. README 的 RViz 截图早于"运行中冻结规划控件"
+### 4. ~~README 的 RViz 截图早于"运行中冻结规划控件"~~ 已解决
 
-`docs/images/rviz_coverage_task.png` 摄于 `21:27`，冻结那次提交在 `21:30`，所以图里
+**2026-08-19 已重截替换。** 旧图摄于 `21:27`，冻结那次提交在 `21:30`，所以图里
 `State: Executing` 的同时 Region、Sweep、Replan、Clear points 仍是可点的，只有
-Algorithm 是灰的。与 `OPERATION.md` 里"运行期间五个控件全部置灰"矛盾。下次跑任务
-时在执行中重截一张替换即可。
+Algorithm 是灰的，与 `OPERATION.md` 里"运行期间五个控件全部置灰"矛盾。
+
+新图是执行中的梯形横向任务（`Timed trajectory`、`Segment 3 of 15`、进度 `21%`、
+`Schedule` 滞后 `+0.01 s`），五个控件连同 Start 全部置灰，只有 Cancel / Stop 可点，
+与文档一致。
 
 ### 5. 15 个旧归档标签不可追溯，且无法补救
 
