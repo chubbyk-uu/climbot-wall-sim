@@ -52,6 +52,36 @@ METRICS = (
 )
 
 
+#: Maximum range a group of repeats may show, per metric, in summary units.
+#: Derived from the acceptance thresholds the same metrics are judged against
+#: rather than from measured spread, so this is a bound the runs have to meet
+#: and not a restatement of what they happened to do: a quarter of the
+#: threshold, which leaves a regression three quarters of the budget before it
+#: reaches the criterion itself. Metrics with no acceptance threshold get a
+#: bound in the same spirit - a few percent of the quantity. The spread these
+#: were measured against is in results/README.md.
+DEFAULT_TOLERANCES = {
+    # Acceptance: >= 0.95. A ratio that varies at all across repeats is worth
+    # seeing, so this one is far tighter than a quarter of its own budget.
+    'coverage/ratio': 0.005,
+    # Acceptance: <= 0.030 m.
+    'execution_quality/maximum_endpoint_error_m': 0.0075,
+    # Acceptance: <= 0.030 m.
+    'execution_quality/maximum_horizontal_height_drift_m': 0.0075,
+    # Acceptance: <= 2.0 deg.
+    'execution_quality/maximum_turn_end_heading_error_deg': 0.5,
+    # Acceptance: <= 0.020 m.
+    'scan_line_spacing/maximum_scan_line_spacing_error_m': 0.005,
+    # No acceptance threshold on these three; bounded as a fraction of the
+    # quantity itself, at the scale the schedule is planned and judged on.
+    'execution_quality/maximum_heading_compensation_deg': 0.5,
+    'execution_quality/actual_to_planned_length_ratio': 0.01,
+    'elapsed_time_s': 5.0,
+    'schedule/schedule_lag_max_s': 0.020,
+    'schedule/schedule_lag_min_s': 0.020,
+}
+
+
 def lookup(summary, path):
     """Return a slash-separated field, or None where any level is missing."""
     node = summary
@@ -195,10 +225,15 @@ def main():
         help='a summary from a different seed, reported alongside the spread')
     parser.add_argument(
         '--tolerance', action='append', default=[], metavar='PATH=VALUE',
-        help='maximum allowed range for one metric, in the summary unit')
+        help='override the allowed range for one metric, in the summary unit')
+    parser.add_argument(
+        '--no-default-tolerances', action='store_true',
+        help='report the spread without judging it')
     arguments = parser.parse_args()
 
-    tolerances = {}
+    tolerances = dict(DEFAULT_TOLERANCES)
+    if arguments.no_default_tolerances:
+        tolerances = {}
     for entry in arguments.tolerance:
         path, _, value = entry.partition('=')
         tolerances[path] = float(value)
