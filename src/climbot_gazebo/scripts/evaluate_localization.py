@@ -63,6 +63,8 @@ class LocalizationEvaluator(Node):
         self._wheel_odom = None
         self._filtered = None
         self._records = []
+        self._origin_truth = None
+        self._origin_wheel = None
         self._command = self.create_publisher(Twist, '/control/cmd_vel', 10)
         self.create_subscription(
             Odometry, '/model/climbot/ground_truth', self._truth_callback, 10)
@@ -154,13 +156,22 @@ class LocalizationEvaluator(Node):
         estimate = self._filtered.pose.pose.position
         estimate_wall = (estimate.x, estimate.y, estimate.z)
         error = math.dist(truth_wall, estimate_wall)
-        # Wheel odometry publishes in odom, the same frame the EKF and the
-        # controller work in, so it is comparable to truth in wall coordinates
-        # without conversion. The start record is what proves that: if the two
-        # frames disagreed it would not begin near zero.
+        # Wheel odometry is anchored at the spawn pose, not at the wall origin:
+        # its first sample is (0, 0, 0) while truth is at the spawn point. So
+        # the comparable quantity is displacement, not position - how far dead
+        # reckoning thinks it has travelled against how far it really has. The
+        # EKF needs no such treatment because it estimates the wall pose
+        # itself, which the start record is here to show: it begins on truth.
         wheel = self._wheel_odom.pose.pose.position
         wheel_wall = (wheel.x, wheel.y, wheel.z)
-        wheel_error = math.dist(truth_wall, wheel_wall)
+        if self._origin_truth is None:
+            self._origin_truth = truth_wall
+            self._origin_wheel = wheel_wall
+        truth_moved = tuple(
+            value - origin for value, origin in zip(truth_wall, self._origin_truth))
+        wheel_moved = tuple(
+            value - origin for value, origin in zip(wheel_wall, self._origin_wheel))
+        wheel_error = math.dist(truth_moved, wheel_moved)
         truth_yaw = math.degrees(yaw_from_quaternion(
             self._wall_frame.orientation_from_world(
                 quaternion_tuple(self._truth.pose.pose.orientation))))
@@ -171,9 +182,11 @@ class LocalizationEvaluator(Node):
             'label': label,
             'truth_wall_m': list(truth_wall),
             'ekf_wall_m': list(estimate_wall),
-            'wheel_wall_m': list(wheel_wall),
+            'wheel_odom_m': list(wheel_wall),
+            'truth_displacement_m': list(truth_moved),
+            'wheel_displacement_m': list(wheel_moved),
             'ekf_position_error_m': error,
-            'wheel_position_error_m': wheel_error,
+            'wheel_dead_reckoning_error_m': wheel_error,
             'truth_yaw_deg': truth_yaw,
             'ekf_yaw_deg': ekf_yaw,
             'wheel_yaw_deg': wheel_yaw,
@@ -181,10 +194,10 @@ class LocalizationEvaluator(Node):
         self.get_logger().info(
             '%s: truth_wall=(%.3f, %.3f, %.3f) '
             'ekf=(%.3f, %.3f, %.3f) error=%.4f m; '
-            'wheel=(%.3f, %.3f, %.3f) error=%.4f m; '
+            'wheel_dead_reckoning=(%.3f, %.3f, %.3f) error=%.4f m; '
             'yaw_deg truth=%.2f ekf=%.2f wheel=%.2f' % (
                 label, *truth_wall, *estimate_wall, error,
-                *wheel_wall, wheel_error,
+                *wheel_moved, wheel_error,
                 truth_yaw, ekf_yaw, wheel_yaw))
 
     def _summarize(self):
@@ -194,14 +207,14 @@ class LocalizationEvaluator(Node):
         # about, so the comparison is over the four driven legs.
         driven = [record for record in self._records if record['label'] != 'start']
         ekf = [record['ekf_position_error_m'] for record in driven]
-        wheel = [record['wheel_position_error_m'] for record in driven]
+        wheel = [record['wheel_dead_reckoning_error_m'] for record in driven]
         summary = {
             'records': self._records,
             'legs': len(driven),
             'maximum_ekf_position_error_m': max(ekf) if ekf else None,
-            'maximum_wheel_position_error_m': max(wheel) if wheel else None,
+            'maximum_wheel_dead_reckoning_error_m': max(wheel) if wheel else None,
             'final_ekf_position_error_m': ekf[-1] if ekf else None,
-            'final_wheel_position_error_m': wheel[-1] if wheel else None,
+            'final_wheel_dead_reckoning_error_m': wheel[-1] if wheel else None,
             'provenance': {
                 'recorded_utc': datetime.now(timezone.utc).isoformat(),
                 'git': git_state(),
