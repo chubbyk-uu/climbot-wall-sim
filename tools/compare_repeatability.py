@@ -112,6 +112,31 @@ def seeds(summary):
     return found
 
 
+def noise_settings(summary):
+    """Flatten every recorded noise-source parameter into one dict."""
+    sources = (summary.get('provenance') or {}).get('noise_sources') or {}
+    flat = {}
+    for name in sorted(sources):
+        values = sources[name]
+        if values is None:
+            flat[name] = 'unknown'
+            continue
+        for key in sorted(values):
+            flat['%s.%s' % (name, key)] = values[key]
+    return flat
+
+
+def settings_difference(group, control):
+    """Name only the noise settings the control run does not share."""
+    if not group or not control:
+        return 'not recorded'
+    keys = sorted(set(group) | set(control))
+    changed = [
+        '%s %s -> %s' % (key, group.get(key, '-'), control.get(key, '-'))
+        for key in keys if group.get(key) != control.get(key)]
+    return ', '.join(changed) if changed else 'nothing (identical settings)'
+
+
 def spread(values):
     """Return the mean, the sample standard deviation, and the range."""
     count = len(values)
@@ -184,6 +209,12 @@ def compare(runs, tolerances, control):
     report = []
     ok = check_preconditions(runs, report)
     report.append('')
+    if control:
+        # What the comparison run actually differed in, read back from the
+        # nodes rather than assumed: a sweep point that never reached them
+        # would otherwise look like a setting that changed nothing.
+        report.append('  against   %s' % settings_difference(
+            noise_settings(runs[0][1]), noise_settings(control)))
     header = '  %-30s %9s %9s %9s %9s' % (
         'metric', 'mean', 'sd', 'range', 'tolerance')
     if control:

@@ -78,6 +78,13 @@ class CoverageExecutionEvaluator(Node):
         ('coverage_grid_resolution_m', 0.01),
         ('trajectory_csv', ''),
         ('summary_json', ''),
+        # PROJECT_GUIDE 15.7 asks for horizontal, vertical, and diagonal single
+        # segments. One parameterised case rather than three fixed ones,
+        # because what separates them is a bearing and nothing else, and a
+        # bearing nobody can vary would leave 15.7 answered only at the three
+        # angles somebody thought of.
+        ('straight_line_bearing_deg', 0.0),
+        ('straight_line_length_m', 2.0),
     )
 
     #: The nodes whose randomness decides how much of a run repeats, and the
@@ -280,6 +287,47 @@ class CoverageExecutionEvaluator(Node):
         task.detection_length = 0.1
         return task
 
+    def _straight_line(self, x, y):
+        """One scan segment from here, at a bearing in the wall frame."""
+        bearing = math.radians(
+            float(self.get_parameter('straight_line_bearing_deg').value))
+        length = float(self.get_parameter('straight_line_length_m').value)
+        if not length > 0.0 or not math.isfinite(length):
+            raise ValueError('straight_line_length_m must be positive.')
+        along = (math.cos(bearing), math.sin(bearing))
+        normal = (-along[1], along[0])
+
+        task = CoverageTask()
+        task.task_id = 'evaluation-straight-line'
+        # Only decides how the task is labelled: which metrics apply is decided
+        # per segment from the reference heading the run actually had, so a
+        # diagonal is not forced into one of the two sweeps.
+        task.sweep_direction = (
+            CoverageTask.SWEEP_VERTICAL
+            if abs(along[1]) > abs(along[0]) else CoverageTask.SWEEP_HORIZONTAL)
+        task.waypoints = [
+            make_pose(x, y, bearing),
+            make_pose(x + along[0] * length, y + along[1] * length, bearing)]
+        task.segment_types = [CoverageTask.SEGMENT_SCAN]
+        task.detection_width = 0.5
+        task.detection_length = 0.1
+
+        # The strip the footprint sweeps, pulled in by half a footprint at each
+        # end. The footprint centre only ever reaches the endpoints, so the
+        # last half footprint of the nominal strip is outside what any correct
+        # run could cover; leaving it in would charge the tracker for geometry
+        # rather than for tracking.
+        inset = task.detection_length / 2.0
+        half = task.detection_width / 2.0
+        task.coverage_region.points = [
+            make_point(
+                x + along[0] * distance + normal[0] * half * side,
+                y + along[1] * distance + normal[1] * half * side)
+            for distance, side in (
+                (inset, 1.0), (length - inset, 1.0),
+                (length - inset, -1.0), (inset, -1.0))]
+        return task
+
     def _short_top_trapezoid(self, x, y):
         # Isosceles trapezoid: bottom 1.2 m, top 0.4 m, height 0.8 m.
         points = [
@@ -321,9 +369,12 @@ class CoverageExecutionEvaluator(Node):
             task = self._vertical_rectangle(position.x, position.y)
         elif case_name == 'short_top_trapezoid':
             task = self._short_top_trapezoid(position.x, position.y)
+        elif case_name == 'straight_line':
+            task = self._straight_line(position.x, position.y)
         else:
             raise ValueError(
-                'case must be planned_task, vertical_rectangle, or short_top_trapezoid')
+                'case must be planned_task, vertical_rectangle, '
+                'short_top_trapezoid, or straight_line')
         task.header.frame_id = 'odom'
         task.header.stamp = self.get_clock().now().to_msg()
         task.revision = 1

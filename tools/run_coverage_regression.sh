@@ -15,12 +15,16 @@
 #
 # Usage:
 #   tools/run_coverage_regression.sh [-j lanes] [-t tag] [-m mode] [-s seed]
-#                                    [-i seed] [-k] [case ...]
+#                                    [-i seed] [-n stddev] [-r rate] [-d drop]
+#                                    [-k] [case ...]
 #     -j  lanes to run in parallel (default 4)
 #     -t  tag for the output file names (default today, YYYY-MM-DD)
 #     -m  tracking mode: time (default) or distance
 #     -s  total-station noise seed (default 42, the launch default)
 #     -i  IMU attitude noise seed (default 17, the launch default)
+#     -n  total-station position noise stddev in m (default 0.001)
+#     -r  total-station publish rate in Hz (default 12)
+#     -d  total-station dropout probability, 0 to 1 (default 0)
 #     -k  keep trajectories uncompressed (default: gzip them)
 #     case names default to all eight; see CASES below
 #
@@ -40,6 +44,29 @@ WS=$(dirname "$SCRIPT_DIR")
 # the order, but starting the two 400-second cases first stops one of them
 # landing last and stranding three idle lanes. The trailing comment on each
 # line is roughly how long that case takes in simulated seconds.
+# Single-segment straight lines (PROJECT_GUIDE 15.7). These skip the planner:
+# the evaluator builds a two-waypoint task itself, so what is under test is the
+# tracker on one line rather than the decomposition of a region. The bearing is
+# in the wall frame - 0 along the wall, 90 straight up - and the length is in
+# metres.
+#
+# 15.7 asks for horizontal, vertical, and diagonal. The two mirrored bearings
+# are here because a set that only ever drives away from the spawn point cannot
+# see a sign error in the gravity feedforward: the correction that is right
+# going one way is exactly wrong going the other, and both runs cost 40
+# seconds. Every line starts from the spawn pose at (0, 2) and has to stay
+# inside the motion region, which is why none of them run downhill - 4 m down
+# leaves it. Downward motion is 15.5's question, not this one.
+#
+# name  bearing_deg  length_m
+LINE_CASES="
+line_horizontal        0.0  4.0
+line_horizontal_back 180.0  4.0
+line_vertical         90.0  4.0
+line_diagonal         45.0  4.0
+line_diagonal_back   135.0  4.0
+"
+
 CASES="
 bigV                  coverage_vertical_large.yaml              rectangle vertical    # 409
 bigTV                 coverage_trapezoid_vertical_large.yaml    trapezoid vertical    # 398
@@ -56,16 +83,24 @@ TAG=$(date +%F)
 MODE=time
 TOTAL_STATION_SEED=42
 IMU_SEED=17
+# Defaults repeat climbot_wall.launch.py's, so an unswept run is the ordinary
+# configuration and a sweep point differs from the baseline in one number.
+TOTAL_STATION_STDDEV=0.001
+TOTAL_STATION_RATE=12.0
+TOTAL_STATION_DROP=0.0
 COMPRESS=1
-while getopts 'j:t:m:s:i:kh' opt; do
+while getopts 'j:t:m:s:i:n:r:d:kh' opt; do
   case $opt in
     j) LANES=$OPTARG ;;
     t) TAG=$OPTARG ;;
     m) MODE=$OPTARG ;;
     s) TOTAL_STATION_SEED=$OPTARG ;;
     i) IMU_SEED=$OPTARG ;;
+    n) TOTAL_STATION_STDDEV=$OPTARG ;;
+    r) TOTAL_STATION_RATE=$OPTARG ;;
+    d) TOTAL_STATION_DROP=$OPTARG ;;
     k) COMPRESS=0 ;;
-    h) sed -n '2,31p' "$0"; exit 0 ;;
+    h) sed -n '2,36p' "$0"; exit 0 ;;
     *) exit 2 ;;
   esac
 done
@@ -101,10 +136,18 @@ RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/coverage_regression_XXXXXX")
 QUEUE=$RUN_DIR/queue
 LOCK=$RUN_DIR/lock
 : > "$LOCK"
+# Each queue entry carries its kind, so one lane function serves both tables
+# without having to guess which one a name came from.
 for name in "${WANTED[@]}"; do
-  line=$(awk -v n="$name" '$1 == n {print; found = 1} END {exit !found}' <<<"$CASES") || {
-    echo "unknown case: $name" >&2; exit 2; }
-  echo "$line"
+  if line=$(awk -v n="$name" '$1 == n {print; found = 1} END {exit !found}' \
+      <<<"$CASES"); then
+    echo "coverage $line"
+  elif line=$(awk -v n="$name" '$1 == n {print; found = 1} END {exit !found}' \
+      <<<"$LINE_CASES"); then
+    echo "line $line"
+  else
+    echo "unknown case: $name" >&2; exit 2
+  fi
 done > "$QUEUE"
 
 echo "workspace : $WS"
@@ -112,6 +155,7 @@ echo "lanes     : $LANES"
 echo "tag       : $TAG"
 echo "mode      : $MODE"
 echo "seeds     : total_station=$TOTAL_STATION_SEED imu=$IMU_SEED"
+echo "station   : stddev=${TOTAL_STATION_STDDEV} m rate=${TOTAL_STATION_RATE} Hz drop=${TOTAL_STATION_DROP}"
 echo "cases     : $(wc -l < "$QUEUE")"
 echo "logs      : $RUN_DIR"
 echo
@@ -157,10 +201,15 @@ run_lane() {
   cd "$WS" || return 1
 
   while :; do
-    local line name cfg region sweep
+    local line kind name cfg region sweep bearing length
     line=$(pop_case)
     [ -n "$line" ] || break
-    read -r name cfg region sweep _ <<<"$line"
+    read -r kind name cfg region sweep _ <<<"$line"
+    if [ "$kind" = "line" ]; then
+      # The line table's columns sit where cfg and region do in the other one.
+      bearing=$cfg
+      length=$region
+    fi
 
     local log=$RUN_DIR/$name
     mkdir -p "$log"
@@ -172,6 +221,9 @@ run_lane() {
     setsid ros2 launch climbot_gazebo climbot_wall.launch.py \
       use_sim_time:=true headless:=true \
       total_station_seed:="$TOTAL_STATION_SEED" imu_seed:="$IMU_SEED" \
+      total_station_stddev_m:="$TOTAL_STATION_STDDEV" \
+      total_station_rate_hz:="$TOTAL_STATION_RATE" \
+      total_station_drop_probability:="$TOTAL_STATION_DROP" \
       > "$log/sim.log" 2>&1 &
     disown
     local deadline=$((SECONDS + 180)) up=0
@@ -186,20 +238,32 @@ run_lane() {
       lane_teardown "$lane"; continue
     fi
 
-    setsid ros2 launch climbot_coverage coverage_planner.launch.py \
-      use_sim_time:=true rviz:=false \
-      config_file:="$WS/src/climbot_coverage/config/$cfg" \
-      input_mode:=parameters region_type:="$region" sweep_direction:="$sweep" \
-      > "$log/planner.log" 2>&1 &
-    disown
-    sleep 10
+    # A line case has nothing for the planner to decompose, so it does not
+    # run one: the evaluator publishes the two-waypoint task itself.
+    if [ "$kind" = "coverage" ]; then
+      setsid ros2 launch climbot_coverage coverage_planner.launch.py \
+        use_sim_time:=true rviz:=false \
+        config_file:="$WS/src/climbot_coverage/config/$cfg" \
+        input_mode:=parameters region_type:="$region" sweep_direction:="$sweep" \
+        > "$log/planner.log" 2>&1 &
+      disown
+      sleep 10
+    fi
     setsid ros2 launch climbot_control coverage_executor.launch.py \
       use_sim_time:=true tracking_mode:="$MODE" > "$log/executor.log" 2>&1 &
     disown
     sleep 10
 
+    local case_arguments
+    if [ "$kind" = "line" ]; then
+      case_arguments="-p case:=straight_line \
+        -p straight_line_bearing_deg:=$bearing -p straight_line_length_m:=$length"
+    else
+      case_arguments="-p case:=planned_task"
+    fi
+    # shellcheck disable=SC2086
     timeout 1500 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
-      -p use_sim_time:=true -p case:=planned_task \
+      -p use_sim_time:=true $case_arguments \
       -p startup_timeout_s:=90.0 -p execution_timeout_s:=900.0 \
       -p trajectory_csv:="results/coverage_${name}_${TAG}_trajectory.csv" \
       -p summary_json:="results/coverage_${name}_${TAG}_summary.json" \
