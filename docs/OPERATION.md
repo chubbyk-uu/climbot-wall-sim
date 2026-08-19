@@ -197,27 +197,36 @@ ros2 launch climbot_bringup coverage_mission.launch.py region_type:=trapezoid
 
 | 选项 | `tracking_mode` | 直线段怎么走 |
 | --- | --- | --- |
+| **Timed trajectory**（默认） | `time` | 按时间参数化的梯形/三角形速度曲线行驶：前馈该时刻的曲线速度与加速度，反馈该时刻应到位置与实际位置之差 |
 | **Position only** | `distance` | 恒定巡航速度前进，终点靠 `sqrt(2·a·剩余距离)` 距离制动收尾。控制器不知道"现在应该走到哪儿" |
-| **Timed trajectory** | `time` | 按时间参数化的梯形/三角形速度曲线行驶：前馈该时刻的曲线速度与加速度，反馈该时刻应到位置与实际位置之差 |
 
-两者在全部验收指标上等价（落点、道间距、转向落点航向、覆盖率），`Timed
-trajectory` 额外给出可用的任务时长预测。原地转向段两种模式相同——它本来就是时间
-参数化的。实测数据见
-[PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md) 第 8 节。
+两者在落点、道间距、转向落点航向和覆盖率上**没有系统性差异**——2026-08-19 在同一
+提交的同一棵干净工作树上各跑了八工况，只差这一个参数，单工况互有胜负，差值都落在
+运行间散布内。分得开的只有任务时长预测：
+
+| | `act/plan` 区间 | sd | 最大偏离 | 滞后是否被测量 |
+| --- | --- | ---: | ---: | --- |
+| `time` | `0.988~1.020` | 0.92% | 1.96% | 是，`0.03~0.05 s` |
+| `distance` | `0.968~1.016` | 1.43% | 3.18% | 否 |
+
+`time` 是默认值，理由是后一列而不是前几列：它逐拍上报自己与计划的偏差，落后了会
+自己说出来；`distance` 只能等任务结束后对账。原地转向段两种模式相同——它本来就是
+时间参数化的。实测数据见 [`results/README.md`](../results/README.md)「两种算法的
+对照」和 [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md) 第 8 节。
 
 **任务运行中不能切换**，执行器会拒绝并说明原因：控制律换了而时间表还是按旧律排
 的，那是危险的。面板在运行期间已经把这个框置灰。
 
-启动时指定：
+启动时指定（默认已是 `time`，这行是切回位置控制用的）：
 
 ```bash
-ros2 launch climbot_bringup coverage_mission.launch.py tracking_mode:=time
+ros2 launch climbot_bringup coverage_mission.launch.py tracking_mode:=distance
 ```
 
 命令行等价（同样只在没有任务运行时接受）：
 
 ```bash
-ros2 param set /line_tracker tracking_mode time
+ros2 param set /line_tracker tracking_mode distance
 ros2 param get /line_tracker tracking_mode
 ```
 

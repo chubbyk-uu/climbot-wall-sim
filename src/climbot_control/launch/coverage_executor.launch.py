@@ -26,7 +26,7 @@ def generate_launch_description():
         # compensation, without reporting anything. A distinct name plus the
         # explicit pass below makes that collision impossible.
         DeclareLaunchArgument('control_config_file', default_value=default_config),
-        DeclareLaunchArgument('tracking_mode', default_value='distance'),
+        DeclareLaunchArgument('tracking_mode', default_value='time'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(tracker_launch),
             launch_arguments={

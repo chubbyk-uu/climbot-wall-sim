@@ -210,8 +210,12 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   // reflect which node happens to own each.
   algorithm_box_ = new QComboBox();
   algorithm_box_->setObjectName("algorithm_box");
-  algorithm_box_->addItem(tr("Position only"), QStringLiteral("distance"));
+  // Timed first, because it is the default the executor comes up in and the
+  // box shows item zero for the moment before the executor answers with what
+  // is actually in force. It is disabled until then, so this is what an
+  // operator reads while it is greyed out.
   algorithm_box_->addItem(tr("Timed trajectory"), QStringLiteral("time"));
+  algorithm_box_->addItem(tr("Position only"), QStringLiteral("distance"));
   selection_label_ = makeValue("selection_value");
 
   replan_button_ = new QPushButton(tr("Replan"));

@@ -197,6 +197,15 @@ TEST(CoveragePanelConfig, theBoxesCarryValuesThePlannerValidates)
   EXPECT_GE(sweep->findData("horizontal"), 0);
   EXPECT_GE(sweep->findData("vertical"), 0);
   EXPECT_EQ(sweep->count(), 2);
+  auto * algorithm = box(panel, "algorithm_box");
+  ASSERT_NE(algorithm, nullptr);
+  EXPECT_GE(algorithm->findData("time"), 0);
+  EXPECT_GE(algorithm->findData("distance"), 0);
+  EXPECT_EQ(algorithm->count(), 2);
+  // Item zero is what shows while the box is still disabled, before the
+  // executor has answered with the mode actually in force, so it has to be
+  // the mode the executor defaults to.
+  EXPECT_EQ(algorithm->itemData(0).toString(), QStringLiteral("time"));
 }
 
 TEST(CoveragePanelConfig, anUnknownValueLeavesTheBoxAloneRatherThanClearingIt)

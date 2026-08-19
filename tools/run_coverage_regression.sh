@@ -17,7 +17,7 @@
 #   tools/run_coverage_regression.sh [-j lanes] [-t tag] [-m mode] [-k] [case ...]
 #     -j  lanes to run in parallel (default 4)
 #     -t  tag for the output file names (default today, YYYY-MM-DD)
-#     -m  tracking mode: distance (default) or time
+#     -m  tracking mode: time (default) or distance
 #     -k  keep trajectories uncompressed (default: gzip them)
 #     case names default to all eight; see CASES below
 set -u
@@ -44,7 +44,7 @@ horizontal            coverage_horizontal_demo.yaml             rectangle horizo
 
 LANES=4
 TAG=$(date +%F)
-MODE=distance
+MODE=time
 COMPRESS=1
 while getopts 'j:t:m:kh' opt; do
   case $opt in

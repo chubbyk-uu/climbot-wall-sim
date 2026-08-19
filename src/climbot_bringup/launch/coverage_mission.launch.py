@@ -93,7 +93,7 @@ def generate_launch_description():
         DeclareLaunchArgument('sweep_direction', default_value='horizontal'),
         DeclareLaunchArgument(
             'tracking_mode',
-            default_value='distance',
+            default_value='time',
             description='Straight-line control: distance or time. The panel '
                         'can also switch it while no task is running.',
         ),

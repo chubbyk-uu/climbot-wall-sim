@@ -38,7 +38,7 @@
 | `control_config_file` | `control.yaml` | 跟踪器参数 |
 | `region_type` | `rectangle` | `rectangle` 需两点，`trapezoid` 需三点 |
 | `sweep_direction` | `horizontal` | 扫描方向 |
-| `tracking_mode` | `distance` | 直线段控制律：`distance` 或 `time` |
+| `tracking_mode` | `time` | 直线段控制律：`time` 或 `distance` |
 
 launch 参数只给这三项定初值。`region_type` 和 `sweep_direction` 运行中改用
 `/coverage/configure` 或面板上的下拉框，见下面的"运行时构型"；规划器的其余参数
@@ -267,7 +267,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 
 | 节点 | 参数 | 默认值 | 行为 |
 | --- | --- | ---: | --- |
-| `line_tracker` | `tracking_mode` | `distance` | `distance` 按剩余距离制动；`time` 按时间参数化速度曲线行驶。非法值拒绝。**不在 `control.yaml` 里**：它是 launch 参数兼运行时可写参数，两处都写会静默互相覆盖 |
+| `line_tracker` | `tracking_mode` | `time` | `time` 按时间参数化速度曲线行驶；`distance` 按剩余距离制动。非法值拒绝。**不在 `control.yaml` 里**：它是 launch 参数兼运行时可写参数，两处都写会静默互相覆盖 |
 | `line_tracker` | `time_profile_acceleration` | `0.20 m/s²` | 时间曲线的加速段斜率，与额定线加速度相同 |
 | `line_tracker` | `time_profile_deceleration` | `0.20 m/s²` | 时间曲线的减速段斜率，对称 |
 | `line_tracker` | `time_speed_lag_s` | `0.08 s` | 执行机构速度环滞后，作为加速度前馈的系数：`v_cmd += τ·v̇`。实测 `0.0799 s`（sd `0.0193`，124 段） |

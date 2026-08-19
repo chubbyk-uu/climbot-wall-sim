@@ -42,7 +42,7 @@ def generate_launch_description():
         # Deliberately an argument and not a config entry: an A/B run switches
         # it per launch, and a value in control.yaml would be overridden here
         # without saying so.
-        DeclareLaunchArgument('tracking_mode', default_value='distance'),
+        DeclareLaunchArgument('tracking_mode', default_value='time'),
         DeclareLaunchArgument('config_file', default_value=default_config),
         tracker,
     ])

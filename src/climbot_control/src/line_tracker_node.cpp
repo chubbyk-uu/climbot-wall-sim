@@ -139,13 +139,13 @@ public:
     // rated point; they are what makes a late robot able to catch up instead
     // of only able to observe that it is late.
     const auto tracking_mode = parseTrackingMode(
-      declare_parameter("tracking_mode", std::string("distance")));
+      declare_parameter("tracking_mode", std::string("time")));
     if (!tracking_mode.has_value()) {
       throw std::invalid_argument("tracking_mode must be \"distance\" or \"time\".");
     }
     tracking_mode_ = tracking_mode.value();
     time_speed_lag_ = declare_parameter("time_speed_lag_s", 0.08);
-    time_along_gain_ = declare_parameter("time_along_gain", 1.0);
+    time_along_gain_ = declare_parameter("time_along_gain", 2.5);
     time_along_integral_gain_ = declare_parameter("time_along_integral_gain", 0.0);
     time_along_integral_limit_ = declare_parameter("time_along_integral_limit_m_s", 0.05);
     time_profile_acceleration_ = declare_parameter("time_profile_acceleration", 0.20);
@@ -1627,7 +1627,7 @@ private:
   bool have_pose_{false};
   TrackingMode tracking_mode_{TrackingMode::DISTANCE};
   double time_speed_lag_{0.08};
-  double time_along_gain_{1.0};
+  double time_along_gain_{2.5};
   double time_along_integral_gain_{0.0};
   double time_along_integral_limit_{0.05};
   double time_along_integral_{0.0};
