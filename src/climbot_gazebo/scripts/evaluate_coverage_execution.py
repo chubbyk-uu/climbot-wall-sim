@@ -93,6 +93,13 @@ class CoverageExecutionEvaluator(Node):
         # task never asks for that; the planner puts the approach before the
         # first scan line. This restores that structure.
         ('straight_line_start_offset_m', 0.6),
+        # Which way the start point lies from the robot, as opposed to which
+        # way the line then runs. The two are separate because a start approach
+        # is only exercised when they differ: an offset along the line bearing
+        # puts the robot already pointing at the start, which is the easy case
+        # and the only one a single angle can express. NaN means "along the
+        # line", so a case that does not set it keeps the simple geometry.
+        ('straight_line_approach_bearing_deg', float('nan')),
     )
 
     #: The nodes whose randomness decides how much of a run repeats, and the
@@ -310,7 +317,12 @@ class CoverageExecutionEvaluator(Node):
         if offset < 0.0 or not math.isfinite(offset):
             raise ValueError(
                 'straight_line_start_offset_m must be zero or positive.')
-        start = (x + along[0] * offset, y + along[1] * offset)
+        approach_deg = float(
+            self.get_parameter('straight_line_approach_bearing_deg').value)
+        approach = bearing if math.isnan(approach_deg) else math.radians(
+            approach_deg)
+        start = (
+            x + math.cos(approach) * offset, y + math.sin(approach) * offset)
 
         task = CoverageTask()
         task.task_id = 'evaluation-straight-line'

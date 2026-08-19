@@ -59,20 +59,35 @@ WS=$(dirname "$SCRIPT_DIR")
 # leaves it. Downward motion is 15.5's question, not this one.
 #
 # name  bearing_deg  length_m
+# The last two columns are the start approach: how far the line's first
+# waypoint sits from the robot, and in which direction. Direction is separate
+# from the line's own bearing because an offset taken along the line leaves the
+# robot already pointing at the start, which is the easy case and the only one
+# a single angle can express. The offset also has to be there at all: a line
+# beginning exactly where the robot is leaves the approach nowhere to happen,
+# and the entry arc comes out of the line instead - a measured 383 mm after a
+# 180 degree turn (results/README.md, tag line1).
+#
+# 15.7's five bearings take the simple geometry, 0.6 m along the line, which
+# keeps the 180 degree case clear of the motion region edge at x = -4.6. The
+# entry_* rows are stage E item 8: the distance to the first waypoint swept at
+# 0.3, 1.0 and 2.0 m, then the approach direction turned away from the line.
+#
+# name  line_bearing_deg  length_m  approach_bearing_deg  offset_m
 LINE_CASES="
-line_horizontal        0.0  3.5
-line_horizontal_back 180.0  3.5
-line_vertical         90.0  3.5
-line_diagonal         45.0  3.5
-line_diagonal_back   135.0  3.5
+line_horizontal          0.0  3.5     0.0  0.6
+line_horizontal_back   180.0  3.5   180.0  0.6
+line_vertical           90.0  3.5    90.0  0.6
+line_diagonal           45.0  3.5    45.0  0.6
+line_diagonal_back     135.0  3.5   135.0  0.6
+entry_near               0.0  2.0     0.0  0.3
+entry_mid                0.0  2.0     0.0  1.0
+entry_far                0.0  2.0     0.0  2.0
+entry_side               0.0  2.0    90.0  1.0
+entry_behind             0.0  2.0   180.0  1.0
+entry_vertical_side     90.0  2.0     0.0  1.0
+entry_diagonal          45.0  2.0   135.0  1.5
 "
-
-# Where the line begins relative to the robot, so the start approach has
-# somewhere to happen that is not the line. Same for every bearing: the entry
-# arc's length is set by the alignment turn, and 180 degrees is the worst of
-# them at a measured 383 mm. 3.5 m of line after a 0.6 m offset keeps the
-# 180-degree case clear of the motion region edge at x = -4.6.
-LINE_START_OFFSET=0.6
 
 CASES="
 bigV                  coverage_vertical_large.yaml              rectangle vertical    # 409
@@ -208,14 +223,15 @@ run_lane() {
   cd "$WS" || return 1
 
   while :; do
-    local line kind name cfg region sweep bearing length
+    local line kind name cfg region sweep offset bearing length approach
     line=$(pop_case)
     [ -n "$line" ] || break
-    read -r kind name cfg region sweep _ <<<"$line"
+    read -r kind name cfg region sweep offset _ <<<"$line"
     if [ "$kind" = "line" ]; then
-      # The line table's columns sit where cfg and region do in the other one.
+      # The line table's four columns land in the four generic slots.
       bearing=$cfg
       length=$region
+      approach=$sweep
     fi
 
     local log=$RUN_DIR/$name
@@ -265,7 +281,8 @@ run_lane() {
     if [ "$kind" = "line" ]; then
       case_arguments="-p case:=straight_line \
         -p straight_line_bearing_deg:=$bearing -p straight_line_length_m:=$length \
-        -p straight_line_start_offset_m:=$LINE_START_OFFSET"
+        -p straight_line_approach_bearing_deg:=$approach \
+        -p straight_line_start_offset_m:=$offset"
     else
       case_arguments="-p case:=planned_task"
     fi
