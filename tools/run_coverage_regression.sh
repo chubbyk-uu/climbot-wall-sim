@@ -16,7 +16,7 @@
 # Usage:
 #   tools/run_coverage_regression.sh [-j lanes] [-t tag] [-m mode] [-s seed]
 #                                    [-i seed] [-n stddev] [-r rate] [-d drop]
-#                                    [-k] [case ...]
+#                                    [-o name=value] [-k] [case ...]
 #     -j  lanes to run in parallel (default 4)
 #     -t  tag for the output file names (default today, YYYY-MM-DD)
 #     -m  tracking mode: time (default) or distance
@@ -25,6 +25,7 @@
 #     -n  total-station position noise stddev in m (default 0.001)
 #     -r  total-station publish rate in Hz (default 12)
 #     -d  total-station dropout probability, 0 to 1 (default 0)
+#     -o  override one line_tracker parameter, "name=value" (repeatable)
 #     -k  keep trajectories uncompressed (default: gzip them)
 #     case names default to all eight; see CASES below
 #
@@ -73,6 +74,16 @@ WS=$(dirname "$SCRIPT_DIR")
 # entry_* rows are stage E item 8: the distance to the first waypoint swept at
 # 0.3, 1.0 and 2.0 m, then the approach direction turned away from the line.
 #
+# g1_cross is the G-1 cross-track case. A scan line cannot simply be handed a
+# large initial cross-track error: the start approach drives to the first
+# waypoint, so the segment always begins on the line. What decides the error
+# that remains is reservedTurnDrop(), which lifts the approach endpoint by the
+# drop the coming turn is predicted to cause. So the error is set by running
+# this case with -o turn_slip_per_degree_m=..., away from its calibrated
+# 0.00041: the prediction is then wrong by a known amount and the turn leaves
+# the robot off the line by it. A horizontal line entered from behind puts the
+# whole drop across the line, which is the worst case and the measurable one.
+#
 # name  line_bearing_deg  length_m  approach_bearing_deg  offset_m
 LINE_CASES="
 line_horizontal          0.0  3.5     0.0  0.6
@@ -80,6 +91,7 @@ line_horizontal_back   180.0  3.5   180.0  0.6
 line_vertical           90.0  3.5    90.0  0.6
 line_diagonal           45.0  3.5    45.0  0.6
 line_diagonal_back     135.0  3.5   135.0  0.6
+g1_cross                 0.0  3.5   180.0  0.6
 entry_near               0.0  2.0     0.0  0.3
 entry_mid                0.0  2.0     0.0  1.0
 entry_far                0.0  2.0     0.0  2.0
@@ -110,8 +122,9 @@ IMU_SEED=17
 TOTAL_STATION_STDDEV=0.001
 TOTAL_STATION_RATE=12.0
 TOTAL_STATION_DROP=0.0
+OVERRIDES=()
 COMPRESS=1
-while getopts 'j:t:m:s:i:n:r:d:kh' opt; do
+while getopts 'j:t:m:s:i:n:r:d:o:kh' opt; do
   case $opt in
     j) LANES=$OPTARG ;;
     t) TAG=$OPTARG ;;
@@ -121,8 +134,9 @@ while getopts 'j:t:m:s:i:n:r:d:kh' opt; do
     n) TOTAL_STATION_STDDEV=$OPTARG ;;
     r) TOTAL_STATION_RATE=$OPTARG ;;
     d) TOTAL_STATION_DROP=$OPTARG ;;
+    o) OVERRIDES+=("$OPTARG") ;;
     k) COMPRESS=0 ;;
-    h) sed -n '2,36p' "$0"; exit 0 ;;
+    h) sed -n '2,38p' "$0"; exit 0 ;;
     *) exit 2 ;;
   esac
 done
@@ -155,6 +169,34 @@ WARN
 fi
 
 RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/coverage_regression_XXXXXX")
+
+# An override is applied by copying control.yaml and patching the copy, rather
+# than by adding a launch argument per parameter. The copy lives in the run
+# directory, so the working tree stays clean and the dirty-tree guard above
+# still means what it says. What was applied is not taken on trust either:
+# the evaluator reads the tracker parameters back off the node and records
+# them under provenance.control_parameters.
+CONTROL_CONFIG="$WS/src/climbot_control/config/control.yaml"
+if [ ${#OVERRIDES[@]} -gt 0 ]; then
+  SOURCE_CONFIG=$CONTROL_CONFIG
+  CONTROL_CONFIG="$RUN_DIR/control.yaml"
+  python3 -c '
+import sys
+import yaml
+source, target = sys.argv[1], sys.argv[2]
+with open(source) as handle:
+    document = yaml.safe_load(handle)
+parameters = document["line_tracker"]["ros__parameters"]
+for entry in sys.argv[3:]:
+    name, _, value = entry.partition("=")
+    if name not in parameters:
+        raise SystemExit("unknown line_tracker parameter: " + name)
+    parameters[name] = yaml.safe_load(value)
+    print("override %s = %r" % (name, parameters[name]))
+with open(target, "w") as handle:
+    yaml.safe_dump(document, handle, sort_keys=True)
+' "$SOURCE_CONFIG" "$CONTROL_CONFIG" "${OVERRIDES[@]}" || exit 2
+fi
 QUEUE=$RUN_DIR/queue
 LOCK=$RUN_DIR/lock
 : > "$LOCK"
@@ -178,6 +220,9 @@ echo "tag       : $TAG"
 echo "mode      : $MODE"
 echo "seeds     : total_station=$TOTAL_STATION_SEED imu=$IMU_SEED"
 echo "station   : stddev=${TOTAL_STATION_STDDEV} m rate=${TOTAL_STATION_RATE} Hz drop=${TOTAL_STATION_DROP}"
+if [ ${#OVERRIDES[@]} -gt 0 ]; then
+  echo "overrides : ${OVERRIDES[*]}"
+fi
 echo "cases     : $(wc -l < "$QUEUE")"
 echo "logs      : $RUN_DIR"
 echo
@@ -273,7 +318,8 @@ run_lane() {
       sleep 10
     fi
     setsid ros2 launch climbot_control coverage_executor.launch.py \
-      use_sim_time:=true tracking_mode:="$MODE" > "$log/executor.log" 2>&1 &
+      use_sim_time:=true tracking_mode:="$MODE" \
+      control_config_file:="$CONTROL_CONFIG" > "$log/executor.log" 2>&1 &
     disown
     sleep 10
 

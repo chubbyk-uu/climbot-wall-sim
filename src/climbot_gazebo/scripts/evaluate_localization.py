@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
-"""Drive a closed-loop four-direction test and report EKF position errors."""
+"""
+Drive a closed-loop four-direction test and compare EKF against wheel odometry.
 
+PROJECT_GUIDE 14.5 asks that the fused position error be clearly smaller than
+the long-run error of wheel odometry alone. That is the whole claim the EKF
+exists to support, so both errors are measured against Gazebo truth here and
+written to a summary a reader can cite, rather than only logged.
+"""
+
+from datetime import datetime
+from datetime import timezone
+import json
 import math
 import os
 import time
@@ -12,6 +22,10 @@ from climbot_description.geometry import (
     yaw_from_quaternion,
 )
 from climbot_description.wall_frame import WallFrame
+from climbot_gazebo.provenance import CONTROL_SOURCES
+from climbot_gazebo.provenance import git_state
+from climbot_gazebo.provenance import NOISE_SOURCES
+from climbot_gazebo.provenance import parameter_groups
 from climbot_gazebo.safe_stop import install_stop_on_termination
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -42,11 +56,13 @@ class LocalizationEvaluator(Node):
         self.declare_parameter('settle_duration_s', 1.0)
         self.declare_parameter('heading_hold_gain', 1.5)
         self.declare_parameter('wall_config', default_wall_config())
+        self.declare_parameter('summary_json', '')
         self._wall_frame = WallFrame.from_yaml(
             str(self.get_parameter('wall_config').value))
         self._truth = None
         self._wheel_odom = None
         self._filtered = None
+        self._records = []
         self._command = self.create_publisher(Twist, '/control/cmd_vel', 10)
         self.create_subscription(
             Odometry, '/model/climbot/ground_truth', self._truth_callback, 10)
@@ -138,29 +154,107 @@ class LocalizationEvaluator(Node):
         estimate = self._filtered.pose.pose.position
         estimate_wall = (estimate.x, estimate.y, estimate.z)
         error = math.dist(truth_wall, estimate_wall)
+        # Wheel odometry publishes in odom, the same frame the EKF and the
+        # controller work in, so it is comparable to truth in wall coordinates
+        # without conversion. The start record is what proves that: if the two
+        # frames disagreed it would not begin near zero.
+        wheel = self._wheel_odom.pose.pose.position
+        wheel_wall = (wheel.x, wheel.y, wheel.z)
+        wheel_error = math.dist(truth_wall, wheel_wall)
         truth_yaw = math.degrees(yaw_from_quaternion(
             self._wall_frame.orientation_from_world(
                 quaternion_tuple(self._truth.pose.pose.orientation))))
         ekf_yaw = math.degrees(self._filtered_yaw())
         wheel_yaw = math.degrees(yaw_from_quaternion(
             quaternion_tuple(self._wheel_odom.pose.pose.orientation)))
+        self._records.append({
+            'label': label,
+            'truth_wall_m': list(truth_wall),
+            'ekf_wall_m': list(estimate_wall),
+            'wheel_wall_m': list(wheel_wall),
+            'ekf_position_error_m': error,
+            'wheel_position_error_m': wheel_error,
+            'truth_yaw_deg': truth_yaw,
+            'ekf_yaw_deg': ekf_yaw,
+            'wheel_yaw_deg': wheel_yaw,
+        })
         self.get_logger().info(
             '%s: truth_wall=(%.3f, %.3f, %.3f) '
             'ekf=(%.3f, %.3f, %.3f) error=%.4f m; '
+            'wheel=(%.3f, %.3f, %.3f) error=%.4f m; '
             'yaw_deg truth=%.2f ekf=%.2f wheel=%.2f' % (
                 label, *truth_wall, *estimate_wall, error,
+                *wheel_wall, wheel_error,
                 truth_yaw, ekf_yaw, wheel_yaw))
+
+    def _summarize(self):
+        """State the 14.5 comparison as a number, not as a list to eyeball."""
+        # The start record is the frame check, not evidence about drift: both
+        # estimates begin on top of truth. Long-run error is what 14.5 asks
+        # about, so the comparison is over the four driven legs.
+        driven = [record for record in self._records if record['label'] != 'start']
+        ekf = [record['ekf_position_error_m'] for record in driven]
+        wheel = [record['wheel_position_error_m'] for record in driven]
+        summary = {
+            'records': self._records,
+            'legs': len(driven),
+            'maximum_ekf_position_error_m': max(ekf) if ekf else None,
+            'maximum_wheel_position_error_m': max(wheel) if wheel else None,
+            'final_ekf_position_error_m': ekf[-1] if ekf else None,
+            'final_wheel_position_error_m': wheel[-1] if wheel else None,
+            'provenance': {
+                'recorded_utc': datetime.now(timezone.utc).isoformat(),
+                'git': git_state(),
+                'noise_sources': parameter_groups(self, NOISE_SOURCES),
+                'control_parameters': parameter_groups(self, CONTROL_SOURCES),
+            },
+        }
+        if ekf and wheel and max(ekf) > 0.0:
+            summary['wheel_to_ekf_maximum_ratio'] = max(wheel) / max(ekf)
+        if ekf and wheel:
+            summary['passed'] = max(wheel) > max(ekf)
+            self.get_logger().info(
+                'max position error: ekf=%.4f m wheel=%.4f m (%.1fx)' % (
+                    max(ekf), max(wheel),
+                    max(wheel) / max(ekf) if max(ekf) > 0.0 else float('inf')))
+        git = summary['provenance']['git']
+        if git.get('traceable'):
+            self.get_logger().info(
+                'traceable=true commit=%s' % (git['commit'] or '?')[:12])
+        else:
+            self.get_logger().warning(
+                'traceable=FALSE commit=%s: the working tree under src differs '
+                'from that commit, so this result cannot be tied to a source '
+                'state and must not be filed as a baseline.'
+                % (git.get('commit') or '?')[:12])
+        return summary
+
+    def _write_summary(self):
+        path = str(self.get_parameter('summary_json').value)
+        summary = self._summarize()
+        if not path:
+            return
+        expanded = os.path.abspath(os.path.expanduser(path))
+        os.makedirs(os.path.dirname(expanded), exist_ok=True)
+        with open(expanded, 'w', encoding='utf-8') as handle:
+            json.dump(summary, handle, indent=2, sort_keys=True)
+            handle.write('\n')
 
     def run(self):
         self._wait_for_data()
         self._report('start')
-        for label, yaw in (
-                ('right_plus_x', 0.0),
-                ('up_plus_y', math.pi / 2.0),
-                ('left_minus_x', math.pi),
-                ('down_minus_y', -math.pi / 2.0)):
-            self._drive_segment(label, yaw)
-        self._publish()
+        try:
+            for label, yaw in (
+                    ('right_plus_x', 0.0),
+                    ('up_plus_y', math.pi / 2.0),
+                    ('left_minus_x', math.pi),
+                    ('down_minus_y', -math.pi / 2.0)):
+                self._drive_segment(label, yaw)
+            self._publish()
+        finally:
+            # Same reasoning as the coverage evaluator: an interrupted run is
+            # when the partial record is most worth having.
+            self._write_summary()
 
 
 def main():

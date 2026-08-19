@@ -7,7 +7,6 @@ from datetime import timezone
 import json
 import math
 import os
-import subprocess
 import time
 
 from ament_index_python.packages import get_package_share_directory
@@ -18,6 +17,10 @@ from climbot_gazebo.coverage_metrics import footprint_coverage
 from climbot_gazebo.execution_metrics import count_visible_reversals
 from climbot_gazebo.execution_metrics import execution_quality
 from climbot_gazebo.execution_metrics import scan_line_spacing
+from climbot_gazebo.provenance import CONTROL_SOURCES
+from climbot_gazebo.provenance import git_state
+from climbot_gazebo.provenance import NOISE_SOURCES
+from climbot_gazebo.provenance import parameter_groups
 from climbot_gazebo.trajectory_io import write_trajectory
 from climbot_interfaces.action import ExecuteCoverage
 from climbot_interfaces.msg import CoverageTask
@@ -26,12 +29,10 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
-from rcl_interfaces.srv import GetParameters
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
 from rclpy.node import Node
-from rclpy.parameter import parameter_value_to_python
 from rclpy.qos import DurabilityPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import ReliabilityPolicy
@@ -100,18 +101,6 @@ class CoverageExecutionEvaluator(Node):
         # and the only one a single angle can express. NaN means "along the
         # line", so a case that does not set it keeps the simple geometry.
         ('straight_line_approach_bearing_deg', float('nan')),
-    )
-
-    #: The nodes whose randomness decides how much of a run repeats, and the
-    #: parameters of each that decide it. Recorded by asking the running nodes
-    #: rather than by repeating what a launch file was told: a repeatability
-    #: claim is about what actually produced the numbers, and a seed passed to
-    #: a node that never started would otherwise read as a seed that was used.
-    NOISE_SOURCES = (
-        ('/total_station_sim',
-         ('random_seed', 'position_stddev_m', 'publish_rate_hz',
-          'fixed_delay_s', 'drop_probability')),
-        ('/wall_imu_adapter', ('random_seed', 'orientation_stddev_rad')),
     )
 
     def __init__(self):
@@ -433,80 +422,13 @@ class CoverageExecutionEvaluator(Node):
             'heading_range_deg': math.degrees(max(yaw) - min(yaw)),
         }
 
-    @staticmethod
-    def _git_state():
-        """Describe the source revision, or nulls when git is unavailable."""
-        def capture(arguments):
-            return subprocess.run(
-                ['git'] + arguments, check=True, capture_output=True,
-                text=True, timeout=5.0,
-                cwd=os.path.dirname(os.path.abspath(__file__))).stdout.strip()
-
-        try:
-            root = capture(['rev-parse', '--show-toplevel'])
-            # Restricted to src so untracked notes and build outputs do not
-            # mark an otherwise reproducible run as modified.
-            modified = bool(capture(
-                ['-C', root, 'status', '--porcelain', '--', 'src']))
-            return {
-                'commit': capture(['rev-parse', 'HEAD']),
-                'branch': capture(['rev-parse', '--abbrev-ref', 'HEAD']),
-                'source_modified': modified,
-                # The question source_modified was added to answer, stated as
-                # the answer rather than as its input. A field nobody reads
-                # cannot stop an untraceable run from being filed as a
-                # baseline, and both of the archives named as baselines in
-                # results/README.md and PLAN_2026-08-18_time_control.md were
-                # produced on modified trees without anything saying so.
-                'traceable': not modified,
-            }
-        except (OSError, subprocess.SubprocessError):
-            return {
-                'commit': None, 'branch': None, 'source_modified': None,
-                'traceable': False,
-            }
-
-    def _noise_sources(self):
-        """Ask each noise source what it is actually running with."""
-        state = {}
-        for node_name, names in self.NOISE_SOURCES:
-            state[node_name.lstrip('/')] = self._remote_parameters(
-                node_name, names)
-        return state
-
-    def _remote_parameters(self, node_name, names):
-        """Read parameters off another node, or null if it cannot be asked."""
-        client = self.create_client(
-            GetParameters, node_name + '/get_parameters')
-        try:
-            if not client.wait_for_service(timeout_sec=2.0):
-                return None
-            future = client.call_async(
-                GetParameters.Request(names=list(names)))
-            deadline = time.monotonic() + 2.0
-            while not future.done() and time.monotonic() < deadline:
-                rclpy.spin_once(self, timeout_sec=0.05)
-            response = future.result() if future.done() else None
-            if response is None or len(response.values) != len(names):
-                return None
-            return {
-                name: parameter_value_to_python(value)
-                for name, value in zip(names, response.values)}
-        except Exception:
-            # Provenance is written from a finally block that may be running
-            # because something already went wrong, including a context that
-            # is on its way down. Losing the seeds is worth reporting; losing
-            # the summary that reports them is not.
-            return None
-        finally:
-            self.destroy_client(client)
-
     def _provenance(self):
         """Record what a later reader needs to reproduce or discard this run."""
         return {
             'recorded_utc': datetime.now(timezone.utc).isoformat(),
-            'git': self._git_state(),
-            'noise_sources': self._noise_sources(),
+            'git': git_state(),
+            'noise_sources': parameter_groups(self, NOISE_SOURCES),
+            'control_parameters': parameter_groups(self, CONTROL_SOURCES),
             'evaluator_parameters': {
                 name: self.get_parameter(name).value
                 for name, _ in self.PARAMETERS},
