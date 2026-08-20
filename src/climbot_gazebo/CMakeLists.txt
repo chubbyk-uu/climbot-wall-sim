@@ -42,6 +42,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(test_command_routing test/test_command_routing.py)
   ament_add_pytest_test(test_coverage_metrics test/test_coverage_metrics.py)
+  ament_add_pytest_test(test_ekf_startup test/test_ekf_startup.py)
   ament_add_pytest_test(test_execution_metrics test/test_execution_metrics.py)
   ament_add_pytest_test(test_model_defaults test/test_model_defaults.py)
   ament_add_pytest_test(

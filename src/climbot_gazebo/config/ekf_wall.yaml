@@ -53,3 +53,33 @@ ekf_filter_node:
     pose0_differential: false
     pose0_relative: false
     pose0_rejection_threshold: 5.0
+
+    # The filter starts at the origin, and by default it starts there almost
+    # certain of it. That is a claim it has no basis for: nothing has told it
+    # where the robot is until the total station reports. With the default
+    # near-zero covariance the very first fix is a huge residual, so
+    # pose0_rejection_threshold throws it away as an outlier, and the filter
+    # sits at the origin until its own variance has grown enough to admit the
+    # measurement - 12.9 s of it, measured, once the work frame's origin moved
+    # to the wall corner and put the spawn 4 m away.
+    #
+    # This was always wrong; it was invisible only because the old origin sat
+    # under the spawn point, making the initial guess accidentally correct.
+    # Saying position is unknown lets the first fix land immediately, and costs
+    # nothing afterwards: one measurement collapses it.
+    initial_estimate_covariance: [100.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0, 100.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0, 100.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   1.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   1.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   1.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09,   0.0,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09,   0.0,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09,   0.0,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09,   0.0,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09,   0.0,
+                                    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0, 1.0e-09]
+
