@@ -4,8 +4,10 @@ project(climbot_rviz_plugins)
 find_package(ament_cmake REQUIRED)
 find_package(climbot_interfaces REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rviz_common REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 
@@ -21,7 +23,7 @@ target_include_directories(climbot_rviz_plugins PUBLIC
   $<INSTALL_INTERFACE:include>)
 target_link_libraries(climbot_rviz_plugins Qt5::Core Qt5::Gui Qt5::Widgets)
 ament_target_dependencies(climbot_rviz_plugins
-  climbot_interfaces pluginlib rclcpp rviz_common std_srvs)
+  climbot_interfaces pluginlib rcl_interfaces rclcpp rviz_common std_msgs std_srvs)
 target_compile_definitions(climbot_rviz_plugins PRIVATE "QT_NO_KEYWORDS")
 
 install(TARGETS climbot_rviz_plugins

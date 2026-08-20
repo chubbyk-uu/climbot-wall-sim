@@ -5,6 +5,7 @@ import math
 import random
 
 from climbot_description.geometry import quaternion_from_rpy, quaternion_multiply
+from climbot_gazebo.parameter_checks import require_finite
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
@@ -19,6 +20,7 @@ class WallImuAdapter(Node):
         self.declare_parameter('random_seed', 17)
         self._orientation_stddev = float(
             self.get_parameter('orientation_stddev_rad').value)
+        require_finite('orientation_stddev_rad', self._orientation_stddev)
         if self._orientation_stddev < 0.0:
             raise ValueError('orientation_stddev_rad cannot be negative.')
         self._random = random.Random(

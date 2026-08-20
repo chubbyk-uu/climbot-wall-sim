@@ -985,6 +985,36 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 `gazebo_wall.png` 不受影响，墙面在世界系里没有变。（已于 2026-08-20 重拍，见
 「README 时长口径与 RViz 截图」。）
 
+## 2026-08-20 低严重度小项打包（review L2~L6、L8）
+
+- **L2 规划器只比大小，不查有限性。** `validatePhysicalParameters()` 的每条检查都是
+  比较，而 NaN 是**全部比较都为假**而不是其中之一为假，`detection_width <= 0.0` 对它
+  是假，于是坏参数直接通过。实测 `detection_width:=.nan`：节点照常启动、什么都规划不出、
+  发空任务、报覆盖率 `0%`。失败方向是对的（fail closed），但它表现成规划故障，会把人
+  引去看区域几何，而不是看自己敲的那个数。新增 `requireFinite()`，覆盖九个物理参数、
+  网格间距和两个点参数；`test_planner_rejects_bad_numbers.py` 用七个参数逐个验证：
+  进程非零退出，且消息里点名是哪个参数。
+- **L3 三个传感器脚本同样只查正负。** `position_stddev_m`、IMU 姿态噪声、轮速协方差
+  的 NaN 能绕过校验进入消息和协方差矩阵。抽出 `climbot_gazebo/parameter_checks.py` 的
+  `require_finite()`，三处统一调用。
+- **L4 贴图 manifest 只检查文件存在。** 不校验 scale、尺寸、块是否落在墙内，路径还直接
+  拼进 XML。现在 `load_manifest()` 在发出任何 visual 之前把这些全查一遍——因为另一种
+  发现方式就是看渲染图，而那正是工作系原点 bug 的发现方式：块整体偏了半面墙、一半墙面
+  没贴图、加载过程一声不吭。路径改为 XML 转义：带 `&` 或尖括号的目录（谁给目录起的名字、
+  或 WSL 下看到的 Windows 共享）会让 `minidom.parseString` 在整个世界文件上失败，而报错
+  指向的是烘焙写出的那一行。两个新测试。
+- **L5 包元数据不自洽。** `climbot_rviz_plugins` 用了 `std_msgs`/`rcl_interfaces` 却
+  没声明；`climbot_control` 和 `climbot_gazebo` 也直接用 `rcl_interfaces`。当前靠传递
+  依赖能构建，但那不是依赖关系。已补齐 `package.xml` 与 `CMakeLists.txt`。
+- **L6 `standalone_mode` 下运行中也能切控制律。** 那条拒绝的注释写的是"只能在任务之间
+  切换"，但判据只有 `active_goal_`；`standalone_mode` 从来没有 Goal，却从拿到位姿那刻起
+  就在走配置好的那一段。改为 `isDrivingASegment()`，两种情况一起管。
+- **L8 `SEGMENT_RETURN` 验证器收、执行器没语义。** 常量保留在 `CoverageTask.msg`（编号
+  一挪，已录制的 bag 就换了含义），但 `validateCoverageTask()` 现在明确拒绝它并说明原因：
+  收下它等于按默认分支走一段谁都没定义、谁都没测过的轨迹。
+
+宿主全量：**481 tests，0 error，0 failure，30 skipped**。
+
 ## 2026-08-20 清掉不可追溯的过程轨迹（review M4）
 
 `results/` 87 MiB / 373 文件里，172 份摘要中 **92 份 `source_modified=true`**，对应

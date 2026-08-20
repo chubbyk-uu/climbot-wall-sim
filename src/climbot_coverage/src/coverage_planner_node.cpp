@@ -174,11 +174,37 @@ public:
   }
 
 private:
+  /// Reject a number that is not a number, before anything compares it.
+  ///
+  /// NaN fails every comparison rather than any of them, so `value <= 0.0` and
+  /// `value >= 1.0` are both false for it and a bad parameter walks straight
+  /// through validation. Measured with detection_width:=nan: the planner
+  /// starts, plans nothing, publishes an empty task and reports 0% coverage.
+  /// It fails closed, which is the right direction, but it presents as a
+  /// planning fault and sends whoever is looking at the geometry instead of at
+  /// the number they typed.
+  static void requireFinite(const char * name, double value)
+  {
+    if (!std::isfinite(value)) {
+      throw std::invalid_argument(std::string(name) + " must be a finite number.");
+    }
+  }
+
   void validatePhysicalParameters() const
   {
     if (task_id_.empty()) {
       throw std::invalid_argument("task_id cannot be empty.");
     }
+    requireFinite("detection_width", detection_width_);
+    requireFinite("detection_length", detection_length_);
+    requireFinite("overlap_ratio", overlap_ratio_);
+    requireFinite("minimum_nominal_coverage_ratio", minimum_nominal_coverage_ratio_);
+    requireFinite("robot_length", robot_length_);
+    requireFinite("robot_width", robot_width_);
+    requireFinite("edge_clearance", edge_clearance_);
+    requireFinite("wall_width", wall_width_);
+    requireFinite("wall_height", wall_height_);
+    requireFinite("wall_grid_spacing", wall_grid_spacing_);
     if (detection_width_ <= 0.0 || detection_length_ <= 0.0) {
       throw std::invalid_argument("Detection footprint dimensions must be positive.");
     }
@@ -214,6 +240,8 @@ private:
     if (values.size() != 2) {
       throw std::invalid_argument(name + " must contain exactly two coordinates.");
     }
+    requireFinite(name.c_str(), values[0]);
+    requireFinite(name.c_str(), values[1]);
     return {values[0], values[1]};
   }
 

@@ -198,9 +198,9 @@ public:
             result.reason = "tracking_mode must be \"distance\" or \"time\".";
             return result;
           }
-          if (active_goal_) {
+          if (isDrivingASegment()) {
             result.successful = false;
-            result.reason = "tracking_mode cannot change while a coverage task is running.";
+            result.reason = "tracking_mode cannot change while a segment is being driven.";
             return result;
           }
         }
@@ -286,6 +286,22 @@ public:
   }
 
 private:
+  /// Whether a line is being followed right now, with or without a goal.
+  ///
+  /// The refusal above is meant to keep the control law from changing under a
+  /// half-followed line, and a goal handle does not answer that on its own:
+  /// standalone_mode never has one and still drives the single configured
+  /// segment from the moment it has a pose. The switch was allowed mid-drive
+  /// there, which is the same half-followed line, with nothing reporting it.
+  bool isDrivingASegment() const
+  {
+    if (active_goal_) {
+      return true;
+    }
+    return standalone_mode_ && have_pose_ &&
+           motion_state_ != MotionState::SEGMENT_COMPLETE;
+  }
+
   /// Now, on the clock every duration in this node is measured against.
   rclcpp::Time controlNow() const
   {

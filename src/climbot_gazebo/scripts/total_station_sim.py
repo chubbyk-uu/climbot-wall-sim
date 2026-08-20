@@ -7,6 +7,7 @@ import random
 
 from ament_index_python.packages import get_package_share_directory
 from climbot_description.wall_frame import WallFrame
+from climbot_gazebo.parameter_checks import require_finite
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 import rclpy
@@ -59,6 +60,10 @@ class TotalStationSimulator(Node):
 
     def _validate(self, delay_s):
         """Reject parameter values that would silently corrupt measurements."""
+        require_finite('publish_rate_hz', self._rate)
+        require_finite('position_stddev_m', self._stddev)
+        require_finite('fixed_delay_s', delay_s)
+        require_finite('drop_probability', self._drop_probability)
         if self._rate <= 0.0:
             raise ValueError('publish_rate_hz must be positive.')
         if self._stddev < 0.0:

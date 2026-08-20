@@ -58,6 +58,9 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_rviz_config test/test_rviz_config.py TIMEOUT 30)
   ament_add_pytest_test(
     test_planner_launch_grid test/test_planner_launch_grid.py TIMEOUT 30)
+  ament_add_pytest_test(
+    test_planner_rejects_bad_numbers test/test_planner_rejects_bad_numbers.py
+    TIMEOUT 120)
 endif()
 
 ament_export_include_directories(include)

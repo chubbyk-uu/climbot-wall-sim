@@ -16,6 +16,7 @@
 
 import json
 import os
+from xml.sax.saxutils import quoteattr
 
 #: How far the texture blocks stand off the wall face, in metres. Large enough
 #: that the renderer does not have to choose between two surfaces at one depth,
@@ -26,18 +27,74 @@ SURFACE_OFFSET_M = 0.001
 
 
 def load_manifest(path):
-    """Read a bake manifest and check it describes blocks that exist."""
+    """Read a bake manifest and check it describes a wall that can be built."""
+    # Everything here is checked before a single visual is emitted, because the
+    # alternative is finding out from the rendered wall. That is how the work
+    # frame origin bug was found: blocks landed half a wall sideways, half the
+    # surface rendered untextured, and nothing in the load reported anything.
+    # A manifest written by hand, edited, or half-copied between machines can
+    # go wrong in the same silent way, and it is cheap to refuse it here.
     with open(path, encoding='utf-8') as handle:
         manifest = json.load(handle)
     directory = os.path.dirname(os.path.abspath(path))
+
+    for key in ('scale_m_per_px', 'region_origin_m', 'region_m', 'maps'):
+        if key not in manifest:
+            raise KeyError('the manifest has no %s; rebake with '
+                           'tools/bake_wall_texture.py' % key)
+    scale = _positive(manifest, 'scale_m_per_px')
+    for key in ('region_origin_m', 'region_m'):
+        pair = manifest[key]
+        if not isinstance(pair, list) or len(pair) != 2:
+            raise ValueError('%s must be two numbers' % key)
+        for value in pair:
+            if not isinstance(value, (int, float)) or value != value:
+                raise ValueError('%s must be two finite numbers' % key)
+    region_width, region_height = (float(value) for value in manifest['region_m'])
+    if region_width <= 0.0 or region_height <= 0.0:
+        raise ValueError('region_m must be positive')
+
     for name, group in manifest['maps'].items():
-        for block in group['blocks']:
+        blocks = group.get('blocks')
+        if not blocks:
+            raise ValueError('map %s lists no blocks' % name)
+        for block in blocks:
+            for key in ('file', 'row', 'column', 'x_px', 'y_px',
+                        'width_px', 'height_px'):
+                if key not in block:
+                    raise KeyError('a block of map %s has no %s' % (name, key))
+            if block['width_px'] <= 0 or block['height_px'] <= 0:
+                raise ValueError('a block of map %s has no area' % name)
             candidate = os.path.join(directory, block['file'])
             if not os.path.exists(candidate):
                 raise FileNotFoundError(
                     'manifest lists %s for map %s but it is missing; '
                     'rebake with tools/bake_wall_texture.py' % (candidate, name))
+            # Off the region is off the wall. A block placed there renders
+            # somewhere nobody is looking, and the surface it should have
+            # covered stays blank - which reads as a camera fault rather than
+            # as a bad manifest.
+            right = (block['x_px'] + block['width_px']) * scale
+            bottom = (block['y_px'] + block['height_px']) * scale
+            if block['x_px'] < 0 or block['y_px'] < 0:
+                raise ValueError(
+                    'block %s of map %s starts outside the baked region'
+                    % (block['file'], name))
+            if right > region_width + scale or bottom > region_height + scale:
+                raise ValueError(
+                    'block %s of map %s runs %.3f x %.3f m past the %.3f x %.3f m '
+                    'region it claims to tile'
+                    % (block['file'], name, max(0.0, right - region_width),
+                       max(0.0, bottom - region_height), region_width, region_height))
     return manifest, directory
+
+
+def _positive(manifest, key):
+    """Return a manifest number that has to be positive and finite."""
+    value = manifest[key]
+    if not isinstance(value, (int, float)) or value != value or value <= 0.0:
+        raise ValueError('%s must be a positive number' % key)
+    return float(value)
 
 
 def block_extent(manifest, block):
@@ -93,7 +150,7 @@ def texture_visuals(manifest, directory, thickness, wall_origin, link_centre,
             '            <specular>0.1 0.1 0.1 1</specular>\n'
             '            <pbr>\n'
             '              <metal>\n'
-            '                <albedo_map>file://%s</albedo_map>\n'
+            '                <albedo_map>%s</albedo_map>\n'
             '                <metalness>0.0</metalness>\n'
             '              </metal>\n'
             '            </pbr>\n'
@@ -104,5 +161,17 @@ def texture_visuals(manifest, directory, thickness, wall_origin, link_centre,
                 wall_origin[1] + work_x - link_centre[1],
                 wall_origin[2] + work_y - link_centre[2],
                 width, height,
-                os.path.join(directory, block['file'])))
+                # Escaped, because this text is parsed as XML by the caller.
+                # A directory with an ampersand or an angle bracket in it - a
+                # checkout under a path somebody named, a Windows share seen
+                # through WSL - would otherwise make minidom.parseString fail
+                # on the whole world file, pointing at a line the bake wrote.
+                _texture_uri(directory, block['file'])))
     return elements
+
+
+def _texture_uri(directory, name):
+    """Return a file:// URI for one block, safe to place in XML text."""
+    escaped = quoteattr('file://' + os.path.join(directory, name))
+    # quoteattr wraps in quotes for attribute use; this goes in element text.
+    return escaped[1:-1]

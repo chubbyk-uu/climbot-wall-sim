@@ -3,6 +3,7 @@
 import json
 import os
 import tempfile
+from xml.dom import minidom
 
 from climbot_gazebo.wall_texture import (
     block_extent, load_manifest, texture_visuals)
@@ -144,3 +145,65 @@ def test_a_block_lands_where_the_work_frame_says_it_does():
         # Top-right block: work (1.25, 2.15) -> world (-2.75, 2.15).
         assert poses['wall_texture_r00_c02'][1] == pytest.approx(-2.75)
         assert poses['wall_texture_r00_c02'][2] == pytest.approx(-0.85)
+
+
+def _mutated_bake(directory, mutate):
+    """Write a valid bake, then break one thing about the manifest."""
+    path = write_bake(directory)
+    with open(path, encoding='utf-8') as handle:
+        manifest = json.load(handle)
+    mutate(manifest)
+    with open(path, 'w', encoding='utf-8') as handle:
+        json.dump(manifest, handle)
+    return path
+
+
+def test_a_manifest_that_does_not_describe_the_wall_is_refused():
+    """The failures a bad manifest used to produce only in the rendered image."""
+    # The work frame origin bug showed what silence costs here: every block
+    # shifted half a wall sideways, half the surface rendered untextured, and
+    # nothing in the load said a word. These are the same class of mistake,
+    # made in the manifest rather than in the code.
+    def drop_the_scale(manifest):
+        del manifest['scale_m_per_px']
+
+    def negative_scale(manifest):
+        manifest['scale_m_per_px'] = -SCALE
+
+    def block_off_the_region(manifest):
+        manifest['maps']['albedo']['blocks'][0]['x_px'] = 100000
+
+    def block_with_no_area(manifest):
+        manifest['maps']['albedo']['blocks'][0]['width_px'] = 0
+
+    def map_with_no_blocks(manifest):
+        manifest['maps']['albedo']['blocks'] = []
+
+    for mutate, error in ((drop_the_scale, KeyError),
+                          (negative_scale, ValueError),
+                          (block_off_the_region, ValueError),
+                          (block_with_no_area, ValueError),
+                          (map_with_no_blocks, ValueError)):
+        with tempfile.TemporaryDirectory() as directory:
+            with pytest.raises(error):
+                load_manifest(_mutated_bake(directory, mutate))
+
+
+def test_a_path_with_xml_in_it_still_produces_parseable_sdf():
+    """The world file is parsed as XML, so the bake's own text has to be."""
+    # Nothing about a checkout path is under this repository control. One with
+    # an ampersand in it - somebody named a directory, or a Windows share seen
+    # through WSL - would break minidom.parseString on the whole world file,
+    # and the error would point at a line the bake wrote rather than at the
+    # path that caused it.
+    with tempfile.TemporaryDirectory() as parent:
+        directory = os.path.join(parent, 'wall & mount <v2>')
+        os.mkdir(directory)
+        manifest, resolved = load_manifest(write_bake(directory))
+        visuals = texture_visuals(
+            manifest, resolved, 0.10, (0.0, -5.0, 0.0), (0.0, 0.0, 4.0))
+        document = minidom.parseString('<link>' + '\n'.join(visuals) + '</link>')
+        uris = document.getElementsByTagName('albedo_map')
+        assert uris, 'no albedo map was emitted'
+        assert '&' in uris[0].firstChild.data, (
+            'the path was mangled rather than escaped')

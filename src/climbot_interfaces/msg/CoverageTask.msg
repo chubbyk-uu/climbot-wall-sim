@@ -5,6 +5,10 @@ uint8 SWEEP_VERTICAL=2
 
 uint8 SEGMENT_SCAN=1
 uint8 SEGMENT_TRANSITION=2
+# Reserved, and rejected by validateCoverageTask(). No executor has a behaviour
+# for it, so a task carrying one would be driven as something nobody defined.
+# The number stays here rather than being removed so it can never be reused for
+# something else and silently change the meaning of a recorded bag.
 uint8 SEGMENT_RETURN=3
 
 std_msgs/Header header

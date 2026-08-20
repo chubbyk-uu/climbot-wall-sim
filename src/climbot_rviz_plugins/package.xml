@@ -17,8 +17,10 @@
   <depend>climbot_interfaces</depend>
   <depend>pluginlib</depend>
   <depend>qtbase5-dev</depend>
+  <depend>rcl_interfaces</depend>
   <depend>rclcpp</depend>
   <depend>rviz_common</depend>
+  <depend>std_msgs</depend>
   <depend>std_srvs</depend>
 
   <exec_depend>rviz2</exec_depend>

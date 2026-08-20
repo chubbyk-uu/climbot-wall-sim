@@ -286,9 +286,18 @@ std::optional<std::string> validateCoverageTask(
         return "zero-length segments are invalid";
       }
       const auto segment_type = task.segment_types[index];
+      // SEGMENT_RETURN is deliberately not accepted. The constant stays in
+      // CoverageTask.msg so the numbering never shifts under a recorded bag,
+      // but no executor has ever had a behaviour for it: accepted here it
+      // would be driven as whatever the default branch happens to do, which is
+      // a trajectory nobody has defined and nobody has tested. Refusing it at
+      // the task boundary means anyone who starts using it finds out at
+      // startup rather than from the shape of the run.
+      if (segment_type == Task::SEGMENT_RETURN) {
+        return "segment type SEGMENT_RETURN has no execution semantics yet";
+      }
       if (segment_type != Task::SEGMENT_SCAN &&
-        segment_type != Task::SEGMENT_TRANSITION &&
-        segment_type != Task::SEGMENT_RETURN)
+        segment_type != Task::SEGMENT_TRANSITION)
       {
         return "segment type is invalid";
       }

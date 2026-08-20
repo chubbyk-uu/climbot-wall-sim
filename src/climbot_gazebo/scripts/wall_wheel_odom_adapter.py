@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Inflate wheel-odometry uncertainty for force-dependent wall slip."""
 
+from climbot_gazebo.parameter_checks import require_finite
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
@@ -20,6 +21,9 @@ class WallWheelOdomAdapter(Node):
         yaw_rate_stddev = float(self.get_parameter('yaw_rate_stddev_rps').value)
         self._unobserved_variance = float(
             self.get_parameter('unobserved_variance').value)
+        require_finite('forward_velocity_stddev_mps', forward_stddev)
+        require_finite('yaw_rate_stddev_rps', yaw_rate_stddev)
+        require_finite('unobserved_variance', self._unobserved_variance)
         if forward_stddev < 0.0 or yaw_rate_stddev < 0.0:
             raise ValueError('Wheel odometry standard deviations cannot be negative.')
         if self._unobserved_variance <= 0.0:
