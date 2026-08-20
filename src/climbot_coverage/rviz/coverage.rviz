@@ -16,8 +16,10 @@ Visualization Manager:
     # rviz_default_plugins/Grid, which draws a square centred on the fixed
     # frame: correct while the work frame's origin was the wall's centre, a
     # 10 x 10 m square hanging off the corner once it moved. This one is cut
-    # to the wall. Unticking it is the live switch; wall_grid_spacing:=0
-    # stops it being drawn in either view at all.
+    # to the wall. Unticking it is the only switch it has, and the only one
+    # it needs: wall_grid_spacing:=0 takes the grid off the wall face in
+    # Gazebo, where it would otherwise land in photographs, and deliberately
+    # leaves this overlay alone.
     - Class: rviz_default_plugins/MarkerArray
       Name: Wall Reference Grid
       Enabled: true

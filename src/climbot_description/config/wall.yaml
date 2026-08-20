@@ -25,7 +25,11 @@ wall:
   # Worth keeping while a human watches a run and worth removing while the
   # wall is being photographed: at the 0.50 m by 0.28 m photo footprint a 1 m
   # grid lands in 67% of images, repeats identically, and sits 3 mm off the
-  # surface a stitch treats as a plane. Override for one run with the
-  # wall_grid_spacing launch argument; untick the RViz display to hide it live.
+  # surface a stitch treats as a plane.
+  #
+  # Only the painted one ends up in a photograph, so only that one has a
+  # launch argument: wall_grid_spacing:=0 leaves the wall face bare and does
+  # not touch RViz. The overlay is switched by unticking its display, which
+  # is where an operator looks and needs no restart.
   reference_grid:
     spacing_m: 1.0

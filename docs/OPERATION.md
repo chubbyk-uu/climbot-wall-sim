@@ -67,15 +67,20 @@ RViz 里从启动起就画着一个**绿色边框**，那是墙面按机器人�
 内部线，两个视图用的是同一条规则和同一个间距（`climbot_description/config/wall.yaml`
 的 `reference_grid.spacing_m`），所以从任一视图读出来的坐标一致。
 
-- **临时藏起来**：在 RViz 左侧 Displays 里取消勾选 `Wall Reference Grid`，立即生效，
-  不影响 Gazebo 里墙面上那套。
-- **整轮都不画**：加 `wall_grid_spacing:=0`，Gazebo 墙面和 RViz 叠加层同时不画。
-  拍摄墙面的运行必须这样跑——网格线是周期性高对比特征，还浮在墙面前 `3 mm`，
-  在 `0.50 × 0.28 m` 的拍摄视场下会进入 `67%` 的照片。
+两套网格各有各的开关，互不影响：
+
+| 要关的 | 怎么关 |
+| --- | --- |
+| **Gazebo 墙面上那套**（会进照片） | 启动时加 `wall_grid_spacing:=0` |
+| **RViz 叠加层**（只有人看） | Displays 里取消勾选 `Wall Reference Grid`，当场生效 |
 
 ```bash
 ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 ```
+
+`wall_grid_spacing` **只管墙面那套**，不碰 RViz。拍摄墙面的运行必须加它——网格线是
+周期性高对比特征，还浮在墙面前 `3 mm`，在 `0.50 × 0.28 m` 的拍摄视场下会进入 `67%`
+的照片。而这类运行操作员照样要看规划，所以 RViz 那套不能跟着一起消失。
 
 在工具栏选择 `Publish Point`，按下表顺序点击角点。每次点击 `/coverage/status`
 都会回显它认成了哪个角和坐标，用来确认没有因为相机视角而选反方向：
@@ -389,7 +394,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 `--source-size-m 2.5` 没有默认值，必须显式给：ambientCG 没有记录 `Concrete044D`
 的真实尺寸，这个数是**本项目的声明**，而烘焙里每一个长度都是从它推出来的。
 
-拍照运行请一并加 `wall_grid_spacing:=0`，理由见上面的参考网格线一节。
+拍照运行请一并加 `wall_grid_spacing:=0`（只关墙面那套，RViz 不受影响），理由见上面
+的参考网格线一节。
 
 贴图只改墙面**外观**：碰撞盒、摩擦系数和按它标定的 WheelSlip 参数都不动，贴图块
 浮在墙面前 `1 mm`（参考网格线是 `3 mm`，那个距离足以让拼接的单应性把它当成第二个

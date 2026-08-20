@@ -106,8 +106,12 @@ public:
     wall_width_ = declare_parameter("wall_width", -1.0);
     wall_height_ = declare_parameter("wall_height", -1.0);
     // Pitch of the reference grid drawn over the wall in RViz, matching the
-    // one painted on the wall face in Gazebo. 0 publishes nothing; the
-    // display can also be unticked in RViz, which is the live switch.
+    // one painted on the wall face in Gazebo. The launch injects it from the
+    // wall description and not from the wall_grid_spacing launch argument:
+    // that argument is for keeping the painted grid out of photographs, and
+    // this overlay is never photographed. Unticking the display is its switch.
+    // 0 publishes nothing, which is what a wall description with no grid asks
+    // for.
     wall_grid_spacing_ = declare_parameter("wall_grid_spacing", 1.0);
     path_height_ = declare_parameter("path_height", 0.06);
     bottom_warning_tolerance_ = declare_parameter("bottom_warning_tolerance", 0.05);
@@ -607,10 +611,11 @@ private:
   /// Draw the wall's reference grid once, on a topic of its own.
   ///
   /// Same pitch and the same lines as the grid painted on the wall face in
-  /// Gazebo, so a coordinate read off one view is the coordinate in the other,
-  /// and so an operator who switched the painted grid off for a photography
-  /// run still has one to plan against. It never changes, so it is published
-  /// once and latched for late subscribers rather than rebuilt per plan.
+  /// Gazebo, so a coordinate read off one view is the coordinate in the other.
+  /// It is drawn whatever the painted grid is doing, which is the point: a
+  /// photography run takes the grid off the wall and the operator watching it
+  /// still has one to plan against. It never changes, so it is published once
+  /// and latched for late subscribers rather than rebuilt per plan.
   void publishWallGrid()
   {
     visualization_msgs::msg::MarkerArray markers;

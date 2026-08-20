@@ -38,7 +38,6 @@ def generate_launch_description():
             'input_mode': LaunchConfiguration('input_mode'),
             'region_type': LaunchConfiguration('region_type'),
             'sweep_direction': LaunchConfiguration('sweep_direction'),
-            'wall_grid_spacing': LaunchConfiguration('wall_grid_spacing'),
         }.items(),
     )
     # The executor is what coverage_sim.launch.py leaves out: without it the
@@ -97,15 +96,16 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument('region_type', default_value='rectangle'),
         DeclareLaunchArgument('sweep_direction', default_value='horizontal'),
-        # One word for both views. The wall launch paints the grid on the
-        # wall face, the planner draws the same lines in RViz, and both take
-        # their default from climbot_description/config/wall.yaml. Set it to 0
-        # for a run that photographs the wall; untick the RViz display to hide
-        # the overlay live without restarting anything.
+        # The grid painted on the wall face in Gazebo, which is the one that
+        # ends up in photographs. Set it to 0 for a run that photographs the
+        # wall. It deliberately does not reach the RViz overlay: that one is
+        # only ever looked at by a person, and its switch is unticking the
+        # Wall Reference Grid display, which needs no restart.
         DeclareLaunchArgument(
             'wall_grid_spacing',
             default_value=repr(reference_grid_spacing()),
-            description='Reference grid pitch in metres; 0 draws none.',
+            description='Reference grid pitch on the Gazebo wall face in '
+                        'metres; 0 paints none. Does not affect RViz.',
         ),
         DeclareLaunchArgument(
             'wall_texture',

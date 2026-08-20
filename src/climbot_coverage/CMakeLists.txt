@@ -56,6 +56,8 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_configure.py TIMEOUT 90 ENV ROS_DOMAIN_ID=65)
   add_launch_test(test/test_coverage_wall_grid_off.py TIMEOUT 30 ENV ROS_DOMAIN_ID=66)
   ament_add_pytest_test(test_rviz_config test/test_rviz_config.py TIMEOUT 30)
+  ament_add_pytest_test(
+    test_planner_launch_grid test/test_planner_launch_grid.py TIMEOUT 30)
 endif()
 
 ament_export_include_directories(include)
