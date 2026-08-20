@@ -15,6 +15,9 @@ uint8 STOPPING=6    # contact with the executor was lost mid-run and the manager
                     # the robot is no longer being driven, and never reports
                     # FINISHED on the strength of the executor merely having
                     # gone quiet on the Action interface
+uint8 RECOVERY_LOCKED=7  # supervision of an unknown Goal was explicitly
+                         # abandoned; the speed hold remains engaged and no new
+                         # task may start until the operator explicitly rearms
 
 std_msgs/Header header
 
@@ -59,6 +62,8 @@ uint16 result_code
 # executor's Action server is not running, and the refusal explains itself.
 bool can_start
 bool can_cancel
+bool can_force_abandon
+bool can_rearm
 
 # The same line the manager logs. Publishing it here keeps one wording for the
 # log, the panel and ros2 topic echo.

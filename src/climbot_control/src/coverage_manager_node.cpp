@@ -165,6 +165,14 @@ public:
       "/coverage/cancel",
       [this](const std_srvs::srv::Trigger::Request::SharedPtr,
       const std_srvs::srv::Trigger::Response::SharedPtr response) {cancel(response);});
+    force_abandon_service_ = create_service<std_srvs::srv::Trigger>(
+      "/coverage/force_abandon",
+      [this](const std_srvs::srv::Trigger::Request::SharedPtr,
+      const std_srvs::srv::Trigger::Response::SharedPtr response) {forceAbandon(response);});
+    rearm_service_ = create_service<std_srvs::srv::Trigger>(
+      "/coverage/rearm",
+      [this](const std_srvs::srv::Trigger::Request::SharedPtr,
+      const std_srvs::srv::Trigger::Response::SharedPtr response) {rearm(response);});
     // Steady time, and a wall timer, so a paused or stopped simulation clock
     // cannot freeze either safety deadline: detecting an unanswered start
     // request and detecting a vanished executor. Both measure their own
@@ -179,7 +187,7 @@ private:
   bool busy() const
   {
     return active_goal_ != nullptr || start_pending_since_.has_value() ||
-           stopping_since_.has_value() || queued_goal_.has_value();
+           stopping_since_.has_value() || queued_goal_.has_value() || recovery_locked_;
   }
 
   /// Publish what this manager would accept right now, using the same
@@ -192,6 +200,8 @@ private:
     // the same moment contact was lost, which is the one moment an operator
     // watching the robot still move has nothing else to reach for.
     status_.can_cancel = active_goal_ != nullptr || stopping_since_.has_value();
+    status_.can_force_abandon = stopping_since_.has_value() && unresolved_goal_response_;
+    status_.can_rearm = recovery_locked_;
   }
 
   void publishStatus(uint8_t state, const std::string & text)
@@ -240,6 +250,10 @@ private:
   // after all. A hold protects current output but does not terminate the task.
   void superviseExecution()
   {
+    if (recovery_locked_) {
+      engageHold();
+      return;
+    }
     continueQueuedStart();
     expireStalePending();
     if (stopping_since_) {
@@ -463,9 +477,11 @@ private:
     // exists. Sending both asynchronously made EXECUTING mean only that the
     // controller had a goal, not that the actuator path could move, and a late
     // engage response could win after the new task started.
-    const bool hold_may_engage = hold_active_.value_or(false) ||
-      (hold_request_value_ && *hold_request_value_);
-    if (hold_may_engage) {
+    // When the watchdog exists, every start performs an explicit release and
+    // waits for its acknowledgement. Inferring release from the latest latched
+    // sample races an older false sample against a newer engage request under
+    // load; a goal can otherwise reach the executor while hold is still true.
+    if (hold_client_->service_is_ready()) {
       queued_goal_ = goal;
       queued_goal_generation_ = generation;
       hold_release_confirmed_ = false;
@@ -526,6 +542,11 @@ private:
     options.goal_response_callback = [this, task_id, revision,
         generation](const GoalHandle::SharedPtr & goal_handle) {
         if (generation != goal_generation_) {
+          const bool was_forcibly_abandoned =
+            forced_abandoned_generation_ && *forced_abandoned_generation_ == generation;
+          if (was_forcibly_abandoned) {
+            forced_abandoned_generation_.reset();
+          }
           RCLCPP_WARN(
             get_logger(),
             "Received a retired goal response for %s revision %u.",
@@ -537,6 +558,26 @@ private:
             // the second one.
             maintainHoldRequest(true);
             action_client_->async_cancel_goal(goal_handle);
+            if (was_forcibly_abandoned) {
+              // The premise under which an operator rearmed was wrong: the
+              // unknown request really was accepted. Stop any newer task too,
+              // retire all of its callbacks, and require an explicit recovery
+              // again rather than hiding the late acceptance in a warning.
+              if (active_goal_) {
+                action_client_->async_cancel_goal(active_goal_);
+              }
+              ++goal_generation_;
+              start_pending_since_.reset();
+              stopping_since_.reset();
+              unresolved_goal_response_ = false;
+              queued_goal_.reset();
+              active_goal_.reset();
+              recovery_locked_ = true;
+              publishStatus(
+                Status::RECOVERY_LOCKED,
+                "A forcibly abandoned Goal was accepted late; speed hold is engaged. "
+                "Verify the executor and hardware stop before rearming.");
+            }
           }
           return;
         }
@@ -628,6 +669,53 @@ private:
     response->message = "Cancellation requested; executor will stop before returning.";
   }
 
+  void forceAbandon(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
+  {
+    expireStalePending();
+    if (!stopping_since_ || !unresolved_goal_response_) {
+      response->success = false;
+      response->message =
+        "Force abandon is only available while a start response is unknown.";
+      return;
+    }
+
+    // Retire the callbacks, but remember exactly which request was abandoned.
+    // If its response later proves it was accepted, the callback re-engages
+    // RECOVERY_LOCKED even after an operator has already rearmed.
+    forced_abandoned_generation_ = goal_generation_;
+    ++goal_generation_;
+    start_pending_since_.reset();
+    stopping_since_.reset();
+    unresolved_goal_response_ = false;
+    active_goal_.reset();
+    recovery_locked_ = true;
+    engageHold();
+    publishStatus(
+      Status::RECOVERY_LOCKED,
+      "Unknown Goal supervision was forcibly abandoned. This does not prove the task "
+      "stopped; speed hold remains requested. Verify hardware stop or executor shutdown "
+      "before rearming.");
+    response->success = true;
+    response->message =
+      "Recovery locked with speed hold requested; physical verification is required.";
+  }
+
+  void rearm(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
+  {
+    if (!recovery_locked_) {
+      response->success = false;
+      response->message = "The manager is not recovery locked.";
+      return;
+    }
+    recovery_locked_ = false;
+    publishStatus(
+      cached_task_ ? Status::READY : Status::IDLE,
+      "Manager rearmed after operator verification; speed hold remains engaged until "
+      "the next Start releases it.");
+    response->success = true;
+    response->message = "Manager rearmed; the next Start will release the speed hold.";
+  }
+
   std::string frame_id_;
   double start_response_timeout_s_;
   double feedback_publish_period_s_;
@@ -651,10 +739,12 @@ private:
   std::optional<bool> hold_request_value_;
   bool hold_release_confirmed_{false};
   bool unresolved_goal_response_{false};
+  bool recovery_locked_{false};
   uint64_t hold_generation_{0};
   // Identifies callbacks from one Action request. A timed-out request keeps its
   // generation until its true outcome or a supervised stop retires it.
   uint64_t goal_generation_{0};
+  std::optional<uint64_t> forced_abandoned_generation_;
   uint64_t queued_goal_generation_{0};
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;
   std::optional<ExecuteCoverage::Goal> queued_goal_;
@@ -666,6 +756,8 @@ private:
   rclcpp_action::Client<ExecuteCoverage>::SharedPtr action_client_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr cancel_service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr force_abandon_service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr rearm_service_;
   rclcpp::Publisher<Status>::SharedPtr status_publisher_;
   rclcpp::TimerBase::SharedPtr supervision_timer_;
 };

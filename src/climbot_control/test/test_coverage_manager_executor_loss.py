@@ -172,7 +172,8 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
         goal_handle.abort()
         return ExecuteCoverage.Result()
 
-    def _offer_the_speed_hold(self, first_response_delay_s=0.0):
+    def _offer_the_speed_hold(self, first_response_delay_s=0.0,
+                              delayed_value=True):
         self.hold_publisher = self.node.create_publisher(
             Bool, '/control/hold_active',
             rclpy.qos.QoSProfile(
@@ -183,7 +184,10 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
 
         def serve(request, response):
             self.hold_requests.append(request.data)
-            if len(self.hold_requests) == 1 and first_response_delay_s > 0.0:
+            delayed_already = getattr(self, '_hold_response_delayed', False)
+            if (request.data == delayed_value and not delayed_already and
+                    first_response_delay_s > 0.0):
+                self._hold_response_delayed = True
                 time.sleep(first_response_delay_s)
             self.hold_publisher.publish(Bool(data=request.data))
             response.success = True
@@ -408,7 +412,8 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
 
     def test_a_new_goal_waits_until_an_old_hold_is_confirmed_released(self):
         """STARTING may not mean the Action was sent while wheels stay held."""
-        self._offer_the_speed_hold(first_response_delay_s=0.8)
+        self._offer_the_speed_hold(
+            first_response_delay_s=0.8, delayed_value=False)
         self.hold_publisher.publish(Bool(data=True))
         time.sleep(0.2)
         self.task_publisher.publish(_task(self.revision))

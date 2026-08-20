@@ -114,6 +114,9 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         self.node.create_subscription(CoverageStatus, '/coverage/manager_status',
                                       self.statuses.append, 10)
         self.start_client = self.node.create_client(Trigger, '/coverage/start')
+        self.force_abandon_client = self.node.create_client(
+            Trigger, '/coverage/force_abandon')
+        self.rearm_client = self.node.create_client(Trigger, '/coverage/rearm')
 
         self.executor_node = rclpy.create_node('stub_executor')
         self.first_goal_seen = Event()
@@ -137,6 +140,8 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         self.spin_thread = Thread(target=self.ros_executor.spin)
         self.spin_thread.start()
         self.assertTrue(self.start_client.wait_for_service(timeout_sec=10.0))
+        self.assertTrue(self.force_abandon_client.wait_for_service(timeout_sec=10.0))
+        self.assertTrue(self.rearm_client.wait_for_service(timeout_sec=10.0))
 
     def tearDown(self):
         self.end_of_test.set()
@@ -174,13 +179,16 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         self.abandoned_finished.set()
         return result
 
-    def _call_start(self):
-        future = self.start_client.call_async(Trigger.Request())
+    def _call(self, client):
+        future = client.call_async(Trigger.Request())
         deadline = time.monotonic() + 10.0
         while not future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
         self.assertTrue(future.done(), 'The start service did not answer.')
         return future.result()
+
+    def _call_start(self):
+        return self._call(self.start_client)
 
     def _wait_until(self, predicate, what, timeout=30.0):
         deadline = time.monotonic() + timeout
@@ -241,6 +249,58 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         self.assertEqual(finished.result_code, ExecuteCoverage.Result.SUCCESS)
         self.assertTrue(finished.can_start)
         self.assertFalse(finished.can_cancel)
+
+    def test_force_abandon_requires_rearm_and_a_late_acceptance_relocks(self):
+        """The manual escape must remain fail-safe when its premise was wrong."""
+        self.task_publisher.publish(_task(ABANDONED_REVISION + 10))
+        self._wait_until(
+            lambda s: s.state == CoverageStatus.READY,
+            'the recovery preview')
+        self.assertTrue(self._call_start().success)
+        self.assertTrue(self.first_goal_seen.wait(10.0))
+        stopping = self._wait_until(
+            lambda s: s.state == CoverageStatus.STOPPING and
+            s.can_force_abandon,
+            'force abandon to become available for an unknown response')
+        self.assertFalse(stopping.can_rearm)
+
+        forced = self._call(self.force_abandon_client)
+        self.assertTrue(forced.success)
+        locked = self._wait_until(
+            lambda s: s.state == CoverageStatus.RECOVERY_LOCKED,
+            'the manager to enter recovery lock')
+        self.assertFalse(locked.can_start)
+        self.assertFalse(locked.can_cancel)
+        self.assertFalse(locked.can_force_abandon)
+        self.assertTrue(locked.can_rearm)
+        self.assertFalse(self._call_start().success)
+
+        self.assertTrue(self._call(self.rearm_client).success)
+        ready = self._wait_until(
+            lambda s: s.state == CoverageStatus.READY and s.can_start,
+            'operator rearm to restore READY')
+        self.assertFalse(ready.can_rearm)
+
+        # The explicit recovery was based on external verification. If that
+        # premise proves wrong and the retired request is accepted after all,
+        # it must not run behind READY or a newer task: hold and lock again.
+        self.release_first.set()
+        relocked = self._wait_until(
+            lambda s: s.state == CoverageStatus.RECOVERY_LOCKED and
+            'accepted late' in s.message,
+            'the late acceptance to invalidate the operator rearm')
+        self.assertFalse(relocked.can_start)
+        self.assertTrue(relocked.can_rearm)
+        self.assertTrue(self.abandoned_finished.wait(30.0))
+        time.sleep(0.2)
+        self.assertEqual(self.statuses[-1].state, CoverageStatus.RECOVERY_LOCKED)
+
+        # Test cleanup models a second physical verification after the now
+        # known old Goal has reached its terminal result.
+        self.assertTrue(self._call(self.rearm_client).success)
+        self._wait_until(
+            lambda s: s.state == CoverageStatus.READY,
+            'the second rearm to release the test fixture')
 
 
 @launch_testing.post_shutdown_test()
