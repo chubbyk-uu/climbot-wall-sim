@@ -985,6 +985,35 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 `gazebo_wall.png` 不受影响，墙面在世界系里没有变。（已于 2026-08-20 重拍，见
 「README 时长口径与 RViz 截图」。）
 
+## 2026-08-20 拆出控制器的三块边界（review M5）
+
+`line_tracker_node.cpp` 上一轮 review 时 1741 行，本轮涨到 1788，单类同时负责参数、
+Action、8 态运动控制、调度估计、动态参考、反馈和安全终止。上一轮决定"下次动这个文件时
+顺带拆"，本轮已多次触及却没执行。
+
+按 review 建议的三条边界抽出三个可单测对象，**只搬不改算法**：
+
+| 新对象 | 管什么 | 原来在哪 |
+| --- | --- | --- |
+| `ScheduleEstimate` | 任务该花多久、花掉多少：进度条、倒计时、`planned_total_s` | `planSegmentDurations` / `taskProgress` / `startApproachRemaining` / `estimatedRemaining` 及五个成员 |
+| `ScanEntry` | 扫描线顶端的三个判断：机器人相对线在哪、转完后的偏移怎么办、首条扫描线进不进得去 | `preparePostTurnScan` / `firstScanEntryFits` / `warnIfTurnSlipLooksStale` 里的几何部分 |
+| `SegmentArrival` | 一段什么时候算到了：双阈值迟滞 + 静止判据 + 稳定时间 | `updateGoalCompletion` 与 `goal_settle_start_` |
+
+这三块的共同点是：**它们决定了每一次运行的形状，而唯一能验证它们的方式是跑一整个任务**。
+现在各有一组直接提问的单元测试，共 25 项——`ScheduleEstimate` 8 项、`ScanEntry` 10 项、
+`SegmentArrival` 7 项。几个此前完全没有覆盖的点：进度按耗时而非段数加权、起点进入是
+逐渐倒计时而非到达时整块消失、沿重力方向的扫描线把转向下坠吃在自己长度里所以不占偏移
+预算、双阈值之间的漂移保留稳定计时但不能凭此判完成、以及以速度穿过终点不算到达。
+
+搬迁过程中发现并保留了一处原有语义：`updateGoalCompletion` 在"进了松阈值、出了紧阈值"
+时返回 `false` 而**不**清计时器。第一版重写把它写成了"计时够了就完成"，是行为改变；已
+按原样恢复，并在 `SegmentArrival` 里把这条写明——两个阈值band 是为了让停在紧阈值边缘的
+机器人既不会永远重新计时、也不会从松阈值外面判完成。
+
+`line_tracker_node.cpp` 1788 → 1745 行。行数不是重点，**编排能被直接提问了**才是。
+
+宿主全量：**643 tests，0 error，0 failure，39 skipped**（原 588，新增 55）。
+
 ## 2026-08-20 Apache-2.0 文件头（review L7）
 
 七个包的 `package.xml` 都写着 `<license>Apache-2.0</license>`，根目录有完整的

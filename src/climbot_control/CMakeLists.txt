@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
 add_library(line_tracker src/line_tracker.cpp src/command_watchdog.cpp src/coverage_execution.cpp
+  src/schedule_estimate.cpp src/scan_entry.cpp src/segment_arrival.cpp
   src/turn_profile.cpp src/travel_profile.cpp src/segment_duration.cpp)
 target_compile_features(line_tracker PUBLIC cxx_std_17)
 target_include_directories(line_tracker PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -50,6 +51,12 @@ if(BUILD_TESTING)
   ament_add_gtest(test_control_clock test/test_control_clock.cpp)
   ament_target_dependencies(test_control_clock rclcpp)
   target_include_directories(test_control_clock PRIVATE include)
+  ament_add_gtest(test_segment_arrival test/test_segment_arrival.cpp)
+  target_link_libraries(test_segment_arrival line_tracker)
+  ament_add_gtest(test_scan_entry test/test_scan_entry.cpp)
+  target_link_libraries(test_scan_entry line_tracker)
+  ament_add_gtest(test_schedule_estimate test/test_schedule_estimate.cpp)
+  target_link_libraries(test_schedule_estimate line_tracker)
   ament_add_gtest(test_segment_duration test/test_segment_duration.cpp)
   target_link_libraries(test_segment_duration line_tracker)
   ament_add_gtest(test_travel_profile test/test_travel_profile.cpp)

@@ -25,6 +25,9 @@
 #include "climbot_control/control_clock.hpp"
 #include "climbot_control/coverage_execution.hpp"
 #include "climbot_control/line_tracker.hpp"
+#include "climbot_control/scan_entry.hpp"
+#include "climbot_control/segment_arrival.hpp"
+#include "climbot_control/schedule_estimate.hpp"
 #include "climbot_control/segment_duration.hpp"
 #include "climbot_control/travel_profile.hpp"
 #include "climbot_control/turn_profile.hpp"
@@ -242,7 +245,7 @@ public:
     alignment_settle_start_ = zero;
     travel_start_ = zero;
     arc_entry_start_time_ = zero;
-    goal_settle_start_ = zero;
+    arrival_.reset();
     last_pose_received_time_ = zero;
     last_control_time_ = zero;
     task_start_time_ = zero;
@@ -584,11 +587,7 @@ private:
     // renders a zero planned_total_s as "-", so the schedule reads as unknown
     // for the few cycles the wait lasts rather than carrying the previous
     // task's numbers or an estimate measured from the origin.
-    segment_turn_estimates_.clear();
-    segment_travel_estimates_.clear();
-    total_duration_estimate_ = 0.0;
-    start_approach_turn_estimate_ = 0.0;
-    start_approach_travel_estimate_ = 0.0;
+    schedule_.clear();
     // Log before configuring: configureStartApproach() may finish the goal and
     // release active_task_, and acceptance is what this line reports anyway.
     RCLCPP_INFO(
@@ -629,46 +628,19 @@ private:
   /// time; measured baselines put that discrepancy at a factor of 2.4.
   void planSegmentDurations()
   {
-    const auto model = durationModel();
-    const auto & waypoints = active_task_->waypoints;
-    segment_turn_estimates_.assign(active_task_->segment_types.size(), 0.0);
-    segment_travel_estimates_.assign(active_task_->segment_types.size(), 0.0);
-    total_duration_estimate_ = 0.0;
-    double previous_heading = pose_.yaw;
-    for (std::size_t index = 0; index < active_task_->segment_types.size(); ++index) {
-      const auto & from = waypoints[index].position;
-      const auto & to = waypoints[index + 1U].position;
-      const double heading = std::atan2(to.y - from.y, to.x - from.x);
-      const double turn = std::atan2(
-        std::sin(heading - previous_heading), std::cos(heading - previous_heading));
-      previous_heading = heading;
-      segment_turn_estimates_[index] =
-        climbot_control::estimateTurnDuration(turn, model);
-      segment_travel_estimates_[index] = climbot_control::estimateTravelDuration(
-        std::hypot(to.x - from.x, to.y - from.y), model);
-      total_duration_estimate_ +=
-        segment_turn_estimates_[index] + segment_travel_estimates_[index];
+    // The arithmetic lives in ScheduleEstimate, which reads no clock and knows
+    // nothing about the eight motion states: the numbers an operator schedules
+    // work from used to be reachable only by running a whole task in
+    // simulation. What stays here is the part that is genuinely this node's -
+    // turning the task's poses into positions, and knowing where the robot is.
+    std::vector<climbot_control::Point2> waypoints;
+    waypoints.reserve(active_task_->waypoints.size());
+    for (const auto & pose : active_task_->waypoints) {
+      waypoints.push_back({pose.position.x, pose.position.y});
     }
-    // Deliberately outside total_duration_estimate_, which is the progress
-    // bar's denominator and has to keep meaning what it meant: the bar counts
-    // the segments and reads zero until the first one starts. The approach to
-    // the first waypoint is real time the operator waits through, though, so
-    // the schedule reported alongside the bar does include it.
-    const auto & first = waypoints.front().position;
-    const double approach_length = std::hypot(first.x - pose_.x, first.y - pose_.y);
-    if (approach_length <= goal_position_tolerance_) {
-      start_approach_turn_estimate_ = 0.0;
-      start_approach_travel_estimate_ = 0.0;
-      return;
-    }
-    const double approach_heading = std::atan2(first.y - pose_.y, first.x - pose_.x);
-    // Kept as its two parts rather than one total, because the estimate has to
-    // be counted down while the leg runs and its turn and its drive finish at
-    // different times.
-    start_approach_turn_estimate_ = climbot_control::estimateTurnDuration(
-      climbot_control::wrapAngle(approach_heading - pose_.yaw), model);
-    start_approach_travel_estimate_ =
-      climbot_control::estimateTravelDuration(approach_length, model);
+    schedule_.plan(
+      waypoints, {pose_.x, pose_.y}, pose_.yaw, durationModel(),
+      goal_position_tolerance_);
   }
 
   /// How much of the current segment's turn is done. The alignment profile is
@@ -783,24 +755,10 @@ private:
     const geometry_msgs::msg::Point & first, const geometry_msgs::msg::Point & second,
     const climbot_control::Point2 & lifted_target)
   {
-    const double approach_heading = std::atan2(
-      lifted_target.y - pose_.y, lifted_target.x - pose_.x);
-    const double scan_heading = std::atan2(second.y - first.y, second.x - first.x);
-    const double turn = std::abs(
-      std::atan2(
-        std::sin(scan_heading - approach_heading),
-        std::cos(scan_heading - approach_heading)));
-    const double drop = turn_slip_per_degree_ * turn * 180.0 / std::acos(-1.0);
-    const double gravity_norm = std::hypot(
-      limits_.gravity_direction.x, limits_.gravity_direction.y);
-    const double reserved = std::hypot(
-      lifted_target.x - first.x, lifted_target.y - first.y);
-    const double residual = std::max(0.0, drop - reserved);
-    const double normal_share = gravity_norm <= 1e-9 ? 0.0 :
-      std::abs(
-      -std::sin(scan_heading) * limits_.gravity_direction.x +
-      std::cos(scan_heading) * limits_.gravity_direction.y) / gravity_norm;
-    const double budget = start_approach_tolerance_ + residual * normal_share;
+    const double budget = climbot_control::firstScanEntryBudget(
+      {pose_.x, pose_.y}, {first.x, first.y}, {second.x, second.y}, lifted_target,
+      {limits_.gravity_direction.x, limits_.gravity_direction.y},
+      turn_slip_per_degree_, start_approach_tolerance_);
     if (budget <= maximum_scan_offset_) {
       return true;
     }
@@ -939,7 +897,7 @@ private:
     previous_command_ = {};
     cross_integral_ = 0.0;
     alignment_settle_start_ = zeroInstant();
-    goal_settle_start_ = zeroInstant();
+    arrival_.reset();
     segment_start_time_ = controlNow();
     alignment_origin_ = start_;
     arc_entry_active_ = false;
@@ -963,7 +921,7 @@ private:
     previous_command_ = {};
     cross_integral_ = 0.0;
     alignment_settle_start_ = zeroInstant();
-    goal_settle_start_ = zeroInstant();
+    arrival_.reset();
     segment_start_time_ = controlNow();
     alignment_origin_ = {pose_.x, pose_.y};
     arc_entry_active_ = false;
@@ -1015,27 +973,25 @@ private:
   {
     nominal_scan_start_ = start_;
     nominal_scan_end_ = end_;
-    const double dx = end_.x - start_.x;
-    const double dy = end_.y - start_.y;
-    const double length = std::hypot(dx, dy);
-    if (length <= 1e-9) {
+    if (std::hypot(end_.x - start_.x, end_.y - start_.y) <= 1e-9) {
       finishGoal(
         ExecuteCoverage::Result::TRACKING_FAILED,
         "Nominal scan line has no length.");
       return false;
     }
-    const double tx = dx / length;
-    const double ty = dy / length;
-    const double along = (pose_.x - start_.x) * tx + (pose_.y - start_.y) * ty;
-    const double cross = -(pose_.x - start_.x) * ty + (pose_.y - start_.y) * tx;
-    if (std::abs(cross) <= parallel_scan_offset_) {
-      return lockParallelScanLine(cross, along);
-    }
-    if (std::abs(cross) > maximum_scan_offset_) {
-      finishGoal(
-        ExecuteCoverage::Result::TRACKING_FAILED,
-        "Post-turn scan offset exceeds the maximum recoverable distance.");
-      return false;
+    const auto offset = climbot_control::offsetFromLine(start_, end_, {pose_.x, pose_.y});
+    switch (climbot_control::classifyScanOffset(
+        offset.cross, parallel_scan_offset_, maximum_scan_offset_))
+    {
+      case climbot_control::ScanEntry::LOCK_PARALLEL:
+        return lockParallelScanLine(offset.cross, offset.along);
+      case climbot_control::ScanEntry::TOO_FAR:
+        finishGoal(
+          ExecuteCoverage::Result::TRACKING_FAILED,
+          "Post-turn scan offset exceeds the maximum recoverable distance.");
+        return false;
+      case climbot_control::ScanEntry::ARC_ENTRY:
+        break;
     }
     arc_entry_active_ = true;
     arc_entry_start_time_ = controlNow();
@@ -1043,7 +999,7 @@ private:
     RCLCPP_INFO(
       get_logger(),
       "Starting a single forward arc entry for %.1f mm post-turn scan offset.",
-      cross * 1000.0);
+      offset.cross * 1000.0);
     return true;
   }
 
@@ -1053,20 +1009,17 @@ private:
   // sustained disagreement is reported rather than silently absorbed.
   void warnIfTurnSlipLooksStale(double observed_turn_drop)
   {
-    const double degrees = alignment_turn_ * 180.0 / std::acos(-1.0);
-    if (degrees < 10.0) {
+    if (!climbot_control::turnSlipLooksStale(
+        alignment_turn_, observed_turn_drop, turn_slip_per_degree_))
+    {
       return;
     }
-    const double predicted = turn_slip_per_degree_ * degrees;
-    const double tolerance = std::max(0.005, 0.5 * predicted);
-    if (std::abs(observed_turn_drop - predicted) <= tolerance) {
-      return;
-    }
+    const double degrees = std::abs(alignment_turn_) * 180.0 / std::acos(-1.0);
     RCLCPP_WARN_THROTTLE(
       get_logger(), *control_clock_, 10000,
       "Turn of %.0f deg dropped %.1f mm but turn_slip_per_degree_m predicts "
       "%.1f mm. Re-run measure_turn_slip.py for this wall.",
-      degrees, observed_turn_drop * 1000.0, predicted * 1000.0);
+      degrees, observed_turn_drop * 1000.0, turn_slip_per_degree_ * degrees * 1000.0);
   }
 
   DynamicReferenceResult prepareDynamicReference()
@@ -1179,21 +1132,11 @@ private:
   /// whole segment's worth over each approach leg and then drop back to zero.
   float taskProgress(const climbot_control::Command & command)
   {
-    if (!(total_duration_estimate_ > 0.0) ||
-      current_segment_ >= segment_turn_estimates_.size())
-    {
-      return 0.0F;
-    }
-    double spent = 0.0;
-    for (std::size_t index = 0; index < completed_segments_; ++index) {
-      spent += segment_turn_estimates_[index] + segment_travel_estimates_[index];
-    }
     const double length = std::hypot(end_.x - start_.x, end_.y - start_.y);
-    const double travelled = length > 0.0 ?
-      std::clamp(command.along / length, 0.0, 1.0) : 0.0;
-    spent += segment_turn_estimates_[current_segment_] * alignmentFraction() +
-      segment_travel_estimates_[current_segment_] * travelled;
-    return static_cast<float>(std::clamp(spent / total_duration_estimate_, 0.0, 1.0));
+    const double travelled = length > 0.0 ? command.along / length : 0.0;
+    return static_cast<float>(
+      schedule_.progress(
+        completed_segments_, current_segment_, alignmentFraction(), travelled));
   }
 
   /// The lag expressed in seconds, at the rated cruise speed. The reference
@@ -1210,24 +1153,22 @@ private:
 
   /// What is left of the drive to the first waypoint. The progress bar reads
   /// zero throughout this leg on purpose - it counts the task's segments and
-  /// this is not one of them - so the estimate cannot be derived from it, and
-  /// carrying the leg as a block that only disappears on arrival left the
-  /// countdown standing still and then jumping by the whole leg at once.
+  /// this is not one of them - so the estimate cannot be derived from it.
   double startApproachRemaining(const climbot_control::Command & command) const
   {
-    const double total = start_approach_turn_estimate_ + start_approach_travel_estimate_;
-    if (waiting_for_start_pose_ || !(total > 0.0)) {
-      return total;
+    if (waiting_for_start_pose_) {
+      // Nothing has been driven yet, so the whole leg is still ahead. Asking
+      // for a fraction of a line that has not been anchored would be asking
+      // about a line that does not exist.
+      return schedule_.approachRemaining(0.0, 1.0);
     }
     // Measured against the current anchoring rather than the length this leg
     // started with: reanchorStartApproach moves the origin to wherever the
     // robot ended its turn, and a fraction of the original length would step
     // when it does.
     const double length = std::hypot(end_.x - start_.x, end_.y - start_.y);
-    const double left = length > 0.0 ?
-      std::clamp(command.remaining / length, 0.0, 1.0) : 0.0;
-    return start_approach_turn_estimate_ * (1.0 - alignmentFraction()) +
-           start_approach_travel_estimate_ * left;
+    const double left = length > 0.0 ? command.remaining / length : 0.0;
+    return schedule_.approachRemaining(alignmentFraction(), left);
   }
 
   /// What is left, carrying the lag. The progress fraction is already the
@@ -1235,11 +1176,10 @@ private:
   /// it rather than from a second traversal that could disagree with the bar.
   double estimatedRemaining(float progress, const climbot_control::Command & command) const
   {
-    const double segments = total_duration_estimate_ *
-      std::clamp(1.0 - static_cast<double>(progress), 0.0, 1.0);
     const double approach = approaching_start_ || waiting_for_start_pose_ ?
       startApproachRemaining(command) : 0.0;
-    return std::max(0.0, segments + approach + scheduleLagSeconds());
+    return schedule_.remaining(
+      static_cast<double>(progress), approach, scheduleLagSeconds());
   }
 
   void publishFeedback(const climbot_control::Command & command)
@@ -1259,8 +1199,7 @@ private:
     feedback->heading_error = command.heading_error;
     feedback->remaining_distance = command.remaining;
     feedback->progress = before_first_segment ? 0.0F : taskProgress(command);
-    feedback->planned_total_s = total_duration_estimate_ +
-      start_approach_turn_estimate_ + start_approach_travel_estimate_;
+    feedback->planned_total_s = schedule_.plannedTotal();
     feedback->schedule_lag_s = scheduleLagSeconds();
     feedback->estimated_remaining_s = estimatedRemaining(feedback->progress, command);
     active_goal_->publish_feedback(feedback);
@@ -1320,7 +1259,7 @@ private:
         motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
       }
       alignment_settle_start_ = zeroInstant();
-      goal_settle_start_ = zeroInstant();
+      arrival_.reset();
       last_control_time_ = current_time;
       geometry_msgs::msg::Twist stop;
       command_publisher_->publish(stop);
@@ -1529,43 +1468,35 @@ private:
     const rclcpp::Time & current_time, const climbot_control::Command & command)
   {
     const double position_error = std::hypot(end_.x - pose_.x, end_.y - pose_.y);
-    const double heading_error = std::abs(command.heading_error);
+    climbot_control::SegmentArrival::Tolerances tolerances;
     // The start approach keeps a loose tolerance on both legs: the robot turns
     // in place there and slips while stopped, so a tight ball around the goal
     // can be left as fast as it is entered. Where the first scan line ends up
     // is bounded by arc_entry_finish_offset_m instead.
-    const double position_tolerance = approaching_start_ ?
+    tolerances.position = approaching_start_ ?
       start_approach_tolerance_ : goal_position_tolerance_;
-    const double position_exit_tolerance = approaching_start_ ?
+    tolerances.position_exit = approaching_start_ ?
       start_approach_exit_tolerance_ : goal_position_exit_tolerance_;
-    const bool stopped = measured_linear_speed_ <= stopped_linear_speed_ &&
-      measured_angular_speed_ <= stopped_angular_speed_;
-    const bool strict_goal = position_error <= position_tolerance &&
-      heading_error <= alignment_tolerance_ && stopped;
-    const bool relaxed_goal = position_error <= position_exit_tolerance &&
-      heading_error <= goal_heading_exit_tolerance_ && stopped;
+    tolerances.heading = alignment_tolerance_;
+    tolerances.heading_exit = goal_heading_exit_tolerance_;
+    tolerances.linear_speed = stopped_linear_speed_;
+    tolerances.angular_speed = stopped_angular_speed_;
+    tolerances.settle_s = goal_settle_duration_;
 
-    if (!relaxed_goal) {
-      goal_settle_start_ = zeroInstant();
-      return false;
-    }
-    if (!strict_goal) {
-      return false;
-    }
-    if (goal_settle_start_.nanoseconds() == 0) {
-      goal_settle_start_ = current_time;
-      return false;
-    }
-    if ((current_time - goal_settle_start_).seconds() < goal_settle_duration_) {
+    if (!arrival_.update(
+        current_time.seconds(), position_error, command.heading_error,
+        measured_linear_speed_, measured_angular_speed_, tolerances))
+    {
       return false;
     }
 
+    arrival_.reset();
     motion_state_ = MotionState::SEGMENT_COMPLETE;
     cross_integral_ = 0.0;
     publishCompletion(!approaching_start_);
     RCLCPP_INFO(
       get_logger(), "Segment complete: position error %.4f m, heading error %.2f deg.",
-      position_error, heading_error * 180.0 / std::acos(-1.0));
+      position_error, std::abs(command.heading_error) * 180.0 / std::acos(-1.0));
     return true;
   }
 
@@ -1757,11 +1688,7 @@ private:
   double schedule_align_converge_s_{0.0};
   double schedule_goal_stop_s_{0.0};
   double schedule_handshake_s_{0.0};
-  double start_approach_turn_estimate_{0.0};
-  double start_approach_travel_estimate_{0.0};
-  std::vector<double> segment_turn_estimates_;
-  std::vector<double> segment_travel_estimates_;
-  double total_duration_estimate_{0.0};
+  climbot_control::ScheduleEstimate schedule_;
   std::size_t current_segment_{0U};
   climbot_control::Limits limits_;
   climbot_control::Point2 start_{};
@@ -1782,7 +1709,7 @@ private:
   rclcpp::Time alignment_profile_start_;
   rclcpp::Time alignment_settle_start_;
   rclcpp::Time arc_entry_start_time_;
-  rclcpp::Time goal_settle_start_;
+  climbot_control::SegmentArrival arrival_;
   rclcpp::Time last_pose_received_time_;
   rclcpp::Time last_control_time_;
   rclcpp::Time task_start_time_;
