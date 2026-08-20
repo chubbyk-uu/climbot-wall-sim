@@ -18,8 +18,11 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from visualization_msgs.msg import MarkerArray
 
-LOWER_LEFT = (-3.0, 0.5)
-UPPER_RIGHT = (3.0, 6.5)
+# Inside the reachable rectangle of the 12 x 9 m wall declared below,
+# which the lower-left work-frame origin makes 0.548..11.452 by
+# 0.548..8.452.
+LOWER_LEFT = (3.0, 1.0)
+UPPER_RIGHT = (9.0, 7.0)
 
 
 @pytest.mark.launch_test

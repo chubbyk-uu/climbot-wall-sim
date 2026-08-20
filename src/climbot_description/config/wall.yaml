@@ -2,9 +2,14 @@
 wall:
   # Pose of the wall work frame expressed in the external world frame.
   # The right-handed work frame is +X horizontal, +Y up, and +Z outward.
-  origin_xyz: [0.0, 0.0, 0.0]
+  #
+  # The origin sits at the wall's lower-left corner, so the whole surface
+  # is x in [0, width] and y in [0, height] with no negative coordinates to
+  # carry through region definitions and result files. The wall itself is
+  # still centred on world Y = 0, which is why this offset is -width/2.
+  origin_xyz: [0.0, -4.0, 0.0]
   origin_rpy: [1.5707963267948966, 0.0, 1.5707963267948966]
 
   surface:
-    width_m: 10.0
-    height_m: 8.0
+    width_m: 8.0
+    height_m: 6.0

@@ -541,8 +541,10 @@ private:
 
   Polygon motionRegion() const
   {
+    // The work frame's origin is the wall's lower-left corner, so the surface
+    // is the first quadrant and no region coordinate is ever negative.
     const RegionResult wall = makeRectangle(
-      {-0.5 * wall_width_, 0.0}, {0.5 * wall_width_, wall_height_});
+      {0.0, 0.0}, {wall_width_, wall_height_});
     return insetConvexPolygon(wall.polygon, safety_margin_);
   }
 
@@ -615,6 +617,8 @@ private:
     wall.id = 0;
     wall.type = visualization_msgs::msg::Marker::CUBE;
     wall.action = visualization_msgs::msg::Marker::ADD;
+    // Centre of a surface that now runs from the origin, not across it.
+    wall.pose.position.x = 0.5 * wall_width_;
     wall.pose.position.y = 0.5 * wall_height_;
     wall.pose.position.z = -0.02;
     wall.pose.orientation.w = 1.0;

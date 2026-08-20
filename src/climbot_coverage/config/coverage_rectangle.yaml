@@ -4,9 +4,9 @@ coverage_planner:
     task_id: rectangle
     input_mode: parameters
     region_type: rectangle
-    lower_left: [-3.0, 0.5]
-    upper_right: [3.0, 6.5]
-    lower_right: [3.0, 0.5]
+    lower_left: [0.75, 0.75]
+    upper_right: [7.25, 5.25]
+    lower_right: [7.25, 0.75]
     detection_width: 0.50
     # Conservative provisional value; replace with the calibrated payload length.
     detection_length: 0.01

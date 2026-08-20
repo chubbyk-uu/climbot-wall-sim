@@ -36,6 +36,7 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import ReliabilityPolicy
+import yaml
 
 
 def make_pose(x, y, yaw):
@@ -112,6 +113,7 @@ class CoverageExecutionEvaluator(Node):
             get_package_share_directory('climbot_description'),
             'config', 'wall.yaml')
         self.wall = WallFrame.from_yaml(wall_path)
+        self.motion_region_corners = self._reachable_rectangle(wall_path)
         self.filtered = None
         self.planned_task = None
         self.reference = None
@@ -261,10 +263,32 @@ class CoverageExecutionEvaluator(Node):
         })
 
     @staticmethod
-    def _motion_region():
+    def _reachable_rectangle(wall_path):
+        """Derive the rectangle the planner would hand out."""
+        # This used to be four literals for a 10 x 8 m wall inset by 0.4 m,
+        # which was neither the wall nor the planner's margin:
+        # coverage_planner_node insets by 0.5 * hypot(length, width) +
+        # edge_clearance. A line case that fits here but not there would only
+        # fail once it reached the tracker.
+        with open(wall_path) as handle:
+            surface = yaml.safe_load(handle)['wall']['surface']
+        robot_path = os.path.join(
+            get_package_share_directory('climbot_description'),
+            'config', 'robot.yaml')
+        with open(robot_path) as handle:
+            footprint = yaml.safe_load(handle)['robot']['footprint']
+        margin = 0.5 * math.hypot(
+            float(footprint['length_m']), float(footprint['width_m'])
+        ) + float(footprint['edge_clearance_m'])
+        return (margin, margin,
+                float(surface['width_m']) - margin,
+                float(surface['height_m']) - margin)
+
+    def _motion_region(self):
+        left, bottom, right, top = self.motion_region_corners
         return [
-            make_point(-4.6, 0.4), make_point(4.6, 0.4),
-            make_point(4.6, 7.6), make_point(-4.6, 7.6)]
+            make_point(left, bottom), make_point(right, bottom),
+            make_point(right, top), make_point(left, top)]
 
     def _vertical_rectangle(self, x, y):
         task = CoverageTask()

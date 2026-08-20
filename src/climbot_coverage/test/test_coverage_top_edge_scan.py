@@ -20,8 +20,8 @@ REGION = {
     # The vertical demo geometry: a 6 m tall region does not fit a vertical
     # sweep inside the inset motion region, which is a pre-existing constraint
     # of the planner and not what this file is testing.
-    'lower_left': [-0.25, 2.005],
-    'upper_right': [3.05, 6.505],
+    'lower_left': [4.75, 2.005],
+    'upper_right': [8.05, 6.505],
     'detection_width': 0.5,
     'overlap_ratio': 0.2,
     'robot_length': 0.76,
@@ -63,7 +63,7 @@ def generate_test_description():
         # An odd column count ends the sweep at the top, so the return leg is
         # a short hop instead of retracing the last column.
         _planner('odd_planner', 'vertical', 'always',
-                 upper_right=[2.65, 6.505]),
+                 upper_right=[7.65, 6.505]),
         launch_testing.actions.ReadyToTest(),
     ])
 

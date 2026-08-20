@@ -27,8 +27,8 @@ def generate_test_description():
         parameters=[{
             'input_mode': 'parameters',
             'region_type': 'rectangle',
-            'lower_left': [-3.0, 0.5],
-            'upper_right': [3.0, 6.5],
+            'lower_left': [3.0, 0.5],
+            'upper_right': [9.0, 6.5],
             'detection_width': 0.5,
             'overlap_ratio': 0.2,
             'robot_length': 0.76,
@@ -144,4 +144,6 @@ class TestCoveragePlannerNode(unittest.TestCase):
         wall = next(marker for marker in self.markers.markers if marker.ns == 'wall')
         self.assertAlmostEqual(wall.scale.x, 12.0)
         self.assertAlmostEqual(wall.scale.y, 9.0)
+        # Centred on a surface that runs from the origin, not across it.
+        self.assertAlmostEqual(wall.pose.position.x, 6.0)
         self.assertAlmostEqual(wall.pose.position.y, 4.5)

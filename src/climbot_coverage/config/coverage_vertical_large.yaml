@@ -4,12 +4,11 @@ coverage_planner:
     task_id: vertical-rectangle-large
     input_mode: parameters
     region_type: rectangle
-    # With a 0.50 m footprint, the first vertical centreline starts at x=0.
-    # The 0.01 m longitudinal extension places its first waypoint at y=2.0.
-    lower_left: [-2.0, 1.2]
-    # Large visual demo: 3.30 m wide by 4.50 m high.
-    upper_right: [2.0, 6.0]
-    lower_right: [3.05, 2.005]
+    # Large vertical block: 5.00 m wide by 4.50 m high, filling the reachable
+    # height of the wall.
+    lower_left: [1.5, 0.75]
+    upper_right: [6.5, 5.25]
+    lower_right: [6.5, 0.75]
     detection_width: 0.50
     detection_length: 0.01
     overlap_ratio: 0.20

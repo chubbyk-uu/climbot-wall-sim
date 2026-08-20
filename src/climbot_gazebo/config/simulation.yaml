@@ -1,7 +1,13 @@
 # Gazebo-only contact, rendering, sensor, and initialization parameters.
 simulation:
   wall:
-    centre_xyz: [0.0, 0.0, 4.0]
+    # Where the wall body sits in the Gazebo world. This is not free: it has to
+    # place the same surface that climbot_description/config/wall.yaml already
+    # describes, so centre_y must be origin_xyz[1] + width/2 and centre_z must
+    # be origin_xyz[2] + height/2. test_wall_world_matches_description.py holds
+    # the two files to that, because a stale centre_z lifts the wall off the
+    # ground without any other symptom.
+    centre_xyz: [0.0, 0.0, 3.0]
     thickness_m: 0.10
     mu: 1.1
     grid_spacing_m: 1.0

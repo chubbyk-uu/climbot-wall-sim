@@ -125,8 +125,8 @@ class TestConfigure(unittest.TestCase):
     def _rectangle(self):
         self._set(region='rectangle')
         self._call(self.clear, Trigger.Request())
-        self._click(-0.6, 1.4, expect=1)
-        self._click(2.7, 4.2, expect=2)
+        self._click(4.4, 1.4, expect=1)
+        self._click(7.7, 4.2, expect=2)
 
     def test_a_late_panel_still_learns_the_configuration(self):
         """The topic is latched, so a panel started afterwards is not blind."""
@@ -185,7 +185,7 @@ class TestConfigure(unittest.TestCase):
         """A and B mean the same corner in both shapes, so they carry over."""
         self._rectangle()
         self._set(region='trapezoid')
-        self._click(3.4, 1.4, expect=3)
+        self._click(8.4, 1.4, expect=3)
         config = self._latest_config()
         self.assertEqual(config.selected_points, 3)
         self.assertTrue(config.can_plan)
@@ -199,9 +199,9 @@ class TestConfigure(unittest.TestCase):
         """The drop-down must not plan something nobody asked for."""
         self._set(region='trapezoid')
         self._call(self.clear, Trigger.Request())
-        self._click(-0.6, 1.4, expect=1)
-        self._click(2.7, 4.2, expect=2)
-        self._click(3.4, 1.4, expect=3)
+        self._click(4.4, 1.4, expect=1)
+        self._click(7.7, 4.2, expect=2)
+        self._click(8.4, 1.4, expect=3)
         self.assertGreater(len(self.task.waypoints), 2)
         response = self._set(region='rectangle')
         self.assertTrue(response.success)
@@ -214,9 +214,9 @@ class TestConfigure(unittest.TestCase):
         """Withdrawing the preview must not strand the points that made it."""
         self._set(region='trapezoid')
         self._call(self.clear, Trigger.Request())
-        self._click(-0.6, 1.4, expect=1)
-        self._click(2.7, 4.2, expect=2)
-        self._click(3.4, 1.4, expect=3)
+        self._click(4.4, 1.4, expect=1)
+        self._click(7.7, 4.2, expect=2)
+        self._click(8.4, 1.4, expect=3)
         self._set(region='rectangle')
         self.assertEqual(len(self.task.waypoints), 0)
         response = self._call(self.replan, Trigger.Request())

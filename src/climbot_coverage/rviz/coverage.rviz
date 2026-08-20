@@ -78,10 +78,12 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 9
+      # Framed on the whole 8 x 6 m wall, whose centre is now (W/2, H/2) rather
+      # than (0, H/2): the work frame's origin is the lower-left corner.
+      Distance: 7
       Focal Point:
-        X: 0
-        Y: 4
+        X: 4
+        Y: 3
         Z: 0
       # Look at the wall face-on from +Z. Yaw must place the camera on the
       # -Y side, otherwise Ogre's fixed +Z yaw axis resolves screen-right to

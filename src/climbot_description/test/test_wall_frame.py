@@ -19,7 +19,10 @@ def default_frame():
 
 def test_maps_world_axes_onto_wall_axes():
     """World +Y, +Z and +X become wall +X, +Y and +Z respectively."""
-    frame = default_frame()
+    # The axis convention is the rotation alone, so this takes the rotation the
+    # description carries and drops its translation; where the origin sits is
+    # the next two tests' subject.
+    frame = WallFrame((0.0, 0.0, 0.0), default_frame().roll_pitch_yaw)
     assert frame.position_from_world((0.0, 1.0, 0.0)) == pytest.approx(
         (1.0, 0.0, 0.0), abs=1e-12)
     assert frame.position_from_world((0.0, 0.0, 1.0)) == pytest.approx(
@@ -28,12 +31,25 @@ def test_maps_world_axes_onto_wall_axes():
         (0.0, 0.0, 1.0), abs=1e-12)
 
 
-def test_matches_the_previous_hardcoded_permutation():
-    """The robot spawn pose keeps the wall coordinates it had before."""
+def test_origin_is_the_wall_lower_left_corner():
+    """The whole surface is the first quadrant, with no negative coordinate."""
     frame = default_frame()
-    world = (0.051, 0.0, 2.0)
-    assert frame.position_from_world(world) == pytest.approx(
-        (world[1], world[2], world[0]), abs=1e-12)
+    width = float(frame.surface['width_m'])
+    height = float(frame.surface['height_m'])
+    # The wall is centred on world Y = 0 and stands on world Z = 0, so these
+    # two world points are its bottom-left and top-right corners.
+    assert frame.position_from_world((0.0, -0.5 * width, 0.0)) == pytest.approx(
+        (0.0, 0.0, 0.0), abs=1e-12)
+    assert frame.position_from_world((0.0, 0.5 * width, height)) == pytest.approx(
+        (width, height, 0.0), abs=1e-12)
+
+
+def test_robot_spawns_at_the_middle_of_the_wall():
+    """lateral_m is a world offset, so a centred spawn is x = width / 2."""
+    frame = default_frame()
+    width = float(frame.surface['width_m'])
+    assert frame.position_from_world((0.051, 0.0, 2.0)) == pytest.approx(
+        (0.5 * width, 2.0, 0.051), abs=1e-12)
 
 
 def test_robot_spawn_orientation_is_identity_in_the_wall_frame():
