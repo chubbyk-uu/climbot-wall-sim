@@ -45,6 +45,8 @@ if(BUILD_TESTING)
   target_link_libraries(test_coverage_panel_layout climbot_rviz_plugins)
   ament_target_dependencies(test_coverage_panel_layout
     climbot_interfaces rclcpp rviz_common)
+  ament_add_gtest(test_request_gate test/test_request_gate.cpp)
+  target_link_libraries(test_request_gate climbot_rviz_plugins)
   ament_add_gtest(test_coverage_panel_config test/test_coverage_panel_config.cpp)
   target_link_libraries(test_coverage_panel_config climbot_rviz_plugins)
   ament_target_dependencies(test_coverage_panel_config

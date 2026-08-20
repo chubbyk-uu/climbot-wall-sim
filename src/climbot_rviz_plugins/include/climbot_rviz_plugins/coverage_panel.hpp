@@ -2,6 +2,7 @@
 #define CLIMBOT_RVIZ_PLUGINS__COVERAGE_PANEL_HPP_
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -44,6 +45,37 @@ std::chrono::milliseconds requestTimeout();
 bool requestHasExpired(
   std::chrono::steady_clock::time_point sent,
   std::chrono::steady_clock::time_point now);
+
+/// Decides whether an answer that has just arrived is still the one waited for.
+///
+/// Releasing a request that timed out does not retract it. The service can
+/// still answer, minutes later, and its callback carries whatever it was going
+/// to say: the configuration in force when it was asked, the tracking mode as
+/// it was then. Applying that to a panel the operator has since driven
+/// somewhere else walks the display backwards - the second request's pending
+/// flag is cleared by the first request's answer, and the boxes repaint to a
+/// state nobody chose.
+///
+/// Every request takes a generation on the way out and presents it on the way
+/// back. Timing out, and sending again, each retire the one before.
+class RequestGate
+{
+public:
+  /// Claim the generation for a request about to be sent, retiring any before.
+  uint64_t begin();
+  /// Whether an answer stamped `generation` is the one still being waited for.
+  bool isCurrent(uint64_t generation) const;
+  /// Give up on the request in flight, so no later answer for it counts.
+  void abandon();
+  /// Whether a request is in flight and still wanted.
+  bool waiting() const;
+  /// Stop waiting because the current request has just been answered.
+  void settle();
+
+private:
+  uint64_t generation_{0};
+  bool waiting_{false};
+};
 
 /// Operator panel for planning, starting and stopping a coverage task.
 class CoveragePanel : public rviz_common::Panel

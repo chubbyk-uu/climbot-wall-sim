@@ -163,6 +163,36 @@ QString wrappableText(const QString & text)
   return broken;
 }
 
+uint64_t RequestGate::begin()
+{
+  ++generation_;
+  waiting_ = true;
+  return generation_;
+}
+
+bool RequestGate::isCurrent(uint64_t generation) const
+{
+  return waiting_ && generation == generation_;
+}
+
+void RequestGate::abandon()
+{
+  // The generation moves even though nothing new was sent. The request that
+  // was in flight keeps its old number, so its answer no longer matches.
+  ++generation_;
+  waiting_ = false;
+}
+
+bool RequestGate::waiting() const
+{
+  return waiting_;
+}
+
+void RequestGate::settle()
+{
+  waiting_ = false;
+}
+
 struct CoveragePanel::SharedState
 {
   std::mutex mutex;
@@ -173,12 +203,14 @@ struct CoveragePanel::SharedState
   // Set while a configure request is in flight so a second one cannot be
   // launched from a control the first has not finished answering for, with the
   // instant it was sent so a request that is never answered can be released.
-  bool configure_pending{false};
+  // The gate beside it decides whether an answer that does arrive is still the
+  // one being waited for; releasing a request does not retract it.
+  RequestGate configure_gate;
   std::chrono::steady_clock::time_point configure_sent{};
   // Empty until the executor has answered once; the box shows nothing
   // selectable until then rather than a guess that may be wrong.
   QString tracking_mode;
-  bool tracking_pending{false};
+  RequestGate tracking_gate;
   std::chrono::steady_clock::time_point tracking_sent{};
 };
 
@@ -369,7 +401,7 @@ void CoveragePanel::onInitialize()
       const std::lock_guard<std::mutex> lock(state->mutex);
       // A configure response in flight is newer than anything the topic can
       // carry, so it wins until it lands.
-      if (!state->configure_pending) {
+      if (!state->configure_gate.waiting()) {
         state->config = std::make_unique<Config>(*config);
       }
     });
@@ -426,7 +458,7 @@ void CoveragePanel::onConfigurationChosen()
   // and the change signal would turn each of those writes into another call.
   {
     const std::lock_guard<std::mutex> lock(state_->mutex);
-    if (state_->configure_pending) {
+    if (state_->configure_gate.waiting()) {
       state_->response = tr("Configuration: previous change still pending.");
       return;
     }
@@ -441,9 +473,10 @@ void CoveragePanel::onConfigurationChosen()
   auto request = std::make_shared<Configure::Request>();
   request->region_type = region_box_->currentData().toString().toStdString();
   request->sweep_direction = sweep_box_->currentData().toString().toStdString();
+  uint64_t generation = 0;
   {
     const std::lock_guard<std::mutex> lock(state_->mutex);
-    state_->configure_pending = true;
+    generation = state_->configure_gate.begin();
     state_->configure_sent = std::chrono::steady_clock::now();
     state_->response = tr("Configuration: sent.");
   }
@@ -451,10 +484,16 @@ void CoveragePanel::onConfigurationChosen()
   sweep_box_->setEnabled(false);
   configure_client_->async_send_request(
     request,
-    [state = state_](rclcpp::Client<Configure>::SharedFuture future) {
+    [state = state_, generation](rclcpp::Client<Configure>::SharedFuture future) {
       const auto response = future.get();
       const std::lock_guard<std::mutex> lock(state->mutex);
-      state->configure_pending = false;
+      if (!state->configure_gate.isCurrent(generation)) {
+        // This answer belongs to a request the panel stopped waiting for. It
+        // carries the configuration as it was then, and the operator has since
+        // asked for something else.
+        return;
+      }
+      state->configure_gate.settle();
       // The response carries the configuration actually in force, accepted or
       // not, so a refused change repaints the boxes back to the truth without
       // waiting for the topic.
@@ -468,7 +507,7 @@ void CoveragePanel::onAlgorithmChosen()
 {
   {
     const std::lock_guard<std::mutex> lock(state_->mutex);
-    if (state_->tracking_pending) {
+    if (state_->tracking_gate.waiting()) {
       state_->response = tr("Algorithm: previous change still pending.");
       return;
     }
@@ -478,21 +517,25 @@ void CoveragePanel::onAlgorithmChosen()
     return;
   }
   const std::string wanted = algorithm_box_->currentData().toString().toStdString();
+  uint64_t generation = 0;
   {
     const std::lock_guard<std::mutex> lock(state_->mutex);
-    state_->tracking_pending = true;
+    generation = state_->tracking_gate.begin();
     state_->tracking_sent = std::chrono::steady_clock::now();
     state_->response = tr("Algorithm: sent.");
   }
   algorithm_box_->setEnabled(false);
   tracking_client_->set_parameters(
     {rclcpp::Parameter("tracking_mode", wanted)},
-    [state = state_, wanted](
+    [state = state_, wanted, generation](
       std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
       const auto results = future.get();
       const bool accepted = !results.empty() && results.front().successful;
       const std::lock_guard<std::mutex> lock(state->mutex);
-      state->tracking_pending = false;
+      if (!state->tracking_gate.isCurrent(generation)) {
+        return;
+      }
+      state->tracking_gate.settle();
       // The executor refuses while a task is running, so a refused change has
       // to put the box back to what is actually in force rather than leave it
       // showing a mode nobody is driving in.
@@ -518,20 +561,26 @@ void CoveragePanel::readTrackingMode()
   if (!tracking_client_ || !tracking_client_->service_is_ready()) {
     return;
   }
+  uint64_t generation = 0;
   {
     const std::lock_guard<std::mutex> lock(state_->mutex);
-    if (state_->tracking_pending) {
+    if (state_->tracking_gate.waiting()) {
       return;
     }
-    state_->tracking_pending = true;
+    generation = state_->tracking_gate.begin();
     state_->tracking_sent = std::chrono::steady_clock::now();
   }
   tracking_client_->get_parameters(
     {"tracking_mode"},
-    [state = state_](std::shared_future<std::vector<rclcpp::Parameter>> future) {
+    [state = state_, generation](std::shared_future<std::vector<rclcpp::Parameter>> future) {
       const auto parameters = future.get();
       const std::lock_guard<std::mutex> lock(state->mutex);
-      state->tracking_pending = false;
+      if (!state->tracking_gate.isCurrent(generation)) {
+        // A read that was given up on can still answer, and what it answers is
+        // the mode as it was before whatever the operator did next.
+        return;
+      }
+      state->tracking_gate.settle();
       if (!parameters.empty() &&
       parameters.front().get_type() == rclcpp::ParameterType::PARAMETER_STRING)
       {
@@ -668,12 +717,15 @@ void CoveragePanel::expireStalePendingRequests()
 {
   const auto now = std::chrono::steady_clock::now();
   const std::lock_guard<std::mutex> lock(state_->mutex);
-  if (state_->configure_pending && requestHasExpired(state_->configure_sent, now)) {
-    state_->configure_pending = false;
+  // abandon() rather than a flag: releasing the controls has never retracted
+  // the request, and the answer that eventually arrives must not be applied to
+  // whatever the operator has done in the meantime.
+  if (state_->configure_gate.waiting() && requestHasExpired(state_->configure_sent, now)) {
+    state_->configure_gate.abandon();
     state_->response = tr("Configuration: no answer; released the controls.");
   }
-  if (state_->tracking_pending && requestHasExpired(state_->tracking_sent, now)) {
-    state_->tracking_pending = false;
+  if (state_->tracking_gate.waiting() && requestHasExpired(state_->tracking_sent, now)) {
+    state_->tracking_gate.abandon();
     state_->response = tr("Algorithm: no answer; released the control.");
   }
 }
@@ -698,8 +750,8 @@ void CoveragePanel::refresh()
     }
     planner = state_->planner;
     response = state_->response;
-    pending = state_->configure_pending;
-    tracking_pending = state_->tracking_pending;
+    pending = state_->configure_gate.waiting();
+    tracking_pending = state_->tracking_gate.waiting();
     tracking_mode = state_->tracking_mode;
   }
   if (tracking_mode.isEmpty()) {

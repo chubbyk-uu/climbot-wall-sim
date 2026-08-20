@@ -984,6 +984,24 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 **`docs/images/rviz_coverage_task.png` 已过期**：图中的坐标和绿框属于旧工作系。
 `gazebo_wall.png` 不受影响，墙面在世界系里没有变。
 
+## 2026-08-20 面板的迟到应答（review M3）
+
+上一轮 M5 修好了"永久置灰"，但留下了和 H2 同一个代次问题：3 秒超时只把
+`configure_pending` / `tracking_pending` 置回 `false`，**并没有撤回请求**。服务随后
+仍可能应答，而它带回来的是被问的那一刻的内容——当时在用的构型、当时的 `tracking_mode`。
+操作员此时早已改做别的（超时正是通知他们可以继续的那件事），第一个请求的迟到回调会
+清掉第二个请求的 pending 标志，并把旧 config、旧模式和旧提示写回界面，看起来像面板
+撤销了操作员刚做的动作。
+
+改法与 H1/H2 同构：新增 `RequestGate`（`coverage_panel.hpp`，与 `requestHasExpired()`
+并列，同样是把可测的判断从 Qt/ROS 线程编排里拿出来）。每个请求发出时 `begin()` 取一个
+代次，回调带着它回来交给 `isCurrent()` 判断；超时改调 `abandon()`——代次前进但不算发出
+新请求，于是在飞的那个请求的应答从此不匹配。三条路径全部走这个门：`onConfigurationChosen`、
+`onAlgorithmChosen`、`readTrackingMode`。
+
+`test_request_gate.cpp` 五个用例，其中一个就是面板实际会产生的时序：发出 → 超时 →
+再发 → 第一个服务这时才应答，断言迟到那个既不被应用、也不能把第二个请求判为已完成。
+
 ## 2026-08-20 摘要改成合法 JSON（review M1）
 
 `results/` 里 172 份摘要有 **27 份不是合法 JSON**：Python 的 `json.dump()` 默认写出裸
