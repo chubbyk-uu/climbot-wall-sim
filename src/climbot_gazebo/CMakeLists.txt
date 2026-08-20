@@ -54,6 +54,8 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_wall_slip_sampling test/test_wall_slip_sampling.py)
   ament_add_pytest_test(test_wall_texture test/test_wall_texture.py)
+  ament_add_pytest_test(test_results_are_machine_readable
+    test/test_results_are_machine_readable.py)
   ament_add_pytest_test(
     test_wall_world_matches_description
     test/test_wall_world_matches_description.py)

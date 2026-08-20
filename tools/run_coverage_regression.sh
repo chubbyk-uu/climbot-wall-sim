@@ -434,7 +434,14 @@ def get(d, path, default=None):
         if not isinstance(cur, dict) or key not in cur:
             return default
         cur = cur[key]
-    return cur
+    # null is what a metric that does not apply to this case now writes - a
+    # single scan line has no spacing between adjacent lines. It is not zero
+    # and it is not a missing field.
+    return default if cur is None else cur
+
+
+def column(value, form, scale=1.0):
+    return 'n/a' if value is None else form % (value * scale)
 
 limits = {'endpoint': 30.0, 'turn': 2.0, 'spacing': 20.0, 'coverage': 95.0}
 head = ('case', 'pass', 'endpt_mm', 'turn_deg', 'spacing_mm', 'cover_%',
@@ -453,11 +460,12 @@ for name in names:
         failed.append(name)
     planned = get(d, 'schedule.planned_total_s', 0.0)
     lag = get(d, 'schedule.schedule_lag_max_s', 0.0)
-    print('%-22s %-5s %9.2f %9.3f %11.2f %8.2f %8.1f %8.1f %9s %7.2f %6s' % (
+    print('%-22s %-5s %9s %9s %11s %8.2f %8.1f %8.1f %9s %7.2f %6s' % (
         name, 'yes' if ok else 'NO',
-        1000 * get(d, 'execution_quality.maximum_endpoint_error_m', float('nan')),
-        get(d, 'execution_quality.maximum_turn_end_heading_error_deg', float('nan')),
-        1000 * get(d, 'scan_line_spacing.maximum_scan_line_spacing_error_m', float('nan')),
+        column(get(d, 'execution_quality.maximum_endpoint_error_m'), '%.2f', 1000),
+        column(get(d, 'execution_quality.maximum_turn_end_heading_error_deg'), '%.3f'),
+        column(get(d, 'scan_line_spacing.maximum_scan_line_spacing_error_m'),
+               '%.2f', 1000),
         100 * get(d, 'coverage.ratio', float('nan')), sim, planned,
         ('%.3f' % (sim / planned)) if planned else '-', lag,
         ('%.2f' % (sim / w)) if w else '-'))

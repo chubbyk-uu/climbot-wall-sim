@@ -115,6 +115,11 @@
 每组 `*` 包含一个 `_trajectory.csv.gz`（逐采样真值、融合位姿、动态参考、状态和
 横轨误差）和一个 `_summary.json`（Action 结果、逐段误差、覆盖率和 `provenance`）。
 
+摘要是**严格合法的 JSON**。此前有 27 份写了裸 `NaN` 记号——Python 读得回来，Ruby、
+严格 Java/Go 和 schema 校验读不了。2026-08-20 就地改成 `null`，不适用的指标另带
+`applicable: false` 和不适用的理由；只改了这些字段，其余数值逐字未动。写出端已加
+`allow_nan=False`，`test_results_are_machine_readable.py` 对本目录全部摘要做严格解析。
+
 ## 标签索引（全部 47 个）
 
 `coverage_<工况>_<标签>_summary.json` / `_trajectory.csv.gz` 的标签一览。这里列全，

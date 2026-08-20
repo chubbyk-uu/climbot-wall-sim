@@ -14,11 +14,11 @@
   "execution_quality": {
     "actual_path_length_m": 0.0,
     "actual_to_planned_length_ratio": 0.0,
-    "maximum_endpoint_error_m": NaN,
-    "maximum_heading_compensation_deg": NaN,
+    "maximum_endpoint_error_m": null,
+    "maximum_heading_compensation_deg": null,
     "maximum_horizontal_height_drift_m": null,
-    "maximum_tracking_angular_speed_rps": NaN,
-    "maximum_turn_end_heading_error_deg": NaN,
+    "maximum_tracking_angular_speed_rps": null,
+    "maximum_turn_end_heading_error_deg": null,
     "planned_path_length_m": 18.439999999999998,
     "segments": []
   },
@@ -70,9 +70,11 @@
   "result_message": "Segment execution timed out.",
   "revision": 1,
   "scan_line_spacing": {
+    "applicable": false,
     "crossing_scan_lines": 0,
-    "maximum_scan_line_offset_m": NaN,
-    "maximum_scan_line_spacing_error_m": NaN,
+    "maximum_scan_line_offset_m": null,
+    "maximum_scan_line_spacing_error_m": null,
+    "not_applicable_reason": "the task has fewer than two parallel scan lines, and spacing between adjacent lines is not a property such a task has",
     "scan_line_offsets_m": [],
     "scan_line_spacing_errors_m": []
   },

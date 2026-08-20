@@ -39,6 +39,23 @@ from rclpy.qos import ReliabilityPolicy
 import yaml
 
 
+def _number(value, form):
+    """Format a metric that may not apply, without inventing a number for it."""
+    return 'n/a' if value is None else form % value
+
+
+def _millimetres(value):
+    """Format a metre-valued metric in millimetres, or say it does not apply."""
+    return 'n/a' if value is None else '%.2f' % (value * 1000.0)
+
+
+def _finite_or_none(value):
+    """Replace a non-finite float with None, so the record stays valid JSON."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
 def make_pose(x, y, yaw):
     """Build a planar pose."""
     pose = Pose()
@@ -454,7 +471,10 @@ class CoverageExecutionEvaluator(Node):
             'noise_sources': parameter_groups(self, NOISE_SOURCES),
             'control_parameters': parameter_groups(self, CONTROL_SOURCES),
             'evaluator_parameters': {
-                name: self.get_parameter(name).value
+                # straight_line_approach_bearing_deg carries NaN as its "along
+                # the line" sentinel, which is fine as a parameter and not fine
+                # in a record meant to be read by anything but Python.
+                name: _finite_or_none(self.get_parameter(name).value)
                 for name, _ in self.PARAMETERS},
         }
 
@@ -493,7 +513,13 @@ class CoverageExecutionEvaluator(Node):
         expanded = os.path.abspath(os.path.expanduser(path))
         os.makedirs(os.path.dirname(expanded), exist_ok=True)
         with open(expanded, 'w', encoding='utf-8') as handle:
-            json.dump(values, handle, indent=2, sort_keys=True)
+            # allow_nan=False is the point of the exercise: Python's default
+            # writes the bare tokens NaN and Infinity, which are not JSON, and
+            # a summary that only Python can read is not machine-readable
+            # acceptance evidence. Failing here is better than writing one -
+            # anything non-finite that reaches this is a metric that has not
+            # decided what it means yet.
+            json.dump(values, handle, indent=2, sort_keys=True, allow_nan=False)
             handle.write('\n')
 
     def run(self):
@@ -687,24 +713,23 @@ class CoverageExecutionEvaluator(Node):
             'schedule_lag_min_s': self.schedule_lag_min_s,
         }
         self.get_logger().info(
-            'scan_line_offset_max=%.2f mm spacing_error_max=%.2f mm '
+            'scan_line_offset_max=%s mm spacing_error_max=%s mm '
             'offsets=[%s] mm' % (
-                spacing['maximum_scan_line_offset_m'] * 1000.0,
-                spacing['maximum_scan_line_spacing_error_m'] * 1000.0,
+                _millimetres(spacing['maximum_scan_line_offset_m']),
+                _millimetres(spacing['maximum_scan_line_spacing_error_m']),
                 ' '.join('%+.1f' % (value * 1000.0)
                          for value in spacing['scan_line_offsets_m'])))
         maximum_spacing_error = float(
             self.get_parameter('maximum_scan_line_spacing_error_m').value)
-        # NaN here is "undefined", not "bad": scan_line_spacing returns it when
-        # the task has fewer than two parallel scan lines, and spacing between
-        # adjacent lines is not a property such a task has. The endpoint check
-        # below treats its own NaN as a failure, and the difference is
-        # deliberate - there NaN means no segment was measured at all, which is
-        # a run that produced no evidence rather than a metric that does not
-        # apply. Both are spelled out because relying on NaN comparison
-        # semantics to encode the difference reads as an accident.
+        # "Does not apply" and "was not measured" are different facts about a
+        # run, and both used to be spelled NaN. Here it is the first: spacing
+        # between adjacent lines is not a property of a task with fewer than two
+        # parallel scan lines, and the metric says so itself now. The endpoint
+        # check below is the second, and it is a failure - a run that produced
+        # no evidence. Relying on NaN comparison semantics to tell those apart
+        # read as an accident even while it worked.
         spacing_error = spacing['maximum_scan_line_spacing_error_m']
-        spacing_applies = not math.isnan(spacing_error)
+        spacing_applies = spacing['applicable']
         passed = passed and (
             not spacing_applies or spacing_error <= maximum_spacing_error)
         if not quality['segments']:
@@ -713,23 +738,27 @@ class CoverageExecutionEvaluator(Node):
                 'evidence exists for this run.')
             passed = False
         horizontal_drift = quality['maximum_horizontal_height_drift_m']
+        endpoint_error = quality['maximum_endpoint_error_m']
+        turn_end_error = quality['maximum_turn_end_heading_error_deg']
         self.get_logger().info(
-            'endpoint_max=%.2f mm turn_end_max=%.2f deg '
-            'horizontal_drift_max=%.2f mm path_ratio=%.4f '
-            'heading_compensation_max=%.2f deg tracking_angular_max=%.3f rad/s' % (
-                quality['maximum_endpoint_error_m'] * 1000.0,
-                quality['maximum_turn_end_heading_error_deg'],
-                (horizontal_drift * 1000.0
-                 if horizontal_drift is not None else math.nan),
+            'endpoint_max=%s mm turn_end_max=%s deg '
+            'horizontal_drift_max=%s mm path_ratio=%.4f '
+            'heading_compensation_max=%s deg tracking_angular_max=%s rad/s' % (
+                _millimetres(endpoint_error),
+                _number(turn_end_error, '%.2f'),
+                _millimetres(horizontal_drift),
                 quality['actual_to_planned_length_ratio'],
-                quality['maximum_heading_compensation_deg'],
-                quality['maximum_tracking_angular_speed_rps']))
+                _number(quality['maximum_heading_compensation_deg'], '%.2f'),
+                _number(quality['maximum_tracking_angular_speed_rps'], '%.3f')))
+        # None is not one answer here. No endpoint at all means no segment was
+        # measured, which the check above has already failed the run for; no
+        # turn means an ordinary single-line task, which is not a fault.
         passed = passed and (
-            quality['maximum_endpoint_error_m'] <=
+            endpoint_error is not None and endpoint_error <=
             float(self.get_parameter('maximum_endpoint_error_m').value) and
-            quality['maximum_turn_end_heading_error_deg'] <=
-            float(self.get_parameter(
-                'maximum_turn_end_heading_error_deg').value) and
+            (turn_end_error is None or turn_end_error <=
+             float(self.get_parameter(
+                 'maximum_turn_end_heading_error_deg').value)) and
             (horizontal_drift is None or horizontal_drift <=
              float(self.get_parameter(
                  'maximum_horizontal_height_drift_m').value)))

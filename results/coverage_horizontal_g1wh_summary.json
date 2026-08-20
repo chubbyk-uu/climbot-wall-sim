@@ -106,7 +106,7 @@
       "maximum_visible_reversals": 0,
       "minimum_actual_coverage_ratio": 0.95,
       "startup_timeout_s": 90.0,
-      "straight_line_approach_bearing_deg": NaN,
+      "straight_line_approach_bearing_deg": null,
       "straight_line_bearing_deg": 0.0,
       "straight_line_length_m": 2.0,
       "straight_line_start_offset_m": 0.6,
@@ -139,6 +139,7 @@
   "result_message": "Coverage task completed.",
   "revision": 1,
   "scan_line_spacing": {
+    "applicable": true,
     "crossing_scan_lines": 0,
     "maximum_scan_line_offset_m": 0.0030780844523599082,
     "maximum_scan_line_spacing_error_m": 0.0032775731485721327,

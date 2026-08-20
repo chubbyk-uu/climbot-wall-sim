@@ -1,5 +1,6 @@
 """Verify complete-task execution quality metrics."""
 
+import json
 import math
 
 from climbot_gazebo.execution_metrics import coefficient_of_variation
@@ -78,7 +79,7 @@ def test_turn_end_heading_error_is_omitted_without_a_filtered_pose():
         [_row(0, 0.0, 0.0, yaw=0.10, heading_error=0.02,
               filtered_yaw=math.nan)], [1], [1.0])
     assert result['segments'][0]['turn_end_heading_error_deg'] is None
-    assert math.isnan(result['maximum_turn_end_heading_error_deg'])
+    assert result['maximum_turn_end_heading_error_deg'] is None
 
 
 def _scan_row(segment, x, y):
@@ -117,7 +118,23 @@ def test_scan_line_spacing_is_undefined_for_a_single_line():
     rows = [_scan_row(0, 0.0, 0.0), _scan_row(0, 0.0, 1.0)]
     result = scan_line_spacing(rows, [1], [(0.0, 0.0), (0.0, 1.0)])
     assert result['scan_line_offsets_m'] == []
-    assert math.isnan(result['maximum_scan_line_spacing_error_m'])
+    assert result['maximum_scan_line_spacing_error_m'] is None
+    assert result['applicable'] is False
+    assert 'fewer than two parallel scan lines' in result['not_applicable_reason']
+
+
+def test_every_metric_a_summary_carries_is_valid_json():
+    """These summaries are meant to be machine-readable, and NaN is not JSON."""
+    # json.dump writes the bare token NaN by default. Python reads it back, so
+    # nothing in this repository noticed for twenty-six archived acceptance
+    # summaries; Ruby, strict Java and Go, and every schema validator do not.
+    single = scan_line_spacing(
+        [_scan_row(0, 0.0, 0.0), _scan_row(0, 0.0, 1.0)], [1],
+        [(0.0, 0.0), (0.0, 1.0)])
+    nothing_measured = execution_quality([], [1], [1.0])
+    for name, metrics in (('spacing', single), ('quality', nothing_measured)):
+        # Raises ValueError on anything non-finite, which is the whole check.
+        assert json.dumps(metrics, allow_nan=False), name
 
 
 def test_scan_line_spacing_rejects_mismatched_waypoints():

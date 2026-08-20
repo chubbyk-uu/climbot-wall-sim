@@ -62,9 +62,11 @@
   "result_message": "Segment execution timed out.",
   "revision": 1,
   "scan_line_spacing": {
+    "applicable": false,
     "crossing_scan_lines": 0,
     "maximum_scan_line_offset_m": 0.0008350703001944416,
-    "maximum_scan_line_spacing_error_m": NaN,
+    "maximum_scan_line_spacing_error_m": null,
+    "not_applicable_reason": "the task has fewer than two parallel scan lines, and spacing between adjacent lines is not a property such a task has",
     "scan_line_offsets_m": [
       -0.0008350703001944416
     ],

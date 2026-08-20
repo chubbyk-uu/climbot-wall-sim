@@ -169,6 +169,13 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 `null`，例如定位对照实验不起跟踪器，它的 `control_parameters.line_tracker` 就是
 `null`，而不是抄一份配置值冒充。
 
+摘要**必须是合法 JSON**：写出时用 `allow_nan=False`。Python 的 `json.dump` 默认会写出
+裸 `NaN` / `Infinity` 记号，Python 自己读得回来，Ruby、严格 Java/Go、schema 校验和多数
+数据仓库读不了——只有生产者自己能读的证据不算机器可读证据。不适用的指标写 `null`，
+并另带 `applicable: false` 和 `not_applicable_reason`：单独一个 `null` 分不清
+"不适用"和"没测到"，而这是关于一次运行的两件不同的事。`test_results_are_machine_readable.py`
+对 `results/` 下全部摘要做严格解析，并要求每个 `null` 都给出理由。
+
 `turn_slip_per_degree_m` 在 `control_parameters` 里，是因为 `reservedTurnDrop()` 用它
 抬高起点进入的终点，它直接决定第一条扫描线的初始横轨误差；三个偏移门限是那个误差
 随后被判定的梯子。实测见 `results/README.md`「G-1 不同初始横轨误差」。
@@ -189,7 +196,7 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 | `straight_line_bearing_deg` | `0.0` | 线本身的走向，墙面系。`0` 沿墙，`90` 朝上 |
 | `straight_line_length_m` | `2.0` | 线长 |
 | `straight_line_start_offset_m` | `0.6` | 线首点离机器人多远 |
-| `straight_line_approach_bearing_deg` | `NaN` | 首点在机器人的哪个方位；`NaN` 表示沿线方向 |
+| `straight_line_approach_bearing_deg` | `NaN` | 首点在机器人的哪个方位；`NaN` 表示沿线方向。写进 `provenance` 时记为 `null`——`NaN` 不是合法 JSON |
 
 **方位与走向是两个角，不能合并。** 偏置沿线方向取时机器人一开始就朝着首点，起点进入
 等于没被考验——这是一个角度唯一能表达的情形。

@@ -83,11 +83,22 @@ def scan_line_spacing(rows, segment_types, waypoints, scan_type=1):
                         if not _parallel_to(waypoints, index, sweep)]
             scans = [index for index in scans if index not in set(crossing)]
     if len(scans) < 2:
+        # None rather than NaN, and an explicit flag rather than either. NaN is
+        # not JSON: json.dump writes the bare token NaN, which Python reads back
+        # and RFC 8259 parsers - Ruby, strict Java and Go, schema validators -
+        # reject outright. Twenty-six of the archived acceptance summaries were
+        # unreadable that way. The flag is here because null alone still leaves
+        # a reader guessing between "does not apply" and "was not measured",
+        # which are different facts about a run.
         return {
             'scan_line_offsets_m': [],
             'scan_line_spacing_errors_m': [],
-            'maximum_scan_line_offset_m': math.nan,
-            'maximum_scan_line_spacing_error_m': math.nan,
+            'maximum_scan_line_offset_m': None,
+            'maximum_scan_line_spacing_error_m': None,
+            'applicable': False,
+            'not_applicable_reason':
+                'the task has fewer than two parallel scan lines, and spacing '
+                'between adjacent lines is not a property such a task has',
             'crossing_scan_lines': len(crossing),
         }
 
@@ -132,9 +143,10 @@ def scan_line_spacing(rows, segment_types, waypoints, scan_type=1):
         'scan_line_offsets_m': offsets,
         'scan_line_spacing_errors_m': errors,
         'maximum_scan_line_offset_m': max(
-            (abs(value) for value in offsets), default=math.nan),
+            (abs(value) for value in offsets), default=None),
         'maximum_scan_line_spacing_error_m': max(
-            (abs(value) for value in errors), default=math.nan),
+            (abs(value) for value in errors), default=None),
+        'applicable': bool(errors),
         'crossing_scan_lines': len(crossing),
     }
 
@@ -220,17 +232,23 @@ def execution_quality(rows, segment_types, planned_lengths, scan_type=1):
         'actual_path_length_m': actual_length,
         'planned_path_length_m': planned_length,
         'actual_to_planned_length_ratio': actual_length / planned_length,
+        # None, like maximum_horizontal_height_drift_m beside it has always
+        # been, and for the same reason: there is nothing to report. NaN said
+        # the same thing in a token no strict JSON parser accepts. What None
+        # means differs per field and is read by the caller - no endpoint at
+        # all is a run that produced no evidence, while no turn is an ordinary
+        # single-line task.
         'maximum_endpoint_error_m': max(
-            (value['endpoint_error_m'] for value in segment_metrics), default=math.nan),
+            (value['endpoint_error_m'] for value in segment_metrics), default=None),
         'maximum_turn_end_heading_error_deg': max(
-            turn_end_errors, default=math.nan),
+            turn_end_errors, default=None),
         'maximum_horizontal_height_drift_m': (
             max(horizontal_drifts) if horizontal_drifts else None),
         'maximum_heading_compensation_deg': max(
             (value['maximum_heading_compensation_deg'] for value in segment_metrics),
-            default=math.nan),
+            default=None),
         'maximum_tracking_angular_speed_rps': max(
             (value['maximum_tracking_angular_speed_rps'] for value in segment_metrics),
-            default=math.nan),
+            default=None),
         'segments': segment_metrics,
     }

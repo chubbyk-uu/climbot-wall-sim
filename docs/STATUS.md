@@ -984,6 +984,41 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 **`docs/images/rviz_coverage_task.png` 已过期**：图中的坐标和绿框属于旧工作系。
 `gazebo_wall.png` 不受影响，墙面在世界系里没有变。
 
+## 2026-08-20 摘要改成合法 JSON（review M1）
+
+`results/` 里 172 份摘要有 **27 份不是合法 JSON**：Python 的 `json.dump()` 默认写出裸
+`NaN` 记号，RFC 8259 只允许有限数字。Python 自己读得回来，所以仓库里没人发现；Ruby、
+严格 Java/Go、schema 校验和多数数据仓库读不了。只有生产者自己能读的证据，不算机器可读
+验收证据。
+
+复核后比 review 的描述更值得注意的一点：**27 份里有 26 份是干净树产物**，也就是正式
+可引用证据，和 M4 删不删脏树轨迹无关。
+
+`NaN` 出现在四处，全部改掉：
+
+| 位置 | 含义 | 现在写什么 |
+| --- | --- | --- |
+| `scan_line_spacing` 少于两条平行扫描线 | 不适用 | `null` + `applicable: false` + `not_applicable_reason` |
+| `execution_quality` 四个 `max(..., default=nan)` | 没有可测的段 | `null`（与旁边一直是 `None` 的 `maximum_horizontal_height_drift_m` 一致） |
+| `straight_line_approach_bearing_deg` 的哨兵值 | "沿线方向" | 参数本身仍是 `NaN`，写进 `provenance` 时转 `null` |
+| `_write_json` | — | `allow_nan=False`，非有限值直接报错而不是写出去 |
+
+`applicable` 标志是必要的：单独一个 `null` 分不清"不适用"和"没测到"，而这是关于一次
+运行的两件不同的事。原代码靠 `NaN` 的比较语义来编码这个区别——间距用 `isnan` 判"不适用
+就跳过"，端点误差用 `nan <= limit` 为假来判"没证据就失败"。两者都对，但**读起来像是
+巧合**，现在各自写明。
+
+判定逻辑相应改为显式：端点误差为 `null` 是失败（这次运行没产生任何证据），转向末端
+航向误差为 `null` 是不适用（单段直线任务本来就没有转向），二者不再共用一个记号。
+
+已有 27 份摘要就地重写为 `null`，只改这些字段，其余数值逐字不动。新增
+`test_results_are_machine_readable.py` 对 `results/` 下全部摘要做严格解析，并要求每个
+`null` 间距都带上不适用的理由；未强制要求已有的 145 份合法文件补 `applicable` 字段——
+它们带的是真实数值，本来就没有歧义，为此重写它们只会制造无谓的 diff。
+
+实测：`line_vertical`（单条扫描线，正是不适用那条路径）跑通，`exit=0`，回归表格的
+间距列显示 `n/a` 而不是 `nan`。
+
 ## 2026-08-20 回归脚本的进程清理（review M2）
 
 `tools/run_coverage_regression.sh` 用 `setsid ... &` 起仿真、规划器和执行器，却没有
