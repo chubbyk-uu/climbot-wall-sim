@@ -5,7 +5,9 @@
 ## 内容
 
 - `config/robot.yaml`：机器人几何、质量、轮系、驱动限幅和 footprint；
-- `config/wall.yaml`：`world → wall` 位姿及墙面宽高；
+- `config/wall.yaml`：`world → wall` 位姿及墙面宽高。**工作系原点在墙面左下角**，
+  所以作业面是 `x ∈ [0, 宽]`、`y ∈ [0, 高]`，不出现负坐标；`origin_xyz` 是该原点
+  在世界系中的位置，仿真里墙仍居中于世界 `Y = 0`，因此它是 `-宽/2`；
 - `urdf/climbot.urdf.xacro`：`robot_state_publisher` 使用的 URDF；
 - `climbot_description/geometry.py`：四元数和角度通用函数；
 - `climbot_description/wall_frame.py`：世界坐标与墙面工作坐标转换。

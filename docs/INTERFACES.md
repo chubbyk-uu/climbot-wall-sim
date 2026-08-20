@@ -59,7 +59,8 @@ launch 参数只给这三项定初值。`region_type` 和 `sweep_direction` 运�
 会回显每次点击被接受时的坐标，可据此发现相机视角造成的镜像或旋转误选。
 角点点错时用面板的 `Clear points` 或 `/coverage/clear_points` 清空重来。
 RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出的 `x`、`y` 就是墙面
-坐标；规划器忽略 `z`。
+坐标；规划器忽略 `z`。该坐标系的原点在墙面左下角，因此点出来的坐标全为非负，
+`(0, 0)` 就是墙面左下角本身。
 
 `climbot_wall.launch.py` 的主要 launch 参数：
 

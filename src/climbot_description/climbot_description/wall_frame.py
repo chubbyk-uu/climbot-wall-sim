@@ -15,6 +15,9 @@ import yaml
 class WallFrame:
     """Right-handed wall work frame: +X along the wall, +Y up, +Z outward."""
 
+    # The origin is the wall's lower-left corner, so the working surface is
+    # x in [0, width] and y in [0, height] and no wall coordinate is negative.
+    #
     # The stored pose is that of the wall frame expressed in the Gazebo world
     # frame, so position_from_world maps world coordinates into wall ones.
 
