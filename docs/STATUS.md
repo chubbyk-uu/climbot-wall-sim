@@ -984,6 +984,37 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 **`docs/images/rviz_coverage_task.png` 已过期**：图中的坐标和绿框属于旧工作系。
 `gazebo_wall.png` 不受影响，墙面在世界系里没有变。
 
+## 2026-08-20 回归脚本的进程清理（review M2）
+
+`tools/run_coverage_regression.sh` 用 `setsid ... &` 起仿真、规划器和执行器，却没有
+任何 `trap`。Ctrl-C、关终端或脚本异常时，独立会话里的子进程收不到前台进程组信号，
+`lane_teardown()` 也未必执行；而它扫全 `/proc`、按 `GZ_PARTITION` 直接 `kill -9`，
+既不限于本脚本创建的进程，也不给 Gazebo 落盘的机会。这与本项目反复出现的
+"后台还有东西在跑"完全对得上——本轮开始前刚清掉 19 个几小时前的残留节点。
+
+改为：
+
+- 进程组记账。每个 `setsid` 起的东西创建时把进程组 ID（从内核读回，不假设 `setsid`
+  一定 exec）记进 `$RUN_DIR/laneN.pgids`；teardown 先对这些组发 `TERM`、限时等待
+  （`LANE_TERM_GRACE_S`，默认 `20 s`），仍活着才 `KILL` 并报告。
+- **评价器也进独立会话**。它原先在前台跑，位于脚本自己的进程组里——唯一能打到它的
+  信号是发给整个组的，而那正是 lane 绝不能发的。实测中断时它每次都活下来，只能靠
+  分区兜底扫掉。退出码经 `wait` 照常回来。
+- 顶层 `trap cleanup_all EXIT` 与 `trap interrupted INT TERM`，退出时先 `TERM` 各
+  lane 子 shell，再逐 lane teardown，并打印 teardown 摘要。
+- 分区扫描保留为兜底，但先 `TERM` 后 `KILL`，且**报告它抓到了什么**——兜底抓到东西
+  意味着这一 lane 创建了没记账的进程，下一个逃掉的可能根本不带分区。`ros2 daemon`
+  单列：它由 `ros2 topic list` 拉起、自己 daemonize 到独立会话、并继承 lane 的环境，
+  脚本无从记账，属于预期内，不计为逃逸。
+- 清理逻辑拆到 `tools/lane_processes.sh`，因为它只在出错时才有意义，正常跑一遍永远
+  测不到。`tools/test_lane_processes.sh` 直接测它：正常组被 `TERM` 收走且不产生报告、
+  忽略 `TERM` 的组被 `KILL` 并被报告、组外进程被兜底抓到并被报告、一个 lane 不碰另一个
+  lane 的进程。
+
+实测：起一个 lane 到 Gazebo 就绪（15 个进程），向脚本发 `SIGINT`，清理后存活进程
+为 `0`，teardown 摘要为空（无逃逸）。随后完整跑一遍 `line_vertical`：`exit=0`，
+用例通过，结束后同样无残留。
+
 ## 2026-08-20 失联后的停机权限（review H1 + H2）
 
 `docs/REVIEW_2026-08-20.md` 的两条高严重度项已修完。两者根子是同一个：管理器只有

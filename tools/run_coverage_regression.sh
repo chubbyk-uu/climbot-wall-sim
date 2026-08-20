@@ -5,8 +5,20 @@
 # graphs apart, but Gazebo speaks gz-transport, a separate discovery system
 # whose topics (/world/climbot_wall/model/climbot/...) are identical between
 # instances - without GZ_PARTITION the bridges cross-subscribe and each lane
-# quietly drives another lane's robot. Teardown matches on the partition read
-# back from each process's own environment, so one lane can never kill another.
+# quietly drives another lane's robot.
+#
+# Teardown works from the process groups this script created, recorded when it
+# creates them. setsid puts each launch in its own session precisely so that a
+# signal to this script's foreground group does not reach it - which is what
+# keeps a lane alive across the evaluator's exit, and also what used to leave
+# Gazebo and half a ROS graph running after a Ctrl-C. The partition sweep is
+# kept as a backstop for anything that escaped its group, and it reports what
+# it catches, because that means the recorded groups were incomplete. It
+# matches on the partition read back from each process's own environment, so
+# one lane can never kill another.
+#
+# Everything gets TERM and a bounded wait before KILL. Gazebo writes its logs
+# on the way out, and a run that ends in KILL -9 throws that away.
 #
 # The bottleneck is the 1 ms physics step, which is single-threaded: four
 # instances each sit at roughly 70% of one core, so lanes do not slow each
@@ -204,6 +216,41 @@ with open(target, "w") as handle:
 fi
 QUEUE=$RUN_DIR/queue
 LOCK=$RUN_DIR/lock
+LANE_PIDS=()
+
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lane_processes.sh"
+
+# Without this, a Ctrl-C, a closed terminal or any early exit left every lane's
+# simulation, planner and executor running. They are in their own sessions by
+# design, so the signal that ends this script never reaches them, and nothing
+# else was going to. The next run then started beside them, on the same
+# machine, competing for the physics core it measures itself against.
+interrupted() {
+  echo
+  echo "interrupted; stopping every lane"
+  exit 130
+}
+
+cleanup_all() {
+  local status=$? lane pid
+  trap - EXIT INT TERM
+  for pid in ${LANE_PIDS[@]+"${LANE_PIDS[@]}"}; do
+    kill -TERM "$pid" 2>/dev/null
+  done
+  for lane in $(seq 1 "$LANES"); do
+    lane_teardown "$lane"
+  done
+  if [ -s "$RUN_DIR/teardown" ]; then
+    echo
+    echo "teardown notes:"
+    cat "$RUN_DIR/teardown"
+  fi
+  return $status
+}
+
+trap cleanup_all EXIT
+trap interrupted INT TERM
 : > "$LOCK"
 # Each queue entry carries its kind, so one lane function serves both tables
 # without having to guess which one a name came from.
@@ -243,18 +290,6 @@ pop_case() {
   flock -u "$fd"
   exec {fd}<&-
   printf '%s' "$line"
-}
-
-lane_teardown() {
-  local lane=$1 pid
-  for pid in $(ls /proc 2>/dev/null | grep -E '^[0-9]+$'); do
-    [ "$pid" = "$BASHPID" ] && continue
-    if cat "/proc/$pid/environ" 2>/dev/null | tr '\0' '\n' |
-       grep -qx "GZ_PARTITION=lane${lane}"; then
-      kill -9 "$pid" 2>/dev/null
-    fi
-  done
-  sleep 2
 }
 
 run_lane() {
@@ -298,6 +333,7 @@ run_lane() {
       total_station_rate_hz:="$TOTAL_STATION_RATE" \
       total_station_drop_probability:="$TOTAL_STATION_DROP" \
       > "$log/sim.log" 2>&1 &
+    lane_remember "$lane" $!
     disown
     local deadline=$((SECONDS + 180)) up=0
     while [ $SECONDS -lt $deadline ]; do
@@ -319,12 +355,14 @@ run_lane() {
         config_file:="$WS/src/climbot_coverage/config/$cfg" \
         input_mode:=parameters region_type:="$region" sweep_direction:="$sweep" \
         > "$log/planner.log" 2>&1 &
+      lane_remember "$lane" $!
       disown
       sleep 10
     fi
     setsid ros2 launch climbot_control coverage_executor.launch.py \
       use_sim_time:=true tracking_mode:="$MODE" \
       control_config_file:="$CONTROL_CONFIG" > "$log/executor.log" 2>&1 &
+    lane_remember "$lane" $!
     disown
     sleep 10
 
@@ -337,13 +375,22 @@ run_lane() {
     else
       case_arguments="-p case:=planned_task"
     fi
+    # In its own session like the launches, and for the same reason: run in the
+    # foreground it sits in this script's process group, where the only signal
+    # that reaches it is one aimed at the whole group - which is exactly what a
+    # lane must never send. It then outlived every interrupt and had to be
+    # swept up by partition afterwards. Its exit status still arrives here,
+    # through wait.
     # shellcheck disable=SC2086
-    timeout 1500 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
+    setsid timeout 1500 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
       -p use_sim_time:=true $case_arguments \
       -p startup_timeout_s:=90.0 -p execution_timeout_s:=900.0 \
       -p trajectory_csv:="results/coverage_${name}_${TAG}_trajectory.csv" \
       -p summary_json:="results/coverage_${name}_${TAG}_summary.json" \
-      > "$log/evaluate.log" 2>&1
+      > "$log/evaluate.log" 2>&1 &
+    local evaluator=$!
+    lane_remember "$lane" "$evaluator"
+    wait "$evaluator"
     local status=$?
     local wall=$(( $(date +%s) - started ))
     echo "$name $wall" >> "$RUN_DIR/wall"
@@ -357,6 +404,7 @@ run_lane() {
 
 for lane in $(seq 1 "$LANES"); do
   run_lane "$lane" &
+  LANE_PIDS+=($!)
 done
 wait
 
