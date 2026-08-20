@@ -45,10 +45,17 @@ Algorithm 走参数接口而不是 `/coverage/configure`，因为后者是规划
 | Clear points | `/coverage/clear_points` |
 | Start | `/coverage/start` |
 | Cancel / Stop | `/coverage/cancel` |
+| Force abandon（5 秒内二次点击） | `/coverage/force_abandon` |
+| Rearm after verification | `/coverage/rearm` |
 
-`Start` 与 `Cancel / Stop` 的可用性直接取自 `CoverageStatus` 的 `can_start` /
-`can_cancel`——由管理器按自己服务的前置条件计算，面板不做推断。面板自行从
+四个任务操作按钮的可用性直接取自 `CoverageStatus` 的 `can_start`、`can_cancel`、
+`can_force_abandon`、`can_rearm`——由管理器按自己服务的前置条件计算，面板不做推断。面板自行从
 `state` 推断正是"取消后无法重新开始"那个 bug 的成因。
+
+Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点击只显示“这不证明任务
+停止”的风险说明，5 秒内第二次点击才调用服务；管理器随后进入 `RECOVERY_LOCKED` 并
+持续请求 hold，Start 仍不可用。完成硬件急停、驱动失能或执行器终止确认后，操作员才
+使用单独的 Rearm。面板只实现二次确认交互，恢复锁及许可判断仍全部属于管理器。
 
 **任务运行期间，Region、Sweep、Algorithm、Replan、Clear points 五个控件全部置灰**，
 只留 Cancel。它们发出的请求确实只改预览、不动运行中的 Goal，但预览就是画在机器人

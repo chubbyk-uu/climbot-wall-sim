@@ -175,6 +175,50 @@ TEST(CoveragePanelConfig, releasesThePlanningControlsWhenTheTaskStops)
   EXPECT_TRUE(panel.findChild<QPushButton *>("clear_button")->isEnabled());
 }
 
+TEST(CoveragePanelConfig, recoveryLockKeepsMotionAndPlanningControlsClosed)
+{
+  application();
+  climbot_rviz_plugins::CoveragePanel panel;
+  climbot_rviz_plugins::CoveragePanel::Status status;
+  status.state = climbot_rviz_plugins::CoveragePanel::Status::RECOVERY_LOCKED;
+  status.can_rearm = true;
+  panel.renderStatus(status);
+  panel.renderConfig(makeConfig("rectangle", "horizontal", 2, 2, true));
+
+  EXPECT_FALSE(panel.findChild<QPushButton *>("start_button")->isEnabled());
+  EXPECT_FALSE(panel.findChild<QPushButton *>("cancel_button")->isEnabled());
+  EXPECT_FALSE(panel.findChild<QPushButton *>("force_abandon_button")->isEnabled());
+  EXPECT_TRUE(panel.findChild<QPushButton *>("rearm_button")->isEnabled());
+  EXPECT_FALSE(panel.findChild<QPushButton *>("replan_button")->isEnabled());
+  EXPECT_FALSE(panel.findChild<QPushButton *>("clear_button")->isEnabled());
+  EXPECT_FALSE(box(panel, "region_box")->isEnabled());
+  EXPECT_FALSE(box(panel, "sweep_box")->isEnabled());
+  EXPECT_TRUE(
+    panel.findChild<QLabel *>("state_value")->text().contains("Recovery"));
+}
+
+TEST(CoveragePanelConfig, forceAbandonNeedsASecondClick)
+{
+  application();
+  climbot_rviz_plugins::CoveragePanel panel;
+  climbot_rviz_plugins::CoveragePanel::Status status;
+  status.state = climbot_rviz_plugins::CoveragePanel::Status::STOPPING;
+  status.can_cancel = true;
+  status.can_force_abandon = true;
+  panel.renderStatus(status);
+
+  auto * button = panel.findChild<QPushButton *>("force_abandon_button");
+  ASSERT_NE(button, nullptr);
+  ASSERT_TRUE(button->isEnabled());
+  EXPECT_EQ(button->text(), QStringLiteral("Force abandon"));
+  button->click();
+  EXPECT_EQ(button->text(), QStringLiteral("Confirm force abandon"));
+  // The second click reaches an unavailable service in this widget-only test,
+  // but it proves the first click did not send and the confirmation is retired.
+  button->click();
+  EXPECT_EQ(button->text(), QStringLiteral("Force abandon"));
+}
+
 // A configure or algorithm request disables the control that sent it and is
 // re-enabled only by the response. rclcpp never completes the future of a
 // service that died after service_is_ready() passed, so without an expiry the

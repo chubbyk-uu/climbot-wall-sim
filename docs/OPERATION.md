@@ -116,6 +116,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 | --- | --- |
 | **Start** | 开始执行，State 转为 `Executing` |
 | **Cancel / Stop** | 中途停车 |
+| **Force abandon** | 仅在 Start 应答永久未知时使用；5 秒内二次点击后进入恢复锁，不代表任务已停止 |
+| **Rearm after verification** | 确认硬件急停、驱动失能或执行器确已终止后解除恢复锁 |
 | **Clear points** | 点错角点时清空重选 |
 | **Replan** | 用当前角点重新规划 |
 
@@ -124,9 +126,14 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 正在执行的 Goal，但预览就是画在机器人身上的那条轨迹，运行中改它看起来就像任务
 被换掉了。
 
-Start 和 Cancel 的置灰由管理器发布的 `can_start` / `can_cancel` 决定，五个规划
-控件的置灰同样取自 `can_cancel`，不是面板另外判断一遍状态。无论面板显示什么，
+Start、Cancel、Force abandon 和 Rearm 的置灰由管理器发布的许可位决定；恢复锁和
+运行期间五个规划控件都置灰，不是面板另外判断一遍任务状态。无论面板显示什么，
 非法请求都由管理器拒绝，原因显示在 Last request 一行。
+
+若 State 显示 `Stopping` 且管理器一直等待未知的 Start 应答，默认保持这个状态最安全。
+只有已经从机器人外部确认停车条件时才使用 Force abandon：第一次点击只显示风险，
+5 秒内第二次点击才进入 `Recovery locked`。这一步仍不开放 Start；完成硬件/执行器确认
+后再点击 Rearm。不要把这两个按钮连成自动脚本，ROS hold 不能替代实机硬件急停。
 
 几个容易踩的点：
 
@@ -146,6 +153,9 @@ Start 和 Cancel 的置灰由管理器发布的 `can_start` / `can_cancel` 决�
 ```bash
 ros2 service call /coverage/start std_srvs/srv/Trigger
 ros2 service call /coverage/cancel std_srvs/srv/Trigger
+ros2 service call /coverage/force_abandon std_srvs/srv/Trigger
+# 完成外部停车确认后才执行：
+ros2 service call /coverage/rearm std_srvs/srv/Trigger
 ros2 service call /coverage/clear_points std_srvs/srv/Trigger
 
 # 只看人类可读的一行

@@ -433,6 +433,8 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | --- | --- | --- |
 | `/coverage/start` | `std_srvs/srv/Trigger` | 锁定管理器当前显示的有效 `task_id + revision`，校验后发送 `/coverage/execute` Goal |
 | `/coverage/cancel` | `std_srvs/srv/Trigger` | 请求取消当前 Goal；服务响应只确认请求已受理，最终停车状态看 `/coverage/manager_status` |
+| `/coverage/force_abandon` | `std_srvs/srv/Trigger` | 仅在 Start 应答未知的 `STOPPING` 中放弃等待；进入 `RECOVERY_LOCKED`，不代表任务已停止 |
+| `/coverage/rearm` | `std_srvs/srv/Trigger` | 操作员确认硬件停车或执行器终止后解除恢复锁；hold 留到下一次 Start 才释放 |
 
 ### 管理器状态话题
 
@@ -442,11 +444,11 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 
 界面所需的一切都在这一个话题上，界面因此不持有任何自己的状态，也不可能和管理器
 对当前在跑什么产生分歧。这是 §11.1「面板只负责人机交互」的落地方式：
-`climbot_rviz_plugins/Coverage` 面板就只订阅这一个话题并调用下面四个服务。
+`climbot_rviz_plugins/Coverage` 面板就只订阅这一个话题并调用上述管理器服务。
 
 | 字段 | 含义 |
 | --- | --- |
-| `state` | 管理器状态：`IDLE` / `INVALID` / `READY` / `STARTING` / `EXECUTING` / `STOPPING` / `FINISHED` |
+| `state` | 管理器状态：`IDLE` / `INVALID` / `READY` / `STARTING` / `EXECUTING` / `STOPPING` / `RECOVERY_LOCKED` / `FINISHED` |
 | `task_id`、`revision` | 已缓存或正在执行的任务标识；`task_id` 为空且 `revision` 为 `0` 表示从未收到任务 |
 | `current_segment` | 执行器上报的当前段；接近首点期间为 `-1`，仅在 `EXECUTING` 有意义 |
 | `total_segments` | 来自缓存任务，从 `READY` 起即可用 |
@@ -454,6 +456,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `executor_state` | 执行器运动状态，取值与 `ExecuteCoverage.action` 反馈一致；仅在 `EXECUTING` 有意义 |
 | `result_code` | 上一次执行的结果码，取值与 Action 结果一致；仅在 `FINISHED` 有意义 |
 | `can_start`、`can_cancel` | 管理器当前是否接受该请求，由它自己服务的前置条件计算；界面直接渲染，不从 `state` 反推 |
+| `can_force_abandon`、`can_rearm` | 是否允许放弃未知应答、是否允许在完成外部停车确认后解除恢复锁 |
 | `message` | 与管理器日志同一行文本 |
 
 `can_start` 和 `can_cancel` 是提示不是保证：请求仍可能被拒绝（例如执行器 Action
@@ -469,6 +472,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `STARTING` | 拒绝，已有任务在启动 | 拒绝，尚在正常应答期限内；超时后转为 `STOPPING` 并接受 | **面板置灰**；服务层仍会受理，只改预览 |
 | `EXECUTING` | 拒绝 | **接受**，请求取消 | **面板置灰**；`tracking_mode` 由执行器直接拒绝 |
 | `STOPPING` | 拒绝，仍在停机 | **接受**，重试速度保持与取消 | **面板置灰** |
+| `RECOVERY_LOCKED` | 拒绝，外部停车尚未确认 | 拒绝，无受监督 Goal handle | **面板置灰** |
 | `FINISHED` | **接受**（若仍有缓存任务），重跑该任务 | 拒绝 | 允许 |
 
 任务运行期间面板冻结全部五个规划控件，只留 Cancel。它们发出的请求确实只改预览、
@@ -511,6 +515,18 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 只由管理器发出，执行器自己永远不会返回它；先前这里复用 `CONTROL_TIMEOUT`，报的是
 一个并未发生的原因。实测从 `SIGKILL` 到释放约 `25 s`，其中约 `20 s` 是 DDS 摘除已死
 参与者所需的时间，正常退出会快得多。
+
+Start 应答未知时，当前静默不能证明请求以后不会被接受，因此这条 `STOPPING` 默认没有
+自动超时逃生口。`/coverage/force_abandon` 是明确的人工风险边界，只在这一分支可用：
+调用后退休未知请求的代次并进入 `RECOVERY_LOCKED`，持续请求 `/control/hold=true`，
+`can_start=false`。它不发布 `FINISHED`，也不声称任务已停止。操作员确认硬件急停、驱动
+失能或执行器进程确已终止后调用 `/coverage/rearm`，管理器才恢复 `READY`；hold 本身仍
+保持到下一次 Start 显式请求并确认释放。若被放弃的请求后来竟返回“已接受”，管理器会
+立即重新进入 `RECOVERY_LOCKED`、施加 hold，并取消旧 Goal 和当时任何新 Goal。
+
+RViz 的 Force abandon 必须在 `5 s` 内点击两次；第一次只显示上述风险说明。Rearm 是
+独立按钮，按钮文字要求完成外部确认。命令行可以直接调用服务，因此使用者承担同一物理
+确认责任，不能把脚本调用当成自动故障恢复。
 
 `message` 与日志共用一份措辞，命令行观察等价于原来的 `std_msgs/String`：
 
@@ -555,9 +571,9 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 新的 Start 在旧代次退休前一律拒绝。即便未来替换成允许并发 Goal 的 Action 服务，旧
 回调也不能改写新任务状态或撤掉新任务的停止入口。
 
-若上一次任务留下速度保持，新 Start 会先进入 `STARTING` 并请求解除保持；只有
+只要速度看门狗服务存在，每次新 Start 都先进入 `STARTING` 并显式请求解除保持；只有
 `/control/hold` 成功应答或 `/control/hold_active=false` 确认后才真正发送 Action Goal，
-避免 Goal 已开始而轮子仍被旧保持锁住。
+避免旧锁存状态或消息到达竞态让 Goal 已开始而轮子仍被 hold 锁住。
 
 ### 运行时构型
 

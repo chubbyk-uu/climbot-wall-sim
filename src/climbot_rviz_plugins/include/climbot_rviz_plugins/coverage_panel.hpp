@@ -117,6 +117,8 @@ private Q_SLOTS:
   void onClearPoints();
   void onStart();
   void onCancel();
+  void onForceAbandon();
+  void onRearm();
   void onConfigurationChosen();
   void onAlgorithmChosen();
   void refresh();
@@ -163,14 +165,18 @@ private:
   QPushButton * clear_button_{nullptr};
   QPushButton * start_button_{nullptr};
   QPushButton * cancel_button_{nullptr};
+  QPushButton * force_abandon_button_{nullptr};
+  QPushButton * rearm_button_{nullptr};
   QTimer * refresh_timer_{nullptr};
   // Qt-thread only: the mode the last refresh painted with, so renderStatus
   // can label the schedule without reaching for the guarded copy.
   QString rendered_tracking_mode_;
-  // Qt-thread only. Set from the manager's own can_cancel rather than from a
-  // state comparison here, so the panel and the manager cannot disagree about
-  // whether something is running.
+  // Qt-thread only. Set from the manager's operation permission bits rather
+  // than from a state comparison here, so a recovery lock also freezes task
+  // planning even though there is no cancellable Goal handle.
   bool task_running_{false};
+  bool force_confirmation_armed_{false};
+  std::chrono::steady_clock::time_point force_confirmation_deadline_{};
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<Status>::SharedPtr status_subscription_;
@@ -181,6 +187,8 @@ private:
   rclcpp::Client<Trigger>::SharedPtr clear_client_;
   rclcpp::Client<Trigger>::SharedPtr start_client_;
   rclcpp::Client<Trigger>::SharedPtr cancel_client_;
+  rclcpp::Client<Trigger>::SharedPtr force_abandon_client_;
+  rclcpp::Client<Trigger>::SharedPtr rearm_client_;
   // The tracking mode is a parameter of the executor, not part of the planner's
   // configuration service, so it is read and written where it actually lives.
   rclcpp::AsyncParametersClient::SharedPtr tracking_client_;

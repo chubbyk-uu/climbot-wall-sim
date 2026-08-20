@@ -59,6 +59,8 @@ QString stateName(uint8_t state)
       // The stop button stays enabled here, from can_cancel, because this is
       // the state in which it is most worth pressing.
       return QObject::tr("Stopping (executor lost)");
+    case climbot_interfaces::msg::CoverageStatus::RECOVERY_LOCKED:
+      return QObject::tr("Recovery locked");
     default:
       return QObject::tr("Unknown (%1)").arg(state);
   }
@@ -274,6 +276,8 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   clear_button_ = new QPushButton(tr("Clear points"));
   start_button_ = new QPushButton(tr("Start"));
   cancel_button_ = new QPushButton(tr("Cancel / Stop"));
+  force_abandon_button_ = new QPushButton(tr("Force abandon"));
+  rearm_button_ = new QPushButton(tr("Rearm after verification"));
   // Named so a test can reach them. Without names the one test that already
   // checked a button's state had to guard against not finding it, which turned
   // the check into a no-op.
@@ -281,6 +285,8 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   clear_button_->setObjectName("clear_button");
   start_button_->setObjectName("start_button");
   cancel_button_->setObjectName("cancel_button");
+  force_abandon_button_->setObjectName("force_abandon_button");
+  rearm_button_->setObjectName("rearm_button");
   // The buttons keep their default policy, unlike the labels. A label with no
   // room wraps; a button label with no room is simply cut, and "Cancel / Sto"
   // is not a control an operator should have to act on. So the buttons are
@@ -332,6 +338,8 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   buttons->addWidget(clear_button_, 0, 1);
   buttons->addWidget(start_button_, 1, 0);
   buttons->addWidget(cancel_button_, 1, 1);
+  buttons->addWidget(force_abandon_button_, 2, 0, 1, 2);
+  buttons->addWidget(rearm_button_, 3, 0, 1, 2);
 
   // Task ids and manager sentences are longer than any dock is wide, so they
   // get the full width with the name above rather than a column beside them.
@@ -389,6 +397,10 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   connect(clear_button_, &QPushButton::clicked, this, &CoveragePanel::onClearPoints);
   connect(start_button_, &QPushButton::clicked, this, &CoveragePanel::onStart);
   connect(cancel_button_, &QPushButton::clicked, this, &CoveragePanel::onCancel);
+  connect(
+    force_abandon_button_, &QPushButton::clicked,
+    this, &CoveragePanel::onForceAbandon);
+  connect(rearm_button_, &QPushButton::clicked, this, &CoveragePanel::onRearm);
 
   renderDisconnected();
 }
@@ -429,6 +441,8 @@ void CoveragePanel::onInitialize()
   clear_client_ = node_->create_client<Trigger>("/coverage/clear_points");
   start_client_ = node_->create_client<Trigger>("/coverage/start");
   cancel_client_ = node_->create_client<Trigger>("/coverage/cancel");
+  force_abandon_client_ = node_->create_client<Trigger>("/coverage/force_abandon");
+  rearm_client_ = node_->create_client<Trigger>("/coverage/rearm");
   configure_client_ = node_->create_client<Configure>("/coverage/configure");
   tracking_client_ = std::make_shared<rclcpp::AsyncParametersClient>(node_, "/line_tracker");
 
@@ -645,6 +659,27 @@ void CoveragePanel::onCancel()
   call(cancel_client_, tr("Cancel"));
 }
 
+void CoveragePanel::onForceAbandon()
+{
+  const auto now = std::chrono::steady_clock::now();
+  if (!force_confirmation_armed_ || now > force_confirmation_deadline_) {
+    force_confirmation_armed_ = true;
+    force_confirmation_deadline_ = now + std::chrono::seconds{5};
+    force_abandon_button_->setText(tr("Confirm force abandon"));
+    note(tr("Force abandon: this does not prove the task stopped. Verify the "
+      "hardware stop or executor shutdown, then click again within 5 seconds."));
+    return;
+  }
+  force_confirmation_armed_ = false;
+  force_abandon_button_->setText(tr("Force abandon"));
+  call(force_abandon_client_, tr("Force abandon"));
+}
+
+void CoveragePanel::onRearm()
+{
+  call(rearm_client_, tr("Rearm after verification"));
+}
+
 void CoveragePanel::renderDisconnected()
 {
   // The State row is a narrow column beside its name, so it holds the state
@@ -666,6 +701,10 @@ void CoveragePanel::renderDisconnected()
   clear_button_->setEnabled(true);
   start_button_->setEnabled(false);
   cancel_button_->setEnabled(false);
+  force_abandon_button_->setEnabled(false);
+  rearm_button_->setEnabled(false);
+  force_confirmation_armed_ = false;
+  force_abandon_button_->setText(tr("Force abandon"));
 }
 
 void CoveragePanel::renderStatus(const Status & status)
@@ -710,6 +749,12 @@ void CoveragePanel::renderStatus(const Status & status)
   // preview, so they are never withheld here.
   start_button_->setEnabled(status.can_start);
   cancel_button_->setEnabled(status.can_cancel);
+  force_abandon_button_->setEnabled(status.can_force_abandon);
+  rearm_button_->setEnabled(status.can_rearm);
+  if (!status.can_force_abandon) {
+    force_confirmation_armed_ = false;
+    force_abandon_button_->setText(tr("Force abandon"));
+  }
   // Everything that shapes a task is frozen while one is running, so the only
   // thing left to do to a running task is stop it. These controls were left
   // live on the grounds that they only touch the preview and never the running
@@ -717,7 +762,7 @@ void CoveragePanel::renderStatus(const Status & status)
   // operator sees: the preview is the trajectory drawn over the robot, and
   // changing the shape now withdraws it mid-drive, which reads as the mission
   // having been altered or lost.
-  task_running_ = status.can_cancel;
+  task_running_ = status.can_cancel || status.can_force_abandon || status.can_rearm;
   replan_button_->setEnabled(!task_running_);
   clear_button_->setEnabled(!task_running_);
   if (task_running_) {
@@ -746,6 +791,13 @@ void CoveragePanel::expireStalePendingRequests()
 
 void CoveragePanel::refresh()
 {
+  if (force_confirmation_armed_ &&
+    std::chrono::steady_clock::now() > force_confirmation_deadline_)
+  {
+    force_confirmation_armed_ = false;
+    force_abandon_button_->setText(tr("Force abandon"));
+    note(tr("Force abandon: confirmation expired; no request was sent."));
+  }
   expireStalePendingRequests();
   std::unique_ptr<Status> status;
   QString planner;

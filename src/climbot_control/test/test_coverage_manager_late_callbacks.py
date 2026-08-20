@@ -47,7 +47,8 @@ import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
-from std_srvs.srv import Trigger
+from std_msgs.msg import Bool
+from std_srvs.srv import SetBool, Trigger
 
 
 ABANDONED_REVISION = 7
@@ -117,6 +118,23 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         self.force_abandon_client = self.node.create_client(
             Trigger, '/coverage/force_abandon')
         self.rearm_client = self.node.create_client(Trigger, '/coverage/rearm')
+        self.hold_requests = []
+        self.hold_publisher = self.node.create_publisher(
+            Bool, '/control/hold_active',
+            rclpy.qos.QoSProfile(
+                depth=1,
+                durability=rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL,
+                reliability=rclpy.qos.ReliabilityPolicy.RELIABLE))
+        self.hold_publisher.publish(Bool(data=False))
+
+        def set_hold(request, response):
+            self.hold_requests.append(request.data)
+            self.hold_publisher.publish(Bool(data=request.data))
+            response.success = True
+            return response
+
+        self.hold_service = self.node.create_service(
+            SetBool, '/control/hold', set_hold)
 
         self.executor_node = rclpy.create_node('stub_executor')
         self.first_goal_seen = Event()
@@ -252,6 +270,8 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
 
     def test_force_abandon_requires_rearm_and_a_late_acceptance_relocks(self):
         """The manual escape must remain fail-safe when its premise was wrong."""
+        self.assertFalse(self._call(self.force_abandon_client).success)
+        self.assertFalse(self._call(self.rearm_client).success)
         self.task_publisher.publish(_task(ABANDONED_REVISION + 10))
         self._wait_until(
             lambda s: s.state == CoverageStatus.READY,
@@ -273,13 +293,19 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         self.assertFalse(locked.can_cancel)
         self.assertFalse(locked.can_force_abandon)
         self.assertTrue(locked.can_rearm)
+        self.assertIn(True, self.hold_requests)
         self.assertFalse(self._call_start().success)
 
+        releases_before_rearm = self.hold_requests.count(False)
         self.assertTrue(self._call(self.rearm_client).success)
         ready = self._wait_until(
             lambda s: s.state == CoverageStatus.READY and s.can_start,
             'operator rearm to restore READY')
         self.assertFalse(ready.can_rearm)
+        time.sleep(0.6)
+        self.assertEqual(
+            self.hold_requests.count(False), releases_before_rearm,
+            'Rearm released hold before a new Start explicitly requested it.')
 
         # The explicit recovery was based on external verification. If that
         # premise proves wrong and the retired request is accepted after all,

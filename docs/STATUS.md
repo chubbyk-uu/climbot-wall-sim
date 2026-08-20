@@ -15,6 +15,7 @@
 | 速度保持可靠性 | 已完成 | `/control/hold` 请求有 deadline 和重试；看门狗重启发布 `false` 时重新施加；旧保持确认解除前不发送新 Goal |
 | `STOPPING` 终止证据 | 已完成 | `hold_active=true` 只作为当前输出保护，不再当作任务终止；仅 Action 最终结果或上游运动指令持续静默允许离开 |
 | 实机安全边界 | 已明确 | ROS hold 是进程内易失的软件保护；实机最终停机保证必须由默认失效关闭的硬件急停/驱动使能回路提供 |
+| 未知 Start 应答恢复 | 已完成 | 默认 `STOPPING` 不自动推断安全；二次确认 Force abandon 进入持续 hold 的 `RECOVERY_LOCKED`，外部停车确认后独立 Rearm；迟到接受会再次锁定 |
 
 ## 阶段状态
 
