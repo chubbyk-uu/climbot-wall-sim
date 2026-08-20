@@ -29,13 +29,24 @@ LANE_TERM_GRACE_S=${LANE_TERM_GRACE_S:-20}
 # to signal. setsid usually execs rather than forks here, but "usually" is not
 # a thing to build a kill on: the group id is read back from the kernel.
 lane_remember() {
-  local lane=$1 pid=$2 pgid
+  local lane=$1 pid=$2 pgid mine
   pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')
-  if [ -n "$pgid" ]; then
-    echo "$pgid" >> "$RUN_DIR/lane${lane}.pgids"
-  else
+  mine=$(ps -o pgid= -p "$BASHPID" 2>/dev/null | tr -d ' ')
+  if [ -z "$pgid" ]; then
     echo "[lane$lane] could not read a process group for pid $pid" >> "$RUN_DIR/teardown"
+    return
   fi
+  # setsid execs rather than forks when the caller is not already a process
+  # group leader, so this is normally the new group. "Normally" is not enough
+  # to build a kill on: if it forked, the pid read back is still in this
+  # script's own group, and teardown would then signal the whole run - every
+  # other lane, and the script itself - on the first case that finished.
+  if [ "$pgid" = "$mine" ]; then
+    echo "[lane$lane] pid $pid did not get a session of its own; not recorded" \
+      >> "$RUN_DIR/teardown"
+    return
+  fi
+  echo "$pgid" >> "$RUN_DIR/lane${lane}.pgids"
 }
 
 lane_groups_alive() {

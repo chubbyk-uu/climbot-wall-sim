@@ -82,6 +82,15 @@ check "the stray is gone" "no" "$(kill -0 "$stray" 2>/dev/null && echo yes || ec
 check "the escape was reported" "yes" \
   "$(grep -q 'outside every recorded group' "$RUN_DIR/teardown" && echo yes || echo no)"
 
+echo "a process that never got its own session is not recorded as a group"
+: > "$RUN_DIR/teardown"
+: > "$RUN_DIR/lane1.pgids"
+# Recording this script's own group would make teardown signal the whole run.
+lane_remember 1 "$BASHPID"
+check "nothing was recorded" "" "$(cat "$RUN_DIR/lane1.pgids")"
+check "the refusal was reported" "yes" \
+  "$(grep -q 'session of its own' "$RUN_DIR/teardown" && echo yes || echo no)"
+
 echo "one lane never touches another lane's processes"
 : > "$RUN_DIR/teardown"
 : > "$RUN_DIR/lane1.pgids"
