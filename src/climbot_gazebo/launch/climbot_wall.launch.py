@@ -3,9 +3,11 @@
 import os
 import shutil
 import tempfile
+from xml.dom import minidom
 
 from ament_index_python.packages import get_package_share_directory
 from climbot_description.wall_frame import reference_grid_spacing
+from climbot_gazebo.wall_texture import load_manifest, texture_visuals
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -40,7 +42,32 @@ def running_on_wsl():
         return False
 
 
-def render_world(gazebo_share, description_share, grid_spacing):
+def apply_wall_texture(document, manifest_path, thickness, wall_origin, link_centre):
+    """Add the baked texture blocks to the rendered wall, if one is configured."""
+    if not manifest_path:
+        return
+    path = os.path.abspath(os.path.expanduser(manifest_path))
+    if not os.path.exists(path):
+        # Refusing here rather than falling back to the flat wall. A run that
+        # silently photographs a blank surface produces images that look like a
+        # camera fault, and the cost of finding that out is a whole run.
+        raise FileNotFoundError(
+            'the wall texture manifest %s does not exist; run '
+            'tools/fetch_wall_texture.sh and tools/bake_wall_texture.py, or '
+            'clear texture_manifest' % path)
+    manifest, directory = load_manifest(path)
+    links = [node for node in document.getElementsByTagName('link')
+             if node.getAttribute('name') == 'wall_link']
+    if not links:
+        raise RuntimeError('the rendered world has no wall_link to texture')
+    for element in texture_visuals(
+            manifest, directory, thickness, wall_origin, link_centre):
+        fragment = minidom.parseString(element.strip()).documentElement
+        links[0].appendChild(document.importNode(fragment, True))
+
+
+def render_world(gazebo_share, description_share, grid_spacing,
+                 texture_manifest=None):
     """Render the Gazebo world from shared and simulation-only settings."""
     with open(os.path.join(description_share, 'config', 'wall.yaml')) as handle:
         wall = yaml.safe_load(handle)['wall']
@@ -70,6 +97,14 @@ def render_world(gazebo_share, description_share, grid_spacing):
     }
     source = os.path.join(gazebo_share, 'worlds', 'climbot_wall.sdf.xacro')
     document = xacro.process_file(source, mappings=mappings)
+    # A launch argument beats the configured default, so the wall can be looked
+    # at with the texture on without editing a file every other run reads.
+    configured = simulated_wall.get('texture_manifest', '')
+    apply_wall_texture(
+        document, configured if texture_manifest is None else texture_manifest,
+        float(simulated_wall['thickness_m']),
+        [float(value) for value in wall['origin_xyz']],
+        [float(value) for value in centre])
     handle = tempfile.NamedTemporaryFile(
         mode='w', prefix='climbot_wall_', suffix='.sdf', delete=False)
     handle.write(document.toprettyxml(indent='  '))
@@ -170,7 +205,8 @@ def launch_setup(context, *args, **kwargs):
     ros_gz_share = get_package_share_directory('ros_gz_sim')
     world = render_world(
         package_share, description_share,
-        LaunchConfiguration('wall_grid_spacing').perform(context))
+        LaunchConfiguration('wall_grid_spacing').perform(context),
+        LaunchConfiguration('wall_texture').perform(context) or None)
     model_path, robot_description = render_robot(
         package_share, description_share)
     wall_config = os.path.join(description_share, 'config', 'wall.yaml')
@@ -435,6 +471,12 @@ def generate_launch_description():
             description='Reference grid pitch on the wall face in metres; 0 '
                         'removes the grid. Photography runs remove it: it '
                         'repeats, and it is not on the wall plane.',
+        ),
+        DeclareLaunchArgument(
+            'wall_texture',
+            default_value='',
+            description='Bake manifest from tools/bake_wall_texture.py to put '
+                        'on the wall face; empty uses simulation.yaml.',
         ),
         OpaqueFunction(function=launch_setup),
     ])

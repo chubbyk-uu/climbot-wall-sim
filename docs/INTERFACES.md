@@ -41,6 +41,7 @@
 | `sweep_direction` | `horizontal` | 扫描方向 |
 | `tracking_mode` | `time` | 直线段控制律：`time` 或 `distance` |
 | `wall_grid_spacing` | `1.0` | 参考网格线间距（m），`0` 两个视图都不画。默认值取自 `climbot_description/config/wall.yaml`，同一个值同时传给 Gazebo 墙面和 RViz 叠加层 |
+| `wall_texture` | 空 | 透传给 `climbot_wall.launch.py`，见下 |
 
 launch 参数只给这三项定初值。`region_type` 和 `sweep_direction` 运行中改用
 `/coverage/configure` 或面板上的下拉框，见下面的"运行时构型"；规划器的其余参数
@@ -77,6 +78,7 @@ RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出�
 | `wheel_yaw_rate_stddev_rps` | `0.05` | 轮式角速度标准差 |
 | `imu_orientation_stddev_rad` | `0.00174532925` | IMU 姿态标准差（0.1°） |
 | `wall_grid_spacing` | `1.0` | 墙面参考网格线间距（m），`0` 不画。默认值取自 `climbot_description/config/wall.yaml` |
+| `wall_texture` | 空 | `tools/bake_wall_texture.py` 产出的清单路径；空则用 `simulation.yaml` 的 `wall.texture_manifest`。路径不存在时报错退出，不退回平色墙 |
 
 ## 仿真与定位话题
 

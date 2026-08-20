@@ -14,6 +14,17 @@ simulation:
     # climbot_description/config/wall.yaml, because RViz draws the same grid
     # and cannot read this file.
 
+    # Path to a bake manifest from tools/bake_wall_texture.py, resolved
+    # against the directory ros2 launch was run from. Empty leaves the wall its
+    # flat colour. The blocks are visual only: the collision box and the
+    # friction and WheelSlip parameters calibrated against it are untouched.
+    #
+    # It is empty by default because the bake is 200 MB of generated files that
+    # the repository does not carry - run tools/fetch_wall_texture.sh and
+    # tools/bake_wall_texture.py first, then point this or the wall_texture
+    # launch argument at the manifest.
+    texture_manifest: ''
+
   spawn:
     surface_gap_m: 0.001
     lateral_m: 0.0

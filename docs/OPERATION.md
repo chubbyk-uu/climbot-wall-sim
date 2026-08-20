@@ -365,6 +365,41 @@ ros2 run climbot_gazebo evaluate_localization.py --ros-args -p use_sim_time:=tru
     -p summary_json:=results/localization_<tag>_summary.json
 ```
 
+## 墙面贴图
+
+墙面默认是平色的。贴图是**本地生成**的：源素材 `540 MB`、烘焙产物约 `200 MB`，
+两者都不进仓库。仓库里的是脚本、源素材的 `sha256` 和烘焙种子——这三样一起把
+产物钉死，因为这张图不只是布景，它是拼接结果要比对的基准，换一版素材就等于换了
+一面墙而没人看得出来。
+
+```bash
+# 一次性：下载并校验源素材，只解出颜色图（约 540 MB）
+tools/fetch_wall_texture.sh
+
+# 烘焙整面墙：20000 × 16000 纹素，BC1 DDS，mip 链写在文件里
+python3 tools/bake_wall_texture.py \
+    --source-dir "${TMPDIR:-/tmp}/climbot_wall_texture/maps" \
+    --output-dir textures/wall --source-size-m 2.5
+
+# 用它启动
+ros2 launch climbot_bringup coverage_mission.launch.py \
+    wall_texture:=textures/wall/wall_texture.json wall_grid_spacing:=0
+```
+
+`--source-size-m 2.5` 没有默认值，必须显式给：ambientCG 没有记录 `Concrete044D`
+的真实尺寸，这个数是**本项目的声明**，而烘焙里每一个长度都是从它推出来的。
+
+拍照运行请一并加 `wall_grid_spacing:=0`，理由见上面的参考网格线一节。
+
+贴图只改墙面**外观**：碰撞盒、摩擦系数和按它标定的 WheelSlip 参数都不动，贴图块
+浮在墙面前 `1 mm`（参考网格线是 `3 mm`，那个距离足以让拼接的单应性把它当成第二个
+平面）。
+
+也可以把清单路径写进 `climbot_gazebo/config/simulation.yaml` 的
+`wall.texture_manifest` 长期生效；launch 参数优先级更高。路径指向的文件不存在时
+launch **直接报错退出**，不会退回平色墙——一整轮拍出来的白墙照片看起来像相机故障，
+发现它的代价是整轮重跑。
+
 ## 安全提示
 
 Gazebo DiffDrive 会持续执行最后收到的 `/cmd_vel`，因此仿真 launch 始终启动速度

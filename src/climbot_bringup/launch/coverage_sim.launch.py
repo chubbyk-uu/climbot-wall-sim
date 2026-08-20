@@ -23,6 +23,7 @@ def generate_launch_description():
             'headless': LaunchConfiguration('headless'),
             'gpu_backend': LaunchConfiguration('gpu_backend'),
             'wall_grid_spacing': LaunchConfiguration('wall_grid_spacing'),
+            'wall_texture': LaunchConfiguration('wall_texture'),
         }.items(),
     )
     coverage = IncludeLaunchDescription(
@@ -69,6 +70,12 @@ def generate_launch_description():
             'wall_grid_spacing',
             default_value=repr(reference_grid_spacing()),
             description='Reference grid pitch in metres; 0 draws none.',
+        ),
+        DeclareLaunchArgument(
+            'wall_texture',
+            default_value='',
+            description='Bake manifest from tools/bake_wall_texture.py; empty '
+                        'leaves the wall its flat colour.',
         ),
         simulation,
         coverage,

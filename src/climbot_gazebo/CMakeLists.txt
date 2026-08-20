@@ -53,6 +53,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_turn_profile test/test_turn_profile.py)
   ament_add_pytest_test(
     test_wall_slip_sampling test/test_wall_slip_sampling.py)
+  ament_add_pytest_test(test_wall_texture test/test_wall_texture.py)
   ament_add_pytest_test(
     test_wall_world_matches_description
     test/test_wall_world_matches_description.py)
