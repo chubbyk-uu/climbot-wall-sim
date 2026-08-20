@@ -985,6 +985,23 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 `gazebo_wall.png` 不受影响，墙面在世界系里没有变。（已于 2026-08-20 重拍，见
 「README 时长口径与 RViz 截图」。）
 
+## 2026-08-20 Apache-2.0 文件头（review L7）
+
+七个包的 `package.xml` 都写着 `<license>Apache-2.0</license>`，根目录有完整的
+`LICENSE`，但**没有一个源文件带许可头**，而且七个 `CMakeLists.txt` 全都写着
+`set(ament_cmake_copyright_FOUND TRUE)` 把版权检查显式关掉了。公开仓库里这是声明与
+事实不一致。
+
+给 `src/` 下全部 100 个源文件（`.py` / `.cpp` / `.hpp`）和 `tools/` 下 7 个脚本加上
+标准 Apache-2.0 头，`#!` 行保持在最前；删掉七处 `ament_cmake_copyright_FOUND`，让
+`ament_copyright` 重新参与每次 `colcon test`。测试数从 481 升到 **588**，多出来的
+107 项就是重新打开的版权检查。
+
+顺带修掉一处被这次改动暴露的测试污染：`test_cmd_vel_watchdog_node.py` 里我新加的保持
+测试和原有的超时测试共用一个看门狗节点，前者的驱动线程停下后没等系统静下来，残留的
+指令会被后者当成自己的。现在保持测试结束前先解除保持、再等输出回落到零速。连跑三次
+确认。
+
 ## 2026-08-20 低严重度小项打包（review L2~L6、L8）
 
 - **L2 规划器只比大小，不查有限性。** `validatePhysicalParameters()` 的每条检查都是

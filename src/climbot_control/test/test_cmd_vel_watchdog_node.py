@@ -1,3 +1,17 @@
+# Copyright 2026 jerry
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Node-level verification that stale commands are replaced with a stop."""
 
 from threading import Event
@@ -146,3 +160,11 @@ class TestCmdVelWatchdogNode(unittest.TestCase):
         finally:
             stop_driving.set()
             driver.join()
+            # One watchdog serves every test in this file, and the next one
+            # measures how long a command survives being un-refreshed. Leave it
+            # released and already fallen back to a stop, so nothing this test
+            # published - including whatever is still in flight when the driver
+            # thread stops - can be mistaken for that test's command.
+            self._set_hold(False)
+            self._wait_for_output(
+                (0.0, 0.0), 'the watchdog to fall back to a stop', timeout=5.0)
