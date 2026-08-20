@@ -1082,22 +1082,40 @@ private:
     if (!active_goal_) {
       return;
     }
+    if (!rclcpp::ok()) {
+      clearActiveGoal();
+      return;
+    }
     geometry_msgs::msg::Twist stop;
-    command_publisher_->publish(stop);
-    previous_command_ = {};
-    auto result = std::make_shared<ExecuteCoverage::Result>();
-    result->result_code = code;
-    result->message = message;
-    result->completed_segments = completed_segments_;
-    result->elapsed_time_s = std::max(0.0, (controlNow() - task_start_time_).seconds());
-    if (code == ExecuteCoverage::Result::SUCCESS) {
-      active_goal_->succeed(result);
-    } else if (code == ExecuteCoverage::Result::CANCELED) {
-      active_goal_->canceled(result);
-    } else {
-      active_goal_->abort(result);
+    try {
+      command_publisher_->publish(stop);
+      previous_command_ = {};
+      auto result = std::make_shared<ExecuteCoverage::Result>();
+      result->result_code = code;
+      result->message = message;
+      result->completed_segments = completed_segments_;
+      result->elapsed_time_s = std::max(0.0, (controlNow() - task_start_time_).seconds());
+      if (code == ExecuteCoverage::Result::SUCCESS) {
+        active_goal_->succeed(result);
+      } else if (code == ExecuteCoverage::Result::CANCELED) {
+        active_goal_->canceled(result);
+      } else {
+        active_goal_->abort(result);
+      }
+    } catch (const rclcpp::exceptions::RCLError &) {
+      if (rclcpp::ok()) {
+        throw;
+      }
+      clearActiveGoal();
+      return;
     }
     RCLCPP_INFO(get_logger(), "Coverage execution stopped: %s", message.c_str());
+    clearActiveGoal();
+  }
+
+  void clearActiveGoal()
+  {
+    previous_command_ = {};
     active_goal_.reset();
     active_task_.reset();
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
@@ -1202,7 +1220,14 @@ private:
     feedback->planned_total_s = schedule_.plannedTotal();
     feedback->schedule_lag_s = scheduleLagSeconds();
     feedback->estimated_remaining_s = estimatedRemaining(feedback->progress, command);
-    active_goal_->publish_feedback(feedback);
+    try {
+      active_goal_->publish_feedback(feedback);
+    } catch (const rclcpp::exceptions::RCLError &) {
+      if (rclcpp::ok()) {
+        throw;
+      }
+      clearActiveGoal();
+    }
   }
 
   void publishReferencePath()
@@ -1232,6 +1257,15 @@ private:
 
   void onTimer()
   {
+    // SIGINT invalidates Action publishers before a timer callback already in
+    // flight necessarily returns. Publishing feedback or a result after that
+    // point throws RCLError and used to turn an otherwise clean launch
+    // shutdown into exit 1. The wheel watchdog independently times out the
+    // last command, so teardown only retires process-local task state here.
+    if (!rclcpp::ok()) {
+      clearActiveGoal();
+      return;
+    }
     const auto current_time = controlNow();
     if (!standalone_mode_) {
       if (!active_goal_) {

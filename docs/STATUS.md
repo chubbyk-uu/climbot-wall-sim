@@ -16,6 +16,7 @@
 | `STOPPING` 终止证据 | 已完成 | `hold_active=true` 只作为当前输出保护，不再当作任务终止；仅 Action 最终结果或上游运动指令持续静默允许离开 |
 | 实机安全边界 | 已明确 | ROS hold 是进程内易失的软件保护；实机最终停机保证必须由默认失效关闭的硬件急停/驱动使能回路提供 |
 | 未知 Start 应答恢复 | 已完成 | 默认 `STOPPING` 不自动推断安全；二次确认 Force abandon 进入持续 hold 的 `RECOVERY_LOCKED`，外部停车确认后独立 Rearm；迟到接受会再次锁定 |
+| Action 关机竞态 | 已完成 | ROS context 关闭后不再发布 feedback/result；只清进程内 Goal，正常运行期异常仍上抛。原失败用例连续 5 次正常退出 |
 
 ## 阶段状态
 
