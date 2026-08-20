@@ -83,6 +83,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_line_tracker_time_mode.py TIMEOUT 90 ENV ROS_DOMAIN_ID=52)
   add_launch_test(test/test_coverage_schedule_pose.py TIMEOUT 60 ENV ROS_DOMAIN_ID=53)
   add_launch_test(test/test_coverage_manager_late_callbacks.py TIMEOUT 120 ENV ROS_DOMAIN_ID=54)
+  add_launch_test(test/test_coverage_manager_forced_recovery.py TIMEOUT 60 ENV ROS_DOMAIN_ID=55)
   ament_add_pytest_test(
     test_watchdog_rejects_bad_numbers test/test_watchdog_rejects_bad_numbers.py TIMEOUT 60)
 endif()
