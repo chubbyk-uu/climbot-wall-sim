@@ -7,7 +7,7 @@ simulation:
     # be origin_xyz[2] + height/2. test_wall_world_matches_description.py holds
     # the two files to that, because a stale centre_z lifts the wall off the
     # ground without any other symptom.
-    centre_xyz: [0.0, 0.0, 3.0]
+    centre_xyz: [0.0, 0.0, 4.0]
     thickness_m: 0.10
     mu: 1.1
     grid_spacing_m: 1.0

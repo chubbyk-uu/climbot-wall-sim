@@ -4,11 +4,10 @@ coverage_planner:
     task_id: trapezoid-vertical-large
     input_mode: parameters
     region_type: trapezoid
-    # Isosceles trapezoid: 6.50 m bottom, 3.25 m top, 3.30 m height, swept
-    # vertically to exercise sloped transitions.
-    lower_left: [0.75, 1.35]
-    upper_right: [5.625, 4.65]
-    lower_right: [7.25, 1.35]
+    # Same short-top trapezoid, swept vertically to exercise sloped transitions.
+    lower_left: [2.0, 1.2]
+    upper_right: [6.5, 3.6]
+    lower_right: [8.0, 1.2]
     detection_width: 0.50
     detection_length: 0.01
     overlap_ratio: 0.20

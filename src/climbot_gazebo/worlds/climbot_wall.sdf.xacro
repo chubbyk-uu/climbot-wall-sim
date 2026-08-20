@@ -7,10 +7,10 @@
 <sdf version="1.10" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:arg name="centre_x" default="0.0"/>
   <xacro:arg name="centre_y" default="0.0"/>
-  <xacro:arg name="centre_z" default="3.0"/>
+  <xacro:arg name="centre_z" default="4.0"/>
   <xacro:arg name="thickness" default="0.10"/>
-  <xacro:arg name="width" default="8.0"/>
-  <xacro:arg name="height" default="6.0"/>
+  <xacro:arg name="width" default="10.0"/>
+  <xacro:arg name="height" default="8.0"/>
   <xacro:arg name="mu" default="1.1"/>
   <xacro:arg name="grid_spacing" default="1.0"/>
   <xacro:arg name="suction_force" default="400.0"/>

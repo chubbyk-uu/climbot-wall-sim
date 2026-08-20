@@ -5,9 +5,9 @@ coverage_planner:
     input_mode: parameters
     region_type: trapezoid
     # Same short-top trapezoid, swept vertically to exercise sloped transitions.
-    lower_left: [2.0, 1.4]
-    upper_right: [5.3, 4.2]
-    lower_right: [6.0, 1.4]
+    lower_left: [4.4, 1.4]
+    upper_right: [7.7, 4.2]
+    lower_right: [8.4, 1.4]
     detection_width: 0.50
     detection_length: 0.01
     overlap_ratio: 0.20

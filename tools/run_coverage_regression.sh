@@ -70,15 +70,14 @@ WS=$(dirname "$SCRIPT_DIR")
 # 180 degree turn (results/README.md, tag line1).
 #
 # 15.7's five bearings take the simple geometry, 0.6 m along the line. The
-# lengths are set by how much wall there is: the robot spawns at the middle of
-# the 8 m wide wall, at work (4.0, 2.0), and the reachable rectangle is inset
-# by the planner's 0.548 m margin, so a line offset 0.6 m from the spawn has
-# 4.0 - 0.6 - 0.548 = 2.85 m to run in any direction. 2.8 m uses that with a
-# little to spare; the 3.5 m these carried on the old 10 x 8 m wall ran off the
-# new one in three of the five bearings. The entry_* rows are stage E item 8:
-# the distance to the first waypoint swept at 0.3, 1.0 and 2.0 m, then the
-# approach direction turned away from the line. Their 1.4 m is what is left
-# once the 2.0 m offset is spent.
+# work frame's origin is the wall's lower-left corner, so the robot spawns at
+# work (5.0, 2.0) and the reachable rectangle is the 10 x 8 m wall inset by the
+# planner's 0.548 m margin. The tightest case is the 180 degree one, which ends
+# 0.35 m short of the left edge; the evaluator derives that rectangle from the
+# description rather than restating it, so shrinking the wall would be caught
+# here rather than at the tracker. The entry_* rows are stage E item 8: the
+# distance to the first waypoint swept at 0.3, 1.0 and 2.0 m, then the approach
+# direction turned away from the line.
 #
 # g1_cross is the G-1 cross-track case. A scan line cannot simply be handed a
 # large initial cross-track error: the start approach drives to the first
@@ -92,19 +91,19 @@ WS=$(dirname "$SCRIPT_DIR")
 #
 # name  line_bearing_deg  length_m  approach_bearing_deg  offset_m
 LINE_CASES="
-line_horizontal           0.0  2.8     0.0  0.6
-line_horizontal_back    180.0  2.8   180.0  0.6
-line_vertical            90.0  2.8    90.0  0.6
-line_diagonal            45.0  2.8    45.0  0.6
-line_diagonal_back      135.0  2.8   135.0  0.6
-g1_cross                  0.0  2.8   180.0  0.6
-entry_near                0.0  1.4     0.0  0.3
-entry_mid                 0.0  1.4     0.0  1.0
-entry_far                 0.0  1.4     0.0  2.0
-entry_side                0.0  1.4    90.0  1.0
-entry_behind              0.0  1.4   180.0  1.0
-entry_vertical_side      90.0  1.4     0.0  1.0
-entry_diagonal           45.0  1.4   135.0  1.5
+line_horizontal          0.0  3.5     0.0  0.6
+line_horizontal_back   180.0  3.5   180.0  0.6
+line_vertical           90.0  3.5    90.0  0.6
+line_diagonal           45.0  3.5    45.0  0.6
+line_diagonal_back     135.0  3.5   135.0  0.6
+g1_cross                 0.0  3.5   180.0  0.6
+entry_near               0.0  2.0     0.0  0.3
+entry_mid                0.0  2.0     0.0  1.0
+entry_far                0.0  2.0     0.0  2.0
+entry_side               0.0  2.0    90.0  1.0
+entry_behind             0.0  2.0   180.0  1.0
+entry_vertical_side     90.0  2.0     0.0  1.0
+entry_diagonal          45.0  2.0   135.0  1.5
 "
 
 CASES="

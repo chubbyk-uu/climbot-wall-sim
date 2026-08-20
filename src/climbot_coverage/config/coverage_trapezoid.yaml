@@ -4,12 +4,11 @@ coverage_planner:
     task_id: trapezoid
     input_mode: parameters
     region_type: trapezoid
-    lower_left: [0.75, 0.75]
-    # Top width is 3.25 m versus the 6.50 m bottom, producing clear diagonal
-    # transitions for controller validation.  The 40 mm rise from the left
-    # bottom corner to the right one keeps that edge off horizontal.
-    upper_right: [5.625, 5.25]
-    lower_right: [7.25, 0.79]
+    lower_left: [2.0, 0.5]
+    # Top width is 3.0 m versus the 6.0 m bottom, producing clear diagonal
+    # transitions for controller validation.
+    upper_right: [6.5, 6.5]
+    lower_right: [8.0, 0.54]
     detection_width: 0.50
     # Conservative provisional value; replace with the calibrated payload length.
     detection_length: 0.01
