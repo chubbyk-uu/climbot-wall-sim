@@ -633,3 +633,13 @@ TEST(CommandWatchdog, RejectsNonFiniteCommandsAndTimes)
   EXPECT_FALSE(watchdog.accept({.1, .2}, std::numeric_limits<double>::quiet_NaN()));
   EXPECT_TRUE(watchdog.timedOut(1.2));
 }
+
+TEST(CommandWatchdog, RejectsANonFiniteOrNonPositiveTimeout)
+{
+  EXPECT_THROW(CommandWatchdog(0.0), std::invalid_argument);
+  EXPECT_THROW(CommandWatchdog(-0.1), std::invalid_argument);
+  EXPECT_THROW(
+    CommandWatchdog(std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
+  EXPECT_THROW(
+    CommandWatchdog(std::numeric_limits<double>::infinity()), std::invalid_argument);
+}

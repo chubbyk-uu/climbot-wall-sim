@@ -23,8 +23,8 @@ namespace climbot_control
 CommandWatchdog::CommandWatchdog(double timeout_s)
 : timeout_s_(timeout_s)
 {
-  if (timeout_s_ <= 0.0) {
-    throw std::invalid_argument("Watchdog timeout must be positive.");
+  if (!std::isfinite(timeout_s_) || timeout_s_ <= 0.0) {
+    throw std::invalid_argument("Watchdog timeout must be positive and finite.");
   }
 }
 

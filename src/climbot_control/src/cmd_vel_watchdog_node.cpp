@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <chrono>
+#include <cmath>
 #include <memory>
 #include <stdexcept>
 
@@ -32,8 +33,8 @@ public:
     watchdog_(declare_parameter("command_timeout_s", 0.40))
   {
     const double publish_rate_hz = declare_parameter("publish_rate_hz", 50.0);
-    if (publish_rate_hz <= 0.0) {
-      throw std::invalid_argument("publish_rate_hz must be positive.");
+    if (!std::isfinite(publish_rate_hz) || publish_rate_hz <= 0.0) {
+      throw std::invalid_argument("publish_rate_hz must be positive and finite.");
     }
     // This node is the last thing between a stalled controller and the wheels,
     // so it must not share the controller's failure modes. On the node clock a
