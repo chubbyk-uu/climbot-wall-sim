@@ -29,6 +29,7 @@
 # measured against it must not move because a picture was applied to it.
 
 import json
+import math
 import os
 from xml.sax.saxutils import quoteattr
 
@@ -40,7 +41,7 @@ from xml.sax.saxutils import quoteattr
 SURFACE_OFFSET_M = 0.001
 
 
-def load_manifest(path):
+def load_manifest(path, wall_size=None):
     """Read a bake manifest and check it describes a wall that can be built."""
     # Everything here is checked before a single visual is emitted, because the
     # alternative is finding out from the rendered wall. That is how the work
@@ -52,7 +53,8 @@ def load_manifest(path):
         manifest = json.load(handle)
     directory = os.path.dirname(os.path.abspath(path))
 
-    for key in ('scale_m_per_px', 'region_origin_m', 'region_m', 'maps'):
+    for key in ('scale_m_per_px', 'region_origin_m', 'region_m',
+                'width_px', 'height_px', 'maps'):
         if key not in manifest:
             raise KeyError('the manifest has no %s; rebake with '
                            'tools/bake_wall_texture.py' % key)
@@ -62,23 +64,60 @@ def load_manifest(path):
         if not isinstance(pair, list) or len(pair) != 2:
             raise ValueError('%s must be two numbers' % key)
         for value in pair:
-            if not isinstance(value, (int, float)) or value != value:
+            if not _finite_number(value):
                 raise ValueError('%s must be two finite numbers' % key)
+    origin_x, origin_y = (float(value)
+                          for value in manifest['region_origin_m'])
     region_width, region_height = (float(value) for value in manifest['region_m'])
     if region_width <= 0.0 or region_height <= 0.0:
         raise ValueError('region_m must be positive')
+    width_px = _positive_integer(manifest, 'width_px')
+    height_px = _positive_integer(manifest, 'height_px')
+    if not math.isclose(region_width, width_px * scale,
+                        rel_tol=1e-9, abs_tol=1e-12):
+        raise ValueError('region_m width does not match width_px and scale')
+    if not math.isclose(region_height, height_px * scale,
+                        rel_tol=1e-9, abs_tol=1e-12):
+        raise ValueError('region_m height does not match height_px and scale')
+    if wall_size is not None:
+        if (not isinstance(wall_size, (list, tuple)) or len(wall_size) != 2 or
+                not all(_finite_number(value) and value > 0.0
+                        for value in wall_size)):
+            raise ValueError('wall_size must be two positive finite numbers')
+        wall_width, wall_height = (float(value) for value in wall_size)
+        if (origin_x < 0.0 or origin_y < 0.0 or
+                origin_x + region_width > wall_width + 1e-9 or
+                origin_y + region_height > wall_height + 1e-9):
+            raise ValueError(
+                'the %.3f x %.3f m texture region at (%.3f, %.3f) lies '
+                'outside the %.3f x %.3f m wall' %
+                (region_width, region_height, origin_x, origin_y,
+                 wall_width, wall_height))
 
+    if not isinstance(manifest['maps'], dict) or not manifest['maps']:
+        raise ValueError('maps must be a non-empty object')
     for name, group in manifest['maps'].items():
+        if not isinstance(group, dict):
+            raise ValueError('map %s must be an object' % name)
         blocks = group.get('blocks')
-        if not blocks:
+        if not isinstance(blocks, list) or not blocks:
             raise ValueError('map %s lists no blocks' % name)
+        rectangles = []
         for block in blocks:
+            if not isinstance(block, dict):
+                raise ValueError('a block of map %s must be an object' % name)
             for key in ('file', 'row', 'column', 'x_px', 'y_px',
                         'width_px', 'height_px'):
                 if key not in block:
                     raise KeyError('a block of map %s has no %s' % (name, key))
-            if block['width_px'] <= 0 or block['height_px'] <= 0:
-                raise ValueError('a block of map %s has no area' % name)
+            if not isinstance(block['file'], str) or not block['file']:
+                raise ValueError('a block of map %s has no valid file name' % name)
+            for key in ('row', 'column', 'x_px', 'y_px'):
+                _nonnegative_integer(block, key, 'a block of map %s' % name)
+            block_width = _positive_integer(
+                block, 'width_px', 'a block of map %s' % name)
+            block_height = _positive_integer(
+                block, 'height_px', 'a block of map %s' % name)
             candidate = os.path.join(directory, block['file'])
             if not os.path.exists(candidate):
                 raise FileNotFoundError(
@@ -88,27 +127,65 @@ def load_manifest(path):
             # somewhere nobody is looking, and the surface it should have
             # covered stays blank - which reads as a camera fault rather than
             # as a bad manifest.
-            right = (block['x_px'] + block['width_px']) * scale
-            bottom = (block['y_px'] + block['height_px']) * scale
-            if block['x_px'] < 0 or block['y_px'] < 0:
+            left = block['x_px']
+            top = block['y_px']
+            right = left + block_width
+            bottom = top + block_height
+            if right > width_px or bottom > height_px:
                 raise ValueError(
-                    'block %s of map %s starts outside the baked region'
-                    % (block['file'], name))
-            if right > region_width + scale or bottom > region_height + scale:
-                raise ValueError(
-                    'block %s of map %s runs %.3f x %.3f m past the %.3f x %.3f m '
-                    'region it claims to tile'
-                    % (block['file'], name, max(0.0, right - region_width),
-                       max(0.0, bottom - region_height), region_width, region_height))
+                    'block %s of map %s runs outside the %d x %d px region'
+                    % (block['file'], name, width_px, height_px))
+            rectangles.append((left, top, right, bottom, block['file']))
+        _require_exact_tiling(name, rectangles, width_px, height_px)
     return manifest, directory
+
+
+def _finite_number(value):
+    """Report whether a value is a finite real JSON number other than bool."""
+    return (isinstance(value, (int, float)) and not isinstance(value, bool) and
+            math.isfinite(value))
 
 
 def _positive(manifest, key):
     """Return a manifest number that has to be positive and finite."""
     value = manifest[key]
-    if not isinstance(value, (int, float)) or value != value or value <= 0.0:
+    if not _finite_number(value) or value <= 0.0:
         raise ValueError('%s must be a positive number' % key)
     return float(value)
+
+
+def _positive_integer(values, key, owner='the manifest'):
+    """Return a strictly positive JSON integer field."""
+    value = values[key]
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise ValueError('%s %s must be a positive integer' % (owner, key))
+    return value
+
+
+def _nonnegative_integer(values, key, owner):
+    """Return a non-negative JSON integer field."""
+    value = values[key]
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise ValueError('%s %s must be a non-negative integer' % (owner, key))
+    return value
+
+
+def _require_exact_tiling(name, rectangles, width_px, height_px):
+    """Reject overlaps and gaps without allocating a full-resolution bitmap."""
+    total_area = 0
+    for index, first in enumerate(rectangles):
+        total_area += (first[2] - first[0]) * (first[3] - first[1])
+        for second in rectangles[index + 1:]:
+            overlap_width = min(first[2], second[2]) - max(first[0], second[0])
+            overlap_height = min(first[3], second[3]) - max(first[1], second[1])
+            if overlap_width > 0 and overlap_height > 0:
+                raise ValueError(
+                    'blocks %s and %s overlap in map %s' %
+                    (first[4], second[4], name))
+    if total_area != width_px * height_px:
+        raise ValueError(
+            'blocks of map %s leave gaps in the %d x %d px region' %
+            (name, width_px, height_px))
 
 
 def block_extent(manifest, block):

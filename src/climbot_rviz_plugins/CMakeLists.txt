@@ -56,5 +56,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(climbot_rviz_plugins)
-ament_export_dependencies(climbot_interfaces rclcpp rviz_common std_srvs)
+ament_export_dependencies(
+  climbot_interfaces rcl_interfaces rclcpp rviz_common std_msgs std_srvs)
 ament_package()

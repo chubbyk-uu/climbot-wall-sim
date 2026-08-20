@@ -56,7 +56,8 @@ def running_on_wsl():
         return False
 
 
-def apply_wall_texture(document, manifest_path, thickness, wall_origin, link_centre):
+def apply_wall_texture(document, manifest_path, thickness, wall_origin, link_centre,
+                       wall_size):
     """Add the baked texture blocks to the rendered wall, if one is configured."""
     if not manifest_path:
         return
@@ -69,7 +70,7 @@ def apply_wall_texture(document, manifest_path, thickness, wall_origin, link_cen
             'the wall texture manifest %s does not exist; run '
             'tools/fetch_wall_texture.sh and tools/bake_wall_texture.py, or '
             'clear texture_manifest' % path)
-    manifest, directory = load_manifest(path)
+    manifest, directory = load_manifest(path, wall_size=wall_size)
     links = [node for node in document.getElementsByTagName('link')
              if node.getAttribute('name') == 'wall_link']
     if not links:
@@ -118,7 +119,8 @@ def render_world(gazebo_share, description_share, grid_spacing,
         document, configured if texture_manifest is None else texture_manifest,
         float(simulated_wall['thickness_m']),
         [float(value) for value in wall['origin_xyz']],
-        [float(value) for value in centre])
+        [float(value) for value in centre],
+        (float(surface['width_m']), float(surface['height_m'])))
     handle = tempfile.NamedTemporaryFile(
         mode='w', prefix='climbot_wall_', suffix='.sdf', delete=False)
     handle.write(document.toprettyxml(indent='  '))

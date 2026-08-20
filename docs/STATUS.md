@@ -1341,7 +1341,7 @@ its own; not recorded`）。没有它，那一刻的 teardown 会对脚本自己
 | M4 失联不取消 | 已完成 | 释放句柄前先 `async_cancel_goal()`；新增结果码 `EXECUTOR_LOST=7`，不再复用 `CONTROL_TIMEOUT` |
 | M5 面板 pending | 已完成 | 两个 pending 加发送时刻并按 `requestTimeout()` 释放；被守护成员移入 `shared_ptr<SharedState>`，回调按值持有，面板补上析构 |
 | M6 results 索引 | 已完成（不删文件） | `results/README.md` 补全 18 个标签一节；调参 CSV 保留，删除收不回 `.git` 里已有的 104 MB |
-| M7 cppcheck | 不做 | Ubuntu 24.04 的 cppcheck 2.13.0 触发 `ament_cmake_cppcheck` 上游跳过策略，29 个 skipped 全部是它。手工全量跑只有 3 条无害提示 |
+| M7 cppcheck | 不做 | Ubuntu 24.04 的 cppcheck 2.13.0 触发 `ament_cmake_cppcheck` 上游跳过策略；当时 29 项、当前随包和测试增加为 39 项（control 29、coverage 4、RViz plugin 6），全部是它。手工全量跑只有 3 条无害提示 |
 | M1 上帝类 | 不单独立项 | 下次动 `line_tracker_node.cpp` 功能时顺带 |
 | L1 注释错位 | 已完成 | 描述 `reanchorStartApproach()` 的注释移回该函数 |
 | L2 / L3 文档数字 | 已完成 | 严格门限 `2°`→`1°`；三处 `act/plan` 统一为 `timeE` 八份实测复算的 `0.981~1.015` |

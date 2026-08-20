@@ -184,6 +184,9 @@ def test_a_manifest_that_does_not_describe_the_wall_is_refused():
     def negative_scale(manifest):
         manifest['scale_m_per_px'] = -SCALE
 
+    def infinite_scale(manifest):
+        manifest['scale_m_per_px'] = float('inf')
+
     def block_off_the_region(manifest):
         manifest['maps']['albedo']['blocks'][0]['x_px'] = 100000
 
@@ -193,14 +196,42 @@ def test_a_manifest_that_does_not_describe_the_wall_is_refused():
     def map_with_no_blocks(manifest):
         manifest['maps']['albedo']['blocks'] = []
 
+    def overlapping_blocks(manifest):
+        manifest['maps']['albedo']['blocks'][1]['x_px'] = 0
+
+    def gap_between_blocks(manifest):
+        manifest['maps']['albedo']['blocks'][0]['width_px'] -= 1
+
+    def inconsistent_pixel_extent(manifest):
+        manifest['width_px'] += 1
+
     for mutate, error in ((drop_the_scale, KeyError),
                           (negative_scale, ValueError),
+                          (infinite_scale, ValueError),
                           (block_off_the_region, ValueError),
                           (block_with_no_area, ValueError),
-                          (map_with_no_blocks, ValueError)):
+                          (map_with_no_blocks, ValueError),
+                          (overlapping_blocks, ValueError),
+                          (gap_between_blocks, ValueError),
+                          (inconsistent_pixel_extent, ValueError)):
         with tempfile.TemporaryDirectory() as directory:
             with pytest.raises(error):
                 load_manifest(_mutated_bake(directory, mutate))
+
+
+def test_a_manifest_region_must_fit_the_real_wall():
+    """A self-consistent bake may still be mounted outside the configured wall."""
+    with tempfile.TemporaryDirectory() as directory:
+        path = _mutated_bake(
+            directory,
+            lambda manifest: manifest.update(region_origin_m=[9.8, 7.9]))
+        with pytest.raises(ValueError, match='outside'):
+            load_manifest(path, wall_size=(10.0, 8.0))
+
+    with tempfile.TemporaryDirectory() as directory:
+        manifest, _ = load_manifest(
+            write_bake(directory), wall_size=(10.0, 8.0))
+        assert manifest['region_origin_m'] == [2.0, 1.0]
 
 
 def test_a_path_with_xml_in_it_still_produces_parseable_sdf():
