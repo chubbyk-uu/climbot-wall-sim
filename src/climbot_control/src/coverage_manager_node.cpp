@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <chrono>
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -48,19 +49,23 @@ public:
     // accept that the robot is not being driven. Longer than the speed
     // watchdog's own command timeout, so an executor that is still commanding
     // between two of these checks cannot read as quiet.
-    command_quiet_s_(declare_parameter("command_quiet_s", 1.0))
+    command_quiet_s_(declare_parameter("command_quiet_s", 1.0)),
+    hold_response_timeout_s_(declare_parameter("hold_response_timeout_s", 1.0))
   {
-    if (!(start_response_timeout_s_ > 0.0)) {
+    if (!std::isfinite(start_response_timeout_s_) || !(start_response_timeout_s_ > 0.0)) {
       throw std::invalid_argument("start_response_timeout_s must be positive.");
     }
-    if (!(feedback_publish_period_s_ >= 0.0)) {
+    if (!std::isfinite(feedback_publish_period_s_) || !(feedback_publish_period_s_ >= 0.0)) {
       throw std::invalid_argument("feedback_publish_period_s must be non-negative.");
     }
-    if (!(executor_timeout_s_ > 0.0)) {
+    if (!std::isfinite(executor_timeout_s_) || !(executor_timeout_s_ > 0.0)) {
       throw std::invalid_argument("executor_timeout_s must be positive.");
     }
-    if (!(command_quiet_s_ > 0.0)) {
+    if (!std::isfinite(command_quiet_s_) || !(command_quiet_s_ > 0.0)) {
       throw std::invalid_argument("command_quiet_s must be positive.");
+    }
+    if (!std::isfinite(hold_response_timeout_s_) || !(hold_response_timeout_s_ > 0.0)) {
+      throw std::invalid_argument("hold_response_timeout_s must be positive.");
     }
     // The feedback throttle and the start-response deadline are elapsed times,
     // and off sim time the node clock is the settable system clock. A backward
@@ -140,6 +145,17 @@ public:
       "/control/hold_active", rclcpp::QoS(1).reliable().transient_local(),
       [this](const std_msgs::msg::Bool::SharedPtr message) {
         hold_active_ = message->data;
+        // The watchdog's own state is stronger than a service response. It also
+        // retires a request whose response was lost after the watchdog had
+        // already applied it, so a later retry cannot race the state backwards.
+        if (hold_request_value_ && *hold_request_value_ == message->data) {
+          if (!message->data) {
+            hold_release_confirmed_ = true;
+          }
+          ++hold_generation_;
+          hold_request_value_.reset();
+          hold_request_since_.reset();
+        }
       });
     start_service_ = create_service<std_srvs::srv::Trigger>(
       "/coverage/start",
@@ -150,8 +166,8 @@ public:
       [this](const std_srvs::srv::Trigger::Request::SharedPtr,
       const std_srvs::srv::Trigger::Response::SharedPtr response) {cancel(response);});
     // Steady time, and a wall timer, so a paused or stopped simulation clock
-    // cannot freeze either of the checks that release a stuck task: an
-    // unanswered start request and a vanished executor. Both measure their own
+    // cannot freeze either safety deadline: detecting an unanswered start
+    // request and detecting a vanished executor. Both measure their own
     // elapsed time on std::chrono::steady_clock rather than on control_clock_,
     // which follows simulation time whenever it is active.
     supervision_timer_ = create_wall_timer(500ms, [this]() {superviseExecution();});
@@ -163,7 +179,7 @@ private:
   bool busy() const
   {
     return active_goal_ != nullptr || start_pending_since_.has_value() ||
-           stopping_since_.has_value();
+           stopping_since_.has_value() || queued_goal_.has_value();
   }
 
   /// Publish what this manager would accept right now, using the same
@@ -219,11 +235,12 @@ private:
   // on. Reporting FINISHED there dropped the goal handle and took the operator
   // stop entry away at that exact moment.
   //
-  // So the loss now opens a STOPPING state instead. It is left only for a
-  // reason that is about the robot: the hold is engaged, or nothing has
-  // commanded motion for command_quiet_s, or the executor answered after all.
+  // So the loss now opens a STOPPING state instead. It is left only when
+  // nothing has commanded motion for command_quiet_s, or the executor answers
+  // after all. A hold protects current output but does not terminate the task.
   void superviseExecution()
   {
+    continueQueuedStart();
     expireStalePending();
     if (stopping_since_) {
       continueStopping();
@@ -266,27 +283,33 @@ private:
   void continueStopping()
   {
     engageHold();
-    if (hold_active_.value_or(false)) {
-      finishStopping("the hold is engaged, so it cannot be driven");
+    // A send-goal request that timed out has no handle yet. Until its response
+    // arrives there is nothing to cancel and no proof it was rejected. Calling
+    // the task finished here recreates the late-acceptance hole under a new
+    // name, so this state deliberately has no elapsed-time escape hatch.
+    if (unresolved_goal_response_) {
       return;
     }
     if (motionCommandsHaveStopped()) {
       finishStopping("nothing has commanded motion since");
       return;
     }
-    // Neither is true, so the honest state is the one already published: still
-    // stopping, stop entry live. Saying anything else here is what this whole
-    // state exists to stop. Every tick retries the hold, and the operator's
-    // cancel retries both it and the goal cancellation.
+    // A hold proves the actuator output is zero now, not that the task which
+    // keeps asking for motion has ended. The watchdog can restart and forget
+    // its process-local bool. Staying STOPPING while commands keep arriving
+    // makes that restart observable: hold_active becomes false and the next
+    // tick applies the hold again instead of releasing an orphaned task.
   }
 
   bool motionCommandsHaveStopped() const
   {
-    if (!last_motion_command_) {
-      return true;
+    if (!stopping_since_) {
+      return false;
     }
+    const auto last_evidence = last_motion_command_ && *last_motion_command_ > *stopping_since_ ?
+      *last_motion_command_ : *stopping_since_;
     return std::chrono::duration<double>(
-      std::chrono::steady_clock::now() - *last_motion_command_).count() >= command_quiet_s_;
+      std::chrono::steady_clock::now() - last_evidence).count() >= command_quiet_s_;
   }
 
   void finishStopping(const std::string & evidence)
@@ -297,6 +320,7 @@ private:
     // operator has started the next task.
     ++goal_generation_;
     active_goal_.reset();
+    unresolved_goal_response_ = false;
     status_.result_code = ExecuteCoverage::Result::EXECUTOR_LOST;
     status_.current_segment = -1;
     status_.executor_state = ExecuteCoverage::Feedback::STOPPED;
@@ -308,31 +332,69 @@ private:
   /// Ask the speed watchdog to force /cmd_vel to zero, whatever is publishing.
   void engageHold()
   {
-    if (hold_active_.value_or(false) || hold_pending_ || !hold_client_->service_is_ready()) {
-      // Not ready is not an error to report: the supervision timer comes back
-      // in half a second, and until then the quiet check is still watching.
+    if (hold_active_.value_or(false)) {
       return;
     }
-    sendHold(true);
+    maintainHoldRequest(true);
   }
 
-  void sendHold(bool held)
+  /// Keep one desired hold state in flight, retiring and retrying a request
+  /// whose response never arrives. SetBool is idempotent, so a retry is safe;
+  /// allowing one missing response to suppress every retry is not.
+  void maintainHoldRequest(bool held)
   {
+    const auto current = std::chrono::steady_clock::now();
+    if (hold_request_value_) {
+      const bool same_request = *hold_request_value_ == held;
+      const bool still_live = hold_request_since_ &&
+        std::chrono::duration<double>(current - *hold_request_since_).count() <
+        hold_response_timeout_s_;
+      if (same_request && still_live) {
+        return;
+      }
+      // A different desired state supersedes immediately. The same state is
+      // retried only after its deadline. Either way, a late callback carries
+      // the retired generation and cannot clear the new request.
+      ++hold_generation_;
+      hold_request_value_.reset();
+      hold_request_since_.reset();
+    }
+    if (!hold_client_->service_is_ready()) {
+      return;
+    }
     auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
     request->data = held;
-    hold_pending_ = true;
+    const auto generation = ++hold_generation_;
+    hold_request_value_ = held;
+    hold_request_since_ = current;
     hold_client_->async_send_request(
       request,
-      [this](rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture) {
-        // The answer only says the call landed. Whether the robot is actually
-        // held is read off /control/hold_active, which is the watchdog's own
-        // account of itself and stays right if someone else changes it.
-        hold_pending_ = false;
+      [this, generation, held](rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture future) {
+        if (generation != hold_generation_) {
+          return;
+        }
+        try {
+          const auto response = future.get();
+          if (!response->success) {
+            RCLCPP_ERROR(get_logger(), "The speed hold refused a request: %s",
+              response->message.c_str());
+          } else if (!held) {
+            // SetBool answers only after the watchdog changed its process-local
+            // state, so this is a release confirmation even if the latched
+            // status sample is delivered after the response.
+            hold_release_confirmed_ = true;
+          }
+        } catch (const std::exception & exception) {
+          RCLCPP_ERROR(get_logger(), "The speed hold request failed: %s", exception.what());
+        }
+        // The supervision timer retries unless /control/hold_active confirms
+        // the desired state. Clearing this merely permits that retry.
+        hold_request_value_.reset();
+        hold_request_since_.reset();
       });
   }
 
-  /// Release a start request whose goal response never arrived, so a crashed or
-  /// restarted executor cannot lock the manager out until it is itself restarted.
+  /// Escalate an unanswered start request into supervised STOPPING.
   void expireStalePending()
   {
     if (!start_pending_since_) {
@@ -351,13 +413,13 @@ private:
       return;
     }
     start_pending_since_.reset();
-    // The request itself is still out there. Only the waiting stopped, and a
-    // response arriving after this would otherwise walk the manager back into
-    // EXECUTING for a goal the operator has already been told did not start.
-    ++goal_generation_;
+    unresolved_goal_response_ = true;
+    stopping_since_ = std::chrono::steady_clock::now();
+    engageHold();
     publishStatus(
-      cached_task_ ? Status::READY : Status::IDLE,
-      "Start request timed out before the executor answered.");
+      Status::STOPPING,
+      "Start request timed out before the executor answered; holding the robot "
+      "and waiting for the request's real outcome.");
   }
 
   void start(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
@@ -382,43 +444,126 @@ private:
     goal.task = *cached_task_;
     const auto task_id = goal.task.task_id;
     const auto revision = goal.task.revision;
-    // Whatever is held has to let go before this can move. A hold left engaged
-    // by a previous run's stop would otherwise leave the operator watching an
-    // EXECUTING task that never moves.
-    if (hold_active_.value_or(false)) {
-      sendHold(false);
-    }
-    // Every callback below is stamped with the request that created it, and
-    // speaks only while that request is still the current one. Timing out,
-    // losing the executor and starting again each retire the previous
-    // generation. Without this, a response, feedback or result belonging to an
-    // abandoned request lands on whatever is running by the time it arrives:
-    // the late acceptance republishes EXECUTING for a dead goal, and the late
-    // result resets active_goal_ and reports FINISHED over a live one.
     const auto generation = ++goal_generation_;
+
+    // The identity always describes whatever the current state is about. A
+    // preview cached during the previous run only becomes the reported task
+    // here, when it is the one actually being sent.
+    status_.task_id = task_id;
+    status_.revision = revision;
+    status_.total_segments = static_cast<uint32_t>(goal.task.segment_types.size());
+    status_.current_segment = -1;
+    status_.progress = 0.0F;
+    status_.planned_total_s = 0.0;
+    status_.schedule_lag_s = 0.0;
+    status_.estimated_remaining_s = 0.0;
+    status_.executor_state = ExecuteCoverage::Feedback::WAITING;
+
+    // Whatever is held has to be confirmed released before the Action request
+    // exists. Sending both asynchronously made EXECUTING mean only that the
+    // controller had a goal, not that the actuator path could move, and a late
+    // engage response could win after the new task started.
+    const bool hold_may_engage = hold_active_.value_or(false) ||
+      (hold_request_value_ && *hold_request_value_);
+    if (hold_may_engage) {
+      queued_goal_ = goal;
+      queued_goal_generation_ = generation;
+      hold_release_confirmed_ = false;
+      maintainHoldRequest(false);
+      publishStatus(
+        Status::STARTING,
+        "Releasing the speed hold before starting " + task_id + " revision " +
+        std::to_string(revision) + ".");
+    } else {
+      // STARTING must already be busy in the status message. dispatchGoal()
+      // refreshes this timestamp immediately before the asynchronous send, but
+      // setting it here closes the one-message permission gap.
+      start_pending_since_ = std::chrono::steady_clock::now();
+      publishStatus(
+        Status::STARTING,
+        "Start requested for " + task_id + " revision " + std::to_string(revision));
+      dispatchGoal(goal, generation);
+    }
+    response->success = true;
+    response->message = "Start request accepted for " + task_id + " revision " +
+      std::to_string(revision);
+  }
+
+  void continueQueuedStart()
+  {
+    if (!queued_goal_) {
+      return;
+    }
+    if (!hold_release_confirmed_) {
+      maintainHoldRequest(false);
+      return;
+    }
+    if (!action_client_->action_server_is_ready()) {
+      const auto task_id = queued_goal_->task.task_id;
+      queued_goal_.reset();
+      ++goal_generation_;
+      publishStatus(
+        cached_task_ ? Status::READY : Status::IDLE,
+        "Released the speed hold, but the executor disappeared before " + task_id +
+        " could be sent.");
+      return;
+    }
+    auto goal = *queued_goal_;
+    const auto generation = queued_goal_generation_;
+    queued_goal_.reset();
+    hold_release_confirmed_ = false;
+    dispatchGoal(goal, generation);
+  }
+
+  void dispatchGoal(const ExecuteCoverage::Goal & goal, uint64_t generation)
+  {
+    const auto task_id = goal.task.task_id;
+    const auto revision = goal.task.revision;
+    // Every callback is stamped with the request that created it. A response
+    // timeout no longer retires that generation: the request still exists and
+    // remains the current safety problem until its real response arrives.
     rclcpp_action::Client<ExecuteCoverage>::SendGoalOptions options;
     options.goal_response_callback = [this, task_id, revision,
         generation](const GoalHandle::SharedPtr & goal_handle) {
         if (generation != goal_generation_) {
           RCLCPP_WARN(
             get_logger(),
-            "Ignoring a goal response for %s revision %u: that request was "
-            "already abandoned.", task_id.c_str(), revision);
+            "Received a retired goal response for %s revision %u.",
+            task_id.c_str(), revision);
           if (goal_handle) {
-            // It was accepted, and nothing here is going to run it. Left alone
-            // it would drive the whole task with no manager watching.
+            // Defensive even though this manager no longer retires an
+            // unresolved request: a replacement Action server may permit more
+            // than one goal, so never rely on this project's tracker refusing
+            // the second one.
+            maintainHoldRequest(true);
             action_client_->async_cancel_goal(goal_handle);
           }
           return;
         }
         start_pending_since_.reset();
+        const bool response_was_uncertain = unresolved_goal_response_;
+        unresolved_goal_response_ = false;
         if (!goal_handle) {
+          if (response_was_uncertain) {
+            stopping_since_.reset();
+            ++goal_generation_;
+          }
           publishStatus(
             Status::READY,
-            "Executor rejected " + task_id + " revision " + std::to_string(revision));
+            (response_was_uncertain ? "The timed-out request was ultimately rejected for " :
+            "Executor rejected ") + task_id + " revision " + std::to_string(revision));
           return;
         }
         active_goal_ = goal_handle;
+        if (response_was_uncertain || stopping_since_) {
+          action_client_->async_cancel_goal(active_goal_);
+          publishStatus(
+            Status::STOPPING,
+            "The timed-out request was accepted for " + task_id + " revision " +
+            std::to_string(revision) + "; holding and canceling it.");
+          continueStopping();
+          return;
+        }
         publishStatus(
           Status::EXECUTING, "Executing " + task_id + " revision " + std::to_string(revision));
       };
@@ -445,6 +590,7 @@ private:
         // either case, so nothing else from this goal can follow it.
         ++goal_generation_;
         stopping_since_.reset();
+        unresolved_goal_response_ = false;
         active_goal_.reset();
         status_.result_code = result.result->result_code;
         status_.progress = result.result->result_code == ExecuteCoverage::Result::SUCCESS ?
@@ -453,33 +599,24 @@ private:
         status_.executor_state = ExecuteCoverage::Feedback::STOPPED;
         publishStatus(Status::FINISHED, "Execution finished: " + result.result->message);
       };
-    // The identity always describes whatever the current state is about. A
-    // preview cached during the previous run only becomes the reported task
-    // here, when it is the one actually being sent.
-    status_.task_id = task_id;
-    status_.revision = revision;
-    status_.total_segments = static_cast<uint32_t>(goal.task.segment_types.size());
-    status_.current_segment = -1;
-    status_.progress = 0.0F;
-    status_.planned_total_s = 0.0;
-    status_.schedule_lag_s = 0.0;
-    status_.estimated_remaining_s = 0.0;
-    status_.executor_state = ExecuteCoverage::Feedback::WAITING;
     start_pending_since_ = std::chrono::steady_clock::now();
-    // Announce STARTING before sending, so the goal response can never be
-    // overtaken by this line and leave a live goal reported as still starting.
-    publishStatus(
-      Status::STARTING,
-      "Start requested for " + task_id + " revision " + std::to_string(revision));
     action_client_->async_send_goal(goal, options);
-    response->success = true;
-    response->message = "Start request accepted for " + task_id + " revision " +
-      std::to_string(revision);
   }
 
   void cancel(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
   {
     expireStalePending();
+    if (stopping_since_) {
+      if (active_goal_) {
+        action_client_->async_cancel_goal(active_goal_);
+      }
+      engageHold();
+      response->success = true;
+      response->message = unresolved_goal_response_ ?
+        "Start outcome is still unknown; holding while its response is awaited." :
+        "Already stopping; cancellation and the speed hold were requested again.";
+      return;
+    }
     if (!active_goal_) {
       response->success = false;
       response->message =
@@ -487,17 +624,6 @@ private:
       return;
     }
     action_client_->async_cancel_goal(active_goal_);
-    if (stopping_since_) {
-      // Already stopping, and the operator pressed stop anyway - which is what
-      // an operator watching a robot that has not stopped does. Retry the one
-      // path that does not depend on the executor answering.
-      engageHold();
-      response->success = true;
-      response->message = hold_active_.value_or(false) ?
-        "Already stopping; the robot is held at zero speed." :
-        "Already stopping; asked again, including the speed hold.";
-      return;
-    }
     response->success = true;
     response->message = "Cancellation requested; executor will stop before returning.";
   }
@@ -507,6 +633,7 @@ private:
   double feedback_publish_period_s_;
   double executor_timeout_s_;
   double command_quiet_s_;
+  double hold_response_timeout_s_;
   Status status_;
   // Durations here are measured on control_clock_, so this carries that
   // clock's type and is set in the constructor. Message stamps stay on
@@ -517,13 +644,20 @@ private:
   std::optional<std::chrono::steady_clock::time_point> executor_missing_since_;
   std::optional<std::chrono::steady_clock::time_point> stopping_since_;
   std::optional<std::chrono::steady_clock::time_point> last_motion_command_;
+  std::optional<std::chrono::steady_clock::time_point> hold_request_since_;
   // No value until the speed watchdog has published: absent and false are
   // different answers, and only the second one is evidence of anything.
   std::optional<bool> hold_active_;
-  bool hold_pending_{false};
-  // Retires the callbacks of an abandoned start request; see start().
+  std::optional<bool> hold_request_value_;
+  bool hold_release_confirmed_{false};
+  bool unresolved_goal_response_{false};
+  uint64_t hold_generation_{0};
+  // Identifies callbacks from one Action request. A timed-out request keeps its
+  // generation until its true outcome or a supervised stop retires it.
   uint64_t goal_generation_{0};
+  uint64_t queued_goal_generation_{0};
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;
+  std::optional<ExecuteCoverage::Goal> queued_goal_;
   GoalHandle::SharedPtr active_goal_;
   rclcpp::Subscription<climbot_interfaces::msg::CoverageTask>::SharedPtr task_subscription_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr command_subscription_;

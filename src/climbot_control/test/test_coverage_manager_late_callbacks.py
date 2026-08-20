@@ -12,22 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""An abandoned start request must never speak for the task that replaced it."""
+"""An unanswered start remains supervised until its real outcome arrives."""
 
 # Every callback on a goal is registered once and lives as long as the client.
 # Nothing in rclcpp retires the ones belonging to a request that has been given
 # up on, so the manager has to do it: a start whose response never arrived is
 # reported as not started, and its acceptance can still turn up minutes later.
 #
-# Left unretired it lands on whatever is running by then. The late acceptance
-# republished EXECUTING for a goal nobody was watching, the late feedback wrote
-# an old task's progress into the new task's status, and the late result reset
-# the goal handle and reported FINISHED over a run that was still going - which
-# also takes the operator's stop entry away, since that is drawn from the
-# handle.
+# A timeout cannot retract the send-goal request, and before its response there
+# is no handle to cancel. Returning to READY therefore creates an orphan if the
+# request is accepted later: the one-goal line tracker rejects the replacement,
+# while the old goal keeps running without a handle or a Stop entry in the
+# manager. A different Action server may accept both, so the manager must not
+# rely on this project's executor policy either.
 #
-# The stand-in executor here refuses to be cancelled, so the abandoned goal runs
-# to completion and produces every one of those three callbacks.
+# The stand-in executor refuses cancellation. The manager must stay STOPPING
+# until that goal produces a real terminal result, not send one cancellation
+# and forget it.
 
 from threading import Event, Thread
 import time
@@ -50,10 +51,6 @@ from std_srvs.srv import Trigger
 
 
 ABANDONED_REVISION = 7
-LIVE_REVISION = 8
-
-# Values no real run of this task would produce, so anything showing them in the
-# manager status came from the abandoned goal and from nowhere else.
 STRAY_SEGMENT = 99
 STRAY_PROGRESS = 0.99
 
@@ -164,12 +161,6 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         return CancelResponse.REJECT
 
     def _execute(self, goal_handle):
-        if goal_handle.request.task.revision == LIVE_REVISION:
-            # The live run stays running and says nothing, so any feedback the
-            # manager reports can only have come from the abandoned goal.
-            self.end_of_test.wait(60.0)
-            goal_handle.abort()
-            return ExecuteCoverage.Result()
         feedback = ExecuteCoverage.Feedback()
         feedback.current_segment = STRAY_SEGMENT
         feedback.progress = STRAY_PROGRESS
@@ -201,8 +192,8 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         self.fail('Timed out waiting for {}; last status was {}'.format(
             what, self.statuses[-1] if self.statuses else None))
 
-    def test_a_late_answer_cannot_overwrite_the_task_that_replaced_it(self):
-        """Response, feedback and result of an abandoned goal, in one run."""
+    def test_a_timed_out_start_stays_supervised_until_its_late_result(self):
+        """A rejected cancel must not leave the accepted goal orphaned."""
         self.task_publisher.publish(_task(ABANDONED_REVISION))
         self._wait_until(
             lambda s: s.state == CoverageStatus.READY and s.revision == ABANDONED_REVISION,
@@ -211,46 +202,45 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
         self.assertTrue(self._call_start().success)
         self.assertTrue(self.first_goal_seen.wait(10.0), 'The stub never saw the first goal.')
         timed_out = self._wait_until(
-            lambda s: s.state == CoverageStatus.READY and 'timed out' in s.message,
-            'the start request to be given up on')
-        self.assertTrue(
-            timed_out.can_start,
-            'A start that was never answered has to leave the operator able to try again.')
+            lambda s: s.state == CoverageStatus.STOPPING and 'timed out' in s.message,
+            'the unanswered start to enter the uncertain stopping state')
+        self.assertFalse(timed_out.can_start)
+        self.assertTrue(timed_out.can_cancel)
 
-        self.task_publisher.publish(_task(LIVE_REVISION))
-        self._wait_until(
-            lambda s: s.state == CoverageStatus.READY and s.revision == LIVE_REVISION,
-            'the second preview')
-        self.assertTrue(self._call_start().success)
-        running = self._wait_until(
-            lambda s: s.state == CoverageStatus.EXECUTING and s.revision == LIVE_REVISION,
-            'the replacement task to start')
-        self.assertTrue(running.can_cancel)
-        mark = len(self.statuses)
+        # Stop remains meaningful even before there is a handle: it keeps the
+        # independent hold requested while the response is unknown.
+        cancel_client = self.node.create_client(Trigger, '/coverage/cancel')
+        self.assertTrue(cancel_client.wait_for_service(timeout_sec=5.0))
+        cancel_future = cancel_client.call_async(Trigger.Request())
+        deadline = time.monotonic() + 5.0
+        while not cancel_future.done() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(cancel_future.done())
+        self.assertTrue(cancel_future.result().success)
 
-        # Everything the abandoned goal has to say now arrives at once.
+        # A newer preview may be cached, but it cannot become a second request
+        # while the first one's acceptance is still unknown.
+        self.task_publisher.publish(_task(8))
+        time.sleep(0.2)
+        refused = self._call_start()
+        self.assertFalse(refused.success)
+        self.assertIn('already', refused.message)
+
+        # The old request is accepted late and refuses cancellation. It really
+        # runs; the manager must retain STOPPING until its real result arrives.
         self.release_first.set()
+        self._wait_until(
+            lambda s: s.state == CoverageStatus.STOPPING and 'accepted' in s.message,
+            'the late accepted goal to remain in stopping')
         self.assertTrue(
             self.abandoned_finished.wait(30.0),
-            'The abandoned goal never ran, so none of its callbacks were tested.')
-        # Its result is delivered asynchronously; give the manager room to act
-        # on it wrongly before checking that it did not.
-        time.sleep(1.5)
-
-        later = self.statuses[mark:]
-        self.assertNotIn(
-            CoverageStatus.FINISHED, [status.state for status in later],
-            'The abandoned goal finishing reported the live task as finished.')
-        latest = self.statuses[-1]
-        self.assertEqual(latest.state, CoverageStatus.EXECUTING)
-        self.assertEqual(latest.revision, LIVE_REVISION)
-        self.assertTrue(
-            latest.can_cancel,
-            'The stop entry was withdrawn by a goal that is not the one running.')
-        self.assertNotEqual(
-            latest.current_segment, STRAY_SEGMENT,
-            'The abandoned goal wrote its progress into the live task.')
-        self.assertNotAlmostEqual(latest.progress, STRAY_PROGRESS, places=3)
+            'The late goal never ran, so cancellation rejection was not tested.')
+        finished = self._wait_until(
+            lambda s: s.state == CoverageStatus.FINISHED,
+            'the late goal to supply its terminal result')
+        self.assertEqual(finished.result_code, ExecuteCoverage.Result.SUCCESS)
+        self.assertTrue(finished.can_start)
+        self.assertFalse(finished.can_cancel)
 
 
 @launch_testing.post_shutdown_test()

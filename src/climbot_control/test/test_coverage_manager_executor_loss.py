@@ -28,8 +28,10 @@
 # only way to intervene at the exact moment they need it.
 #
 # So the manager now stops the robot first and reports afterwards, and the
-# evidence it accepts has to be about the robot: the speed hold is engaged, or
-# nothing has commanded motion for a while, or the executor answered after all.
+# evidence it accepts has to be about the task: nothing has commanded motion
+# for a while, or the executor answered after all. A speed hold proves the
+# actuator is zero now, but its process-local state can disappear on restart;
+# it is therefore protection while STOPPING, not evidence that the task ended.
 
 from threading import Event, Thread
 import time
@@ -57,7 +59,11 @@ def generate_test_description():
     return launch.LaunchDescription([
         launch_ros.actions.Node(
             package='climbot_control', executable='coverage_manager_node',
-            parameters=[{'executor_timeout_s': 1.0, 'command_quiet_s': 1.0}]),
+            parameters=[{
+                'executor_timeout_s': 1.0,
+                'command_quiet_s': 1.0,
+                'hold_response_timeout_s': 0.3,
+            }]),
         launch_testing.actions.ReadyToTest(),
     ])
 
@@ -135,7 +141,7 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
         self.accepted = Event()
         self.server = ActionServer(
             self.executor_node, ExecuteCoverage, '/coverage/execute',
-            execute_callback=lambda goal_handle: ExecuteCoverage.Result(),
+            execute_callback=self._execute,
             handle_accepted_callback=self._accept)
 
         self.stop_spin = Event()
@@ -158,7 +164,15 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
         self.goal_handle = goal_handle
         self.accepted.set()
 
-    def _offer_the_speed_hold(self):
+    @staticmethod
+    def _execute(goal_handle):
+        # Tests normally leave the accepted goal dormant to model a crashed
+        # executor. A test that only checks startup ordering can explicitly
+        # execute it; aborting from EXECUTING is then a valid Action transition.
+        goal_handle.abort()
+        return ExecuteCoverage.Result()
+
+    def _offer_the_speed_hold(self, first_response_delay_s=0.0):
         self.hold_publisher = self.node.create_publisher(
             Bool, '/control/hold_active',
             rclpy.qos.QoSProfile(
@@ -169,6 +183,8 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
 
         def serve(request, response):
             self.hold_requests.append(request.data)
+            if len(self.hold_requests) == 1 and first_response_delay_s > 0.0:
+                time.sleep(first_response_delay_s)
             self.hold_publisher.publish(Bool(data=request.data))
             response.success = True
             return response
@@ -187,6 +203,12 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
         self.stop_driving.set()
         if self.driver_thread is not None:
             self.driver_thread.join(timeout=5.0)
+        if self.hold_publisher is not None:
+            # The manager outlives each unittest method. Do not make the next
+            # method inherit a latched hold whose service this node is about to
+            # destroy.
+            self.hold_publisher.publish(Bool(data=False))
+            time.sleep(0.1)
         self.stop_spin.set()
         self.spin_thread.join()
         self._destroy_executor()
@@ -332,21 +354,83 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
             CoverageStatus.FINISHED,
             [status.state for status in self.statuses[self.mark:]])
 
-        # A stop path that does not go through the executor turns up. That is
-        # evidence about the robot rather than about the connection, so the
-        # manager may now release the task.
+        # A stop path that does not go through the executor turns up. It makes
+        # the actuator safe, but the task is still asking for motion, so the
+        # manager must retain STOPPING and the operator's Stop entry.
         self._offer_the_speed_hold()
+        self._wait_until(
+            lambda s: True in self.hold_requests,
+            'the manager to engage the independent speed hold')
+        time.sleep(1.0)
+        self.assertEqual(self.statuses[-1].state, CoverageStatus.STOPPING)
+
+        # A watchdog restart forgets its process-local hold. The manager is
+        # still supervising the task, sees false, and applies it again.
+        held_requests = self.hold_requests.count(True)
+        self.hold_publisher.publish(Bool(data=False))
+        self._wait_until(
+            lambda s: self.hold_requests.count(True) > held_requests,
+            'the manager to re-engage hold after a watchdog restart')
+        self.assertEqual(self.statuses[-1].state, CoverageStatus.STOPPING)
+
+        # Only the task-side evidence ends the lost run.
+        self.stop_driving.set()
+        self.driver_thread.join(timeout=5.0)
         released = self._wait_until(
             lambda s: s.state == CoverageStatus.FINISHED,
-            'the manager to release the task once the robot was held')
+            'the manager to release the task once commands stayed quiet')
         self.assertEqual(released.result_code, ExecuteCoverage.Result.EXECUTOR_LOST)
-        self.assertIn('the hold is engaged', released.message)
+        self.assertIn('commanded motion', released.message)
         self.assertIn(
             True, self.hold_requests,
             'The manager never engaged the one stop path that does not depend '
             'on the executor answering.')
         self.assertTrue(released.can_start)
         self.assertFalse(released.can_cancel)
+
+    def test_a_hold_request_with_no_answer_is_retried(self):
+        """One lost service response must not disable the only stop path."""
+        self.driver_thread = Thread(target=self._keep_driving)
+        self.driver_thread.start()
+        # Longer than several request deadlines. The server eventually answers
+        # so the test can clean up, but not before retries have been sent.
+        self._offer_the_speed_hold(first_response_delay_s=1.5)
+        self._run_until_the_executor_is_lost()
+        self._wait_until(
+            lambda s: self.hold_requests.count(True) >= 2,
+            'a hold request to be retried after its response deadline')
+        self.assertEqual(self.statuses[-1].state, CoverageStatus.STOPPING)
+        self.stop_driving.set()
+        self.driver_thread.join(timeout=5.0)
+        self._wait_until(
+            lambda s: s.state == CoverageStatus.FINISHED,
+            'quiet commands to finish the retried-hold case')
+
+    def test_a_new_goal_waits_until_an_old_hold_is_confirmed_released(self):
+        """STARTING may not mean the Action was sent while wheels stay held."""
+        self._offer_the_speed_hold(first_response_delay_s=0.8)
+        self.hold_publisher.publish(Bool(data=True))
+        time.sleep(0.2)
+        self.task_publisher.publish(_task(self.revision))
+        self._wait_until(
+            lambda s: s.state == CoverageStatus.READY and s.revision == self.revision,
+            'the preview')
+        self.assertTrue(self._call(self.start_client).success)
+        self._wait_until(
+            lambda s: s.state == CoverageStatus.STARTING,
+            'the manager to wait for hold release')
+        time.sleep(0.3)
+        self.assertFalse(
+            self.accepted.is_set(),
+            'The Action goal reached the executor before hold release was confirmed.')
+        self.assertTrue(self.accepted.wait(5.0), 'The goal was not sent after hold release.')
+        # This stand-in normally keeps a goal forever so executor-loss can be
+        # tested. This case is only about startup ordering; finish its goal so
+        # the manager shared by the next unittest method does not inherit it.
+        self.goal_handle.execute()
+        self._wait_until(
+            lambda s: s.state == CoverageStatus.FINISHED,
+            'the startup-ordering goal to finish during cleanup')
 
     def test_the_operator_stop_still_does_something_while_stopping(self):
         """Pressing stop on a robot that has not stopped must not be a no-op."""
