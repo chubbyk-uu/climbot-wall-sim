@@ -25,6 +25,7 @@ import launch
 import launch.actions
 import launch.launch_description_sources
 import launch_testing.actions
+import launch_testing.asserts
 import launch_testing.markers
 import pytest
 from rcl_interfaces.srv import GetParameters
@@ -102,3 +103,11 @@ class TestCoverageExecutorConfig(unittest.TestCase):
         self.assertEqual(len(values), len(names))
         for name, value in zip(names, values):
             self.assertAlmostEqual(value.double_value, float(expected[name]), places=9)
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed executor or manager must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

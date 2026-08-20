@@ -542,7 +542,7 @@ int main(int argc, char ** argv)
   try {
     rclcpp::spin(std::make_shared<CoverageManagerNode>());
   } catch (const std::exception & exception) {
-    RCLCPP_FATAL(rclcpp::get_logger("coverage_manager"), "Startup failed: %s", exception.what());
+    RCLCPP_FATAL(rclcpp::get_logger("coverage_manager"), "Node failed: %s", exception.what());
     rclcpp::shutdown();
     return 1;
   }

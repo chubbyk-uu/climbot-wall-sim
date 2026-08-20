@@ -39,6 +39,7 @@ from geometry_msgs.msg import Point32, Pose
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 import launch_testing.markers
 import pytest
 import rclpy
@@ -250,3 +251,11 @@ class TestCoverageManagerLateCallbacks(unittest.TestCase):
             latest.current_segment, STRAY_SEGMENT,
             'The abandoned goal wrote its progress into the live task.')
         self.assertNotAlmostEqual(latest.progress, STRAY_PROGRESS, places=3)
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed manager must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

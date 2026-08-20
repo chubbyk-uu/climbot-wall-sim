@@ -35,6 +35,7 @@ from geometry_msgs.msg import Twist
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 from nav_msgs.msg import Odometry
 import pytest
 import rclpy
@@ -294,3 +295,11 @@ class TestArcEntry(unittest.TestCase):
         self.assertLess(
             abs(y), 0.030,
             'finished %0.1f mm off the scan line' % (1000.0 * y))
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed executor must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

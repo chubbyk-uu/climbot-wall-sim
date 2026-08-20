@@ -24,6 +24,7 @@ from geometry_msgs.msg import Twist
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 import pytest
 import rclpy
 from std_msgs.msg import Bool
@@ -168,3 +169,11 @@ class TestCmdVelWatchdogNode(unittest.TestCase):
             self._set_hold(False)
             self._wait_for_output(
                 (0.0, 0.0), 'the watchdog to fall back to a stop', timeout=5.0)
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed safety node must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

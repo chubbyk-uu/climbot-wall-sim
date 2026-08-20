@@ -24,6 +24,7 @@ from geometry_msgs.msg import Point32, Pose
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 import launch_testing.markers
 from nav_msgs.msg import Odometry
 import pytest
@@ -166,3 +167,11 @@ class TestCoverageProgress(unittest.TestCase):
             'Start approach reported {:.3f} task progress; the approach is not a '
             'task segment, so its travel makes progress climb and then fall back '
             'to zero when the first segment begins.'.format(worst))
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed executor or manager must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

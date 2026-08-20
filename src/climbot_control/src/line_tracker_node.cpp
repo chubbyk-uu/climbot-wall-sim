@@ -1736,7 +1736,7 @@ int main(int argc, char ** argv)
   try {
     rclcpp::spin(std::make_shared<LineTrackerNode>());
   } catch (const std::exception & exception) {
-    RCLCPP_FATAL(rclcpp::get_logger("line_tracker"), "Failed to start: %s", exception.what());
+    RCLCPP_FATAL(rclcpp::get_logger("line_tracker"), "Node failed: %s", exception.what());
     rclcpp::shutdown();
     return 1;
   }

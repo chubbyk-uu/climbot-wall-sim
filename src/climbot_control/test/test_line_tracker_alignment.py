@@ -25,6 +25,7 @@ from geometry_msgs.msg import Twist
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 from nav_msgs.msg import Odometry
 import pytest
 import rclpy
@@ -126,3 +127,11 @@ class TestLineTrackerAlignment(unittest.TestCase):
 
         self.assertTrue(motion_observed)
         self.assertLessEqual(error, math.radians(2.0))
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed tracker must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

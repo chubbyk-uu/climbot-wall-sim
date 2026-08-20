@@ -41,6 +41,7 @@ from geometry_msgs.msg import Point32, Pose, Twist
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 import launch_testing.markers
 import pytest
 import rclpy
@@ -363,3 +364,11 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
             True, self.hold_requests,
             'Stop during a loss did not reach the speed hold, which is the only '
             'path left when the executor is unreachable.')
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed manager must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

@@ -24,6 +24,7 @@ from geometry_msgs.msg import Point32, Pose
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 import launch_testing.markers
 from nav_msgs.msg import Odometry
 import pytest
@@ -115,7 +116,18 @@ class TestCoverageSchedulePose(unittest.TestCase):
         self.spin_thread.start()
 
     def tearDown(self):
-        self._call(self.cancel_client)
+        mark = len(self.statuses)
+        response = self._call(self.cancel_client)
+        if response is not None and response.success:
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline:
+                if any(status.state == CoverageStatus.FINISHED
+                       for status in self.statuses[mark:]):
+                    break
+                self._publish_odom()
+                time.sleep(0.01)
+            else:
+                self.fail('The final goal did not finish after cancellation.')
         self.stop_spin.set()
         self.spin_thread.join()
         self.node.destroy_node()
@@ -217,3 +229,11 @@ class TestCoverageSchedulePose(unittest.TestCase):
                 'acceptance, from a pose that did not exist yet, and nothing '
                 'recomputed it when the real one arrived.'.format(
                     deferred, immediate))
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """The shutdown race that motivated this gate must fail the test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

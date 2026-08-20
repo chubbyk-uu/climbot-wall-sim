@@ -24,6 +24,7 @@ from geometry_msgs.msg import Point32, Pose
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 import launch_testing.markers
 from nav_msgs.msg import Odometry
 import pytest
@@ -237,3 +238,11 @@ class TestCoverageManagerStates(unittest.TestCase):
         for status in starting:
             self.assertFalse(status.can_start)
             self.assertFalse(status.can_cancel)
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed executor or manager must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)

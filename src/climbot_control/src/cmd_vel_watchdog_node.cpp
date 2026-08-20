@@ -139,7 +139,7 @@ int main(int argc, char ** argv)
     rclcpp::spin(std::make_shared<CmdVelWatchdogNode>());
   } catch (const std::exception & exception) {
     RCLCPP_FATAL(
-      rclcpp::get_logger("cmd_vel_watchdog"), "Startup failed: %s", exception.what());
+      rclcpp::get_logger("cmd_vel_watchdog"), "Node failed: %s", exception.what());
     rclcpp::shutdown();
     return 1;
   }

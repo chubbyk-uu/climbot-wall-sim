@@ -24,6 +24,7 @@ from geometry_msgs.msg import Twist
 import launch
 import launch_ros.actions
 import launch_testing.actions
+import launch_testing.asserts
 from nav_msgs.msg import Odometry
 import pytest
 import rclpy
@@ -159,3 +160,11 @@ class TestLineTrackerTimeMode(unittest.TestCase):
         self.assertGreater(peak_command, CRUISE_SPEED * 1.05)
         # And it stays inside the ceiling it was given.
         self.assertLessEqual(peak_command, CATCH_UP_SPEED + 1e-6)
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessExitCodes(unittest.TestCase):
+    """A crashed tracker must fail the launch test."""
+
+    def test_processes_exit_cleanly(self, proc_info):
+        launch_testing.asserts.assertExitCodes(proc_info)
