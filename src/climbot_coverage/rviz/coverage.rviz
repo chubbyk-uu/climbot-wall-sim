@@ -88,8 +88,12 @@ Visualization Manager:
       Class: rviz_default_plugins/Orbit
       # Framed on the whole 10 x 8 m wall, whose centre is now (W/2, H/2)
       # rather than (0, H/2): the work frame's origin is the lower-left
-      # corner.
-      Distance: 9
+      # corner. The distance follows from the height rather than the width:
+      # the render area is wider than it is tall, so 8 m is what has to fit,
+      # and RViz's 45-degree vertical field of view needs 12 m to show it with
+      # a margin. At 9 the safety inset's top and bottom edges fell outside
+      # the view, which is the one thing on screen a click has to land inside.
+      Distance: 12
       Focal Point:
         X: 5
         Y: 4
@@ -101,8 +105,8 @@ Visualization Manager:
       Pitch: 1.5
       Yaw: -1.5707
 Window Geometry:
-  Width: 1200
-  Height: 850
+  Width: 1280
+  Height: 1000
   Hide Left Dock: false
   Hide Right Dock: true
   Displays:

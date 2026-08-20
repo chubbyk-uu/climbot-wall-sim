@@ -982,7 +982,30 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 `rcl_yaml_param_parser` 按浮点，同一文件两个解析器读出不同类型。已统一写成 `1.0e-09`。
 
 **`docs/images/rviz_coverage_task.png` 已过期**：图中的坐标和绿框属于旧工作系。
-`gazebo_wall.png` 不受影响，墙面在世界系里没有变。
+`gazebo_wall.png` 不受影响，墙面在世界系里没有变。（已于 2026-08-20 重拍，见
+「README 时长口径与 RViz 截图」。）
+
+## 2026-08-20 README 时长口径与 RViz 截图（review M6 + L1）
+
+**M6：`README.md` 对时间点控制的入口结论过度概括。** 原文写"额外给出误差约 `2%` 的
+任务时长预测"——这只对当前八个长任务基线成立。同一仓库的 `docs/STATUS.md` 和
+`results/README.md` 已经证明单段短任务系统性高估 `8%~17%`，离轴起点进入还会改变误差
+符号。不影响直线跟踪验收，但会误导用 `planned_total_s` 排工期的读者。入口改为两段
+口径，并指回 `STATUS.md`。
+
+**L1：`docs/images/rviz_coverage_task.png` 已重拍。** 旧图是墙面工作系原点还在底边
+中心时拍的：坐标轴画在绿框底边中央、绿框跨正负 X，而 `Displays` 里还是已经删掉的
+`rviz_default_plugins/Grid`。新图是当前状态：坐标轴在墙面左下角，网格由
+`Wall Reference Grid`（MarkerArray）画。
+
+重拍时发现 `coverage.rviz` 的视角有个实际缺陷：`Distance: 9` 的注释写着"框住整面
+`10 × 8 m` 墙"，实际框不住。渲染区宽大于高，所以约束在高度上，而 RViz `45°` 垂直
+视场在 `9 m` 处只看得到约 `7.5 m`——**安全内缩绿框的上下两条边落在视野外**，而那个框
+正是点选必须落在里面的东西。改成 `Distance: 12`，窗口 `1280 × 1000`。
+
+截图本身是脚本拍的，不是手点的：三个角点用 `/clicked_point` 发布（规划器分不出这和
+鼠标点选的区别），构型走 `/coverage/configure`，启动走 `/coverage/start`；机器上没装
+截图工具，用 `ctypes` 直接调 `libX11` 的 `XGetImage` 抓窗口。
 
 ## 2026-08-20 面板的迟到应答（review M3）
 
@@ -1186,7 +1209,7 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 话题必须是规划器真的发布的那个——话题名写错时 RViz 只会安静地什么都不画。
 
 **`docs/images/rviz_coverage_task.png` 仍需重拍**，除了旧工作系的坐标和绿框，
-现在网格显示项也换了。
+现在网格显示项也换了。（已于 2026-08-20 重拍。）
 
 ## 2026-08-19 全仓库 review 的修复
 
