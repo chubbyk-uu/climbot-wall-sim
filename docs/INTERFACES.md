@@ -86,6 +86,7 @@ RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出�
 | --- | --- | --- | --- |
 | `/control/cmd_vel` | `geometry_msgs/msg/Twist` | E3 直线控制器、未来任务状态机 | E4 速度看门狗；控制层唯一入口 |
 | `/cmd_vel` | `geometry_msgs/msg/Twist` | E4 速度看门狗 | Gazebo DiffDrive；每 `20 ms` 重发 |
+| `/control/hold_active` | `std_msgs/msg/Bool` | E4 速度看门狗 | transient local；速度保持是否生效 |
 | `/model/climbot/ground_truth` | `nav_msgs/msg/Odometry` | Gazebo | `header.frame_id=world`；仅模拟传感器和评价 |
 | `/model/climbot/odometry` | `nav_msgs/msg/Odometry` | Gazebo DiffDrive | 诊断、轮式协方差适配 |
 | `/wheel_odom` | `nav_msgs/msg/Odometry` | `wall_wheel_odom_adapter` | EKF 的前向速度和偏航角速度 |
@@ -307,6 +308,21 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `cmd_vel_watchdog` | `command_timeout_s` | `0.40 s` | 上游速度指令超时后持续发布零速 |
 | `cmd_vel_watchdog` | `publish_rate_hz` | `50 Hz` | 向执行器重发安全速度的频率 |
 
+速度看门狗另外提供一条**不经过执行器**的停止通路：
+
+| 服务 | 类型 | 行为 |
+| --- | --- | --- |
+| `/control/hold` | `std_srvs/srv/SetBool` | `true` 使 `/cmd_vel` 恒为零速，与 `/control/cmd_vel` 上是否还有指令无关；`false` 解除 |
+
+系统里其他所有停止都是**请求正在驱动的那一方停下来**：取消 Goal，控制器自己减速
+停车。执行器还在应答时这是对的做法。这条不是——它管的是执行器还活着、`/control/cmd_vel`
+仍在刷新、却没有任何请求能送达的情况。此时指令并不陈旧，只是没人要，看门狗的超时
+永远不会触发。保持位于轮子前的最后一跳，因此与图上其余部分处于什么状态无关。
+
+保持状态在 `/control/hold_active` 上以 transient local 发布：施加保持的一方可能在
+保持生效期间崩溃或被重启，届时这个状态就只存在于看门狗内部，而一台"无缘无故不动"
+的机器人是最难诊断的故障。
+
 #### 直线段控制律与时间参数化
 
 `tracking_mode` 决定直线段线速度**怎么算出来**，其余控制链路两种模式完全一致：
@@ -420,7 +436,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 
 | 字段 | 含义 |
 | --- | --- |
-| `state` | 管理器状态：`IDLE` / `INVALID` / `READY` / `STARTING` / `EXECUTING` / `FINISHED` |
+| `state` | 管理器状态：`IDLE` / `INVALID` / `READY` / `STARTING` / `EXECUTING` / `STOPPING` / `FINISHED` |
 | `task_id`、`revision` | 已缓存或正在执行的任务标识；`task_id` 为空且 `revision` 为 `0` 表示从未收到任务 |
 | `current_segment` | 执行器上报的当前段；接近首点期间为 `-1`，仅在 `EXECUTING` 有意义 |
 | `total_segments` | 来自缓存任务，从 `READY` 起即可用 |
@@ -442,6 +458,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `READY` | **接受**，发送 Goal | 拒绝 | 允许，重新生成预览 |
 | `STARTING` | 拒绝，已有任务在启动 | 拒绝，Goal 仍在接受中 | **面板置灰**；服务层仍会受理，只改预览 |
 | `EXECUTING` | 拒绝 | **接受**，请求取消 | **面板置灰**；`tracking_mode` 由执行器直接拒绝 |
+| `STOPPING` | 拒绝，仍在停机 | **接受**，重试速度保持与取消 | **面板置灰** |
 | `FINISHED` | **接受**（若仍有缓存任务），重跑该任务 | 拒绝 | 允许 |
 
 任务运行期间面板冻结全部五个规划控件，只留 Cancel。它们发出的请求确实只改预览、
@@ -462,11 +479,26 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 
 已接受的 Goal 只由结果回调结束，而执行器崩溃时结果永远不会到达。管理器以
 `executor_timeout_s`（默认 `5.0 s`）监视 Action 服务的存在：持续消失超过该时间即
-释放该 Goal 前先发一次取消，然后报 `FINISHED` 与 `EXECUTOR_LOST`，操作员无需重启
-管理器即可重新开始。`EXECUTOR_LOST` 只由管理器发出，执行器自己永远不会返回它；
-先前这里复用 `CONTROL_TIMEOUT`，报的是一个并未发生的原因。
-实测从 `SIGKILL` 到释放约 `25 s`，其中约 `20 s` 是 DDS 摘除已死参与者所需的时间，
-正常退出会快得多。这期间机器人已由速度看门狗停住——指令一停它就发零速。
+进入 `STOPPING`。
+
+`STOPPING` 存在的原因是「Action 服务不可发现」和「机器人已经停下」是两件不同的事。
+执行器真的死了会同时给出这两件；而 DDS 发现抖动、Action 通道故障或取消请求没送达
+只给出第一件——执行器还活着、`/control/cmd_vel` 仍在刷新、速度看门狗没有超时可
+触发、机器人继续在走。此前管理器在这里直接报 `FINISHED` 并释放 Goal handle，而
+`can_cancel` 由该 handle 决定，于是操作员的停止入口恰好在最需要它的时刻消失。
+
+进入 `STOPPING` 后管理器做三件事：调用 `/control/hold` 施加速度保持、再发一次
+Goal 取消、保持 `can_cancel=true`（此时按停止会重试保持和取消）。离开 `STOPPING`
+只接受**关于机器人**的证据，三者取一：
+
+1. `/control/hold_active` 为 `true`，机器人已被保持在零速，无法被驱动；
+2. `/control/cmd_vel` 上连续 `command_quiet_s`（默认 `1.0 s`）没有非零指令；
+3. 执行器最终应答了，此时用它返回的真实结果而不是 `EXECUTOR_LOST`。
+
+三者都不成立就停在 `STOPPING` 不动——这正是这个状态存在的目的。`EXECUTOR_LOST`
+只由管理器发出，执行器自己永远不会返回它；先前这里复用 `CONTROL_TIMEOUT`，报的是
+一个并未发生的原因。实测从 `SIGKILL` 到释放约 `25 s`，其中约 `20 s` 是 DDS 摘除已死
+参与者所需的时间，正常退出会快得多。
 
 `message` 与日志共用一份措辞，命令行观察等价于原来的 `std_msgs/String`：
 
@@ -503,6 +535,13 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 `5.0 s`）超时：超时后管理器在 `/coverage/manager_status` 报告一次并接受新的开始
 请求，不需要重启管理器。超时只释放"等待应答"，已被接受的 Goal 仍只能由
 `/coverage/cancel` 停止。
+
+超时**并不撤回已经发出的请求**，因此每次开始都带一个单调代次，三个回调
+（应答、反馈、结果）都只在自己那一代仍是当前代时才说话。超时、失联和新的开始各自
+使旧代次作废。没有这一层时，迟到的应答会把一个没人在看的 Goal 重新报成
+`EXECUTING`，迟到的反馈会把旧任务的进度写进新任务，迟到的结果会 `reset` 掉正在运行
+的 Goal handle 并报 `FINISHED`——连带撤掉停止入口。迟到的应答若带回一个已被接受的
+Goal，管理器会直接对它发取消：没人打算运行它，放着不管它会把整个任务走完。
 
 ### 运行时构型
 

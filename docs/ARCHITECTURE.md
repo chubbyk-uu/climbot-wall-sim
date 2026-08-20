@@ -111,7 +111,10 @@ C++ 轨迹控制和速度安全：
 - `turn_profile` / `travel_profile`：原地转向与直线段的梯形/三角形时间参数化曲线，
   纯函数，两者对称；`segment_duration` 由它们推导每段耗时，用于进度权重和时间表；
 - `line_tracker_node`：融合位姿输入、定位超时停车和单段参考显示；
-- `cmd_vel_watchdog_node`：`/control/cmd_vel` 到 `/cmd_vel` 的唯一安全出口；
+- `cmd_vel_watchdog_node`：`/control/cmd_vel` 到 `/cmd_vel` 的唯一安全出口，
+  同时提供 `/control/hold`——唯一一条不经过执行器的停止通路。其余所有停止都是
+  「请求正在驱动的一方停下来」，只在它还应答时有效；保持位于轮子前的最后一跳，
+  与图上其余部分处于什么状态无关；
 - `include/climbot_control/control_clock.hpp`：控制环和安全兜底该用哪个时钟。
   节点默认时钟在非仿真时间下退化为**可被设置、可倒退**的系统时钟，定时器建在
   它上面会在时钟回跳期间停止触发。仿真时间激活时跟节点时钟，否则用单调时钟；
@@ -206,7 +209,9 @@ C++ 通用直线段跟踪、任务状态机、
 明确的 `/coverage/start` 后才复制并锁定 `task_id + revision`、发送 Action Goal。
 它还提供 `/coverage/cancel`，并在 `/coverage/manager_status` 上以
 `climbot_interfaces/msg/CoverageStatus` 汇总状态、任务标识、段进度和上次结果，
-使界面无需自行拼装状态；规划器不直接调用控制器，
+使界面无需自行拼装状态；失去执行器时它先进入 `STOPPING` 停机而不是直接报完成，
+离开该状态只认关于机器人的证据（速度保持已生效、无人再下达运动指令、或执行器最终
+应答了），期间停止入口一直有效；规划器不直接调用控制器，
 RViz 面板也不直接实现安全状态机。执行器在首条扫描前完成采集关闭的起点进入：一条直线开到首个路点，
 终点按该处转向的预计下坠抬高，与换道段共用同一套预留；首条扫描随后复用统一的动态
 入轨判据。首点之外的直线不计入覆盖段。管理器留在 `climbot_control`：它是任务状态机和 Action 客户端，

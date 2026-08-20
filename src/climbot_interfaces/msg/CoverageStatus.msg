@@ -10,6 +10,11 @@ uint8 READY=2       # a valid task is cached and waiting for an explicit start
 uint8 STARTING=3    # start requested, the executor has not answered yet
 uint8 EXECUTING=4   # the executor accepted the goal and is running it
 uint8 FINISHED=5    # the last run ended; see result_code and message
+uint8 STOPPING=6    # contact with the executor was lost mid-run and the manager
+                    # is stopping the robot; it stays here until it has evidence
+                    # the robot is no longer being driven, and never reports
+                    # FINISHED on the strength of the executor merely having
+                    # gone quiet on the Action interface
 
 std_msgs/Header header
 

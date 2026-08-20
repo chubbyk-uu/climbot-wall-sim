@@ -12,6 +12,8 @@ import launch_ros.actions
 import launch_testing.actions
 import pytest
 import rclpy
+from std_msgs.msg import Bool
+from std_srvs.srv import SetBool
 
 
 @pytest.mark.launch_test
@@ -42,6 +44,14 @@ class TestCmdVelWatchdogNode(unittest.TestCase):
         self.output_event = Event()
         self.publisher = self.node.create_publisher(Twist, '/control/cmd_vel', 10)
         self.node.create_subscription(Twist, '/cmd_vel', self._output_callback, 10)
+        self.holds = []
+        self.node.create_subscription(
+            Bool, '/control/hold_active', lambda message: self.holds.append(message.data),
+            rclpy.qos.QoSProfile(
+                depth=1,
+                durability=rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL,
+                reliability=rclpy.qos.ReliabilityPolicy.RELIABLE))
+        self.hold_client = self.node.create_client(SetBool, '/control/hold')
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
@@ -82,3 +92,57 @@ class TestCmdVelWatchdogNode(unittest.TestCase):
 
         time.sleep(0.25)
         self.assertEqual(self._last_output(), (0.0, 0.0))
+
+    def _set_hold(self, held):
+        self.assertTrue(self.hold_client.wait_for_service(timeout_sec=10.0))
+        future = self.hold_client.call_async(SetBool.Request(data=held))
+        deadline = time.monotonic() + 5.0
+        while not future.done() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(future.done(), 'The hold service did not answer.')
+        self.assertTrue(future.result().success)
+
+    def _wait_for_output(self, expected, what, timeout=2.0):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if self._last_output() == expected:
+                return
+            time.sleep(0.01)
+        self.fail('Timed out waiting for {}; last output was {}'.format(
+            what, self._last_output()))
+
+    def test_a_hold_zeroes_the_output_while_commands_keep_arriving(self):
+        """The stop that works when the thing driving the robot will not listen."""
+        # Cancelling a goal asks the controller to stop, which is the right way
+        # round while the controller is answering. This is the case where it is
+        # not: something keeps refreshing /control/cmd_vel and no request
+        # reaches it. Freshness alone will never stop the robot, because the
+        # commands are not stale - they are unwanted.
+        self.assertTrue(self.output_event.wait(5.0), 'Watchdog did not publish initial stop.')
+        command = Twist()
+        command.linear.x = 0.12
+
+        stop_driving = Event()
+
+        def keep_driving():
+            while not stop_driving.is_set():
+                self.publisher.publish(command)
+                time.sleep(0.02)
+
+        driver = Thread(target=keep_driving)
+        driver.start()
+        try:
+            self._wait_for_output((0.12, 0.0), 'the command to reach /cmd_vel')
+            self._set_hold(True)
+            self._wait_for_output((0.0, 0.0), 'the hold to zero the output')
+            # Still driving, and still zero: the hold is not a timeout that a
+            # busy publisher can keep resetting.
+            time.sleep(0.5)
+            self.assertEqual(self._last_output(), (0.0, 0.0))
+            self.assertIn(True, self.holds, 'The hold was never announced.')
+
+            self._set_hold(False)
+            self._wait_for_output((0.12, 0.0), 'the release to restore the command')
+        finally:
+            stop_driving.set()
+            driver.join()

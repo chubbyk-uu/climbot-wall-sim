@@ -26,13 +26,13 @@ ament_target_dependencies(line_tracker_node
 add_executable(cmd_vel_watchdog_node src/cmd_vel_watchdog_node.cpp)
 target_compile_features(cmd_vel_watchdog_node PUBLIC cxx_std_17)
 target_link_libraries(cmd_vel_watchdog_node line_tracker)
-ament_target_dependencies(cmd_vel_watchdog_node geometry_msgs rclcpp)
+ament_target_dependencies(cmd_vel_watchdog_node geometry_msgs rclcpp std_msgs std_srvs)
 
 add_executable(coverage_manager_node src/coverage_manager_node.cpp)
 target_compile_features(coverage_manager_node PUBLIC cxx_std_17)
 target_link_libraries(coverage_manager_node line_tracker)
 ament_target_dependencies(coverage_manager_node
-  climbot_interfaces rclcpp rclcpp_action std_msgs std_srvs)
+  climbot_interfaces geometry_msgs rclcpp rclcpp_action std_msgs std_srvs)
 
 install(TARGETS line_tracker line_tracker_node cmd_vel_watchdog_node coverage_manager_node ARCHIVE DESTINATION lib LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
@@ -74,6 +74,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_arc_entry.py TIMEOUT 90 ENV ROS_DOMAIN_ID=51)
   add_launch_test(test/test_line_tracker_time_mode.py TIMEOUT 90 ENV ROS_DOMAIN_ID=52)
   add_launch_test(test/test_coverage_schedule_pose.py TIMEOUT 60 ENV ROS_DOMAIN_ID=53)
+  add_launch_test(test/test_coverage_manager_late_callbacks.py TIMEOUT 120 ENV ROS_DOMAIN_ID=54)
 endif()
 
 ament_export_include_directories(include)

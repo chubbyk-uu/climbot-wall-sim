@@ -984,6 +984,63 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 **`docs/images/rviz_coverage_task.png` 已过期**：图中的坐标和绿框属于旧工作系。
 `gazebo_wall.png` 不受影响，墙面在世界系里没有变。
 
+## 2026-08-20 失联后的停机权限（review H1 + H2）
+
+`docs/REVIEW_2026-08-20.md` 的两条高严重度项已修完。两者根子是同一个：管理器只有
+「当前有没有 Goal」这一个状态，没有代次，也没有区分「Action 服务不可发现」和
+「机器人已经停下」。
+
+**H1：失联后在取消被确认前就宣布 FINISHED 并撤掉停止入口。**
+
+原实现在 Action 服务连续消失超过 `executor_timeout_s` 后，发一次 `async_cancel_goal`
+（不保存 future、不等确认）、立刻 `active_goal_.reset()`、报 `FINISHED/EXECUTOR_LOST`。
+注释称"机器人此时已由速度看门狗停住"——这只在执行器真的死了、`/control/cmd_vel`
+停止刷新时成立。DDS 发现抖动、Action 通道故障或取消没送达时，执行器还活着、指令还在
+刷新，看门狗没有超时可触发，机器人继续在走；而 `can_cancel` 由 Goal handle 决定，
+于是操作员的停止入口恰好在最需要它的时刻消失。
+
+现在改为：
+
+1. 新增管理器状态 `STOPPING`（`CoverageStatus.msg`）。失联先进这个状态，不报完成、
+   不释放 Goal handle、`can_cancel` 保持为真（此时按停止会重试保持和取消）。
+2. 新增一条不经过执行器的停止通路：`cmd_vel_watchdog_node` 的 `/control/hold`
+   （`std_srvs/SetBool`）把 `/cmd_vel` 强制为零，与 `/control/cmd_vel` 上是否还有指令
+   无关，状态在 `/control/hold_active` 上 transient local 发布。系统里其余所有停止都是
+   「请求正在驱动的一方停下来」，执行器不应答时它们全部失效；保持在轮子前的最后一跳，
+   因此与图上其余部分处于什么状态无关。
+3. 离开 `STOPPING` 只认**关于机器人**的证据，三者取一：保持已生效；`/control/cmd_vel`
+   上连续 `command_quiet_s`（默认 `1.0 s`）没有非零指令；执行器最终应答了（此时用它
+   返回的真实结果而非 `EXECUTOR_LOST`）。三者都不成立就停在 `STOPPING`——这正是这个
+   状态存在的目的。
+
+**H2：超时只清 pending，没有使旧异步回调失效。**
+
+三个 Goal 回调只捕获 `this / task_id / revision`，没有代次也没有 handle 校验，而
+`expireStalePending()` 只清 `start_pending_since_`，原 `async_send_goal` 仍在飞。迟到的
+应答会把一个没人在看的 Goal 重新报成 `EXECUTING`；迟到的反馈会把旧任务进度写进新任务；
+迟到的结果会无条件 `reset` 掉正在运行的 Goal handle 并报 `FINISHED`——连带撤掉停止入口。
+
+现在每次 `start()` 分配单调代次，三个回调都只在自己那一代仍是当前代时才说话；超时、
+失联和新的开始各自使旧代次作废。迟到的应答若带回一个已被接受的 Goal，管理器直接对它
+发取消：没人打算运行它，放着不管它会把整个任务走完。
+
+**测试。** 原 `test_coverage_manager_executor_loss.py` 只覆盖"测试桩被真正销毁"这一
+安全情况，全绿并不能证明失联路径安全。现在：
+
+- `test_an_unreachable_but_still_driving_executor_is_not_called_finished`：Action server
+  销毁、但 `/control/cmd_vel` 持续下发非零指令。断言管理器停在 `STOPPING`、`can_cancel`
+  为真、**从不**发布 `FINISHED`；随后出现速度保持服务，才允许释放。这是原实现会失败的
+  那条路径。
+- `test_the_operator_stop_still_does_something_while_stopping`：失联期间按停止必须真的
+  打到速度保持上，不能是空操作。
+- `test_coverage_manager_late_callbacks.py`：桩执行器第一次 Goal 拖到超时之后才应答、
+  且拒绝被取消，于是应答、反馈、结果三个迟到回调依次到达一个已经在跑第二个任务的
+  管理器。断言状态仍是 `EXECUTING`、版本仍是新任务、进度没有被写脏、停止入口还在。
+- `test_cmd_vel_watchdog_node.py` 增加保持测试：指令持续到达时保持仍把输出压零，
+  解除后恢复——保持不是一个繁忙发布者能不断重置的超时。
+
+宿主全量：**455 tests，0 error，0 failure，29 skipped**（原 449，新增 6 项）。
+
 ## 2026-08-20 墙面贴图贴上墙
 
 烘焙工具链进仓库，整墙贴图本地生成并渲染验证通过。参数是 08-19/08-20 定案的那一套，

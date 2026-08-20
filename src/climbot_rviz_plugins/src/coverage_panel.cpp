@@ -39,6 +39,12 @@ QString stateName(uint8_t state)
       return QObject::tr("Executing");
     case climbot_interfaces::msg::CoverageStatus::FINISHED:
       return QObject::tr("Finished");
+    case climbot_interfaces::msg::CoverageStatus::STOPPING:
+      // Not "Finished" and not "Executing": contact with the executor is gone
+      // and the manager has not yet established that the robot has stopped.
+      // The stop button stays enabled here, from can_cancel, because this is
+      // the state in which it is most worth pressing.
+      return QObject::tr("Stopping (executor lost)");
     default:
       return QObject::tr("Unknown (%1)").arg(state);
   }
