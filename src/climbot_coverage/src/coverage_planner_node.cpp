@@ -105,6 +105,10 @@ public:
     edge_clearance_ = declare_parameter("edge_clearance", -1.0);
     wall_width_ = declare_parameter("wall_width", -1.0);
     wall_height_ = declare_parameter("wall_height", -1.0);
+    // Pitch of the reference grid drawn over the wall in RViz, matching the
+    // one painted on the wall face in Gazebo. 0 publishes nothing; the
+    // display can also be unticked in RViz, which is the live switch.
+    wall_grid_spacing_ = declare_parameter("wall_grid_spacing", 1.0);
     path_height_ = declare_parameter("path_height", 0.06);
     bottom_warning_tolerance_ = declare_parameter("bottom_warning_tolerance", 0.05);
     // Above the acceptance gate by more than execution costs. Measured loss
@@ -125,6 +129,11 @@ public:
       "/coverage/task", rclcpp::QoS(1).reliable().transient_local());
     marker_publisher_ = create_publisher<visualization_msgs::msg::MarkerArray>(
       "/coverage/markers", rclcpp::QoS(1).transient_local());
+    // Its own topic rather than another namespace inside /coverage/markers:
+    // the grid is scenery an operator turns on and off while looking at a
+    // plan, and a display can only be ticked off as a whole.
+    grid_publisher_ = create_publisher<visualization_msgs::msg::MarkerArray>(
+      "/coverage/wall_grid", rclcpp::QoS(1).transient_local());
     status_publisher_ = create_publisher<std_msgs::msg::String>(
       "/coverage/status", rclcpp::QoS(1).transient_local());
     config_publisher_ = create_publisher<climbot_interfaces::msg::CoverageConfig>(
@@ -148,6 +157,7 @@ public:
         &CoveragePlannerNode::configure, this, std::placeholders::_1,
         std::placeholders::_2));
     publishConfig();
+    publishWallGrid();
 
     if (input_mode_ == "parameters") {
       planFromPoints();
@@ -594,6 +604,61 @@ private:
     path_publisher_->publish(path);
   }
 
+  /// Draw the wall's reference grid once, on a topic of its own.
+  ///
+  /// Same pitch and the same lines as the grid painted on the wall face in
+  /// Gazebo, so a coordinate read off one view is the coordinate in the other,
+  /// and so an operator who switched the painted grid off for a photography
+  /// run still has one to plan against. It never changes, so it is published
+  /// once and latched for late subscribers rather than rebuilt per plan.
+  void publishWallGrid()
+  {
+    visualization_msgs::msg::MarkerArray markers;
+    visualization_msgs::msg::Marker clear;
+    clear.action = visualization_msgs::msg::Marker::DELETEALL;
+    markers.markers.push_back(clear);
+    if (wall_grid_spacing_ > 0.0) {
+      std_msgs::msg::Header header;
+      header.stamp = now();
+      header.frame_id = frame_id_;
+      visualization_msgs::msg::Marker grid;
+      grid.header = header;
+      grid.ns = "wall_grid";
+      grid.id = 0;
+      grid.type = visualization_msgs::msg::Marker::LINE_LIST;
+      grid.action = visualization_msgs::msg::Marker::ADD;
+      grid.pose.orientation.w = 1.0;
+      grid.scale.x = 0.015;
+      grid.color.r = 0.55F;
+      grid.color.g = 0.58F;
+      grid.color.b = 0.62F;
+      grid.color.a = 0.9F;
+      // Clear of the translucent wall slab below and of the region outlines
+      // above, so it never fights either for the same pixels.
+      const double height = 0.004;
+      // The rule the wall face is painted with, in climbot_wall.sdf.xacro:
+      // lines at whole multiples of the spacing measured from the work frame's
+      // origin, which is the wall's lower-left corner, and only the interior
+      // ones. The epsilon keeps a line off the far edge when the span divides
+      // exactly, which is the ordinary case - 10 m at 1 m pitch is nine lines.
+      const auto interior = [this](double span) {
+          return static_cast<int>((span - 1e-9) / wall_grid_spacing_);
+        };
+      for (int index = 1; index <= interior(wall_width_); ++index) {
+        const double x = index * wall_grid_spacing_;
+        grid.points.push_back(markerPoint(Point2{x, 0.0}, height));
+        grid.points.push_back(markerPoint(Point2{x, wall_height_}, height));
+      }
+      for (int index = 1; index <= interior(wall_height_); ++index) {
+        const double y = index * wall_grid_spacing_;
+        grid.points.push_back(markerPoint(Point2{0.0, y}, height));
+        grid.points.push_back(markerPoint(Point2{wall_width_, y}, height));
+      }
+      markers.markers.push_back(grid);
+    }
+    grid_publisher_->publish(markers);
+  }
+
   /// The motion region is deliberately not taken from the caller. It is the
   /// wall inset by the safety margin and does not depend on what was clicked,
   /// so it is the one thing an operator needs to see *before* clicking - a
@@ -743,6 +808,7 @@ private:
   double edge_clearance_;
   double wall_width_;
   double wall_height_;
+  double wall_grid_spacing_;
   double safety_margin_;
   double row_spacing_;
   double path_height_;
@@ -753,6 +819,7 @@ private:
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_publisher_;
   rclcpp::Publisher<climbot_interfaces::msg::CoverageTask>::SharedPtr task_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr grid_publisher_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr status_publisher_;
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr clicked_point_subscription_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr clear_service_;

@@ -53,14 +53,18 @@ class TestCoveragePlannerNode(unittest.TestCase):
         self.path = None
         self.task = None
         self.markers = None
+        self.grid = None
         self.path_event = Event()
         self.task_event = Event()
         self.marker_event = Event()
+        self.grid_event = Event()
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.node.create_subscription(Path, '/coverage/path', self._path_callback, qos)
         self.node.create_subscription(CoverageTask, '/coverage/task', self._task_callback, qos)
         self.node.create_subscription(
             MarkerArray, '/coverage/markers', self._marker_callback, qos)
+        self.node.create_subscription(
+            MarkerArray, '/coverage/wall_grid', self._grid_callback, qos)
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
@@ -86,6 +90,41 @@ class TestCoveragePlannerNode(unittest.TestCase):
     def _marker_callback(self, message):
         self.markers = message
         self.marker_event.set()
+
+    def _grid_callback(self, message):
+        self.grid = message
+        self.grid_event.set()
+
+    def test_wall_grid_draws_the_lines_gazebo_paints_on_the_wall(self):
+        """The overlay has to be that grid, not a similar-looking one."""
+        # A grid that starts at the wrong place or uses a different pitch is
+        # still a plausible grid, and an operator reading a coordinate off it
+        # gets a wrong answer with nothing to warn them. The rule, written once
+        # in climbot_wall.sdf.xacro: whole multiples of the pitch from the work
+        # frame's origin, interior lines only, each one spanning the wall. This
+        # node runs on a 12 x 9 m wall at the default 1 m pitch.
+        self.assertTrue(self.grid_event.wait(10.0), 'No wall grid received.')
+        lines = [marker for marker in self.grid.markers if marker.ns == 'wall_grid']
+        self.assertEqual(len(lines), 1)
+        points = lines[0].points
+        self.assertEqual(len(points) % 2, 0)
+        segments = list(zip(points[::2], points[1::2]))
+        vertical = sorted(
+            round(start.x, 9) for start, end in segments
+            if abs(start.x - end.x) < 1e-9)
+        horizontal = sorted(
+            round(start.y, 9) for start, end in segments
+            if abs(start.y - end.y) < 1e-9)
+        self.assertEqual(vertical, [float(index) for index in range(1, 12)])
+        self.assertEqual(horizontal, [float(index) for index in range(1, 9)])
+        for start, end in segments:
+            if abs(start.x - end.x) < 1e-9:
+                self.assertAlmostEqual(min(start.y, end.y), 0.0, places=9)
+                self.assertAlmostEqual(max(start.y, end.y), 9.0, places=9)
+            else:
+                self.assertAlmostEqual(min(start.x, end.x), 0.0, places=9)
+                self.assertAlmostEqual(max(start.x, end.x), 12.0, places=9)
+        self.assertEqual(lines[0].header.frame_id, 'odom')
 
     def test_path_has_segment_headings_and_configured_wall(self):
         self.assertTrue(self.path_event.wait(10.0), 'No coverage Path received.')

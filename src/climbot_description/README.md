@@ -7,10 +7,14 @@
 - `config/robot.yaml`：机器人几何、质量、轮系、驱动限幅和 footprint；
 - `config/wall.yaml`：`world → wall` 位姿及墙面宽高。**工作系原点在墙面左下角**，
   所以作业面是 `x ∈ [0, 宽]`、`y ∈ [0, 高]`，不出现负坐标；`origin_xyz` 是该原点
-  在世界系中的位置，仿真里墙仍居中于世界 `Y = 0`，因此它是 `-宽/2`；
+  在世界系中的位置，仿真里墙仍居中于世界 `Y = 0`，因此它是 `-宽/2`。
+  还有 `reference_grid.spacing_m`：参考网格线间距，`0` 表示不画。真实墙面上没有
+  网格，它是绘图辅助；放在这里是因为 Gazebo 墙面和 RViz 叠加层两个视图都要画它，
+  各存一份默认值迟早会变成两套不同的网格；
 - `urdf/climbot.urdf.xacro`：`robot_state_publisher` 使用的 URDF；
 - `climbot_description/geometry.py`：四元数和角度通用函数；
-- `climbot_description/wall_frame.py`：世界坐标与墙面工作坐标转换。
+- `climbot_description/wall_frame.py`：世界坐标与墙面工作坐标转换，以及
+  `reference_grid_spacing()`——四个 launch 文件读同一个网格间距的唯一入口。
 
 ## 边界
 

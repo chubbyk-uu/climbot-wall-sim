@@ -984,6 +984,43 @@ robot_localization 的默认值（对角 `1e-9`），等于宣称"我确信自�
 **`docs/images/rviz_coverage_task.png` 已过期**：图中的坐标和绿框属于旧工作系。
 `gazebo_wall.png` 不受影响，墙面在世界系里没有变。
 
+## 2026-08-20 参考网格线做成开关
+
+墙面参考网格线现在可以关掉，两个视图都能关，且能在 RViz 里当场勾掉。
+
+起因是拍摄墙面的准备：网格线是周期性高对比特征，还浮在墙面前 `3 mm`，在
+`0.50 × 0.28 m` 的拍摄视场下会进入 `67%` 的照片（实测见下面的贴图一节）。但它
+对人工看规划有用，所以不能直接删。
+
+| 开关 | 作用范围 | 生效方式 |
+| --- | --- | --- |
+| RViz 左侧 `Wall Reference Grid` 复选框 | 只影响 RViz 叠加层 | 当场生效，不重启 |
+| `wall_grid_spacing:=0` | Gazebo 墙面和 RViz 叠加层同时不画 | 启动时 |
+
+三处顺带修掉的问题：
+
+- **两个视图原本画的不是同一套网格。** Gazebo 那套按"距每条边一个间距"排线，
+  是原点还在墙面中心时定的规则；RViz 这边最初按工作系原点整数倍画，两者在
+  `10 × 8 m`、`1 m` 间距下恰好重合，换个间距就分家。统一成"工作系原点的整数倍、
+  只画内部线"。默认构型下渲染结果逐项不变（列 `1..9`、行 `1..7`，中线加粗在
+  `x = 5`、`y = 4`），所以 `docs/images/gazebo_wall.png` 仍然有效；
+- **`coverage.rviz` 里那个 `Wall Grid` 显示项在原点移动后就错了。** 它是
+  `rviz_default_plugins/Grid`，画的是以固定坐标系为中心的正方形——原点在墙面中心时
+  正确，移到左下角之后变成一个挂在墙角外的 `10 × 10 m` 方块。已换成订阅
+  `/coverage/wall_grid` 的 `MarkerArray`，线是照墙面裁的；
+- **间距值原本只存在 `simulation.yaml` 里，RViz 读不到。** 移到
+  `climbot_description/config/wall.yaml` 的 `reference_grid.spacing_m`，由
+  `wall_frame.reference_grid_spacing()` 统一读取，四个 launch 文件共用。
+
+新增两个测试：`test_coverage_wall_grid_off.py`（间距 `0` 时只发 `DELETEALL`、
+不发任何可画的东西，而规划本身照常）和 `test_coverage_planner_node.py` 里的
+网格线位置断言（按规则逐条比对线的工作坐标，不只比数量）。后者已用"把起始
+下标从 `1` 改回 `0`"验证过确实会失败。`test_rviz_config.py` 再加一条：显示项订阅的
+话题必须是规划器真的发布的那个——话题名写错时 RViz 只会安静地什么都不画。
+
+**`docs/images/rviz_coverage_task.png` 仍需重拍**，除了旧工作系的坐标和绿框，
+现在网格显示项也换了。
+
 ## 2026-08-19 全仓库 review 的修复
 
 见 [REVIEW_2026-08-19.md](REVIEW_2026-08-19.md)。20 条中 19 条实测属实，1 条（L4）

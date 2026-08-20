@@ -11,14 +11,20 @@ Panels:
 Visualization Manager:
   Class: ""
   Displays:
-    - Class: rviz_default_plugins/Grid
-      Name: Wall Grid
+    # The same reference grid Gazebo paints on the wall face, published by
+    # the planner from climbot_description/config/wall.yaml. It replaced an
+    # rviz_default_plugins/Grid, which draws a square centred on the fixed
+    # frame: correct while the work frame's origin was the wall's centre, a
+    # 10 x 10 m square hanging off the corner once it moved. This one is cut
+    # to the wall. Unticking it is the live switch; wall_grid_spacing:=0
+    # stops it being drawn in either view at all.
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Wall Reference Grid
       Enabled: true
-      Plane: XY
-      Cell Size: 1
-      Plane Cell Count: 10
-      Color: 100; 100; 105
-      Alpha: 0.5
+      Topic:
+        Value: /coverage/wall_grid
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
     - Class: rviz_default_plugins/Axes
       Name: Wall Frame
       Enabled: true

@@ -13,3 +13,19 @@ wall:
   surface:
     width_m: 10.0
     height_m: 8.0
+
+  # Pitch of the reference grid, in metres. 0 removes it.
+  #
+  # The real wall has no grid on it. This is a drawing aid, and it is here
+  # rather than in a simulation or an RViz file because two views draw it -
+  # painted on the wall face in Gazebo, and as a latched marker overlay in
+  # RViz - and a coordinate read off one has to be the coordinate in the
+  # other. Two defaults would eventually be two different grids.
+  #
+  # Worth keeping while a human watches a run and worth removing while the
+  # wall is being photographed: at the 0.50 m by 0.28 m photo footprint a 1 m
+  # grid lands in 67% of images, repeats identically, and sits 3 mm off the
+  # surface a stitch treats as a plane. Override for one run with the
+  # wall_grid_spacing launch argument; untick the RViz display to hide it live.
+  reference_grid:
+    spacing_m: 1.0

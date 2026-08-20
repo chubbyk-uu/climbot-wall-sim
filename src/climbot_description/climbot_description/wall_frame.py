@@ -3,6 +3,8 @@
 # Every node that converts Gazebo truth into wall coordinates loads the same
 # description, so the wall can be moved or re-oriented without editing code.
 
+import os
+
 from climbot_description.geometry import (
     quaternion_conjugate,
     quaternion_from_rpy,
@@ -10,6 +12,26 @@ from climbot_description.geometry import (
     rotate_vector,
 )
 import yaml
+
+
+def wall_description_path():
+    """Return the installed path of the shared wall description."""
+    # Imported here rather than at module scope so the transform below can be
+    # exercised from a plain checkout, without an ament index to look in.
+    from ament_index_python.packages import get_package_share_directory
+    return os.path.join(
+        get_package_share_directory('climbot_description'), 'config', 'wall.yaml')
+
+
+def reference_grid_spacing():
+    """Return the pitch of the reference grid every view of the wall draws."""
+    # Four launch files need this number and none of them owns it: the wall
+    # face painted in Gazebo and the overlay drawn in RViz have to be the same
+    # grid, or a coordinate read off one view is not the coordinate in the
+    # other. One reader here is what keeps that from drifting into two.
+    with open(wall_description_path()) as handle:
+        wall = yaml.safe_load(handle)['wall']
+    return float(wall['reference_grid']['spacing_m'])
 
 
 class WallFrame:

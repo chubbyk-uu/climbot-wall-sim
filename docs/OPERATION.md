@@ -63,6 +63,20 @@ RViz 里从启动起就画着一个**绿色边框**，那是墙面按机器人�
 `safety_margin = 0.5 × hypot(0.76, 0.475) + 0.10 = 0.548 m`，绿框就是
 `x ∈ [0.548, 9.452]`、`y ∈ [0.548, 7.452]`，机器人出生在 `(5.0, 2.0)`。
 
+墙面上和 RViz 里都画着 `1 m` 的**参考网格线**。线落在工作坐标的整数倍上、只画
+内部线，两个视图用的是同一条规则和同一个间距（`climbot_description/config/wall.yaml`
+的 `reference_grid.spacing_m`），所以从任一视图读出来的坐标一致。
+
+- **临时藏起来**：在 RViz 左侧 Displays 里取消勾选 `Wall Reference Grid`，立即生效，
+  不影响 Gazebo 里墙面上那套。
+- **整轮都不画**：加 `wall_grid_spacing:=0`，Gazebo 墙面和 RViz 叠加层同时不画。
+  拍摄墙面的运行必须这样跑——网格线是周期性高对比特征，还浮在墙面前 `3 mm`，
+  在 `0.50 × 0.28 m` 的拍摄视场下会进入 `67%` 的照片。
+
+```bash
+ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
+```
+
 在工具栏选择 `Publish Point`，按下表顺序点击角点。每次点击 `/coverage/status`
 都会回显它认成了哪个角和坐标，用来确认没有因为相机视角而选反方向：
 

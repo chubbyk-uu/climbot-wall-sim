@@ -40,6 +40,7 @@
 | `region_type` | `rectangle` | `rectangle` 需两点，`trapezoid` 需三点 |
 | `sweep_direction` | `horizontal` | 扫描方向 |
 | `tracking_mode` | `time` | 直线段控制律：`time` 或 `distance` |
+| `wall_grid_spacing` | `1.0` | 参考网格线间距（m），`0` 两个视图都不画。默认值取自 `climbot_description/config/wall.yaml`，同一个值同时传给 Gazebo 墙面和 RViz 叠加层 |
 
 launch 参数只给这三项定初值。`region_type` 和 `sweep_direction` 运行中改用
 `/coverage/configure` 或面板上的下拉框，见下面的"运行时构型"；规划器的其余参数
@@ -75,6 +76,7 @@ RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出�
 | `wheel_forward_velocity_stddev_mps` | `0.03` | 轮式前向速度标准差 |
 | `wheel_yaw_rate_stddev_rps` | `0.05` | 轮式角速度标准差 |
 | `imu_orientation_stddev_rad` | `0.00174532925` | IMU 姿态标准差（0.1°） |
+| `wall_grid_spacing` | `1.0` | 墙面参考网格线间距（m），`0` 不画。默认值取自 `climbot_description/config/wall.yaml` |
 
 ## 仿真与定位话题
 
@@ -380,6 +382,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `/clicked_point` | `geometry_msgs/msg/PointStamped` | depth 10 | RViz `Publish Point` 输入 |
 | `/coverage/path` | `nav_msgs/msg/Path` | transient local, depth 1 | 墙面覆盖路径；失败或清空时发布空路径 |
 | `/coverage/markers` | `visualization_msgs/msg/MarkerArray` | transient local, depth 1 | 墙面、可达区域、点选区域、路径和方向 |
+| `/coverage/wall_grid` | `visualization_msgs/msg/MarkerArray` | transient local, depth 1 | 参考网格线，启动时发一次。单独一个话题是为了在 RViz 里能单独勾掉；线位于工作系原点整数倍处、只画内部线，与 Gazebo 墙面上那套完全一致 |
 | `/coverage/status` | `std_msgs/msg/String` | transient local, depth 1 | 等待、成功和失败原因 |
 
 所有覆盖接口默认使用 `odom`。RViz 点选消息的 `frame_id` 不匹配时会被拒绝。
@@ -942,7 +945,7 @@ float64 estimated_remaining_s
 | 文件 | 内容 |
 | --- | --- |
 | `climbot_description/config/robot.yaml` | 机器人共享物理属性、限幅和 footprint |
-| `climbot_description/config/wall.yaml` | 工作坐标系、墙面宽高 |
+| `climbot_description/config/wall.yaml` | 工作坐标系、墙面宽高、参考网格线间距 |
 | `climbot_gazebo/config/simulation.yaml` | Gazebo 专有物理和传感器参数 |
 | `climbot_gazebo/config/ekf_wall.yaml` | EKF 状态选择、频率和协方差输入 |
 | `climbot_coverage/config/coverage_interactive.yaml` | RViz 点选工作流，`coverage_mission.launch.py` 的默认 |

@@ -32,32 +32,54 @@
        in front of it so the decals never fight the collision surface. -->
   <xacro:property name="face_x" value="${centre_x + thickness / 2.0}"/>
   <xacro:property name="decal_x" value="${thickness / 2.0 + 0.003}"/>
-  <!-- Outermost grid line sits one spacing inside each edge. -->
-  <xacro:property name="columns" value="${int(width / (2.0 * grid_spacing)) - 1}"/>
-  <xacro:property name="rows" value="${int(height / (2.0 * grid_spacing)) - 1}"/>
+  <!-- Lines sit at whole multiples of the spacing measured from the work
+       frame's origin, the wall's lower-left corner, so a line is a work
+       coordinate an operator can read off the wall. Only the interior ones are
+       drawn: a line on an edge would hang half off the wall. RViz draws the
+       same lines from the same rule over /coverage/wall_grid, and both take
+       the spacing from climbot_description/config/wall.yaml.
 
+       A non-positive spacing removes the grid entirely. It is a periodic
+       high-contrast pattern standing 3 mm proud of the wall face, which puts
+       it in 67% of inspection photographs at the 0.50 m by 0.28 m footprint
+       those are taken at. Runs that photograph the wall switch it off, because
+       a repeating feature is what makes a stitch match the wrong place
+       confidently, and one that is not coplanar with the surface breaks the
+       homography the stitch assumes. Runs a human watches keep it. -->
+  <xacro:property name="show_grid" value="${grid_spacing > 0.0}"/>
+  <!-- The epsilon keeps a line off the far edge when the span divides exactly,
+       which is the ordinary case: 10 m at 1 m pitch is nine lines, not ten. -->
+  <xacro:property name="columns"
+                  value="${int((width - 1e-9) / grid_spacing) if show_grid else 0}"/>
+  <xacro:property name="rows"
+                  value="${int((height - 1e-9) / grid_spacing) if show_grid else 0}"/>
+
+  <!-- index counts lines from the work origin, so index * grid_spacing is the
+       line's work coordinate. The pose is relative to the link centre, hence
+       the half-span subtracted. The mid-span line is drawn heavier, which is
+       what makes the grid readable as two halves rather than as stripes. -->
   <xacro:macro name="grid_line" params="axis index count">
-    <xacro:if value="${index &lt;= 2 * count}">
+    <xacro:if value="${index &lt;= count}">
       <visual name="grid_${axis}_${index}">
         <xacro:if value="${axis == 'column'}">
-          <pose>${decal_x} ${(index - count) * grid_spacing} 0 0 0 0</pose>
+          <pose>${decal_x} ${index * grid_spacing - width / 2.0} 0 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.006 ${0.035 if index == count else 0.025} ${height}</size>
+              <size>0.006 ${0.035 if fabs(index * grid_spacing - width / 2.0) &lt; 1e-9 else 0.025} ${height}</size>
             </box>
           </geometry>
         </xacro:if>
         <xacro:unless value="${axis == 'column'}">
-          <pose>${decal_x} 0 ${(index - count) * grid_spacing} 0 0 0</pose>
+          <pose>${decal_x} 0 ${index * grid_spacing - height / 2.0} 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.006 ${width} ${0.035 if index == count else 0.025}</size>
+              <size>0.006 ${width} ${0.035 if fabs(index * grid_spacing - height / 2.0) &lt; 1e-9 else 0.025}</size>
             </box>
           </geometry>
         </xacro:unless>
         <material>
-          <ambient>${'0.10 0.12 0.16' if index == count else '0.18 0.20 0.24'} 1</ambient>
-          <diffuse>${'0.10 0.12 0.16' if index == count else '0.18 0.20 0.24'} 1</diffuse>
+          <ambient>${'0.10 0.12 0.16' if fabs(index * grid_spacing - (width if axis == 'column' else height) / 2.0) &lt; 1e-9 else '0.18 0.20 0.24'} 1</ambient>
+          <diffuse>${'0.10 0.12 0.16' if fabs(index * grid_spacing - (width if axis == 'column' else height) / 2.0) &lt; 1e-9 else '0.18 0.20 0.24'} 1</diffuse>
         </material>
       </visual>
       <xacro:grid_line axis="${axis}" index="${index + 1}" count="${count}"/>
@@ -137,8 +159,10 @@
           </material>
         </visual>
         <!-- High-contrast reference grid on the wall front face. -->
-        <xacro:grid_line axis="column" index="0" count="${columns}"/>
-        <xacro:grid_line axis="row" index="0" count="${rows}"/>
+        <xacro:if value="${show_grid}">
+          <xacro:grid_line axis="column" index="1" count="${columns}"/>
+          <xacro:grid_line axis="row" index="1" count="${rows}"/>
+        </xacro:if>
       </link>
     </model>
 

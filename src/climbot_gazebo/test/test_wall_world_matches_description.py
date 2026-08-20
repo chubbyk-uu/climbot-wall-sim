@@ -57,7 +57,7 @@ def test_world_defaults_match_the_values_the_launch_injects():
         'width': wall['surface']['width_m'],
         'height': wall['surface']['height_m'],
         'mu': simulated['mu'],
-        'grid_spacing': simulated['grid_spacing_m'],
+        'grid_spacing': wall['reference_grid']['spacing_m'],
         'suction_force': simulation['suction']['force_n'],
         'spawn_gap': spawn['surface_gap_m'],
         'spawn_lateral': spawn['lateral_m'],

@@ -10,7 +10,9 @@ simulation:
     centre_xyz: [0.0, 0.0, 4.0]
     thickness_m: 0.10
     mu: 1.1
-    grid_spacing_m: 1.0
+    # The reference grid pitch used to live here. It moved to
+    # climbot_description/config/wall.yaml, because RViz draws the same grid
+    # and cannot read this file.
 
   spawn:
     surface_gap_m: 0.001

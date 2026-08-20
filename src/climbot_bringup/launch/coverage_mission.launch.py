@@ -3,6 +3,7 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
+from climbot_description.wall_frame import reference_grid_spacing
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -22,6 +23,7 @@ def generate_launch_description():
             'use_sim_time': 'true',
             'headless': LaunchConfiguration('headless'),
             'gpu_backend': LaunchConfiguration('gpu_backend'),
+            'wall_grid_spacing': LaunchConfiguration('wall_grid_spacing'),
         }.items(),
     )
     planning = IncludeLaunchDescription(
@@ -35,6 +37,7 @@ def generate_launch_description():
             'input_mode': LaunchConfiguration('input_mode'),
             'region_type': LaunchConfiguration('region_type'),
             'sweep_direction': LaunchConfiguration('sweep_direction'),
+            'wall_grid_spacing': LaunchConfiguration('wall_grid_spacing'),
         }.items(),
     )
     # The executor is what coverage_sim.launch.py leaves out: without it the
@@ -93,6 +96,16 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument('region_type', default_value='rectangle'),
         DeclareLaunchArgument('sweep_direction', default_value='horizontal'),
+        # One word for both views. The wall launch paints the grid on the
+        # wall face, the planner draws the same lines in RViz, and both take
+        # their default from climbot_description/config/wall.yaml. Set it to 0
+        # for a run that photographs the wall; untick the RViz display to hide
+        # the overlay live without restarting anything.
+        DeclareLaunchArgument(
+            'wall_grid_spacing',
+            default_value=repr(reference_grid_spacing()),
+            description='Reference grid pitch in metres; 0 draws none.',
+        ),
         DeclareLaunchArgument(
             'tracking_mode',
             default_value='time',

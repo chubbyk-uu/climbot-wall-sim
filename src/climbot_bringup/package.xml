@@ -17,6 +17,9 @@
 
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <!-- Read directly, for the reference grid pitch both included views
+       have to agree on. -->
+  <exec_depend>climbot_description</exec_depend>
   <exec_depend>climbot_gazebo</exec_depend>
   <exec_depend>climbot_coverage</exec_depend>
   <exec_depend>climbot_control</exec_depend>

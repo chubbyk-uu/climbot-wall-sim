@@ -1,6 +1,7 @@
-"""Check that the shipped RViz config only names panels that exist."""
+"""Check that the shipped RViz config names panels and topics that exist."""
 
 import os
+from pathlib import Path
 import xml.etree.ElementTree as ElementTree
 
 from ament_index_python.packages import get_package_share_directory
@@ -57,3 +58,22 @@ def test_saved_window_state_covers_every_panel():
         assert encoded in state, (
             'panel {!r} is not in the saved window state; regenerate it with '
             'climbot_coverage/scripts/make_rviz_window_state.py'.format(name))
+
+
+def test_the_wall_grid_display_subscribes_to_what_the_planner_publishes():
+    """The grid overlay is the operator's live switch; a typo makes it empty."""
+    # An RViz display pointed at a topic nobody publishes shows nothing and
+    # says nothing: the display sits there unticked-looking with the box
+    # ticked. Renaming the topic on either side is the way that happens.
+    displays = _config()['Visualization Manager']['Displays']
+    grid = [entry for entry in displays
+            if entry.get('Name') == 'Wall Reference Grid']
+    assert grid, 'coverage.rviz no longer carries the wall reference grid.'
+    topic = grid[0]['Topic']['Value']
+    # Transient local, because the grid is published once at startup and RViz
+    # usually connects after that.
+    assert grid[0]['Topic']['Durability Policy'] == 'Transient Local'
+    source = (Path(__file__).resolve().parents[1] / 'src'
+              / 'coverage_planner_node.cpp').read_text()
+    assert '"{}"'.format(topic) in source, (
+        '{} is displayed but the planner advertises no such topic.'.format(topic))

@@ -5,6 +5,7 @@ import shutil
 import tempfile
 
 from ament_index_python.packages import get_package_share_directory
+from climbot_description.wall_frame import reference_grid_spacing
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -39,7 +40,7 @@ def running_on_wsl():
         return False
 
 
-def render_world(gazebo_share, description_share):
+def render_world(gazebo_share, description_share, grid_spacing):
     """Render the Gazebo world from shared and simulation-only settings."""
     with open(os.path.join(description_share, 'config', 'wall.yaml')) as handle:
         wall = yaml.safe_load(handle)['wall']
@@ -58,7 +59,7 @@ def render_world(gazebo_share, description_share):
         'width': repr(float(surface['width_m'])),
         'height': repr(float(surface['height_m'])),
         'mu': repr(float(simulated_wall['mu'])),
-        'grid_spacing': repr(float(simulated_wall['grid_spacing_m'])),
+        'grid_spacing': repr(float(grid_spacing)),
         'suction_force': repr(float(simulation['suction']['force_n'])),
         'spawn_gap': repr(float(spawn['surface_gap_m'])),
         'spawn_lateral': repr(float(spawn['lateral_m'])),
@@ -167,7 +168,9 @@ def launch_setup(context, *args, **kwargs):
     control_share = get_package_share_directory('climbot_control')
     description_share = get_package_share_directory('climbot_description')
     ros_gz_share = get_package_share_directory('ros_gz_sim')
-    world = render_world(package_share, description_share)
+    world = render_world(
+        package_share, description_share,
+        LaunchConfiguration('wall_grid_spacing').perform(context))
     model_path, robot_description = render_robot(
         package_share, description_share)
     wall_config = os.path.join(description_share, 'config', 'wall.yaml')
@@ -425,6 +428,13 @@ def generate_launch_description():
             'imu_seed',
             default_value='17',
             description='Seed for the IMU attitude noise.',
+        ),
+        DeclareLaunchArgument(
+            'wall_grid_spacing',
+            default_value=repr(reference_grid_spacing()),
+            description='Reference grid pitch on the wall face in metres; 0 '
+                        'removes the grid. Photography runs remove it: it '
+                        'repeats, and it is not on the wall plane.',
         ),
         OpaqueFunction(function=launch_setup),
     ])
