@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "evaluation": "rendered_resolution_comparison",
+  "camera": {
+    "renderer": "Gazebo Harmonic gz-sim 8 / Ogre2 / D3D12",
+    "width_px": 1920,
+    "height_px": 1080,
+    "field_width_m_at_nominal_distance": 0.5,
+    "nominal_distance_m": 0.5,
+    "perturbed_distance_m": 0.5025,
+    "yaw_perturbation_deg": 0.6
+  },
+  "pair_shift_m": [
+    0.06,
+    0.025
+  ],
+  "grid": [
+    3,
+    2
+  ],
+  "raw_artifacts": "/tmp/climbot_wall_resolution_20260821/final_rendered",
+  "recorded_utc": "2026-08-21T09:02:43Z",
+  "opencv_version": "4.6.0",
+  "provenance": {
+    "commit": "17f276a10a3a821770c6daa7df61599278d6a9e8",
+    "branch": "main",
+    "dirty": false
+  },
+  "candidates": [
+    {
+      "label": "0.26",
+      "manifest": "/tmp/climbot_wall_resolution_20260821/0.26/wall_texture.json",
+      "manifest_sha256": "a8d313e91269e52745756cf2932434036d304eff999a9a57c0f61a813a829443",
+      "scale_mm_per_px": 0.26,
+      "region_m": [
+        3.0004000000000004,
+        2.00096
+      ],
+      "dimensions_px": [
+        11540,
+        7696
+      ],
+      "source_asset": "ambientCG Concrete044D 8K-JPG (CC0)",
+      "quilt": {
+        "patch_px": 2954,
+        "overlap_px": 738,
+        "candidates": 96,
+        "tolerance": 0.1,
+        "seam_feather_px": 185.0,
+        "seed": 20260820,
+        "placements": 20
+      },
+      "derived_from": null,
+      "pair_metrics": [
+        {
+          "ratio_matches": 4359,
+          "ransac_inliers": 3985,
+          "inlier_rate": 0.9142005047029135,
+          "descriptor_margin_median": 0.2222222222222222,
+          "pair": 0,
+          "a_keypoints": 9017,
+          "b_keypoints": 8573
+        },
+        {
+          "ratio_matches": 2487,
+          "ransac_inliers": 1995,
+          "inlier_rate": 0.8021712907117008,
+          "descriptor_margin_median": 0.11864406779661019,
+          "pair": 1,
+          "a_keypoints": 6058,
+          "b_keypoints": 6542
+        },
+        {
+          "ratio_matches": 4703,
+          "ransac_inliers": 3931,
+          "inlier_rate": 0.8358494577928981,
+          "descriptor_margin_median": 0.2272727272727273,
+          "pair": 2,
+          "a_keypoints": 9687,
+          "b_keypoints": 9913
+        },
+        {
+          "ratio_matches": 4615,
+          "ransac_inliers": 4483,
+          "inlier_rate": 0.971397616468039,
+          "descriptor_margin_median": 0.18965517241379315,
+          "pair": 3,
+          "a_keypoints": 9965,
+          "b_keypoints": 9827
+        },
+        {
+          "ratio_matches": 3650,
+          "ransac_inliers": 3547,
+          "inlier_rate": 0.9717808219178082,
+          "descriptor_margin_median": 0.2222222222222222,
+          "pair": 4,
+          "a_keypoints": 7502,
+          "b_keypoints": 7059
+        },
+        {
+          "ratio_matches": 5722,
+          "ransac_inliers": 5114,
+          "inlier_rate": 0.893743446347431,
+          "descriptor_margin_median": 0.3833333333333333,
+          "pair": 5,
+          "a_keypoints": 10000,
+          "b_keypoints": 10000
+        }
+      ],
+      "ransac_inliers": {
+        "count": 6,
+        "minimum": 1995.0,
+        "p10": 2771.0,
+        "median": 3958.0,
+        "p90": 4798.5,
+        "maximum": 5114.0
+      },
+      "inlier_rate": {
+        "count": 6,
+        "minimum": 0.8021712907117008,
+        "p10": 0.8190103742522994,
+        "median": 0.9039719755251723,
+        "p90": 0.9715892191929236,
+        "maximum": 0.9717808219178082
+      },
+      "descriptor_margin": {
+        "count": 6,
+        "minimum": 0.11864406779661019,
+        "p10": 0.15414962010520167,
+        "median": 0.2222222222222222,
+        "p90": 0.3053030303030303,
+        "maximum": 0.3833333333333333
+      }
+    },
+    {
+      "label": "0.50",
+      "manifest": "/tmp/climbot_wall_resolution_20260821/controlled_0.50/wall_texture.json",
+      "manifest_sha256": "d9a4b4f21e146083551d338fd5aaa33f8ca122379bd7102133ce6dac2179dfb5",
+      "scale_mm_per_px": 0.5,
+      "region_m": [
+        3.0020000000000002,
+        2.0020000000000002
+      ],
+      "dimensions_px": [
+        6004,
+        4004
+      ],
+      "source_asset": "ambientCG Concrete044D 8K-JPG (CC0)",
+      "quilt": {
+        "patch_px": 2954,
+        "overlap_px": 738,
+        "candidates": 96,
+        "tolerance": 0.1,
+        "seam_feather_px": 185.0,
+        "seed": 20260820,
+        "placements": 20
+      },
+      "derived_from": {
+        "purpose": "controlled rendered-resolution comparison",
+        "canonical_manifest_sha256": "a8d313e91269e52745756cf2932434036d304eff999a9a57c0f61a813a829443",
+        "canonical_scale_m_per_px": 0.00026000000000000003,
+        "resampling": "Pillow LANCZOS from decoded BC1 mip zero"
+      },
+      "pair_metrics": [
+        {
+          "ratio_matches": 3798,
+          "ransac_inliers": 3710,
+          "inlier_rate": 0.9768299104791995,
+          "descriptor_margin_median": 0.21644144144144145,
+          "pair": 0,
+          "a_keypoints": 7900,
+          "b_keypoints": 6830
+        },
+        {
+          "ratio_matches": 1089,
+          "ransac_inliers": 1049,
+          "inlier_rate": 0.9632690541781451,
+          "descriptor_margin_median": 0.203125,
+          "pair": 1,
+          "a_keypoints": 2327,
+          "b_keypoints": 2703
+        },
+        {
+          "ratio_matches": 4741,
+          "ransac_inliers": 3905,
+          "inlier_rate": 0.8236658932714617,
+          "descriptor_margin_median": 0.2586206896551724,
+          "pair": 2,
+          "a_keypoints": 9435,
+          "b_keypoints": 9812
+        },
+        {
+          "ratio_matches": 4575,
+          "ransac_inliers": 4363,
+          "inlier_rate": 0.9536612021857923,
+          "descriptor_margin_median": 0.18441295546558706,
+          "pair": 3,
+          "a_keypoints": 9880,
+          "b_keypoints": 9536
+        },
+        {
+          "ratio_matches": 1587,
+          "ransac_inliers": 1532,
+          "inlier_rate": 0.9653434152488973,
+          "descriptor_margin_median": 0.18181818181818177,
+          "pair": 4,
+          "a_keypoints": 3441,
+          "b_keypoints": 3062
+        },
+        {
+          "ratio_matches": 5807,
+          "ransac_inliers": 5444,
+          "inlier_rate": 0.9374892371276046,
+          "descriptor_margin_median": 0.4,
+          "pair": 5,
+          "a_keypoints": 10000,
+          "b_keypoints": 10000
+        }
+      ],
+      "ransac_inliers": {
+        "count": 6,
+        "minimum": 1049.0,
+        "p10": 1290.5,
+        "median": 3807.5,
+        "p90": 4903.5,
+        "maximum": 5444.0
+      },
+      "inlier_rate": {
+        "count": 6,
+        "minimum": 0.8236658932714617,
+        "p10": 0.8805775651995331,
+        "median": 0.9584651281819687,
+        "p90": 0.9710866628640484,
+        "maximum": 0.9768299104791995
+      },
+      "descriptor_margin": {
+        "count": 6,
+        "minimum": 0.18181818181818177,
+        "p10": 0.1831155686418844,
+        "median": 0.20978322072072073,
+        "p90": 0.3293103448275862,
+        "maximum": 0.4
+      }
+    },
+    {
+      "label": "0.75",
+      "manifest": "/tmp/climbot_wall_resolution_20260821/controlled_0.75/wall_texture.json",
+      "manifest_sha256": "a557222bc652a74d31fa0236492a761efed7cbada35f4bb8288ae569837dbe45",
+      "scale_mm_per_px": 0.75,
+      "region_m": [
+        3.003,
+        2.001
+      ],
+      "dimensions_px": [
+        4004,
+        2668
+      ],
+      "source_asset": "ambientCG Concrete044D 8K-JPG (CC0)",
+      "quilt": {
+        "patch_px": 2954,
+        "overlap_px": 738,
+        "candidates": 96,
+        "tolerance": 0.1,
+        "seam_feather_px": 185.0,
+        "seed": 20260820,
+        "placements": 20
+      },
+      "derived_from": {
+        "purpose": "controlled rendered-resolution comparison",
+        "canonical_manifest_sha256": "a8d313e91269e52745756cf2932434036d304eff999a9a57c0f61a813a829443",
+        "canonical_scale_m_per_px": 0.00026000000000000003,
+        "resampling": "Pillow LANCZOS from decoded BC1 mip zero"
+      },
+      "pair_metrics": [
+        {
+          "ratio_matches": 2095,
+          "ransac_inliers": 1615,
+          "inlier_rate": 0.7708830548926014,
+          "descriptor_margin_median": 0.24025487256371814,
+          "pair": 0,
+          "a_keypoints": 4250,
+          "b_keypoints": 3482
+        },
+        {
+          "ratio_matches": 442,
+          "ransac_inliers": 385,
+          "inlier_rate": 0.8710407239819005,
+          "descriptor_margin_median": 0.23076923076923073,
+          "pair": 1,
+          "a_keypoints": 905,
+          "b_keypoints": 1092
+        },
+        {
+          "ratio_matches": 3347,
+          "ransac_inliers": 2970,
+          "inlier_rate": 0.8873618165521362,
+          "descriptor_margin_median": 0.37142857142857144,
+          "pair": 2,
+          "a_keypoints": 5911,
+          "b_keypoints": 7527
+        },
+        {
+          "ratio_matches": 3464,
+          "ransac_inliers": 2649,
+          "inlier_rate": 0.7647228637413395,
+          "descriptor_margin_median": 0.15000000000000002,
+          "pair": 3,
+          "a_keypoints": 8012,
+          "b_keypoints": 6169
+        },
+        {
+          "ratio_matches": 595,
+          "ransac_inliers": 516,
+          "inlier_rate": 0.8672268907563025,
+          "descriptor_margin_median": 0.16666666666666663,
+          "pair": 4,
+          "a_keypoints": 1363,
+          "b_keypoints": 1131
+        },
+        {
+          "ratio_matches": 5664,
+          "ransac_inliers": 4782,
+          "inlier_rate": 0.8442796610169492,
+          "descriptor_margin_median": 0.375,
+          "pair": 5,
+          "a_keypoints": 10000,
+          "b_keypoints": 10000
+        }
+      ],
+      "ransac_inliers": {
+        "count": 6,
+        "minimum": 385.0,
+        "p10": 450.5,
+        "median": 2132.0,
+        "p90": 3876.0,
+        "maximum": 4782.0
+      },
+      "inlier_rate": {
+        "count": 6,
+        "minimum": 0.7647228637413395,
+        "p10": 0.7678029593169704,
+        "median": 0.8557532758866259,
+        "p90": 0.8792012702670183,
+        "maximum": 0.8873618165521362
+      },
+      "descriptor_margin": {
+        "count": 6,
+        "minimum": 0.15000000000000002,
+        "p10": 0.15833333333333333,
+        "median": 0.23551205166647443,
+        "p90": 0.3732142857142857,
+        "maximum": 0.375
+      }
+    }
+  ],
+  "winner": "0.26",
+  "expected_best": null,
+  "passed": true
+}
