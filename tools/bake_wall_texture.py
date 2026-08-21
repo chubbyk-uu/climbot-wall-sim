@@ -26,8 +26,10 @@ wrong.
 
 So the sample is quilted rather than tiled (Efros and Freeman 2001): patches
 are drawn from anywhere in the source, chosen to agree with what they overlap,
-and joined along the minimum-error path through that overlap. Cuts are hard,
-never blended, because a blend invents texture that was never photographed.
+and joined along the minimum-error path through that overlap. A narrow feather
+is applied only around the selected cut and only inside pixels photographed by
+both candidate patches. It removes the last visible brightness edge without
+turning the whole overlap into a blurred average.
 
 Only the colour map is baked. A normal map at this size would cost as much
 video memory as the colour map and carries nothing a stitch can match, and the
@@ -53,7 +55,7 @@ import sys
 import time
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bc1 import write_dds_bc1  # noqa: E402  (needs the path set above)
@@ -70,6 +72,11 @@ RENDERING_PROCESSES = 2
 #: four. Padding at write time would work but would shift the last block's
 #: texels off the metres they represent, so the bake is sized to fit instead.
 BLOCK_ALIGNMENT = 4
+
+#: A gutter also has to preserve the BC1 4x4 block phase after repeated 2x
+#: mip downsampling. 128 = 4 * 2**5, so the base map through mip level five
+#: encodes the shared pixels in the same BC1 blocks on both visuals.
+DEFAULT_RENDER_GUTTER_PX = BLOCK_ALIGNMENT * 2 ** 5
 
 
 def sha256(path):
@@ -176,6 +183,16 @@ def choose_patch(source_grey, canvas_grey, has_left, has_top, patch, overlap,
     return int(ys[pick]), int(xs[pick])
 
 
+def overlap_mask(patch, overlap, has_left, has_top):
+    """Return pixels already owned by the neighbours of a new patch."""
+    existing = np.zeros((patch, patch), dtype=bool)
+    if has_left:
+        existing[:, :overlap] = True
+    if has_top:
+        existing[:overlap, :] = True
+    return existing
+
+
 def patch_mask(source_grey, canvas_grey, sy, sx, patch, overlap,
                has_left, has_top):
     """Build the hard mask that says which pixels the new patch owns."""
@@ -194,8 +211,17 @@ def patch_mask(source_grey, canvas_grey, sy, sx, patch, overlap,
     return mask
 
 
+def feather_mask(mask, radius):
+    """Soften a minimum-error cut inside the overlap without moving it."""
+    if radius <= 0:
+        return mask.astype(np.float32)
+    image = Image.fromarray(mask.astype(np.uint8) * 255)
+    softened = image.filter(ImageFilter.GaussianBlur(radius=radius))
+    return np.asarray(softened, dtype=np.float32) / 255.0
+
+
 def quilt_layout(source_grey, height, width, patch, overlap, seed,
-                 candidates, tolerance, log):
+                 candidates, tolerance, feather, log):
     """Lay the whole output out once, on a grey copy, and record the layout."""
     rng = np.random.default_rng(seed)
     step = patch - overlap
@@ -213,16 +239,21 @@ def quilt_layout(source_grey, height, width, patch, overlap, seed,
             sy, sx = choose_patch(
                 source_grey, window, has_left, has_top, patch, overlap,
                 rng, candidates, tolerance)
+            block = source_grey[sy:sy + patch, sx:sx + patch]
             mask = patch_mask(
                 source_grey, window, sy, sx, patch, overlap, has_left, has_top)
-            window[mask] = source_grey[sy:sy + patch, sx:sx + patch][mask]
+            alpha = feather_mask(mask, feather)
+            existing = overlap_mask(patch, overlap, has_left, has_top)
+            alpha[~existing] = 1.0
+            window[:] = window * (1.0 - alpha) + block * alpha
             placements.append((top, left, sy, sx, np.packbits(mask)))
         log('  quilted row %d/%d  (%.0f s)'
             % (row + 1, rows, time.monotonic() - started))
     return placements, canvas.shape, patch
 
 
-def apply_layout(source, placements, canvas_shape, patch, height, width):
+def apply_layout(source, placements, canvas_shape, patch, overlap, feather,
+                 height, width):
     """Replay the layout onto the colour map."""
     canvas = np.zeros(canvas_shape + (3,), dtype=np.uint8)
     for top, left, sy, sx, packed in placements:
@@ -230,12 +261,28 @@ def apply_layout(source, placements, canvas_shape, patch, height, width):
         mask = mask.astype(bool)
         block = source[sy:sy + patch, sx:sx + patch]
         window = canvas[top:top + patch, left:left + patch]
-        window[mask] = block[mask]
+        has_left, has_top = left > 0, top > 0
+        alpha = feather_mask(mask, feather)
+        existing = overlap_mask(patch, overlap, has_left, has_top)
+        alpha[~existing] = 1.0
+        alpha = alpha[:, :, None]
+        blended = (window.astype(np.float32) * (1.0 - alpha) +
+                   block.astype(np.float32) * alpha)
+        window[:] = blended.round().clip(0, 255).astype(np.uint8)
     return canvas[:height, :width]
 
 
-def write_blocks(image, directory, name, block, log):
-    """Cut the baked map into GPU-sized blocks and write them as BC1 DDS."""
+def write_blocks(image, directory, name, block, gutter, log):
+    """Cut the baked map into BC1 blocks with shared-neighbour gutters.
+
+    Each visual still owns one exact, non-overlapping ``block`` of the wall,
+    but the DDS stored for it also carries ``gutter`` pixels copied from its
+    real neighbours.  The visual is enlarged to that sampled extent at load
+    time.  Consequently bilinear and mip sampling on either side of a visual
+    boundary sees the same wall pixels instead of clamping to two unrelated
+    texture edges, which is what makes a mathematically gap-free grid show a
+    hairline seam in the renderer.
+    """
     height, width = image.shape[:2]
     rows = math.ceil(height / block)
     columns = math.ceil(width / block)
@@ -244,20 +291,36 @@ def write_blocks(image, directory, name, block, log):
         for column in range(columns):
             y0, x0 = row * block, column * block
             y1, x1 = min(y0 + block, height), min(x0 + block, width)
+            sample_y0, sample_x0 = max(0, y0 - gutter), max(0, x0 - gutter)
+            sample_y1 = min(height, y1 + gutter)
+            sample_x1 = min(width, x1 + gutter)
             filename = '%s_r%02d_c%02d.dds' % (name, row, column)
             stored = write_dds_bc1(
                 os.path.join(directory, filename),
-                np.ascontiguousarray(image[y0:y1, x0:x1]))
+                np.ascontiguousarray(
+                    image[sample_y0:sample_y1, sample_x0:sample_x1]))
             written.append({
                 'file': filename, 'row': row, 'column': column,
                 'x_px': x0, 'y_px': y0,
                 'width_px': x1 - x0, 'height_px': y1 - y0,
+                'sample_x_px': sample_x0, 'sample_y_px': sample_y0,
+                'sample_width_px': sample_x1 - sample_x0,
+                'sample_height_px': sample_y1 - sample_y0,
                 'bytes': stored})
         log('  wrote block row %d/%d' % (row + 1, rows))
     return rows, columns, written
 
 
-def video_memory_gb(width, height):
+def stored_texels(width, height, block, gutter):
+    """Count texels uploaded after neighbouring gutters are duplicated."""
+    columns = math.ceil(width / block)
+    rows = math.ceil(height / block)
+    stored_width = width + 2 * gutter * max(0, columns - 1)
+    stored_height = height + 2 * gutter * max(0, rows - 1)
+    return stored_width * stored_height
+
+
+def video_memory_gb(width, height, block, gutter):
     """Estimate what the finished bake will cost on the GPU.
 
     This number is the whole reason the tool refuses some bakes: exhausting
@@ -265,7 +328,8 @@ def video_memory_gb(width, height):
     with it. That is not hypothetical - an earlier RGBA attempt at this size
     asked for 5.31 GB and did exactly that.
     """
-    return (width * height * BC1_BYTES_PER_TEXEL * MIP_OVERHEAD
+    return (stored_texels(width, height, block, gutter)
+            * BC1_BYTES_PER_TEXEL * MIP_OVERHEAD
             * RENDERING_PROCESSES / 1e9)
 
 
@@ -306,8 +370,17 @@ def main():
                              'the optimum for stitching, with 11x the RANSAC '
                              'inliers of camera-native and 1.6x those of 0.75')
     parser.add_argument('--block-px', type=int, default=2048)
-    parser.add_argument('--patch-px', type=int, default=512)
-    parser.add_argument('--overlap-fraction', type=float, default=1.0 / 6.0)
+    parser.add_argument('--gutter-px', type=int,
+                        default=DEFAULT_RENDER_GUTTER_PX,
+                        help='real neighbouring pixels stored around every '
+                             'render block to keep filtering across visual '
+                             'boundaries continuous')
+    parser.add_argument('--patch-px', type=int, default=1536,
+                        help='larger patches reduce visible quilting changes')
+    parser.add_argument('--overlap-fraction', type=float, default=0.25)
+    parser.add_argument('--seam-feather-px', type=float, default=96.0,
+                        help='Gaussian transition radius around the '
+                             'minimum-error patch cut')
     parser.add_argument('--candidates', type=int, default=96)
     parser.add_argument('--tolerance', type=float, default=0.10)
     parser.add_argument('--seed', type=int, default=20260820)
@@ -324,7 +397,11 @@ def main():
 
     if arguments.block_px % BLOCK_ALIGNMENT:
         parser.error('--block-px must be a multiple of %d' % BLOCK_ALIGNMENT)
-
+    if arguments.gutter_px < 0 or arguments.gutter_px % BLOCK_ALIGNMENT:
+        parser.error('--gutter-px must be a non-negative multiple of %d'
+                     % BLOCK_ALIGNMENT)
+    if arguments.gutter_px * 2 >= arguments.block_px:
+        parser.error('--gutter-px must be smaller than half --block-px')
     scale = arguments.scale_mm_per_px / 1000.0
     # Sized up to whole BC1 blocks rather than padded at write time, so every
     # stored texel still stands for the metre it was baked at. The region grows
@@ -334,6 +411,11 @@ def main():
     region = (width * scale, height * scale)
     patch = arguments.patch_px
     overlap = max(4, int(round(patch * arguments.overlap_fraction)))
+    if (not math.isfinite(arguments.seam_feather_px) or
+            arguments.seam_feather_px < 0 or
+            arguments.seam_feather_px > overlap / 2):
+        parser.error(
+            '--seam-feather-px must be finite and within [0, overlap/2]')
 
     matches = [entry for entry in sorted(os.listdir(arguments.source_dir))
                if entry.endswith('_Color.jpg')]
@@ -348,7 +430,8 @@ def main():
     log('source %dpx over %.2f m (declared) -> %dpx at %.4f mm/px'
         % (native, arguments.source_size_m, side, arguments.scale_mm_per_px))
 
-    video = video_memory_gb(width, height)
+    video = video_memory_gb(
+        width, height, arguments.block_px, arguments.gutter_px)
     host = host_memory_gb(width, height, side)
     log('estimated video memory %.2f GB (server and GUI together)' % video)
     log('estimated peak host memory %.2f GB' % host)
@@ -374,14 +457,18 @@ def main():
     log('laying out patches of %d px with %d px overlap' % (patch, overlap))
     placements, canvas_shape, patch = quilt_layout(
         grey, height, width, patch, overlap, arguments.seed,
-        arguments.candidates, arguments.tolerance, log)
+        arguments.candidates, arguments.tolerance,
+        arguments.seam_feather_px, log)
     del grey
 
     os.makedirs(arguments.output_dir, exist_ok=True)
-    baked = apply_layout(source, placements, canvas_shape, patch, height, width)
+    baked = apply_layout(
+        source, placements, canvas_shape, patch, overlap,
+        arguments.seam_feather_px, height, width)
     del source
     rows, columns, files = write_blocks(
-        baked, arguments.output_dir, 'albedo', arguments.block_px, log)
+        baked, arguments.output_dir, 'albedo', arguments.block_px,
+        arguments.gutter_px, log)
     del baked
     log('wrote albedo: %d x %d blocks, %.0f MiB'
         % (rows, columns, sum(entry['bytes'] for entry in files) / (1 << 20)))
@@ -421,12 +508,15 @@ def main():
             'region_origin_m[1] + region_m[1] - y_px * scale_m_per_px',
         'width_px': width, 'height_px': height,
         'block_px': arguments.block_px,
+        'gutter_px': arguments.gutter_px,
         'format': 'BC1 DDS with baked mip chain',
         'estimated_video_memory_gb': round(video, 3),
         'quilt': {
             'patch_px': patch, 'overlap_px': overlap,
             'candidates': arguments.candidates,
-            'tolerance': arguments.tolerance, 'seed': arguments.seed,
+            'tolerance': arguments.tolerance,
+            'seam_feather_px': arguments.seam_feather_px,
+            'seed': arguments.seed,
             'placements': len(placements)},
         'maps': {
             'albedo': {

@@ -136,6 +136,7 @@ def load_manifest(path, wall_size=None):
                     'block %s of map %s runs outside the %d x %d px region'
                     % (block['file'], name, width_px, height_px))
             rectangles.append((left, top, right, bottom, block['file']))
+            _validate_sample_extent(manifest, block, name)
         _require_exact_tiling(name, rectangles, width_px, height_px)
     return manifest, directory
 
@@ -188,6 +189,55 @@ def _require_exact_tiling(name, rectangles, width_px, height_px):
             (name, width_px, height_px))
 
 
+def _validate_sample_extent(manifest, block, name):
+    """Validate the optional neighbouring pixels stored around one block."""
+    sample_keys = ('sample_x_px', 'sample_y_px',
+                   'sample_width_px', 'sample_height_px')
+    present = [key in block for key in sample_keys]
+    if any(present) and not all(present):
+        raise KeyError('a block of map %s has an incomplete sample extent' % name)
+    if not any(present):
+        if manifest.get('gutter_px', 0) != 0:
+            raise KeyError(
+                'a block of map %s has no sampled extent for gutter_px' % name)
+        return
+    for key in ('sample_x_px', 'sample_y_px'):
+        _nonnegative_integer(block, key, 'a block of map %s' % name)
+    for key in ('sample_width_px', 'sample_height_px'):
+        _positive_integer(block, key, 'a block of map %s' % name)
+
+    sample_left, sample_top = block['sample_x_px'], block['sample_y_px']
+    sample_right = sample_left + block['sample_width_px']
+    sample_bottom = sample_top + block['sample_height_px']
+    nominal_left, nominal_top = block['x_px'], block['y_px']
+    nominal_right = nominal_left + block['width_px']
+    nominal_bottom = nominal_top + block['height_px']
+    if (sample_left > nominal_left or sample_top > nominal_top or
+            sample_right < nominal_right or sample_bottom < nominal_bottom):
+        raise ValueError(
+            'the sampled pixels of block %s in map %s do not contain its '
+            'nominal wall area' % (block['file'], name))
+    if (sample_right > manifest['width_px'] or
+            sample_bottom > manifest['height_px']):
+        raise ValueError(
+            'the sampled pixels of block %s in map %s run outside the bake' %
+            (block['file'], name))
+
+    gutter = manifest.get('gutter_px')
+    if gutter is not None:
+        if not isinstance(gutter, int) or isinstance(gutter, bool) or gutter < 0:
+            raise ValueError('gutter_px must be a non-negative integer')
+        expected = (
+            max(0, nominal_left - gutter),
+            max(0, nominal_top - gutter),
+            min(manifest['width_px'], nominal_right + gutter),
+            min(manifest['height_px'], nominal_bottom + gutter))
+        if ((sample_left, sample_top, sample_right, sample_bottom) != expected):
+            raise ValueError(
+                'the sampled pixels of block %s in map %s do not match '
+                'gutter_px' % (block['file'], name))
+
+
 def block_extent(manifest, block):
     """Return a block's centre and size in the wall work frame, in metres."""
     scale = manifest['scale_m_per_px']
@@ -201,6 +251,23 @@ def block_extent(manifest, block):
     centre_y = (origin_y + region_height
                 - (block['y_px'] + block['height_px'] / 2.0) * scale)
     return centre_x, centre_y, width, height
+
+
+def sampled_block_extent(manifest, block):
+    """
+    Return the wall extent represented by a block's stored texture.
+
+    New bakes include real neighbouring pixels around each nominal block so
+    texture filtering does not clamp at visual boundaries.  Old manifests
+    remain loadable and simply use their nominal, non-overlapping extent.
+    """
+    sampled = dict(block)
+    if 'sample_x_px' in block:
+        sampled.update(
+            x_px=block['sample_x_px'], y_px=block['sample_y_px'],
+            width_px=block['sample_width_px'],
+            height_px=block['sample_height_px'])
+    return block_extent(manifest, sampled)
 
 
 def texture_visuals(manifest, directory, thickness, wall_origin, link_centre,
@@ -221,10 +288,14 @@ def texture_visuals(manifest, directory, thickness, wall_origin, link_centre,
     depth = thickness / 2.0 + offset_m
     elements = []
     for block in manifest['maps']['albedo']['blocks']:
-        work_x, work_y, width, height = block_extent(manifest, block)
+        work_x, work_y, width, height = sampled_block_extent(manifest, block)
         elements.append(
             '        <visual name="wall_texture_r%02d_c%02d">\n'
             '          <pose>%.6f %.6f %.6f 0 0 0</pose>\n'
+            # The collision wall underneath already casts the physical wall's
+            # shadow. Overlapping gutter visuals must not shadow one another
+            # at the same nominal surface or their borders become dark lines.
+            '          <cast_shadows>false</cast_shadows>\n'
             '          <geometry>\n'
             '            <box>\n'
             '              <size>0.0005 %.6f %.6f</size>\n'

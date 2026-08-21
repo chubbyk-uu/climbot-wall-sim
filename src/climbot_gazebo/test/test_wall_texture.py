@@ -16,19 +16,24 @@
 
 import json
 import os
+import sys
 import tempfile
 from xml.dom import minidom
 
-from climbot_gazebo.wall_texture import (
-    block_extent, load_manifest, texture_visuals)
-
-import pytest
+TOOLS = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..',
+                                     'tools'))
+sys.path.insert(0, TOOLS)
+import bake_wall_texture  # noqa: E402
+from climbot_gazebo.wall_texture import (  # noqa: E402
+    block_extent, load_manifest, sampled_block_extent, texture_visuals)
+import numpy as np  # noqa: E402
+import pytest  # noqa: E402
 
 SCALE = 0.001
 BLOCK = 100
 
 
-def write_bake(directory, columns=3, rows=2, maps=('albedo',)):
+def write_bake(directory, columns=3, rows=2, maps=('albedo',), gutter=0):
     """Write a small manifest and the block files it promises."""
     width, height = columns * BLOCK, rows * BLOCK
     entries = {}
@@ -38,10 +43,20 @@ def write_bake(directory, columns=3, rows=2, maps=('albedo',)):
             for column in range(columns):
                 filename = '%s_r%02d_c%02d.dds' % (name, row, column)
                 open(os.path.join(directory, filename), 'wb').close()
-                blocks.append({
+                entry = {
                     'file': filename, 'row': row, 'column': column,
                     'x_px': column * BLOCK, 'y_px': row * BLOCK,
-                    'width_px': BLOCK, 'height_px': BLOCK})
+                    'width_px': BLOCK, 'height_px': BLOCK}
+                if gutter:
+                    left = max(0, column * BLOCK - gutter)
+                    top = max(0, row * BLOCK - gutter)
+                    right = min(width, (column + 1) * BLOCK + gutter)
+                    bottom = min(height, (row + 1) * BLOCK + gutter)
+                    entry.update(
+                        sample_x_px=left, sample_y_px=top,
+                        sample_width_px=right - left,
+                        sample_height_px=bottom - top)
+                blocks.append(entry)
         entries[name] = {'blocks': blocks}
     manifest = {
         'scale_m_per_px': SCALE,
@@ -50,6 +65,8 @@ def write_bake(directory, columns=3, rows=2, maps=('albedo',)):
         'width_px': width, 'height_px': height,
         'maps': entries,
     }
+    if gutter:
+        manifest['gutter_px'] = gutter
     path = os.path.join(directory, 'wall_texture.json')
     with open(path, 'w', encoding='utf-8') as handle:
         json.dump(manifest, handle)
@@ -75,6 +92,58 @@ def test_blocks_tile_the_region_without_gap_or_overlap():
         total = sum((entry[2] - entry[0]) * (entry[3] - entry[1])
                     for entry in covered)
         assert total == pytest.approx(width * height)
+
+
+def test_sampled_block_extents_overlap_with_identical_wall_coordinates():
+    """A gutter enlarges visuals without changing nominal wall ownership."""
+    with tempfile.TemporaryDirectory() as directory:
+        manifest, _ = load_manifest(write_bake(directory, gutter=20))
+        blocks = {(entry['row'], entry['column']): entry
+                  for entry in manifest['maps']['albedo']['blocks']}
+        left = sampled_block_extent(manifest, blocks[(0, 0)])
+        right = sampled_block_extent(manifest, blocks[(0, 1)])
+        left_edges = (left[0] - left[2] / 2.0, left[0] + left[2] / 2.0)
+        right_edges = (right[0] - right[2] / 2.0,
+                       right[0] + right[2] / 2.0)
+        assert left_edges == pytest.approx((2.0, 2.12))
+        assert right_edges == pytest.approx((2.08, 2.22))
+        assert left_edges[1] - right_edges[0] == pytest.approx(0.04)
+
+
+def test_bake_copies_real_neighbours_into_each_render_block(monkeypatch):
+    """Both sides of a visual boundary must store the same source pixels."""
+    image = np.arange(8 * 12 * 3, dtype=np.uint8).reshape(8, 12, 3)
+    encoded = {}
+
+    def remember(path, rgb):
+        encoded[os.path.basename(path)] = rgb.copy()
+        return rgb.size
+
+    monkeypatch.setattr(bake_wall_texture, 'write_dds_bc1', remember)
+    with tempfile.TemporaryDirectory() as directory:
+        _, _, blocks = bake_wall_texture.write_blocks(
+            image, directory, 'albedo', block=8, gutter=4,
+            log=lambda _: None)
+
+    assert blocks[0]['sample_x_px'] == 0
+    assert blocks[0]['sample_width_px'] == 12
+    assert blocks[1]['sample_x_px'] == 4
+    assert blocks[1]['sample_width_px'] == 8
+    assert np.array_equal(encoded['albedo_r00_c00.dds'][:, 4:12],
+                          encoded['albedo_r00_c01.dds'])
+    assert bake_wall_texture.stored_texels(12, 8, 8, 4) == 160
+    assert (bake_wall_texture.DEFAULT_RENDER_GUTTER_PX %
+            (bake_wall_texture.BLOCK_ALIGNMENT * 2 ** 5)) == 0
+
+
+def test_minimum_cut_feather_has_no_binary_render_edge():
+    """The selected cut stays put but its rendered transition becomes soft."""
+    mask = np.zeros((32, 32), dtype=bool)
+    mask[:, 16:] = True
+    alpha = bake_wall_texture.feather_mask(mask, 4.0)
+    assert alpha[:, 0].max() == 0.0
+    assert alpha[:, -1].min() == 1.0
+    assert np.any((alpha > 0.0) & (alpha < 1.0))
 
 
 def test_first_block_is_the_top_of_the_wall_not_the_bottom():
@@ -119,6 +188,8 @@ def test_visuals_are_flat_coplanar_and_carry_the_baked_map():
         # photographs is this assertion.
         assert all('<ambient>1 1 1 1</ambient>' in entry for entry in visuals)
         assert all('<diffuse>1 1 1 1</diffuse>' in entry for entry in visuals)
+        assert all('<cast_shadows>false</cast_shadows>' in entry
+                   for entry in visuals)
         assert all('<albedo_map>' in entry for entry in visuals)
         assert all(entry.count('.dds') == 1 for entry in visuals)
         # No normal or roughness map is baked, so none may be referenced: a tag
