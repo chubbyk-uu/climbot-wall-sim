@@ -44,7 +44,11 @@ if [ -f "${ARCHIVE}" ] && echo "${SHA256}  ${ARCHIVE}" | sha256sum -c - >/dev/nu
   echo "already present: ${ARCHIVE}"
 else
   echo "downloading ${ASSET}_${VARIANT} (540 MB) to ${DEST}"
-  curl -fL --retry 3 "https://ambientcg.com/get?file=${ASSET}_${VARIANT}.zip" -o "${ARCHIVE}"
+  # The ambientCG endpoint redirects to a CDN.  TLS handshakes to that CDN can
+  # fail transiently under WSL, and curl does not retry every connection-class
+  # error unless --retry-all-errors is explicit.
+  curl -fL --retry 5 --retry-all-errors --connect-timeout 30 \
+    "https://ambientcg.com/get?file=${ASSET}_${VARIANT}.zip" -o "${ARCHIVE}"
   echo "${SHA256}  ${ARCHIVE}" | sha256sum -c -
 fi
 
