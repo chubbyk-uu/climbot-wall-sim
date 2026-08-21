@@ -29,6 +29,7 @@ import os
 import statistics
 import subprocess
 import sys
+import time
 
 import cv2
 import numpy as np
@@ -219,6 +220,11 @@ def resolution_mode(arguments):
             'label': label, 'manifest': path,
             'manifest_sha256': sha256(path),
             'scale_mm_per_px': manifest['scale_m_per_px'] * 1000.0,
+            'region_m': manifest['region_m'],
+            'dimensions_px': [manifest['width_px'], manifest['height_px']],
+            'source_asset': manifest.get('source_asset'),
+            'quilt': manifest.get('quilt'),
+            'derived_from': manifest.get('derived_from'),
             'pair_metrics': metrics,
             'ransac_inliers': describe(
                 [entry['ransac_inliers'] for entry in metrics]),
@@ -232,6 +238,8 @@ def resolution_mode(arguments):
         'schema_version': 1, 'evaluation': 'rendered_resolution_comparison',
         'camera': camera_config(), 'pair_shift_m': list(PAIR_SHIFT_M),
         'grid': [arguments.columns, arguments.rows],
+        'raw_artifacts': os.path.abspath(arguments.work_dir),
+        'recorded_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
         'opencv_version': cv2.__version__, 'provenance': git_provenance(),
         'candidates': summaries, 'winner': winner['label'],
         'expected_best': arguments.expected_best,
@@ -273,9 +281,13 @@ def global_mode(arguments):
         'evaluation': 'rendered_global_position_distinguishability',
         'camera': camera_config(), 'pair_shift_m': list(PAIR_SHIFT_M),
         'grid': [arguments.columns, arguments.rows],
+        'raw_artifacts': os.path.abspath(arguments.work_dir),
+        'recorded_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
         'opencv_version': cv2.__version__, 'provenance': git_provenance(),
         'manifest': path, 'manifest_sha256': sha256(path),
         'source_asset': manifest.get('source_asset'),
+        'scale_mm_per_px': manifest['scale_m_per_px'] * 1000.0,
+        'region_m': manifest['region_m'], 'quilt': manifest.get('quilt'),
         'local_pair_metrics': metrics, 'trials': trials,
         'top1_accuracy': accuracy,
         'correct_inliers': describe(

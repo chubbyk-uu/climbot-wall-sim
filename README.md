@@ -23,6 +23,7 @@ Gazebo 里的作业面与机器人：真实重力，靠持续法向吸附力贴�
 | 文档 | 用途 |
 | --- | --- |
 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 项目目标、设计约束、实施阶段和最终验收标准 |
+| [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) | §14 每项要求到自动化测试、Gazebo 结果与实机待办的映射 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 包职责、依赖方向、配置归属和运行时数据流 |
 | [docs/INTERFACES.md](docs/INTERFACES.md) | launch、话题、服务、参数和 TF |
 | [docs/OPERATION.md](docs/OPERATION.md) | 操作手册：启动、点选、面板、算法切换和回归 |
@@ -211,7 +212,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 - 阶段 C：传感器与定位融合——完成；
 - 阶段 D：覆盖路径规划——完成；
 - 阶段 E：自定义轨迹跟踪——完成（规范八项全部实现并有归档证据：多段 Action、动态换道、转后平行扫描、小弧线入轨、时间点控制，以及远距离起点进入与不可进入安全停车）；
-- 阶段 F：系统测试与数据评价——进行中（覆盖基线、§14.4 侧滑补偿专项验收与 §15 全部测试场景已产出，当前基线是哪一批、覆盖哪些工况见 [results/README.md](results/README.md)）。
+- 阶段 F：系统测试与数据评价——仿真阶段完成（§14 逐项映射见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)，正式批次与指标见 [results/README.md](results/README.md)；实机阈值和硬件急停仍待实机冻结）。
 
 详细证据和待办见 [docs/STATUS.md](docs/STATUS.md)。
 
