@@ -432,6 +432,56 @@ quilting 仍先在 `384 px` 重叠区寻找最小误差裁切路径，再只在�
 launch **直接报错退出**，不会退回平色墙——一整轮拍出来的白墙照片看起来像相机故障，
 发现它的代价是整轮重跑。
 
+### 渲染照片验收
+
+`capture_wall_texture.py` 用 Gazebo server 的真实 Ogre2 相机传感器采图，不是从 DDS
+离线裁图。相机位姿由共享 `wall.yaml` 与 `simulation.yaml` 推导，完整 Gazebo/bridge
+日志和原始 PNG 应放在 `/tmp`，只有小型 JSON 摘要进入 `results/`。
+
+整墙位置可区分性用 `5×4` 个参考位置；每个查询相对参考平移
+`(60, 25) mm`、距离扰动 `0.5%`、航向扰动 `±0.6°`，然后对全部参考位置做 ORB +
+RANSAC 检索：
+
+```bash
+source install/setup.bash
+python3 tools/evaluate_wall_texture_photos.py global \
+  --manifest textures/wall/wall_texture.json --columns 5 --rows 4 \
+  --batch-size 12 --work-dir /tmp/climbot_wall_global_<tag> \
+  --output results/wall_texture_global_<tag>_summary.json
+```
+
+贴图精度对照不能让三档各自独立 quilting，否则抽到的混凝土内容会与纹素精度混在
+一起。先以最细档烘焙一份 canonical，再从其 BC1 mip 0 解码并 LANCZOS 下采样；三档
+因此拥有同一内容、同一接缝和同一墙面坐标，只改变纹素尺度：
+
+```bash
+# 示例使用 3×2 m 局部墙，避免为一次对照生成三份整墙。
+python3 tools/bake_wall_texture.py \
+  --source-dir /tmp/climbot_wall_texture/maps \
+  --output-dir /tmp/wall_resolution/0.26 --source-size-m 2.5 \
+  --region-m 3.0 2.0 --region-origin-m 3.5 3.0 \
+  --scale-mm-per-px 0.26 --patch-px 2954 \
+  --overlap-fraction 0.25 --seam-feather-px 185
+python3 tools/resample_wall_texture.py \
+  --manifest /tmp/wall_resolution/0.26/wall_texture.json \
+  --output-dir /tmp/wall_resolution/0.50 --scale-mm-per-px 0.50
+python3 tools/resample_wall_texture.py \
+  --manifest /tmp/wall_resolution/0.26/wall_texture.json \
+  --output-dir /tmp/wall_resolution/0.75 --scale-mm-per-px 0.75
+
+python3 tools/evaluate_wall_texture_photos.py resolution \
+  --candidate 0.26=/tmp/wall_resolution/0.26/wall_texture.json \
+  --candidate 0.50=/tmp/wall_resolution/0.50/wall_texture.json \
+  --candidate 0.75=/tmp/wall_resolution/0.75/wall_texture.json \
+  --columns 3 --rows 2 --batch-size 12 \
+  --work-dir /tmp/wall_resolution/rendered \
+  --output results/wall_texture_resolution_<tag>_summary.json
+```
+
+正式判读以 `ransac_inliers.median` 排序，同时检查最小值、内点率和描述子余量；不要
+只看特征点数量，也不要把预期档位通过 `--expected-best` 写成结论。该选项只适合在排序
+已由正式实验定案后作为回归门禁使用。
+
 ## 安全提示
 
 Gazebo DiffDrive 会持续执行最后收到的 `/cmd_vel`，因此仿真 launch 始终启动速度
