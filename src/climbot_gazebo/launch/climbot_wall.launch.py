@@ -86,7 +86,8 @@ def apply_wall_texture(document, manifest_path, thickness, wall_origin, link_cen
 
 
 def render_world(gazebo_share, description_share, grid_spacing,
-                 texture_manifest=None, inspection_target=False):
+                 texture_manifest=None, inspection_target=False,
+                 inspection_flat_field_target=False):
     """Render the Gazebo world from shared and simulation-only settings."""
     with open(os.path.join(description_share, 'config', 'wall.yaml')) as handle:
         wall = yaml.safe_load(handle)['wall']
@@ -117,6 +118,8 @@ def render_world(gazebo_share, description_share, grid_spacing,
         'spawn_pitch': repr(float(pitch)),
         'spawn_yaw': repr(float(yaw)),
         'inspection_target': str(bool(inspection_target)).lower(),
+        'inspection_flat_field_target': str(bool(
+            inspection_flat_field_target)).lower(),
         'target_lateral': repr(
             float(spawn['lateral_m']) +
             float(camera['optical_mount']['center_xyz_m'][0])),
@@ -358,7 +361,9 @@ def launch_setup(context, *args, **kwargs):
         LaunchConfiguration('wall_grid_spacing').perform(context),
         LaunchConfiguration('wall_texture').perform(context) or None,
         LaunchConfiguration('inspection_target').perform(context).lower() in (
-            'true', '1', 'yes'))
+            'true', '1', 'yes'),
+        LaunchConfiguration('inspection_flat_field_target').perform(
+            context).lower() in ('true', '1', 'yes'))
     model_path, robot_description = render_robot(
         package_share, description_share)
     wall_config = os.path.join(description_share, 'config', 'wall.yaml')
@@ -454,6 +459,10 @@ def launch_setup(context, *args, **kwargs):
             'render_focal_scale': float(
                 simulation['inspection_camera'][
                     'render_overscan_focal_scale']),
+            'output_noise_stddev': float(
+                simulation['inspection_camera']['noise_stddev']),
+            'output_noise_seed': int(
+                simulation['inspection_camera']['noise_seed']),
         }],
         output='screen',
     ))
@@ -657,6 +666,12 @@ def generate_launch_description():
             default_value='false',
             description='Show the asymmetric G1 calibration target at the '
                         'initial camera projection centre.',
+        ),
+        DeclareLaunchArgument(
+            'inspection_flat_field_target',
+            default_value='false',
+            description='Cover the initial view with a uniform grey target '
+                        'for LED flat-field calibration.',
         ),
         OpaqueFunction(function=launch_setup),
     ])

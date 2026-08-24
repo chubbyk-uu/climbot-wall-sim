@@ -21,6 +21,7 @@
   <xacro:arg name="spawn_pitch" default="0.0"/>
   <xacro:arg name="spawn_yaw" default="1.5707963267948966"/>
   <xacro:arg name="inspection_target" default="false"/>
+  <xacro:arg name="inspection_flat_field_target" default="false"/>
   <xacro:arg name="target_lateral" default="0.34"/>
   <xacro:arg name="target_height" default="2.0"/>
   <xacro:arg name="target_length" default="0.28125"/>
@@ -240,6 +241,20 @@
             <pose>${decal_x + 0.007} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
             <geometry><box><size>0.004 ${0.08 * target_length} ${0.08 * target_width}</size></box></geometry>
             <material><ambient>0.02 0.02 1 1</ambient><diffuse>0.02 0.02 1 1</diffuse><emissive>0.02 0.02 1 1</emissive></material>
+          </visual>
+        </xacro:if>
+        <!-- Uniform low-specular target used only to measure the LED/camera
+             flat field. It exceeds the full distorted footprint, so every
+             output pixel sees the same nominal reflectance. -->
+        <xacro:if value="$(arg inspection_flat_field_target)">
+          <visual name="inspection_flat_field_target">
+            <pose>${decal_x + 0.004} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
+            <geometry><box><size>0.004 0.42 0.68</size></box></geometry>
+            <material>
+              <ambient>0.50 0.50 0.50 1</ambient>
+              <diffuse>0.50 0.50 0.50 1</diffuse>
+              <specular>0.01 0.01 0.01 1</specular>
+            </material>
           </visual>
         </xacro:if>
       </link>

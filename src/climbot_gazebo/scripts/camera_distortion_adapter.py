@@ -25,6 +25,7 @@ from climbot_gazebo.camera_distortion import (
 )
 import cv2
 from cv_bridge import CvBridge
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
@@ -38,6 +39,8 @@ class CameraDistortionAdapter(Node):
         super().__init__('camera_distortion_adapter')
         self.declare_parameter('camera_config', '')
         self.declare_parameter('render_focal_scale', 0.83)
+        self.declare_parameter('output_noise_stddev', 0.004)
+        self.declare_parameter('output_noise_seed', 73)
         path = str(self.get_parameter('camera_config').value)
         if not path:
             raise ValueError('camera_config must name the shared calibration YAML')
@@ -47,6 +50,12 @@ class CameraDistortionAdapter(Node):
         self._output_encoding = str(self._camera['image']['encoding'])
         if self._output_encoding != 'mono8':
             raise ValueError('inspection camera output encoding must be mono8')
+        noise = float(self.get_parameter('output_noise_stddev').value)
+        if not np.isfinite(noise) or not 0.0 < noise <= 0.02:
+            raise ValueError('output_noise_stddev must be in (0, 0.02]')
+        self._noise_dn = noise * 255.0
+        self._rng = np.random.default_rng(
+            int(self.get_parameter('output_noise_seed').value))
         scale = float(self.get_parameter('render_focal_scale').value)
         self._map_x, self._map_y = make_distortion_maps(self._camera, scale)
         if not maps_fit_source(
@@ -107,6 +116,14 @@ class CameraDistortionAdapter(Node):
                 'Rejecting ideal image that is not a three-channel RGB frame')
             return
         grayscale = cv2.cvtColor(distorted, cv2.COLOR_RGB2GRAY)
+        # Gazebo can return byte-identical cached renders for repeated triggers
+        # even when SDF camera noise is configured. Model the industrial
+        # sensor's read noise at the final mono8 stage so every exposure has
+        # independent, reproducible white noise in the delivered image.
+        grayscale = np.clip(
+            grayscale.astype(np.float32) + self._rng.normal(
+                0.0, self._noise_dn, grayscale.shape),
+            0.0, 255.0).astype(np.uint8)
         output = self._bridge.cv2_to_imgmsg(
             grayscale, encoding=self._output_encoding)
         output.header = message.header

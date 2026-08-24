@@ -87,6 +87,25 @@ ros2 launch climbot_gazebo climbot_wall.launch.py \
 红色块表示机器人前进正向，应出现在图像上方；绿色块表示墙面向上，应出现在图像
 左侧；蓝色块是投影中心。靶标默认关闭，不会混入普通墙面图像。
 
+### 弱光平场标定
+
+先以纯灰板启动仿真和巡检单拍节点，再采 30 张独立曝光：
+
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  headless:=true inspection_flat_field_target:=true wall_grid_spacing:=0
+ros2 launch climbot_inspection inspection.launch.py \
+  use_sim_time:=true automatic_capture:=false
+ros2 run climbot_inspection calibrate_flat_field --ros-args \
+  -p output_file:=/tmp/climbot_flat_field.npz -p frame_count:=30
+```
+
+成功日志必须同时显示 `frames=30 unique_stamps=30 unique_hashes=30` 和非零
+`noise_dn`。正常纹理墙重启后，通过
+`inspection.launch.py flat_field_file:=/tmp/climbot_flat_field.npz` 发布
+`/inspection/camera/image_compensated`；原图仍保留。曝光、LED、相机或镜头参数改变后
+必须重新标定。
+
 ### 点选区域
 
 RViz 里从启动起就画着一个**绿色边框**，那是墙面按机器人安全边距内缩后的可达

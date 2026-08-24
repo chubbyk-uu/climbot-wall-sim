@@ -1093,6 +1093,23 @@ Gazebo SDF 中畸变标签的书写顺序不等于 ROS 数组顺序，桥接或�
 G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`、相机驱动和未来 G2
 触发节点均不得订阅 `/model/climbot/ground_truth`。
 
+## `climbot_inspection` G3 平场补偿接口
+
+`calibrate_flat_field` 默认依次调用 `/inspection/capture_once` 30 次，且相邻请求至少
+间隔 `0.10 s`。每帧必须具有唯一时间戳和唯一 SHA-256；所有像素的平均时间标准差须
+不低于 `0.10 DN`。输出 NPZ 至少保存 `gain`、`mean_image`、帧数、唯一时间戳数、唯一
+哈希数和实测噪声，运行节点载入时再次拒绝样本数不足或含重复帧的文件。
+
+| 名称 | 类型 | 语义 |
+| --- | --- | --- |
+| `/inspection/camera/image_raw` | `sensor_msgs/msg/Image` | 保留的原始畸变 `mono8` 图 |
+| `/inspection/camera/image_compensated` | `sensor_msgs/msg/Image` | 固定平场增益后的 `mono8` 图；header 与原图相同 |
+| `inspection_flat_field_target` | launch 参数 | 仅仿真标定时在当前视场放置纯灰低反光板；正常任务必须为 false |
+| `flat_field_file` | launch 参数 | 非空时启动补偿节点并加载 NPZ；空值保持原图链路不变 |
+
+仿真最终输出端白噪声标准差为 `0.004 × 255 ≈ 1.02 DN`，随机种子固定用于回归，但
+每次曝光继续推进随机序列。SDF 渲染器内部的噪声配置不能作为独立帧保证。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |

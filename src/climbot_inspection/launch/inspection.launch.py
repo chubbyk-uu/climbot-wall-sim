@@ -20,7 +20,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 import yaml
 
@@ -46,6 +46,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('config_file', default_value=default_config),
+        DeclareLaunchArgument('flat_field_file', default_value=''),
         Node(
             package='climbot_inspection',
             executable='capture_once_node',
@@ -53,6 +54,18 @@ def generate_launch_description():
             parameters=[LaunchConfiguration('config_file'), {
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
             }],
+            output='screen',
+        ),
+        Node(
+            package='climbot_inspection',
+            executable='flat_field_node',
+            name='flat_field_node',
+            parameters=[{
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+                'calibration_file': LaunchConfiguration('flat_field_file'),
+            }],
+            condition=IfCondition(PythonExpression([
+                "'", LaunchConfiguration('flat_field_file'), "' != ''"])),
             output='screen',
         ),
         DeclareLaunchArgument('automatic_capture', default_value='true'),

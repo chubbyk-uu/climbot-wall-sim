@@ -107,7 +107,11 @@ simulation:
     near_clip_m: 0.05
     far_clip_m: 20.0
     noise_mean: 0.0
-    noise_stddev: 0.002
+    # Additive per-frame Gaussian sensor noise in normalized intensity. 0.004
+    # is about 1.02 DN in mono8: visible to a 30-frame flat-field statistic,
+    # but small enough not to bury concrete texture.
+    noise_stddev: 0.004
+    noise_seed: 73
     visualize: false
 
   contact:

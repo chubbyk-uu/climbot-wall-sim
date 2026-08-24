@@ -54,7 +54,8 @@ def _world_defaults():
     return {
         element.attrib['name']: float(element.attrib['default'])
         for element in root.findall(f'{{{XACRO_NAMESPACE}}}arg')
-        if element.attrib['name'] != 'inspection_target'
+        if element.attrib['name'] not in {
+            'inspection_target', 'inspection_flat_field_target'}
     }
 
 
@@ -102,6 +103,16 @@ def test_optional_inspection_target_uses_shared_camera_geometry():
         camera['footprint']['effective_length_m'])
     assert defaults['target_width'] == pytest.approx(
         camera['footprint']['effective_width_m'])
+
+
+def test_camera_noise_is_large_enough_for_multi_frame_statistics():
+    """Calibration frames need independent signal, not byte-identical copies."""
+    _, simulation = _documents()
+    standard_deviation = float(
+        simulation['inspection_camera']['noise_stddev'])
+    assert standard_deviation * 255.0 >= 0.75
+    assert standard_deviation * 255.0 <= 2.0
+    assert isinstance(simulation['inspection_camera']['noise_seed'], int)
 
 
 def test_simulated_wall_body_carries_the_described_surface():
