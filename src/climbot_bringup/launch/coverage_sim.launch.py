@@ -20,6 +20,7 @@ from ament_index_python.packages import get_package_share_directory
 from climbot_description.wall_frame import reference_grid_spacing
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
@@ -28,6 +29,7 @@ def generate_launch_description():
     """Create the combined stage-five launch description."""
     gazebo_share = get_package_share_directory('climbot_gazebo')
     coverage_share = get_package_share_directory('climbot_coverage')
+    inspection_share = get_package_share_directory('climbot_inspection')
 
     simulation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -53,6 +55,13 @@ def generate_launch_description():
             'sweep_direction': LaunchConfiguration('sweep_direction'),
         }.items(),
     )
+    inspection = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                inspection_share, 'launch', 'inspection.launch.py')),
+        condition=IfCondition(LaunchConfiguration('inspection')),
+        launch_arguments={'use_sim_time': 'true'}.items(),
+    )
 
     default_config = os.path.join(
         coverage_share, 'config', 'coverage_rectangle.yaml')
@@ -74,6 +83,11 @@ def generate_launch_description():
         DeclareLaunchArgument('input_mode', default_value='parameters'),
         DeclareLaunchArgument('region_type', default_value='rectangle'),
         DeclareLaunchArgument('sweep_direction', default_value='horizontal'),
+        DeclareLaunchArgument(
+            'inspection',
+            default_value='true',
+            description='Start the G1 one-frame inspection service.',
+        ),
         # The grid painted on the wall face in Gazebo, which is the one that
         # ends up in photographs. Set it to 0 for a run that photographs the
         # wall. It deliberately does not reach the RViz overlay: that one is
@@ -92,5 +106,6 @@ def generate_launch_description():
                         'leaves the wall its flat colour.',
         ),
         simulation,
+        inspection,
         coverage,
     ])

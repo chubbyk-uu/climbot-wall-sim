@@ -54,6 +54,7 @@ climbot_sim/
     ├── climbot_coverage/        C++ 覆盖规划与 RViz
     ├── climbot_rviz_plugins/    RViz 操作面板
     ├── climbot_control/         C++ 轨迹跟踪和速度安全
+    ├── climbot_inspection/      C++ 单次拍照与图像关联
     └── climbot_bringup/         整系统组合 launch
 ```
 
@@ -61,16 +62,16 @@ climbot_sim/
 
 ```text
                 climbot_bringup（只有组合 launch）
-      ┌────────────────┼────────────────┐
-      ↓                ↓                ↓
-climbot_coverage  climbot_control  climbot_gazebo
+      ┌───────────────┬┴───────────────┬────────────────┐
+      ↓               ↓                ↓                ↓
+climbot_coverage  climbot_control  climbot_gazebo  climbot_inspection
       │                │                │
       ├──> climbot_interfaces <──┤       │
       └──> climbot_description <─┴───────┘
 ```
 
 规划器和控制器都不读取 Gazebo 真值或仿真专有参数；Gazebo 包仅因仿真组合 launch
-依赖控制包。组合入口集中在 `climbot_bringup`，它点名下游三个包而没有任何包依赖
+依赖控制包。组合入口集中在 `climbot_bringup`，它点名下游各包而没有任何包依赖
 它，因此算法包的依赖表里不会出现启动编排带来的依赖。
 
 ## 环境安装

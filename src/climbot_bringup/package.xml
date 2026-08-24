@@ -23,6 +23,7 @@
   <exec_depend>climbot_gazebo</exec_depend>
   <exec_depend>climbot_coverage</exec_depend>
   <exec_depend>climbot_control</exec_depend>
+  <exec_depend>climbot_inspection</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

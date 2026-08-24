@@ -1,0 +1,15 @@
+capture_once_node:
+  ros__parameters:
+    source_image_topic: /simulation/inspection_camera/image_raw
+    source_camera_info_topic: /simulation/inspection_camera/camera_info
+    trigger_topic: /simulation/inspection_camera/trigger
+    output_image_topic: /inspection/camera/image_raw
+    output_camera_info_topic: /inspection/camera/camera_info
+    capture_service: /inspection/capture_once
+    expected_frame_id: inspection_camera_optical_frame
+    expected_width: 1920
+    expected_height: 1080
+    capture_timeout_s: 5.0
+    discovery_settle_s: 0.5
+    warmup_retry_s: 1.0
+    warmup_quiet_s: 0.25

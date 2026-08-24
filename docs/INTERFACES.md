@@ -1056,7 +1056,9 @@ G1 使用标准 ROS 图像接口，命名不带 `gz`，使仿真相机和真机�
 `inspection_camera_optical_frame`。两条消息必须具有相同时间戳；消费者以时间戳配对，
 不得用“最近一条标定消息”掩盖分辨率或标定版本切换。服务并发请求串行化；已有请求
 未完成时新请求明确拒绝，不合并、不悄悄多拍。超时返回失败，迟到帧不得被记到下一次
-请求。G1 不提供自动连拍服务。
+请求。为保证该约束，单拍超时后节点进入故障锁定，后续请求均拒绝，必须重启节点后
+重新预热；不能在没有触发编号的 Bool 接口上猜测迟到帧属于哪一次。G1 不提供自动连拍
+服务。
 
 `CameraInfo` 使用 `plumb_bob`。`D` 的顺序为 `[k1,k2,p1,p2,k3]`，标称
 `K/D/P`、有效区域和 `base_link → optical` 外参见 PROJECT_GUIDE §18.1～18.2。
@@ -1074,6 +1076,12 @@ G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`�
 `/simulation/inspection_camera/image_raw` 和 `camera_info`。1920×1080 RGB 图像采用
 Reliable、depth 1，避免大帧在同机桥接和 Python 适配之间被 Best Effort 静默丢弃；
 `climbot_inspection` 只消费适配后的成对消息。
+
+`climbot_inspection/config/inspection.yaml` 定义源／输出话题、服务名、期望尺寸与
+`frame_id`，以及 `capture_timeout_s`、传输发现稳定时间和预热重试／静默窗口。启动
+预热帧只用于建立桥接与渲染传输，全部丢弃；预热输出静默后服务才进入 READY。标准
+`coverage_sim.launch.py` 和 `coverage_mission.launch.py` 默认启动该节点，可用
+`inspection:=false` 关闭。
 
 ## 配置文件
 
