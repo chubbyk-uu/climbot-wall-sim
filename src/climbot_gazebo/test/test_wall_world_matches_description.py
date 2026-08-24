@@ -54,6 +54,7 @@ def _world_defaults():
     return {
         element.attrib['name']: float(element.attrib['default'])
         for element in root.findall(f'{{{XACRO_NAMESPACE}}}arg')
+        if element.attrib['name'] != 'inspection_target'
     }
 
 
@@ -82,6 +83,25 @@ def test_world_defaults_match_the_values_the_launch_injects():
     }
     for name, value in expected.items():
         assert defaults[name] == pytest.approx(float(value)), name
+
+
+def test_optional_inspection_target_uses_shared_camera_geometry():
+    """Keep the acceptance target centred under the initial camera view."""
+    description = Path(get_package_share_directory('climbot_description'))
+    camera = yaml.safe_load(
+        (description / 'config' / 'inspection_camera.yaml').read_text()
+    )['inspection_camera']
+    _, simulation = _documents()
+    defaults = _world_defaults()
+    assert defaults['target_lateral'] == pytest.approx(
+        simulation['spawn']['lateral_m'] +
+        camera['optical_mount']['center_xyz_m'][0])
+    assert defaults['target_height'] == pytest.approx(
+        simulation['spawn']['height_m'])
+    assert defaults['target_length'] == pytest.approx(
+        camera['footprint']['effective_length_m'])
+    assert defaults['target_width'] == pytest.approx(
+        camera['footprint']['effective_width_m'])
 
 
 def test_simulated_wall_body_carries_the_described_surface():

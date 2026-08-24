@@ -20,6 +20,11 @@
   <xacro:arg name="spawn_roll" default="1.5707963267948966"/>
   <xacro:arg name="spawn_pitch" default="0.0"/>
   <xacro:arg name="spawn_yaw" default="1.5707963267948966"/>
+  <xacro:arg name="inspection_target" default="false"/>
+  <xacro:arg name="target_lateral" default="0.3"/>
+  <xacro:arg name="target_height" default="2.0"/>
+  <xacro:arg name="target_length" default="0.28125"/>
+  <xacro:arg name="target_width" default="0.5"/>
 
   <xacro:property name="centre_x" value="$(arg centre_x)"/>
   <xacro:property name="centre_y" value="$(arg centre_y)"/>
@@ -28,6 +33,10 @@
   <xacro:property name="width" value="$(arg width)"/>
   <xacro:property name="height" value="$(arg height)"/>
   <xacro:property name="grid_spacing" value="$(arg grid_spacing)"/>
+  <xacro:property name="target_lateral" value="$(arg target_lateral)"/>
+  <xacro:property name="target_height" value="$(arg target_height)"/>
+  <xacro:property name="target_length" value="$(arg target_length)"/>
+  <xacro:property name="target_width" value="$(arg target_width)"/>
   <!-- Wall face, the plane the wheels roll on, and the grid overlay just
        in front of it so the decals never fight the collision surface. -->
   <xacro:property name="face_x" value="${centre_x + thickness / 2.0}"/>
@@ -162,6 +171,36 @@
         <xacro:if value="${show_grid}">
           <xacro:grid_line axis="column" index="1" count="${columns}"/>
           <xacro:grid_line axis="row" index="1" count="${rows}"/>
+        </xacro:if>
+        <!-- Optional G1 acceptance target. Work +X (robot-forward at spawn)
+             is world +Y and must appear at image top; work +Y is world +Z
+             and must appear at image left. Red marks +X, green marks +Y.
+             It is off by default and never belongs in inspection imagery. -->
+        <xacro:if value="$(arg inspection_target)">
+          <visual name="g1_target_background">
+            <pose>${decal_x + 0.004} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
+            <geometry><box><size>0.004 ${target_length} ${target_width}</size></box></geometry>
+            <material>
+              <ambient>0.95 0.95 0.95 1</ambient>
+              <diffuse>0.95 0.95 0.95 1</diffuse>
+              <specular>0 0 0 1</specular>
+            </material>
+          </visual>
+          <visual name="g1_target_forward_red">
+            <pose>${decal_x + 0.007} ${target_lateral + 0.35 * target_length} ${target_height - centre_z} 0 0 0</pose>
+            <geometry><box><size>0.004 ${0.18 * target_length} ${0.10 * target_width}</size></box></geometry>
+            <material><ambient>1 0.02 0.02 1</ambient><diffuse>1 0.02 0.02 1</diffuse></material>
+          </visual>
+          <visual name="g1_target_up_green">
+            <pose>${decal_x + 0.007} ${target_lateral} ${target_height - centre_z + 0.35 * target_width} 0 0 0</pose>
+            <geometry><box><size>0.004 ${0.10 * target_length} ${0.18 * target_width}</size></box></geometry>
+            <material><ambient>0.02 1 0.02 1</ambient><diffuse>0.02 1 0.02 1</diffuse></material>
+          </visual>
+          <visual name="g1_target_centre_blue">
+            <pose>${decal_x + 0.007} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
+            <geometry><box><size>0.004 ${0.08 * target_length} ${0.08 * target_width}</size></box></geometry>
+            <material><ambient>0.02 0.02 1 1</ambient><diffuse>0.02 0.02 1 1</diffuse></material>
+          </visual>
         </xacro:if>
       </link>
     </model>

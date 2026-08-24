@@ -86,12 +86,15 @@ def apply_wall_texture(document, manifest_path, thickness, wall_origin, link_cen
 
 
 def render_world(gazebo_share, description_share, grid_spacing,
-                 texture_manifest=None):
+                 texture_manifest=None, inspection_target=False):
     """Render the Gazebo world from shared and simulation-only settings."""
     with open(os.path.join(description_share, 'config', 'wall.yaml')) as handle:
         wall = yaml.safe_load(handle)['wall']
     with open(os.path.join(gazebo_share, 'config', 'simulation.yaml')) as handle:
         simulation = yaml.safe_load(handle)['simulation']
+    with open(os.path.join(
+            description_share, 'config', 'inspection_camera.yaml')) as handle:
+        camera = yaml.safe_load(handle)['inspection_camera']
     surface = wall['surface']
     simulated_wall = simulation['wall']
     spawn = simulation['spawn']
@@ -113,6 +116,15 @@ def render_world(gazebo_share, description_share, grid_spacing,
         'spawn_roll': repr(float(roll)),
         'spawn_pitch': repr(float(pitch)),
         'spawn_yaw': repr(float(yaw)),
+        'inspection_target': str(bool(inspection_target)).lower(),
+        'target_lateral': repr(
+            float(spawn['lateral_m']) +
+            float(camera['optical_mount']['center_xyz_m'][0])),
+        'target_height': repr(float(spawn['height_m'])),
+        'target_length': repr(float(
+            camera['footprint']['effective_length_m'])),
+        'target_width': repr(float(
+            camera['footprint']['effective_width_m'])),
     }
     source = os.path.join(gazebo_share, 'worlds', 'climbot_wall.sdf.xacro')
     document = xacro.process_file(source, mappings=mappings)
@@ -308,7 +320,9 @@ def launch_setup(context, *args, **kwargs):
     world = render_world(
         package_share, description_share,
         LaunchConfiguration('wall_grid_spacing').perform(context),
-        LaunchConfiguration('wall_texture').perform(context) or None)
+        LaunchConfiguration('wall_texture').perform(context) or None,
+        LaunchConfiguration('inspection_target').perform(context).lower() in (
+            'true', '1', 'yes'))
     model_path, robot_description = render_robot(
         package_share, description_share)
     wall_config = os.path.join(description_share, 'config', 'wall.yaml')
@@ -601,6 +615,12 @@ def generate_launch_description():
             default_value='',
             description='Bake manifest from tools/bake_wall_texture.py to put '
                         'on the wall face; empty uses simulation.yaml.',
+        ),
+        DeclareLaunchArgument(
+            'inspection_target',
+            default_value='false',
+            description='Show the asymmetric G1 calibration target at the '
+                        'initial camera projection centre.',
         ),
         OpaqueFunction(function=launch_setup),
     ])

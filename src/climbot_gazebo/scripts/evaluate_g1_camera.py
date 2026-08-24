@@ -148,7 +148,58 @@ def message_array(message):
     return array.reshape(message.height, message.width, 3)
 
 
-def compare_frame(evaluator, camera, render_scale):
+def marker_metrics(raw_array):
+    """Locate the asymmetric target colors and prove the two image axes."""
+    red = (
+        (raw_array[:, :, 0] > 140) &
+        (raw_array[:, :, 0] > 1.6 * raw_array[:, :, 1]) &
+        (raw_array[:, :, 0] > 1.6 * raw_array[:, :, 2]))
+    green = (
+        (raw_array[:, :, 1] > 140) &
+        (raw_array[:, :, 1] > 1.6 * raw_array[:, :, 0]) &
+        (raw_array[:, :, 1] > 1.6 * raw_array[:, :, 2]))
+    blue = (
+        (raw_array[:, :, 2] > 140) &
+        (raw_array[:, :, 2] > 1.6 * raw_array[:, :, 0]) &
+        (raw_array[:, :, 2] > 1.6 * raw_array[:, :, 1]))
+
+    def describe(mask):
+        rows, columns = np.nonzero(mask)
+        return {
+            'pixel_count': int(rows.size),
+            'centroid_xy_px': [
+                float(np.mean(columns)) if columns.size else None,
+                float(np.mean(rows)) if rows.size else None,
+            ],
+        }
+
+    markers = {'red_forward': describe(red), 'green_up': describe(green),
+               'blue_centre': describe(blue)}
+    height, width = raw_array.shape[:2]
+    enough = all(marker['pixel_count'] >= 100 for marker in markers.values())
+    if enough:
+        red_xy = markers['red_forward']['centroid_xy_px']
+        green_xy = markers['green_up']['centroid_xy_px']
+        blue_xy = markers['blue_centre']['centroid_xy_px']
+        checks = {
+            'target_markers_visible': True,
+            'robot_forward_appears_image_top': red_xy[1] < blue_xy[1] - 0.10 * height,
+            'wall_up_appears_image_left': green_xy[0] < blue_xy[0] - 0.10 * width,
+            'target_centre_near_principal_point': (
+                abs(blue_xy[0] - width / 2.0) < 0.08 * width and
+                abs(blue_xy[1] - height / 2.0) < 0.08 * height),
+        }
+    else:
+        checks = {
+            'target_markers_visible': False,
+            'robot_forward_appears_image_top': False,
+            'wall_up_appears_image_left': False,
+            'target_centre_near_principal_point': False,
+        }
+    return {'markers': markers, 'checks': checks}
+
+
+def compare_frame(evaluator, camera, render_scale, check_target=False):
     """Validate the single public pair and recompute the Brown pixel mapping."""
     common = set(evaluator.public_images) & set(evaluator.public_infos)
     if len(common) != 1:
@@ -176,7 +227,7 @@ def compare_frame(evaluator, camera, render_scale):
         borderMode=cv2.BORDER_REPLICATE)
     delta = raw_array.astype(np.float64) - expected_raw.astype(np.float64)
     ideal_delta = raw_array.astype(np.float64) - ideal_array.astype(np.float64)
-    return {
+    result = {
         'stamp_ns': key,
         'width_px': int(image.width),
         'height_px': int(image.height),
@@ -205,6 +256,11 @@ def compare_frame(evaluator, camera, render_scale):
             'distortion_visibly_changes_pixels': float(np.mean(np.abs(ideal_delta))) >= 1.0,
         },
     }
+    if check_target:
+        target = marker_metrics(raw_array)
+        result['target'] = target
+        result['checks'].update(target['checks'])
+    return result
 
 
 def compare_tf(evaluator, camera, timeout_s):
@@ -246,6 +302,8 @@ def parse_arguments():
     parser.add_argument('--output', required=True)
     parser.add_argument('--idle-seconds', type=float, default=10.0)
     parser.add_argument('--timeout', type=float, default=15.0)
+    parser.add_argument('--check-target', action='store_true')
+    parser.add_argument('--image-output', default='')
     return parser.parse_args()
 
 
@@ -274,7 +332,15 @@ def main():
         service_message = evaluator.capture(args.timeout)
         evaluator.spin_for(1.0)
         frame = compare_frame(
-            evaluator, camera, simulation['render_overscan_focal_scale'])
+            evaluator, camera, simulation['render_overscan_focal_scale'],
+            check_target=args.check_target)
+        if args.image_output:
+            key = next(iter(evaluator.public_images))
+            rgb = message_array(evaluator.public_images[key])
+            directory = os.path.dirname(os.path.abspath(args.image_output))
+            os.makedirs(directory, exist_ok=True)
+            if not cv2.imwrite(args.image_output, cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)):
+                raise RuntimeError('failed to write --image-output')
         transform = compare_tf(evaluator, camera, args.timeout)
         intrinsics = camera['calibration']['intrinsics']
         mount_distance = float(camera['optical_mount']['center_xyz_m'][2])
