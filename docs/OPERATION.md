@@ -106,6 +106,9 @@ ros2 run climbot_inspection calibrate_flat_field --ros-args \
 `/inspection/camera/image_compensated`；原图仍保留。曝光、LED、相机或镜头参数改变后
 必须重新标定。
 
+仿真默认纯灰板目标均值为 `180 DN`；这是针对当前较暗混凝土贴图的显示增益，仍保留
+高亮余量。可用 `-p target_mean_dn:=...` 调整，范围为 `1～254 DN`。
+
 ### 点选区域
 
 RViz 里从启动起就画着一个**绿色边框**，那是墙面按机器人安全边距内缩后的可达

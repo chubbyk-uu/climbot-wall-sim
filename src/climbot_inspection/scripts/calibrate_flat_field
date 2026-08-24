@@ -25,8 +25,12 @@ class Calibrator(Node):
         self.declare_parameter('capture_service', '/inspection/capture_once')
         self.declare_parameter('image_topic', '/inspection/camera/image_raw')
         self.declare_parameter('output_file', '/tmp/climbot_flat_field.npz')
-        self.declare_parameter('target_mean_dn', 128.0)
+        # The patent uses 128 as an example. The simulated concrete is much
+        # less reflective than the calibration board, so 180 leaves the wall
+        # near 85--90 DN without clipping highlights.
+        self.declare_parameter('target_mean_dn', 180.0)
         self.declare_parameter('frame_timeout_s', 8.0)
+        self.declare_parameter('readiness_timeout_s', 30.0)
         self.declare_parameter('minimum_capture_interval_s', 0.1)
         self.count = int(self.get_parameter('frame_count').value)
         if self.count < 11:
@@ -64,19 +68,34 @@ class Calibrator(Node):
         timeout = float(self.get_parameter('frame_timeout_s').value)
         interval = float(
             self.get_parameter('minimum_capture_interval_s').value)
+        readiness_timeout = float(
+            self.get_parameter('readiness_timeout_s').value)
         if not 0.04 <= interval <= 5.0:
             raise ValueError(
                 'minimum_capture_interval_s must be in [0.04, 5.0]')
+        if not 1.0 <= readiness_timeout <= 120.0:
+            raise ValueError('readiness_timeout_s must be in [1, 120]')
         if not self.client.wait_for_service(timeout_sec=timeout):
             raise RuntimeError('capture service is unavailable')
         for number in range(self.count):
             self.event.clear()
             before = len(self.frames)
-            future = self.client.call_async(Trigger.Request())
-            rclpy.spin_until_future_complete(self, future, timeout_sec=timeout)
-            if not future.done() or not future.result().success:
-                detail = 'timeout' if not future.done() else future.result().message
-                raise RuntimeError(f'capture {number + 1} failed: {detail}')
+            ready_deadline = time.monotonic() + readiness_timeout
+            while True:
+                future = self.client.call_async(Trigger.Request())
+                rclpy.spin_until_future_complete(
+                    self, future, timeout_sec=timeout)
+                if not future.done() or future.result() is None:
+                    raise RuntimeError(
+                        f'capture {number + 1} failed: timeout')
+                if future.result().success:
+                    break
+                detail = future.result().message
+                if ('still warming up' not in detail or
+                        time.monotonic() >= ready_deadline):
+                    raise RuntimeError(
+                        f'capture {number + 1} failed: {detail}')
+                time.sleep(0.25)
             deadline = time.monotonic() + timeout
             while len(self.frames) == before and time.monotonic() < deadline:
                 rclpy.spin_once(self, timeout_sec=0.05)
@@ -88,8 +107,8 @@ class Calibrator(Node):
             # a conservative interval and still reject any duplicate above.
             if number + 1 < self.count:
                 time.sleep(interval)
-        calibration = compute_calibration(
-            self.frames, float(self.get_parameter('target_mean_dn').value))
+        target_mean = float(self.get_parameter('target_mean_dn').value)
+        calibration = compute_calibration(self.frames, target_mean)
         output = Path(str(self.get_parameter('output_file').value)).expanduser()
         output.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(
@@ -98,7 +117,8 @@ class Calibrator(Node):
             unique_timestamps=np.int32(len(self.stamps)),
             unique_hashes=np.int32(calibration.unique_hashes),
             temporal_noise_dn=np.float32(calibration.temporal_noise_dn),
-            trimmed_mean_dn=np.float32(calibration.trimmed_mean_dn))
+            trimmed_mean_dn=np.float32(calibration.trimmed_mean_dn),
+            target_mean_dn=np.float32(target_mean))
         self.get_logger().info(
             f'CALIBRATION_OK frames={self.count} unique_stamps={len(self.stamps)} '
             f'unique_hashes={calibration.unique_hashes} '
