@@ -14,6 +14,8 @@ climbot_rviz_plugins   climbot_coverage  climbot_control   climbot_gazebo
                     \        │        /                    /
                      v       v       v                    v
                     climbot_interfaces        climbot_description
+                             ^                       ^
+                             └── climbot_inspection ─┘
 ```
 
 自上而下读：`climbot_bringup` 只有组合 launch，在运行时点名下游三个包；
@@ -72,6 +74,20 @@ Gazebo 真值接口。
 
 Gazebo 真值只能用于模拟传感器生成、记录和独立评价，不得反馈给规划器或
 未来控制闭环。
+
+### `climbot_inspection`（阶段 G 新建）
+
+视觉巡检采集和图像关联：
+
+- G1：订阅／桥接面阵相机原图和 `CameraInfo`，提供单次人工触发，并检查图像、标定
+  信息和 TF 的一致性；
+- G2：按冻结后的动态执行参考和 EKF 沿轨进度触发拍照，将图像与任务版本、扫描线、
+  触发编号和插值融合位姿绑定；
+- 后续检测算法只消费已绑定的数据，不反向进入底盘控制闭环。
+
+本包依赖公共接口和共享描述，不依赖 Gazebo API。Gazebo 相机传感器、渲染噪声和触发
+适配留在 `climbot_gazebo`，所以同一个 `climbot_inspection` 节点可替换为真实相机输入。
+正常触发逻辑不得订阅 Gazebo 真值。
 
 ### `climbot_coverage`
 
@@ -142,6 +158,7 @@ C++ 轨迹控制和速度安全：
 | 配置 | 所有者 | 消费者 | 说明 |
 | --- | --- | --- | --- |
 | `robot.yaml` | description | Gazebo、coverage、未来 control | 真实物理属性和保守规划轮廓 |
+| `inspection_camera.yaml`（G1 新增） | description | Gazebo、inspection、未来实机 | 分辨率、内参、畸变、有效 ROI 和标称相机外参 |
 | `wall.yaml` | description | Gazebo、coverage、定位、未来实机 | `world → wall` 基准、作业面尺寸和参考网格线间距 |
 | `simulation.yaml` | gazebo | 仅 Gazebo | 吸附、摩擦、WheelSlip、出生位姿、仿真噪声 |
 | `ekf_wall.yaml` | gazebo | `robot_localization` | 定位链路配置，随喂给它的仿真传感器留在 gazebo；不属于编排，未随 bringup 外移 |
@@ -161,6 +178,10 @@ Gazebo physics
 模拟全站仪 position-only ──────────────────┘           │
                                                         v
                                                 /odometry/filtered
+                                                        │
+Gazebo triggered camera -> image_raw + CameraInfo ──────┼─> climbot_inspection
+                                                        │       ├─> G1 单次采集
+冻结执行参考 + coverage status ─────────────────────────┘       └─> G2 位置触发/数据绑定
 
 区域参数或 RViz 点选 -> coverage planner -> /coverage/task（权威任务预览）
                                               ├─> /coverage/path（派生显示）
@@ -188,6 +209,8 @@ world
     └── odom
         └── base_link
             ├── imu_link
+            ├── inspection_camera_link
+            │   └── inspection_camera_optical_frame
             ├── left_wheel_link
             ├── right_wheel_link
             └── caster_ball_link
@@ -195,6 +218,10 @@ world
 
 `base_link` 位于两个主动轮轴中点在墙面接触平面上的投影。覆盖路径、EKF、
 里程计和未来控制器必须使用同一参考点。
+
+`inspection_camera_optical_frame` 的标称平移为 `[0.300, 0.000, 0.275] m`，光学
+`+z` 指向墙面，光学 `+x` 对应机器人横向，光学 `+y` 对应机器人反向。该前置偏移
+意味着相机投影中心不是 `base_link`；巡检覆盖和端点计算必须显式使用 TF。
 
 ## 后续包边界
 
@@ -220,7 +247,7 @@ RViz 面板也不直接实现安全状态机。执行器在首条扫描前完成
 入轨判据。首点之外的直线不计入覆盖段。管理器留在 `climbot_control`：它是任务状态机和 Action 客户端，
 不是启动编排，而 `climbot_bringup` 只放 launch。
 
-未来面阵相机及位置触发采集归属于独立的 `climbot_inspection`。它消费冻结后的动态
+面阵相机及位置触发采集归属于独立的 `climbot_inspection`。它消费冻结后的动态
 执行参考、任务状态、EKF 位姿和相机图像，生成触发事件及带位姿的检测数据；不参与
 底盘闭环，也不得使用 Gazebo 真值决定拍照。墙面纹理和仿真相机传感器属于
 `climbot_gazebo`，真实/共享相机几何安装关系属于 `climbot_description`。

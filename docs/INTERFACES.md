@@ -1016,12 +1016,41 @@ float64 estimated_remaining_s
 | `wall → odom` | static transform publisher | 当前为单位变换 |
 | `odom → base_link` | `robot_localization` | 连续融合位姿 |
 | `base_link → links` | `robot_state_publisher` | 来自共享 URDF 和 `/joint_states` |
+| `base_link → inspection_camera_link` | `robot_state_publisher` | 相机机械安装位置，来自共享描述 |
+| `inspection_camera_link → inspection_camera_optical_frame` | `robot_state_publisher` | ROS 光学轴约定；合成外参见 PROJECT_GUIDE §18.1 |
+
+## `climbot_inspection` G1 相机接口
+
+G1 使用标准 ROS 图像接口，命名不带 `gz`，使仿真相机和真机驱动可直接替换：
+
+| 名称 | 类型 | QoS／行为 |
+| --- | --- | --- |
+| `/inspection/camera/image_raw` | `sensor_msgs/msg/Image` | 畸变原图，`1920 × 1080`；每次成功触发发布一帧 |
+| `/inspection/camera/camera_info` | `sensor_msgs/msg/CameraInfo` | 与原图同时间戳、同 `frame_id`，Transient Local 不用于替代逐帧匹配 |
+| `/inspection/capture_once` | `std_srvs/srv/Trigger` | G1 人工单拍；成功返回前对应图像必须已发布 |
+
+`image_raw.header.frame_id` 和 `camera_info.header.frame_id` 均为
+`inspection_camera_optical_frame`。两条消息必须具有相同时间戳；消费者以时间戳配对，
+不得用“最近一条标定消息”掩盖分辨率或标定版本切换。服务并发请求串行化；已有请求
+未完成时新请求明确拒绝，不合并、不悄悄多拍。超时返回失败，迟到帧不得被记到下一次
+请求。G1 不提供自动连拍服务。
+
+`CameraInfo` 使用 `plumb_bob`。`D` 的顺序为 `[k1,k2,p1,p2,k3]`，标称
+`K/D/P`、有效区域和 `base_link → optical` 外参见 PROJECT_GUIDE §18.1～18.2。
+Gazebo SDF 中畸变标签的书写顺序不等于 ROS 数组顺序，桥接或适配节点必须按字段名
+映射，不能直接按位置复制。原图必须保留畸变；如提供
+`/inspection/camera/image_rect`，其 `CameraInfo` 必须描述实际校正后的 `P/ROI`，不能
+沿用非零畸变原图的语义。
+
+G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`、相机驱动和未来 G2
+触发节点均不得订阅 `/model/climbot/ground_truth`。
 
 ## 配置文件
 
 | 文件 | 内容 |
 | --- | --- |
 | `climbot_description/config/robot.yaml` | 机器人共享物理属性、限幅和 footprint |
+| `climbot_description/config/inspection_camera.yaml`（G1 新增） | 相机内参、畸变、有效足迹和标称安装外参 |
 | `climbot_description/config/wall.yaml` | 工作坐标系、墙面宽高、参考网格线间距 |
 | `climbot_gazebo/config/simulation.yaml` | Gazebo 专有物理和传感器参数 |
 | `climbot_gazebo/config/ekf_wall.yaml` | EKF 状态选择、频率和协方差输入 |
