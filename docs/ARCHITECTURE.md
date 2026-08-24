@@ -51,7 +51,8 @@ climbot_rviz_plugins   climbot_coverage  climbot_control   climbot_gazebo
 
 共享给仿真、规划、控制和未来实机部署的描述包：
 
-- `config/robot.yaml`：机器人几何、质量、轮系、驱动限幅和规划轮廓；
+- `config/robot.yaml`：机器人几何、质量、轮系、驱动限幅、规划轮廓，以及 G1 相机本体
+  与支架的物理质量／质心／惯量；
 - `config/wall.yaml`：墙面工作坐标系、可作业表面尺寸及参考网格线间距；
 - `urdf/climbot.urdf.xacro`：`robot_state_publisher` 使用的机器人描述；
 - `climbot_description/`：墙面坐标变换和通用几何函数。
@@ -157,7 +158,7 @@ C++ 轨迹控制和速度安全：
 
 | 配置 | 所有者 | 消费者 | 说明 |
 | --- | --- | --- | --- |
-| `robot.yaml` | description | Gazebo、coverage、未来 control | 真实物理属性和保守规划轮廓 |
+| `robot.yaml` | description | Gazebo、coverage、未来 control | 真实物理属性、相机／支架惯性和保守规划轮廓 |
 | `inspection_camera.yaml`（G1 新增） | description | Gazebo、inspection、未来实机 | 分辨率、内参、畸变、有效 ROI 和标称相机外参 |
 | `wall.yaml` | description | Gazebo、coverage、定位、未来实机 | `world → wall` 基准、作业面尺寸和参考网格线间距 |
 | `simulation.yaml` | gazebo | 仅 Gazebo | 吸附、摩擦、WheelSlip、出生位姿、仿真噪声 |
