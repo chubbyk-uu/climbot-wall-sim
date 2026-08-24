@@ -1068,6 +1068,13 @@ Gazebo SDF 中畸变标签的书写顺序不等于 ROS 数组顺序，桥接或�
 G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`、相机驱动和未来 G2
 触发节点均不得订阅 `/model/climbot/ground_truth`。
 
+仿真内部接口不属于真机公共 API：Gazebo 在
+`/simulation/inspection_camera/trigger` 收到触发后发布较宽视场的
+`ideal_image/ideal_camera_info`，仿真畸变适配器再输出
+`/simulation/inspection_camera/image_raw` 和 `camera_info`。1920×1080 RGB 图像采用
+Reliable、depth 1，避免大帧在同机桥接和 Python 适配之间被 Best Effort 静默丢弃；
+`climbot_inspection` 只消费适配后的成对消息。
+
 ## 配置文件
 
 | 文件 | 内容 |

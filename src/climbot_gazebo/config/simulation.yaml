@@ -68,6 +68,22 @@ simulation:
     angular_velocity_stddev: 0.0002
     linear_acceleration_stddev: 0.017
 
+  inspection_camera:
+    # Rendering/runtime properties only. Resolution, K/D, effective footprint
+    # and the physical mount come from climbot_description.
+    triggered: true
+    update_rate_hz: 30.0
+    image_format: R8G8B8
+    # Ogre2 does not implement SDF Brown distortion. Render a wider ideal
+    # source image, then the simulation-only adapter maps it into the shared
+    # calibrated K/D without black borders at the distorted corners.
+    render_overscan_focal_scale: 0.83
+    near_clip_m: 0.05
+    far_clip_m: 20.0
+    noise_mean: 0.0
+    noise_stddev: 0.002
+    visualize: false
+
   contact:
     # Match the 1 ms physics step so millisecond caster lift-off is observable.
     update_rate_hz: 1000.0

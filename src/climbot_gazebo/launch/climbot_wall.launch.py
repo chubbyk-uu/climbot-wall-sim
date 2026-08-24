@@ -14,6 +14,7 @@
 
 """Launch the wall robot with ROS 2 command and odometry bridges."""
 
+import math
 import os
 import shutil
 import tempfile
@@ -45,6 +46,9 @@ CONTACT_TOPIC_RIGHT = (
 CONTACT_TOPIC_CASTER = (
     _CONTACT_PREFIX + '/caster_ball_link/sensor/caster_contact/contact')
 JOINT_STATE_TOPIC = '/model/climbot/joint_state'
+CAMERA_IDEAL_IMAGE_TOPIC = '/simulation/inspection_camera/ideal_image'
+CAMERA_IDEAL_INFO_TOPIC = '/simulation/inspection_camera/ideal_camera_info'
+CAMERA_TRIGGER_TOPIC = '/simulation/inspection_camera/trigger'
 
 
 def running_on_wsl():
@@ -148,6 +152,12 @@ def robot_mappings(gazebo_share, description_share):
     simulated_wheel = simulation['drive_wheel']
     simulated_drive = simulation['drive']
     imu = simulation['imu']
+    simulated_camera = simulation['inspection_camera']
+    image = camera['image']
+    calibration = camera['calibration']
+    intrinsics = calibration['intrinsics']
+    render_scale = float(simulated_camera['render_overscan_focal_scale'])
+    render_fx = float(intrinsics['fx_px']) * render_scale
     return {
         'base_length': repr(float(base['size_xyz'][0])),
         'base_width': repr(float(base['size_xyz'][1])),
@@ -217,6 +227,28 @@ def robot_mappings(gazebo_share, description_share):
             bracket['top_arm_centre_xyz_m'][1])),
         'camera_bracket_arm_z': repr(float(
             bracket['top_arm_centre_xyz_m'][2])),
+        'camera_image_width': str(int(image['width_px'])),
+        'camera_image_height': str(int(image['height_px'])),
+        'camera_render_fx': repr(render_fx),
+        'camera_render_fy': repr(
+            float(intrinsics['fy_px']) * render_scale),
+        'camera_render_hfov': repr(2.0 * math.atan(
+            float(image['width_px']) / (2.0 * render_fx))),
+        'camera_cx': repr(float(intrinsics['cx_px'])),
+        'camera_cy': repr(float(intrinsics['cy_px'])),
+        'camera_skew': repr(float(intrinsics['skew'])),
+        'camera_triggered': str(bool(
+            simulated_camera['triggered'])).lower(),
+        'camera_update_rate': repr(float(
+            simulated_camera['update_rate_hz'])),
+        'camera_image_format': str(simulated_camera['image_format']),
+        'camera_near_clip': repr(float(simulated_camera['near_clip_m'])),
+        'camera_far_clip': repr(float(simulated_camera['far_clip_m'])),
+        'camera_noise_mean': repr(float(simulated_camera['noise_mean'])),
+        'camera_noise_stddev': repr(float(
+            simulated_camera['noise_stddev'])),
+        'camera_visualize': str(bool(
+            simulated_camera['visualize'])).lower(),
         'max_linear_velocity': repr(float(drive['max_linear_velocity_mps'])),
         'max_angular_velocity': repr(float(drive['max_angular_velocity_rps'])),
         'max_linear_acceleration': repr(
@@ -286,6 +318,8 @@ def launch_setup(context, *args, **kwargs):
 
     with open(wall_config) as handle:
         wall = yaml.safe_load(handle)['wall']
+    with open(os.path.join(package_share, 'config', 'simulation.yaml')) as handle:
+        simulation = yaml.safe_load(handle)['simulation']
 
     actions = [
         SetEnvironmentVariable(
@@ -335,6 +369,11 @@ def launch_setup(context, *args, **kwargs):
             '/model/climbot/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/model/climbot/ground_truth@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+            CAMERA_IDEAL_IMAGE_TOPIC +
+            '@sensor_msgs/msg/Image[gz.msgs.Image',
+            CAMERA_IDEAL_INFO_TOPIC +
+            '@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+            CAMERA_TRIGGER_TOPIC + '@std_msgs/msg/Bool]gz.msgs.Boolean',
             JOINT_STATE_TOPIC + '@sensor_msgs/msg/JointState[gz.msgs.Model',
             # Contact sensors ignore their <topic> tag, so the fully qualified
             # Gazebo names are bridged and remapped to short ROS topics below.
@@ -350,6 +389,21 @@ def launch_setup(context, *args, **kwargs):
         ],
         parameters=[{
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
+        }],
+        output='screen',
+    ))
+
+    actions.append(Node(
+        package='climbot_gazebo',
+        executable='camera_distortion_adapter.py',
+        name='camera_distortion_adapter',
+        parameters=[{
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'camera_config': os.path.join(
+                description_share, 'config', 'inspection_camera.yaml'),
+            'render_focal_scale': float(
+                simulation['inspection_camera'][
+                    'render_overscan_focal_scale']),
         }],
         output='screen',
     ))

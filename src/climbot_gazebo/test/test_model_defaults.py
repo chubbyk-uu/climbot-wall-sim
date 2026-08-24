@@ -14,6 +14,7 @@
 
 """Verify standalone SDF defaults match authoritative YAML settings."""
 
+import math
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -36,30 +37,77 @@ def test_sdf_defaults_match_shared_and_simulation_yaml():
     root = ElementTree.parse(
         PACKAGE_ROOT / 'models' / 'climbot' / 'model.sdf.xacro').getroot()
     arguments = {
-        element.attrib['name']: float(element.attrib['default'])
+        element.attrib['name']: element.attrib['default']
         for element in root.findall(f'{{{XACRO_NAMESPACE}}}arg')
     }
-    assert arguments['base_x'] == pytest.approx(robot['base']['centre_xyz'][0])
-    assert arguments['base_z'] == pytest.approx(robot['base']['centre_xyz'][2])
-    assert arguments['wheel_axle_x'] == pytest.approx(
+    assert float(arguments['base_x']) == pytest.approx(
+        robot['base']['centre_xyz'][0])
+    assert float(arguments['base_z']) == pytest.approx(
+        robot['base']['centre_xyz'][2])
+    assert float(arguments['wheel_axle_x']) == pytest.approx(
         robot['drive_wheel']['axle_x_m'])
-    assert arguments['caster_x'] == pytest.approx(robot['caster']['centre_x_m'])
+    assert float(arguments['caster_x']) == pytest.approx(
+        robot['caster']['centre_x_m'])
     camera = yaml.safe_load(
         (description / 'config' / 'inspection_camera.yaml').read_text()
     )['inspection_camera']
     body = robot['inspection_payload']['camera_body']
     bracket = robot['inspection_payload']['bracket']
-    assert arguments['camera_body_mass'] == pytest.approx(body['mass_kg'])
-    assert arguments['camera_body_z'] == pytest.approx(body['centre_xyz_m'][2])
-    assert arguments['camera_bracket_mass'] == pytest.approx(bracket['mass_kg'])
-    assert arguments['camera_bracket_x'] == pytest.approx(
+    assert float(arguments['camera_body_mass']) == pytest.approx(body['mass_kg'])
+    assert float(arguments['camera_body_z']) == pytest.approx(
+        body['centre_xyz_m'][2])
+    assert float(arguments['camera_bracket_mass']) == pytest.approx(
+        bracket['mass_kg'])
+    assert float(arguments['camera_bracket_x']) == pytest.approx(
         bracket['centre_xyz_m'][0])
-    assert arguments['camera_optical_x'] == pytest.approx(
+    assert float(arguments['camera_optical_x']) == pytest.approx(
         camera['optical_mount']['center_xyz_m'][0])
-    assert arguments['camera_optical_z'] == pytest.approx(
+    assert float(arguments['camera_optical_z']) == pytest.approx(
         camera['optical_mount']['center_xyz_m'][2])
-    assert arguments['contact_rate'] == pytest.approx(
+    image = camera['image']
+    intrinsics = camera['calibration']['intrinsics']
+    assert int(arguments['camera_image_width']) == image['width_px']
+    assert int(arguments['camera_image_height']) == image['height_px']
+    simulated_camera = simulation['inspection_camera']
+    render_scale = simulated_camera['render_overscan_focal_scale']
+    assert float(arguments['camera_render_fx']) == pytest.approx(
+        intrinsics['fx_px'] * render_scale)
+    assert float(arguments['camera_render_fy']) == pytest.approx(
+        intrinsics['fy_px'] * render_scale)
+    assert float(arguments['camera_render_hfov']) == pytest.approx(
+        2.0 * math.atan(
+            image['width_px'] / (2.0 * intrinsics['fx_px'] * render_scale)))
+    assert arguments['camera_triggered'] == str(
+        simulated_camera['triggered']).lower()
+    assert arguments['camera_image_format'] == simulated_camera['image_format']
+    assert float(arguments['camera_update_rate']) == pytest.approx(
+        simulated_camera['update_rate_hz'])
+    assert float(arguments['camera_noise_stddev']) == pytest.approx(
+        simulated_camera['noise_stddev'])
+    assert float(arguments['contact_rate']) == pytest.approx(
         simulation['contact']['update_rate_hz'])
+
+
+def test_camera_sensor_is_triggered_and_publishes_a_wider_ideal_source():
+    """Pin private transport topics and leave distortion to the Ogre2 adapter."""
+    root = ElementTree.parse(
+        PACKAGE_ROOT / 'models' / 'climbot' / 'model.sdf.xacro').getroot()
+    sensor = root.find(
+        "model/link[@name='inspection_camera_link']/sensor"
+        "[@name='inspection_camera']")
+    assert sensor is not None
+    camera = sensor.find('camera')
+    assert camera.findtext('triggered') == '$(arg camera_triggered)'
+    assert camera.findtext('trigger_topic') == (
+        '/simulation/inspection_camera/trigger')
+    assert camera.findtext('camera_info_topic') == (
+        '/simulation/inspection_camera/ideal_camera_info')
+    assert sensor.findtext('topic') == '/simulation/inspection_camera/ideal_image'
+    assert camera.find('distortion') is None
+    intrinsics = camera.find('lens/intrinsics')
+    assert intrinsics.findtext('fx') == '$(arg camera_render_fx)'
+    assert intrinsics.findtext('fy') == '$(arg camera_render_fy)'
+    assert camera.findtext('horizontal_fov') == '$(arg camera_render_hfov)'
 
 
 def test_truth_odometry_is_explicitly_labelled_as_world_frame():

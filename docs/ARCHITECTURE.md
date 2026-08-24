@@ -90,6 +90,12 @@ Gazebo 真值只能用于模拟传感器生成、记录和独立评价，不得�
 适配留在 `climbot_gazebo`，所以同一个 `climbot_inspection` 节点可替换为真实相机输入。
 正常触发逻辑不得订阅 Gazebo 真值。
 
+当前 Gazebo 8 的 Ogre2 后端不支持 SDF `lens/distortion` 对图像像素生效。因此仿真包
+用较宽视场的 triggered camera 生成理想图，再由 `camera_distortion_adapter` 按共享
+`inspection_camera.yaml` 对像素施加 Brown–Conrady 畸变并生成匹配的
+`CameraInfo`。这层仅用于补足渲染后端能力，不进入 `climbot_inspection`，也不改变其
+真机可替换边界。
+
 ### `climbot_coverage`
 
 C++ 覆盖规划器和 RViz 可视化：

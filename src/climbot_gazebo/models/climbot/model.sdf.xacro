@@ -56,6 +56,22 @@
   <xacro:arg name="camera_bracket_arm_x" default="0.235"/>
   <xacro:arg name="camera_bracket_arm_y" default="0.000"/>
   <xacro:arg name="camera_bracket_arm_z" default="0.300"/>
+  <xacro:arg name="camera_image_width" default="1920"/>
+  <xacro:arg name="camera_image_height" default="1080"/>
+  <xacro:arg name="camera_render_fx" default="796.8"/>
+  <xacro:arg name="camera_render_fy" default="796.8"/>
+  <xacro:arg name="camera_render_hfov" default="1.756056982795549"/>
+  <xacro:arg name="camera_cx" default="959.5"/>
+  <xacro:arg name="camera_cy" default="539.5"/>
+  <xacro:arg name="camera_skew" default="0.0"/>
+  <xacro:arg name="camera_triggered" default="true"/>
+  <xacro:arg name="camera_update_rate" default="30.0"/>
+  <xacro:arg name="camera_image_format" default="R8G8B8"/>
+  <xacro:arg name="camera_near_clip" default="0.05"/>
+  <xacro:arg name="camera_far_clip" default="20.0"/>
+  <xacro:arg name="camera_noise_mean" default="0.0"/>
+  <xacro:arg name="camera_noise_stddev" default="0.002"/>
+  <xacro:arg name="camera_visualize" default="false"/>
   <xacro:arg name="max_linear_velocity" default="0.30"/>
   <xacro:arg name="max_angular_velocity" default="1.20"/>
   <xacro:arg name="max_linear_acceleration" default="0.40"/>
@@ -372,6 +388,46 @@
       <collision name="body_collision">
         <geometry><box><size>$(arg camera_body_size_x) $(arg camera_body_size_y) $(arg camera_body_size_z)</size></box></geometry>
       </collision>
+      <sensor name="inspection_camera" type="camera">
+        <!-- Gazebo cameras look along sensor +X. A +90 degree pitch maps that
+             axis to base -Z; image-right then maps to base -Y and image-down
+             to base -X, matching inspection_camera_optical_frame. -->
+        <pose>0 0 ${float('$(arg camera_optical_z)') - float('$(arg camera_body_z)')} 0 1.5707963267948966 0</pose>
+        <always_on>true</always_on>
+        <update_rate>$(arg camera_update_rate)</update_rate>
+        <visualize>$(arg camera_visualize)</visualize>
+        <topic>/simulation/inspection_camera/ideal_image</topic>
+        <gz_frame_id>inspection_camera_optical_frame</gz_frame_id>
+        <camera>
+          <triggered>$(arg camera_triggered)</triggered>
+          <trigger_topic>/simulation/inspection_camera/trigger</trigger_topic>
+          <camera_info_topic>/simulation/inspection_camera/ideal_camera_info</camera_info_topic>
+          <horizontal_fov>$(arg camera_render_hfov)</horizontal_fov>
+          <image>
+            <width>$(arg camera_image_width)</width>
+            <height>$(arg camera_image_height)</height>
+            <format>$(arg camera_image_format)</format>
+          </image>
+          <clip>
+            <near>$(arg camera_near_clip)</near>
+            <far>$(arg camera_far_clip)</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>$(arg camera_noise_mean)</mean>
+            <stddev>$(arg camera_noise_stddev)</stddev>
+          </noise>
+          <lens>
+            <intrinsics>
+              <fx>$(arg camera_render_fx)</fx>
+              <fy>$(arg camera_render_fy)</fy>
+              <cx>$(arg camera_cx)</cx>
+              <cy>$(arg camera_cy)</cy>
+              <s>$(arg camera_skew)</s>
+            </intrinsics>
+          </lens>
+        </camera>
+      </sensor>
     </link>
     <joint name="inspection_camera_joint" type="fixed">
       <parent>chassis_link</parent>

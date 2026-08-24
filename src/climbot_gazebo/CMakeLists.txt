@@ -21,6 +21,7 @@ install(
 install(
   PROGRAMS
     scripts/calibrate_wall_slip.py
+    scripts/camera_distortion_adapter.py
     scripts/evaluate_localization.py
     scripts/evaluate_coverage_execution.py
     scripts/evaluate_slip_compensation.py
@@ -40,6 +41,8 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(test_command_routing test/test_command_routing.py)
+  ament_add_pytest_test(
+    test_camera_distortion test/test_camera_distortion.py)
   ament_add_pytest_test(test_coverage_metrics test/test_coverage_metrics.py)
   ament_add_pytest_test(test_ekf_startup test/test_ekf_startup.py)
   ament_add_pytest_test(test_execution_metrics test/test_execution_metrics.py)
