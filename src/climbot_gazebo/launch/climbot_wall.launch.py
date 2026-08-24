@@ -132,11 +132,18 @@ def robot_mappings(gazebo_share, description_share):
     """Flatten shared robot and Gazebo-only settings for the xacro files."""
     with open(os.path.join(description_share, 'config', 'robot.yaml')) as handle:
         robot = yaml.safe_load(handle)['robot']
+    with open(os.path.join(
+            description_share, 'config', 'inspection_camera.yaml')) as handle:
+        camera = yaml.safe_load(handle)['inspection_camera']
     with open(os.path.join(gazebo_share, 'config', 'simulation.yaml')) as handle:
         simulation = yaml.safe_load(handle)['simulation']
     base = robot['base']
     wheel = robot['drive_wheel']
     caster = robot['caster']
+    payload = robot['inspection_payload']
+    camera_body = payload['camera_body']
+    bracket = payload['bracket']
+    optical_mount = camera['optical_mount']
     drive = robot['drive']
     simulated_wheel = simulation['drive_wheel']
     simulated_drive = simulation['drive']
@@ -163,6 +170,53 @@ def robot_mappings(gazebo_share, description_share):
         'caster_mass': repr(float(caster['mass_kg'])),
         'caster_x': repr(float(caster['centre_x_m'])),
         'caster_mu': repr(float(simulation['caster']['mu'])),
+        'camera_body_size_x': repr(float(camera_body['size_xyz_m'][0])),
+        'camera_body_size_y': repr(float(camera_body['size_xyz_m'][1])),
+        'camera_body_size_z': repr(float(camera_body['size_xyz_m'][2])),
+        'camera_body_mass': repr(float(camera_body['mass_kg'])),
+        'camera_body_x': repr(float(camera_body['centre_xyz_m'][0])),
+        'camera_body_y': repr(float(camera_body['centre_xyz_m'][1])),
+        'camera_body_z': repr(float(camera_body['centre_xyz_m'][2])),
+        'camera_optical_x': repr(float(optical_mount['center_xyz_m'][0])),
+        'camera_optical_y': repr(float(optical_mount['center_xyz_m'][1])),
+        'camera_optical_z': repr(float(optical_mount['center_xyz_m'][2])),
+        'camera_optical_roll': repr(float(optical_mount['rpy_rad'][0])),
+        'camera_optical_pitch': repr(float(optical_mount['rpy_rad'][1])),
+        'camera_optical_yaw': repr(float(optical_mount['rpy_rad'][2])),
+        'camera_bracket_mass': repr(float(bracket['mass_kg'])),
+        'camera_bracket_x': repr(float(bracket['centre_xyz_m'][0])),
+        'camera_bracket_y': repr(float(bracket['centre_xyz_m'][1])),
+        'camera_bracket_z': repr(float(bracket['centre_xyz_m'][2])),
+        'camera_bracket_inertia_x': repr(float(
+            bracket['inertia_box_size_xyz_m'][0])),
+        'camera_bracket_inertia_y': repr(float(
+            bracket['inertia_box_size_xyz_m'][1])),
+        'camera_bracket_inertia_z': repr(float(
+            bracket['inertia_box_size_xyz_m'][2])),
+        'camera_bracket_upright_size_x': repr(float(
+            bracket['upright_size_xyz_m'][0])),
+        'camera_bracket_upright_size_y': repr(float(
+            bracket['upright_size_xyz_m'][1])),
+        'camera_bracket_upright_size_z': repr(float(
+            bracket['upright_size_xyz_m'][2])),
+        'camera_bracket_upright_x': repr(float(
+            bracket['upright_centre_xyz_m'][0])),
+        'camera_bracket_upright_y': repr(float(
+            bracket['upright_centre_xyz_m'][1])),
+        'camera_bracket_upright_z': repr(float(
+            bracket['upright_centre_xyz_m'][2])),
+        'camera_bracket_arm_size_x': repr(float(
+            bracket['top_arm_size_xyz_m'][0])),
+        'camera_bracket_arm_size_y': repr(float(
+            bracket['top_arm_size_xyz_m'][1])),
+        'camera_bracket_arm_size_z': repr(float(
+            bracket['top_arm_size_xyz_m'][2])),
+        'camera_bracket_arm_x': repr(float(
+            bracket['top_arm_centre_xyz_m'][0])),
+        'camera_bracket_arm_y': repr(float(
+            bracket['top_arm_centre_xyz_m'][1])),
+        'camera_bracket_arm_z': repr(float(
+            bracket['top_arm_centre_xyz_m'][2])),
         'max_linear_velocity': repr(float(drive['max_linear_velocity_mps'])),
         'max_angular_velocity': repr(float(drive['max_angular_velocity_rps'])),
         'max_linear_acceleration': repr(

@@ -24,6 +24,38 @@
   <xacro:arg name="caster_mass" default="0.5"/>
   <xacro:arg name="caster_x" default="-0.33"/>
   <xacro:arg name="caster_mu" default="0.35"/>
+  <xacro:arg name="camera_body_size_x" default="0.10"/>
+  <xacro:arg name="camera_body_size_y" default="0.14"/>
+  <xacro:arg name="camera_body_size_z" default="0.08"/>
+  <xacro:arg name="camera_body_mass" default="1.5"/>
+  <xacro:arg name="camera_body_x" default="0.300"/>
+  <xacro:arg name="camera_body_y" default="0.000"/>
+  <xacro:arg name="camera_body_z" default="0.315"/>
+  <xacro:arg name="camera_optical_x" default="0.300"/>
+  <xacro:arg name="camera_optical_y" default="0.000"/>
+  <xacro:arg name="camera_optical_z" default="0.275"/>
+  <xacro:arg name="camera_optical_roll" default="3.141592653589793"/>
+  <xacro:arg name="camera_optical_pitch" default="0.0"/>
+  <xacro:arg name="camera_optical_yaw" default="-1.5707963267948966"/>
+  <xacro:arg name="camera_bracket_mass" default="0.5"/>
+  <xacro:arg name="camera_bracket_x" default="0.200"/>
+  <xacro:arg name="camera_bracket_y" default="0.000"/>
+  <xacro:arg name="camera_bracket_z" default="0.247"/>
+  <xacro:arg name="camera_bracket_inertia_x" default="0.17"/>
+  <xacro:arg name="camera_bracket_inertia_y" default="0.12"/>
+  <xacro:arg name="camera_bracket_inertia_z" default="0.17"/>
+  <xacro:arg name="camera_bracket_upright_size_x" default="0.04"/>
+  <xacro:arg name="camera_bracket_upright_size_y" default="0.12"/>
+  <xacro:arg name="camera_bracket_upright_size_z" default="0.14"/>
+  <xacro:arg name="camera_bracket_upright_x" default="0.170"/>
+  <xacro:arg name="camera_bracket_upright_y" default="0.000"/>
+  <xacro:arg name="camera_bracket_upright_z" default="0.205"/>
+  <xacro:arg name="camera_bracket_arm_size_x" default="0.15"/>
+  <xacro:arg name="camera_bracket_arm_size_y" default="0.12"/>
+  <xacro:arg name="camera_bracket_arm_size_z" default="0.03"/>
+  <xacro:arg name="camera_bracket_arm_x" default="0.235"/>
+  <xacro:arg name="camera_bracket_arm_y" default="0.000"/>
+  <xacro:arg name="camera_bracket_arm_z" default="0.300"/>
   <xacro:arg name="max_linear_velocity" default="0.30"/>
   <xacro:arg name="max_angular_velocity" default="1.20"/>
   <xacro:arg name="max_linear_acceleration" default="0.40"/>
@@ -60,6 +92,12 @@
   <xacro:property name="wheel_ixx" value="${wheel_mass * (3.0 * wheel_radius * wheel_radius + wheel_width * wheel_width) / 12.0}"/>
   <xacro:property name="wheel_izz" value="${wheel_mass * wheel_radius * wheel_radius / 2.0}"/>
   <xacro:property name="caster_i" value="${0.4 * caster_mass * caster_radius * caster_radius}"/>
+  <xacro:property name="camera_body_ixx" value="${float('$(arg camera_body_mass)') * (float('$(arg camera_body_size_y)')**2 + float('$(arg camera_body_size_z)')**2) / 12.0}"/>
+  <xacro:property name="camera_body_iyy" value="${float('$(arg camera_body_mass)') * (float('$(arg camera_body_size_x)')**2 + float('$(arg camera_body_size_z)')**2) / 12.0}"/>
+  <xacro:property name="camera_body_izz" value="${float('$(arg camera_body_mass)') * (float('$(arg camera_body_size_x)')**2 + float('$(arg camera_body_size_y)')**2) / 12.0}"/>
+  <xacro:property name="camera_bracket_ixx" value="${float('$(arg camera_bracket_mass)') * (float('$(arg camera_bracket_inertia_y)')**2 + float('$(arg camera_bracket_inertia_z)')**2) / 12.0}"/>
+  <xacro:property name="camera_bracket_iyy" value="${float('$(arg camera_bracket_mass)') * (float('$(arg camera_bracket_inertia_x)')**2 + float('$(arg camera_bracket_inertia_z)')**2) / 12.0}"/>
+  <xacro:property name="camera_bracket_izz" value="${float('$(arg camera_bracket_mass)') * (float('$(arg camera_bracket_inertia_x)')**2 + float('$(arg camera_bracket_inertia_y)')**2) / 12.0}"/>
 
   <xacro:macro name="drive_wheel" params="side sign">
     <link name="${side}_wheel_link">
@@ -275,6 +313,74 @@
       <parent>chassis_link</parent>
       <child>caster_ball_link</child>
     </joint>
+
+    <link name="inspection_camera_bracket_link">
+      <pose>$(arg camera_bracket_x) $(arg camera_bracket_y) $(arg camera_bracket_z) 0 0 0</pose>
+      <inertial>
+        <mass>$(arg camera_bracket_mass)</mass>
+        <inertia>
+          <ixx>${camera_bracket_ixx}</ixx>
+          <iyy>${camera_bracket_iyy}</iyy>
+          <izz>${camera_bracket_izz}</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="upright_visual">
+        <pose>${float('$(arg camera_bracket_upright_x)') - float('$(arg camera_bracket_x)')} ${float('$(arg camera_bracket_upright_y)') - float('$(arg camera_bracket_y)')} ${float('$(arg camera_bracket_upright_z)') - float('$(arg camera_bracket_z)')} 0 0 0</pose>
+        <geometry><box><size>$(arg camera_bracket_upright_size_x) $(arg camera_bracket_upright_size_y) $(arg camera_bracket_upright_size_z)</size></box></geometry>
+        <material><ambient>0.15 0.15 0.15 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
+      </visual>
+      <visual name="top_arm_visual">
+        <pose>${float('$(arg camera_bracket_arm_x)') - float('$(arg camera_bracket_x)')} ${float('$(arg camera_bracket_arm_y)') - float('$(arg camera_bracket_y)')} ${float('$(arg camera_bracket_arm_z)') - float('$(arg camera_bracket_z)')} 0 0 0</pose>
+        <geometry><box><size>$(arg camera_bracket_arm_size_x) $(arg camera_bracket_arm_size_y) $(arg camera_bracket_arm_size_z)</size></box></geometry>
+        <material><ambient>0.15 0.15 0.15 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
+      </visual>
+      <collision name="upright_collision">
+        <pose>${float('$(arg camera_bracket_upright_x)') - float('$(arg camera_bracket_x)')} ${float('$(arg camera_bracket_upright_y)') - float('$(arg camera_bracket_y)')} ${float('$(arg camera_bracket_upright_z)') - float('$(arg camera_bracket_z)')} 0 0 0</pose>
+        <geometry><box><size>$(arg camera_bracket_upright_size_x) $(arg camera_bracket_upright_size_y) $(arg camera_bracket_upright_size_z)</size></box></geometry>
+      </collision>
+      <collision name="top_arm_collision">
+        <pose>${float('$(arg camera_bracket_arm_x)') - float('$(arg camera_bracket_x)')} ${float('$(arg camera_bracket_arm_y)') - float('$(arg camera_bracket_y)')} ${float('$(arg camera_bracket_arm_z)') - float('$(arg camera_bracket_z)')} 0 0 0</pose>
+        <geometry><box><size>$(arg camera_bracket_arm_size_x) $(arg camera_bracket_arm_size_y) $(arg camera_bracket_arm_size_z)</size></box></geometry>
+      </collision>
+    </link>
+    <joint name="inspection_camera_bracket_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>inspection_camera_bracket_link</child>
+    </joint>
+
+    <link name="inspection_camera_link">
+      <pose>$(arg camera_body_x) $(arg camera_body_y) $(arg camera_body_z) 0 0 0</pose>
+      <inertial>
+        <mass>$(arg camera_body_mass)</mass>
+        <inertia>
+          <ixx>${camera_body_ixx}</ixx>
+          <iyy>${camera_body_iyy}</iyy>
+          <izz>${camera_body_izz}</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="body_visual">
+        <geometry><box><size>$(arg camera_body_size_x) $(arg camera_body_size_y) $(arg camera_body_size_z)</size></box></geometry>
+        <material><ambient>0.03 0.12 0.20 1</ambient><diffuse>0.05 0.20 0.32 1</diffuse></material>
+      </visual>
+      <visual name="lens_visual">
+        <pose>0 0 ${float('$(arg camera_optical_z)') - float('$(arg camera_body_z)') - 0.004} 0 0 0</pose>
+        <geometry><cylinder><radius>0.025</radius><length>0.012</length></cylinder></geometry>
+        <material><ambient>0.01 0.02 0.03 1</ambient><diffuse>0.02 0.03 0.04 1</diffuse></material>
+      </visual>
+      <collision name="body_collision">
+        <geometry><box><size>$(arg camera_body_size_x) $(arg camera_body_size_y) $(arg camera_body_size_z)</size></box></geometry>
+      </collision>
+    </link>
+    <joint name="inspection_camera_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>inspection_camera_link</child>
+    </joint>
+
+    <frame name="inspection_camera_optical_frame" attached_to="inspection_camera_link">
+      <pose relative_to="__model__">$(arg camera_optical_x) $(arg camera_optical_y) $(arg camera_optical_z) $(arg camera_optical_roll) $(arg camera_optical_pitch) $(arg camera_optical_yaw)</pose>
+    </frame>
 
     <plugin filename="gz-sim-diff-drive-system"
             name="gz::sim::systems::DiffDrive">

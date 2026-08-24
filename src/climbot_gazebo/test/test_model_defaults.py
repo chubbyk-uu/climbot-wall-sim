@@ -44,6 +44,20 @@ def test_sdf_defaults_match_shared_and_simulation_yaml():
     assert arguments['wheel_axle_x'] == pytest.approx(
         robot['drive_wheel']['axle_x_m'])
     assert arguments['caster_x'] == pytest.approx(robot['caster']['centre_x_m'])
+    camera = yaml.safe_load(
+        (description / 'config' / 'inspection_camera.yaml').read_text()
+    )['inspection_camera']
+    body = robot['inspection_payload']['camera_body']
+    bracket = robot['inspection_payload']['bracket']
+    assert arguments['camera_body_mass'] == pytest.approx(body['mass_kg'])
+    assert arguments['camera_body_z'] == pytest.approx(body['centre_xyz_m'][2])
+    assert arguments['camera_bracket_mass'] == pytest.approx(bracket['mass_kg'])
+    assert arguments['camera_bracket_x'] == pytest.approx(
+        bracket['centre_xyz_m'][0])
+    assert arguments['camera_optical_x'] == pytest.approx(
+        camera['optical_mount']['center_xyz_m'][0])
+    assert arguments['camera_optical_z'] == pytest.approx(
+        camera['optical_mount']['center_xyz_m'][2])
     assert arguments['contact_rate'] == pytest.approx(
         simulation['contact']['update_rate_hz'])
 

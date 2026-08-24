@@ -18,6 +18,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(
     test_robot_description_defaults test/test_robot_description_defaults.py)
+  ament_add_pytest_test(
+    test_inspection_camera_config test/test_inspection_camera_config.py)
   ament_add_pytest_test(test_wall_frame test/test_wall_frame.py)
 endif()
 

@@ -1,0 +1,33 @@
+# Shared nominal calibration and optical mounting geometry for the inspection
+# camera. Gazebo and the real camera adapter consume the same schema; a real
+# calibration overrides these nominal K/D values without changing interfaces.
+inspection_camera:
+  image:
+    width_px: 1920
+    height_px: 1080
+
+  # base_link is on the wall plane at the drive-axle midpoint. The optical
+  # frame follows REP 103: +Z looks at the wall, +X is image-right, +Y is
+  # image-down. Robot-forward therefore appears toward the top of the image.
+  optical_mount:
+    center_xyz_m: [0.300, 0.000, 0.275]
+    rpy_rad: [3.141592653589793, 0.0, -1.5707963267948966]
+
+  calibration:
+    distortion_model: plumb_bob
+    intrinsics:
+      fx_px: 960.0
+      fy_px: 960.0
+      cx_px: 959.5
+      cy_px: 539.5
+      skew: 0.0
+    # ROS CameraInfo order: k1, k2, p1, p2, k3. These are a non-ideal nominal
+    # simulation lens, not measurements of the future real camera.
+    distortion: [-0.120, 0.025, 0.0005, -0.0003, -0.004]
+
+  footprint:
+    # The full pinhole field at the nominal 0.275 m wall distance is derived
+    # from resolution and focal length: 0.550 x 0.309375 m.
+    effective_width_m: 0.500
+    effective_length_m: 0.28125
+

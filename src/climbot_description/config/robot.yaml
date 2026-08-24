@@ -18,6 +18,27 @@ robot:
     mass_kg: 0.5
     centre_x_m: -0.33
 
+  # Conservative G1 proxy until the selected camera and bracket have measured
+  # CAD / mass properties. These are physical inertial parts, not only visuals.
+  # The optical centre and calibration live in inspection_camera.yaml.
+  inspection_payload:
+    camera_body:
+      size_xyz_m: [0.10, 0.14, 0.08]
+      mass_kg: 1.5
+      # The wall-facing surface is at z=0.275 m, coincident with the nominal
+      # lens plane; the body extends away from the wall.
+      centre_xyz_m: [0.300, 0.000, 0.315]
+    bracket:
+      mass_kg: 0.5
+      # One rigid equivalent inertia for the two-box L bracket rendered by the
+      # descriptions below. Replace with CAD inertia when hardware is chosen.
+      centre_xyz_m: [0.200, 0.000, 0.247]
+      inertia_box_size_xyz_m: [0.17, 0.12, 0.17]
+      upright_size_xyz_m: [0.04, 0.12, 0.14]
+      upright_centre_xyz_m: [0.170, 0.000, 0.205]
+      top_arm_size_xyz_m: [0.15, 0.12, 0.03]
+      top_arm_centre_xyz_m: [0.235, 0.000, 0.300]
+
   # The actuator envelope, not the operating point. Both controllers still
   # cruise at 0.20 m/s and plan their profiles from the same rated
   # accelerations; what these bound is how much room a correction has above
