@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "task_id": "g2-acceptance-vertical",
+  "revision": 1,
+  "captures": 18,
+  "scan_segments": 3,
+  "captured_segments": [
+    0,
+    2,
+    4
+  ],
+  "scan_only": true,
+  "all_scan_segments_captured": true,
+  "numbering_complete": true,
+  "capture_counts_complete": true,
+  "exact_image_metadata_pairing": true,
+  "nominal_overlap_ratio": 0.25,
+  "minimum_actual_overlap_ratio": 0.2,
+  "maximum_target_gap_m": 0.18799999999999994,
+  "maximum_actual_gap_m": 0.188640207242587,
+  "maximum_actual_gap_limit_m": 0.225,
+  "maximum_lateral_spacing_m": 0.3733063293090191,
+  "maximum_lateral_spacing_limit_m": 0.4,
+  "photo_coverage": {
+    "ratio": 0.9994444444444445,
+    "missed_ratio": 0.0005555555555555314,
+    "covered_cells": 10794,
+    "region_cells": 10800,
+    "resolution_m": 0.01,
+    "covered_area_m2": 1.0794,
+    "region_area_m2": 1.08
+  },
+  "minimum_photo_coverage_ratio": 0.98,
+  "maximum_camera_position_error_m": 0.004999192886598049,
+  "maximum_camera_position_error_components_m": [
+    0.004268920266412124,
+    0.0021887248027656625,
+    0.002662700424977016
+  ],
+  "maximum_camera_position_error_limit_m": 0.005,
+  "maximum_heading_error_deg": 0.17034072241514556,
+  "maximum_heading_error_limit_deg": 1.0,
+  "groups": [
+    {
+      "task_id": "g2-acceptance-vertical",
+      "revision": 1,
+      "segment_index": 0,
+      "captures": 6,
+      "expected_captures": 6,
+      "maximum_target_gap_m": 0.18799999999999994,
+      "maximum_actual_gap_m": 0.188640207242587
+    },
+    {
+      "task_id": "g2-acceptance-vertical",
+      "revision": 1,
+      "segment_index": 2,
+      "captures": 6,
+      "expected_captures": 6,
+      "maximum_target_gap_m": 0.18799999999999994,
+      "maximum_actual_gap_m": 0.18825755577018466
+    },
+    {
+      "task_id": "g2-acceptance-vertical",
+      "revision": 1,
+      "segment_index": 4,
+      "captures": 6,
+      "expected_captures": 6,
+      "maximum_target_gap_m": 0.18799999999999994,
+      "maximum_actual_gap_m": 0.18863534526582537
+    }
+  ],
+  "provenance": {
+    "recorded_utc": "2026-08-24T07:07:09.087109+00:00",
+    "git": {
+      "commit": "ebde2e1ec359482db2f9172df5794d30027fc710",
+      "branch": "main",
+      "source_modified": false,
+      "traceable": true
+    }
+  }
+}
