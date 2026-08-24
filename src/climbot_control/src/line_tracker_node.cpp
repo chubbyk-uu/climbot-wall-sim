@@ -73,6 +73,7 @@ public:
     end_ = {
       declare_parameter("end_x", 1.0), declare_parameter("end_y", 0.0)};
     cruise_speed_ = declare_parameter("cruise_speed", 0.20);
+    inspection_cruise_speed_ = declare_parameter("inspection_cruise_speed", 0.04);
     cross_gain_ = declare_parameter("cross_gain", 1.0);
     cross_integral_gain_ = declare_parameter("cross_integral_gain", 0.30);
     cross_integral_limit_ = declare_parameter("cross_integral_limit_m_s", 0.10);
@@ -378,6 +379,10 @@ private:
       throw std::invalid_argument("The line segment must have non-zero length.");
     }
     requirePositive("cruise_speed", cruise_speed_);
+    requirePositive("inspection_cruise_speed", inspection_cruise_speed_);
+    if (inspection_cruise_speed_ > cruise_speed_) {
+      throw std::invalid_argument("inspection_cruise_speed cannot exceed cruise_speed.");
+    }
     requireFinite("cross_gain", cross_gain_);
     if (cross_gain_ < 0.0) {
       throw std::invalid_argument("cross_gain must be non-negative.");
@@ -606,7 +611,7 @@ private:
   climbot_control::DurationModel durationModel() const
   {
     climbot_control::DurationModel model;
-    model.cruise_speed = cruise_speed_;
+    model.cruise_speed = taskCruiseSpeed();
     // Whichever ramps the robot is actually going to run. In distance mode the
     // command steps to the cruise speed and the rate limiter shapes the ramp,
     // while braking follows the much gentler distance-to-stop curve; in time
@@ -624,6 +629,17 @@ private:
     model.goal_stop_s = schedule_goal_stop_s_;
     model.handshake_s = schedule_handshake_s_;
     return model;
+  }
+
+  double taskCruiseSpeed() const
+  {
+    return isInspectionTask() ?
+           inspection_cruise_speed_ : cruise_speed_;
+  }
+
+  bool isInspectionTask() const
+  {
+    return active_task_ && active_task_->detection_forward_offset > 0.0;
   }
 
   /// Estimate how long each segment takes, so progress can be weighted by
@@ -798,7 +814,7 @@ private:
     travel_start_along_ =
       ((pose_.x - start_.x) * dx + (pose_.y - start_.y) * dy) / length;
     travel_profile_ = climbot_control::planTravel(
-      length - travel_start_along_, cruise_speed_,
+      length - travel_start_along_, taskCruiseSpeed(),
       time_profile_acceleration_, time_profile_deceleration_);
     if (tracking_mode_ == TrackingMode::TIME) {
       RCLCPP_INFO(
@@ -851,7 +867,8 @@ private:
     const double raw = sample.speed + time_speed_lag_ * sample.acceleration +
       time_along_gain_ * schedule_lag_ + integral_term;
     return climbot_control::guardSpeed(
-      std::clamp(raw, 0.0, catch_up_max_linear_speed_),
+      std::clamp(
+        raw, 0.0, isInspectionTask() ? taskCruiseSpeed() : catch_up_max_linear_speed_),
       command.cross, command.heading_error, limits_);
   }
 
@@ -1167,10 +1184,10 @@ private:
   /// keeps the number monotonic in the lag and comparable between segments.
   double scheduleLagSeconds() const
   {
-    if (tracking_mode_ != TrackingMode::TIME || !(cruise_speed_ > 0.0)) {
+    if (tracking_mode_ != TrackingMode::TIME || !(taskCruiseSpeed() > 0.0)) {
       return 0.0;
     }
-    return schedule_lag_ / cruise_speed_;
+    return schedule_lag_ / taskCruiseSpeed();
   }
 
   /// What is left of the drive to the first waypoint. The progress bar reads
@@ -1442,7 +1459,7 @@ private:
       return;
     }
 
-    auto desired = climbot_control::trackLine(start_, end_, pose_, cruise_speed_,
+    auto desired = climbot_control::trackLine(start_, end_, pose_, taskCruiseSpeed(),
         cross_gain_, heading_gain_, limits_, cross_integral_gain_, cross_integral_);
     if (motion_state_ == MotionState::SEGMENT_COMPLETE) {
       limitAndPublish({}, dt, angular_acceleration_);
@@ -1477,7 +1494,7 @@ private:
     if (desired.linear > 0.0 && cross_integral_gain_ > 0.0) {
       const double candidate_integral = std::clamp(
         cross_integral_ + desired.cross * dt, -cross_integral_limit_, cross_integral_limit_);
-      const auto candidate = climbot_control::trackLine(start_, end_, pose_, cruise_speed_,
+      const auto candidate = climbot_control::trackLine(start_, end_, pose_, taskCruiseSpeed(),
           cross_gain_, heading_gain_, limits_, cross_integral_gain_, candidate_integral);
       const double integral_drive = -cross_integral_gain_ *
         (candidate_integral - cross_integral_);
@@ -1696,6 +1713,7 @@ private:
   double travel_stretch_credit_{0.0};
   double schedule_lag_{0.0};
   double cruise_speed_{0.20};
+  double inspection_cruise_speed_{0.04};
   double cross_gain_{1.0};
   double cross_integral_gain_{0.30};
   double cross_integral_limit_{0.10};

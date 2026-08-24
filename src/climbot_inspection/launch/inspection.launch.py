@@ -22,12 +22,27 @@ from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+import yaml
 
 
 def generate_launch_description():
     """Expose topic/config overrides for simulation and future real cameras."""
     package_share = get_package_share_directory('climbot_inspection')
+    description_share = get_package_share_directory('climbot_description')
     default_config = os.path.join(package_share, 'config', 'inspection.yaml')
+    with open(os.path.join(
+            description_share, 'config', 'inspection_camera.yaml')) as handle:
+        camera = yaml.safe_load(handle)['inspection_camera']
+    mount = camera['optical_mount']
+    geometry = {
+        'effective_length_m': camera['footprint']['effective_length_m'],
+        'camera_mount_x_m': mount['center_xyz_m'][0],
+        'camera_mount_y_m': mount['center_xyz_m'][1],
+        'camera_mount_z_m': mount['center_xyz_m'][2],
+        'camera_mount_roll_rad': mount['rpy_rad'][0],
+        'camera_mount_pitch_rad': mount['rpy_rad'][1],
+        'camera_mount_yaw_rad': mount['rpy_rad'][2],
+    }
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('config_file', default_value=default_config),
@@ -45,7 +60,7 @@ def generate_launch_description():
             package='climbot_inspection',
             executable='automatic_capture_node',
             name='automatic_capture_node',
-            parameters=[LaunchConfiguration('config_file'), {
+            parameters=[LaunchConfiguration('config_file'), geometry, {
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
             }],
             condition=IfCondition(LaunchConfiguration('automatic_capture')),

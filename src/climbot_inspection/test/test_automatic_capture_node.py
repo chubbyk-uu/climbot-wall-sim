@@ -65,6 +65,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             InspectionCapture, '/inspection/capture_metadata',
             self._metadata_callback, reliable)
         self.capture_calls = 0
+        self.reject_next = False
         self.image_stamp = Time(sec=10, nanosec=500_000_000)
         self.node.create_service(
             Trigger, '/inspection/capture_once', self._capture_callback)
@@ -86,6 +87,11 @@ class TestAutomaticCaptureNode(unittest.TestCase):
 
     def _capture_callback(self, _request, response):
         self.capture_calls += 1
+        if self.reject_next:
+            self.reject_next = False
+            response.success = False
+            response.message = 'camera is temporarily busy'
+            return response
         image = Image()
         image.header.stamp = self.image_stamp
         image.header.frame_id = 'inspection_camera_optical_frame'
@@ -100,13 +106,14 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.metadata.append(message)
         self.event.set()
 
-    def _reference(self, enabled, state=ExecutionReference.TRACK_LINE if hasattr(
-            ExecutionReference, 'TRACK_LINE') else 3):
+    def _reference(self, enabled, segment=2,
+                   state=ExecutionReference.TRACK_LINE if hasattr(
+                       ExecutionReference, 'TRACK_LINE') else 3):
         message = ExecutionReference()
         message.header.frame_id = 'odom'
         message.task_id = 'g2-test'
         message.revision = 7
-        message.segment_index = 2
+        message.segment_index = segment
         message.segment_type = 1
         message.executor_state = state
         message.start.x = 0.0
@@ -176,6 +183,22 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(self.capture_calls, 2)
         self.assertEqual(self.metadata[1].trigger_index, 1)
         self.assertAlmostEqual(self.metadata[1].target_along_track, 0.5, places=9)
+
+        # A temporary service rejection retries the same spatial target and
+        # keeps trigger numbering contiguous instead of silently losing it.
+        self.reject_next = True
+        self.image_stamp = Time(sec=16, nanosec=500_000_000)
+        self._reference(True, segment=4)
+        self._odom(16, 0.0)
+        time.sleep(0.2)
+        self.assertEqual(self.capture_calls, 3)
+        self._reference(True, segment=4)
+        time.sleep(0.2)
+        self.assertEqual(self.capture_calls, 4)
+        self._odom(17, 0.1)
+        self._wait_count(3)
+        self.assertEqual(self.metadata[2].segment_index, 4)
+        self.assertEqual(self.metadata[2].trigger_index, 0)
 
 
 @launch_testing.post_shutdown_test()

@@ -1,0 +1,17 @@
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    task_id: g2-acceptance-trapezoid
+    input_mode: parameters
+    region_type: trapezoid
+    lower_left: [4.0, 1.4]
+    upper_right: [5.5, 2.6]
+    lower_right: [6.0, 1.4]
+    detection_width: 0.50
+    detection_length: 0.28125
+    detection_forward_offset: 0.300
+    overlap_ratio: 0.25
+    sweep_direction: horizontal
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

@@ -60,8 +60,8 @@ row_spacing = detection_width × (1 - overlap_ratio)
 safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 ```
 
-`detection_length` 是沿行进方向的检测有效长度，当前默认 `0.01 m` 为保守临时值，
-后续必须按实际检测载荷标定。
+`detection_length` 是沿行进方向的检测有效长度。G2 相机配置使用 `0.28125 m`，旧的
+非视觉回归配置仍保留 `0.01 m` 以维持原测试语义。真机仍须按实际检测载荷标定。
 
 机器人轮廓和墙面尺寸由 `climbot_description` 注入。规划器只生成直线段和
 路点处原地转向，不生成圆角或切弯。控制器可能在转后偏差较大时执行一次采集关闭的

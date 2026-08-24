@@ -25,6 +25,7 @@ import time
 from ament_index_python.packages import get_package_share_directory
 from climbot_description.geometry import quaternion_tuple, yaw_from_quaternion
 from climbot_description.wall_frame import WallFrame
+from climbot_gazebo.coverage_metrics import footprint_coverage
 from climbot_gazebo.provenance import git_state
 from climbot_interfaces.msg import CoverageStatus, CoverageTask, InspectionCapture
 from nav_msgs.msg import Odometry
@@ -55,6 +56,7 @@ class G2InspectionEvaluator(Node):
         self.declare_parameter('minimum_actual_overlap_ratio', 0.20)
         self.declare_parameter('maximum_camera_position_error_m', 0.005)
         self.declare_parameter('maximum_heading_error_deg', 1.0)
+        self.declare_parameter('minimum_photo_coverage_ratio', 0.98)
         wall_path = os.path.join(
             get_package_share_directory('climbot_description'),
             'config', 'wall.yaml')
@@ -66,6 +68,7 @@ class G2InspectionEvaluator(Node):
         self.truth = deque()
         self.pending_truth = []
         self.position_errors = []
+        self.position_error_components = []
         self.heading_errors = []
         self.finished_at = None
         reliable = QoSProfile(depth=100, reliability=ReliabilityPolicy.RELIABLE)
@@ -138,8 +141,14 @@ class G2InspectionEvaluator(Node):
                 base[2] + 0.275,
             )
             estimated = metadata.camera_pose.pose.position
-            self.position_errors.append(math.dist(
-                truth_camera, (estimated.x, estimated.y, estimated.z)))
+            components = (
+                estimated.x - truth_camera[0],
+                estimated.y - truth_camera[1],
+                estimated.z - truth_camera[2],
+            )
+            self.position_error_components.append(components)
+            self.position_errors.append(math.sqrt(sum(
+                value * value for value in components)))
             self.heading_errors.append(abs(wrap(
                 metadata.wall_heading_rad - heading)))
         self.pending_truth = unresolved
@@ -165,6 +174,7 @@ class G2InspectionEvaluator(Node):
             groups[(item.task_id, item.revision, item.segment_index)].append(item)
 
         group_results = []
+        line_centres = []
         numbering_ok = True
         counts_ok = True
         maximum_target_gap = 0.0
@@ -193,6 +203,10 @@ class G2InspectionEvaluator(Node):
             if target_gaps:
                 maximum_target_gap = max(maximum_target_gap, max(target_gaps))
                 maximum_actual_gap = max(maximum_actual_gap, max(actual_gaps))
+            line_centres.append((
+                sum(item.camera_pose.pose.position.x for item in values) / len(values),
+                sum(item.camera_pose.pose.position.y for item in values) / len(values),
+            ))
             group_results.append({
                 'task_id': key[0], 'revision': key[1], 'segment_index': segment,
                 'captures': len(values), 'expected_captures': expected_count,
@@ -212,6 +226,32 @@ class G2InspectionEvaluator(Node):
             set(metadata_keys) == image_keys and
             all(count == 1 for count in self.images.values()))
         actual_limit = self.task.detection_length * (1.0 - minimum_overlap)
+        lateral_limit = self.task.detection_width * (1.0 - minimum_overlap)
+        maximum_lateral_spacing = 0.0
+        if len(line_centres) > 1:
+            first_group = next(iter(sorted(groups.items())))[1]
+            dx = (first_group[0].reference_end.x -
+                  first_group[0].reference_start.x)
+            dy = (first_group[0].reference_end.y -
+                  first_group[0].reference_start.y)
+            length = math.hypot(dx, dy)
+            normal = (-dy / length, dx / length)
+            coordinates = sorted(
+                x * normal[0] + y * normal[1] for x, y in line_centres)
+            maximum_lateral_spacing = max(
+                second - first
+                for first, second in zip(coordinates, coordinates[1:]))
+        polygon = [(point.x, point.y) for point in self.task.coverage_region.points]
+        photo_paths = [[(
+            item.camera_pose.pose.position.x,
+            item.camera_pose.pose.position.y,
+            item.wall_heading_rad,
+        )] for item in self.metadata]
+        photo_coverage = footprint_coverage(
+            polygon, photo_paths, self.task.detection_width,
+            self.task.detection_length, resolution=0.01)
+        minimum_photo_coverage = float(
+            self.get_parameter('minimum_photo_coverage_ratio').value)
         position_limit = float(
             self.get_parameter('maximum_camera_position_error_m').value)
         heading_limit = math.radians(float(
@@ -222,6 +262,8 @@ class G2InspectionEvaluator(Node):
             bool(self.metadata), scan_only, all_scan_segments, numbering_ok,
             counts_ok, exact_pairing, not self.pending_truth,
             maximum_actual_gap <= actual_limit + 1e-9,
+            maximum_lateral_spacing <= lateral_limit + 1e-9,
+            photo_coverage['ratio'] >= minimum_photo_coverage,
             bool(self.position_errors) and max(self.position_errors) <= position_limit,
             bool(self.heading_errors) and max(self.heading_errors) <= heading_limit,
         ))
@@ -242,8 +284,16 @@ class G2InspectionEvaluator(Node):
             'maximum_target_gap_m': maximum_target_gap,
             'maximum_actual_gap_m': maximum_actual_gap,
             'maximum_actual_gap_limit_m': actual_limit,
+            'maximum_lateral_spacing_m': maximum_lateral_spacing,
+            'maximum_lateral_spacing_limit_m': lateral_limit,
+            'photo_coverage': photo_coverage,
+            'minimum_photo_coverage_ratio': minimum_photo_coverage,
             'maximum_camera_position_error_m': (
                 max(self.position_errors) if self.position_errors else None),
+            'maximum_camera_position_error_components_m': (
+                [max(abs(value[axis]) for value in self.position_error_components)
+                 for axis in range(3)]
+                if self.position_error_components else None),
             'maximum_camera_position_error_limit_m': position_limit,
             'maximum_heading_error_deg': (
                 math.degrees(max(self.heading_errors)) if self.heading_errors else None),

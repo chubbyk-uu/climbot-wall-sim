@@ -290,6 +290,14 @@ private:
         if (!future.get()->success && pending_ && !pending_->image_stamp) {
           RCLCPP_WARN(get_logger(), "Automatic capture rejected: %s",
           future.get()->message.c_str());
+          // A busy or warming camera has not consumed this spatial target.
+          // Put the same number back rather than silently creating a hole.
+          next_trigger_ = std::min(next_trigger_, pending_->metadata.trigger_index);
+          if (future.get()->message.find("faulted") != std::string::npos ||
+          future.get()->message.find("restart the node") != std::string::npos)
+          {
+            disabled_key_ = key_;
+          }
           pending_.reset();
         }
       });

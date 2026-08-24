@@ -122,7 +122,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'inspection',
             default_value='true',
-            description='Start the G1 one-frame inspection service.',
+            description='Start G1 manual and G2 position-triggered inspection.',
         ),
         # The grid painted on the wall face in Gazebo, which is the one that
         # ends up in photographs. Set it to 0 for a run that photographs the

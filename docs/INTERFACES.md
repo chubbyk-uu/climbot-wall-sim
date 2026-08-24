@@ -272,6 +272,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `arc_entry_max_angular_speed` | `0.25 rad/s` | 小弧线最大角速度 |
 | `line_tracker` | `arc_entry_timeout_s` | `15 s` | 小弧线未收敛时的停车失败门限 |
 | `line_tracker` | `cruise_speed` | `0.20 m/s` | 扫描和换道期望巡航速度 |
+| `line_tracker` | `inspection_cruise_speed` | `0.04 m/s` | `detection_forward_offset>0` 的连续拍照任务巡航速度；为 50 ms 绝对定位延迟和 1 mm 测量噪声保留曝光位姿误差余量 |
 | `line_tracker` | `max_linear_speed` | `0.25 m/s` | 位置控制模式的线速度上限，高于巡航值以容纳上爬打滑 |
 | `line_tracker` | `visible_oscillation_amplitude_m` | `0.03 m` | 仅记录肉眼可见幅度的横轨往复；小误差反复过零不算故障 |
 | `line_tracker` | `control_frequency_hz` | `50 Hz` | 直线跟踪控制频率 |
@@ -624,7 +625,8 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 | `sweep_direction` | `horizontal` / `vertical` | 弓字扫描方向 |
 | `start_corner` | `lower_left` / `lower_right` / `upper_left` / `upper_right` | 起始角点 |
 | `detection_width` | m | 检测有效宽度 |
-| `detection_length` | m | 沿行进方向的检测有效长度；当前默认 `0.01`，待载荷标定 |
+| `detection_length` | m | 沿行进方向的检测有效长度；G2 标称 `0.28125`，旧回归配置保留 `0.01` |
+| `detection_forward_offset` | m | 检测中心相对 `base_link` 的前向偏移；G2 为 `0.300` |
 | `overlap_ratio` | `[0, 1)` | 相邻扫描带重叠率 |
 | `robot_length`、`robot_width` | m | launch 从 `robot.yaml` 注入 |
 | `edge_clearance` | m | launch 从 `robot.yaml` 注入 |
@@ -645,7 +647,7 @@ safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 C（右下）。A、C 的高度取平均值修正为水平底边。
 
 完整任务接口区分检测覆盖区域 `coverage_region` 和机器人中心安全运动区域
-`motion_region`。以下参数和输出在阶段 E/F 实现，不属于当前规划器已完成接口：
+`motion_region`。以下参数和输出已经进入规划／执行接口：
 
 | 项目 | 含义 |
 | --- | --- |
@@ -748,6 +750,7 @@ geometry_msgs/Polygon motion_region
 
 float64 detection_width
 float64 detection_length
+float64 detection_forward_offset
 ```
 
 `header.frame_id` 是所有路点和两个 Polygon 的共同坐标系，默认 `odom`；
@@ -755,11 +758,14 @@ float64 detection_length
 `segment_types`，其中 `segment_types[i]` 描述 `waypoints[i] → waypoints[i+1]`。
 路点姿态指向下一段，最后一个姿态沿用到达航向。
 
+`detection_forward_offset` 是检测中心沿机器人前向相对 `base_link` 的偏移，普通工具可
+为 `0`，G2 前置相机任务为 `+0.300 m`。
+
 接收方必须拒绝以下任务：
 
 - `task_id` 为空、`revision` 为零或扫描方向非法；
 - 路点少于两个，或线段类型数量不是路点数量减一；
-- 坐标、四元数、检测尺寸包含非有限值，或检测尺寸不为正；
+- 坐标、四元数、检测尺寸／偏移包含非有限值，检测尺寸不为正或偏移为负；
 - 存在零长度线段、未知线段类型或非法四元数；
 - 线段类型为 `SEGMENT_RETURN`。该常量保留在消息里，只是为了编号不会挪动、不会让
   已录制的 bag 换个含义；但没有任何执行器为它定义过行为，收下它等于按默认分支去走一段

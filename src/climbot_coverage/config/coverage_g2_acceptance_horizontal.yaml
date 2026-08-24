@@ -1,0 +1,17 @@
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    task_id: g2-acceptance-horizontal
+    input_mode: parameters
+    region_type: rectangle
+    lower_left: [4.1, 1.55]
+    upper_right: [5.9, 2.45]
+    lower_right: [5.9, 1.55]
+    detection_width: 0.50
+    detection_length: 0.28125
+    detection_forward_offset: 0.300
+    overlap_ratio: 0.25
+    sweep_direction: horizontal
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

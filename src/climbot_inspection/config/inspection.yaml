@@ -21,16 +21,9 @@ automatic_capture_node:
     image_topic: /inspection/camera/image_raw
     capture_service: /inspection/capture_once
     metadata_topic: /inspection/capture_metadata
-    effective_length_m: 0.28125
     # 25% nominal leaves trigger/localization margin while G2 acceptance still
     # requires at least 20% actual longitudinal overlap.
     image_overlap_ratio: 0.25
-    camera_mount_x_m: 0.300
-    camera_mount_y_m: 0.0
-    camera_mount_z_m: 0.275
-    camera_mount_roll_rad: 3.141592653589793
-    camera_mount_pitch_rad: 0.0
-    camera_mount_yaw_rad: -1.5707963267948966
     reference_timeout_s: 0.5
     pose_wait_timeout_s: 0.5
     pose_cache_duration_s: 3.0
