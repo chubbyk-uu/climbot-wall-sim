@@ -65,6 +65,16 @@ ros2 service call /inspection/capture_once std_srvs/srv/Trigger '{}'
 相机空闲时不连续出图。只做非视觉调试可在 launch 后加 `inspection:=false`；拍墙面
 纹理时还应加 `wall_grid_spacing:=0`。
 
+轴向验收时可临时显示非对称靶；正常巡检不要打开：
+
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  inspection_target:=true wall_grid_spacing:=0 headless:=true
+```
+
+红色块表示机器人前进正向，应出现在图像上方；绿色块表示墙面向上，应出现在图像
+左侧；蓝色块是投影中心。靶标默认关闭，不会混入普通墙面图像。
+
 ### 点选区域
 
 RViz 里从启动起就画着一个**绿色边框**，那是墙面按机器人安全边距内缩后的可达
