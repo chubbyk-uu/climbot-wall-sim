@@ -16,6 +16,7 @@
 """Measure the three wall-contact normal loads across the guide's manoeuvres."""
 
 import csv
+import json
 import math
 import os
 import time
@@ -25,6 +26,7 @@ from climbot_description.geometry import (
     wrap_angle,
     yaw_from_quaternion,
 )
+from climbot_gazebo.provenance import git_state
 from climbot_gazebo.safe_stop import install_stop_on_termination
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -108,6 +110,8 @@ class NormalLoadMeasurement(Node):
         self.declare_parameter('contact_timeout_s', 0.15)
         self.declare_parameter('turn_timeout_s', 25.0)
         self.declare_parameter('output_csv', 'results/normal_loads.csv')
+        self.declare_parameter('summary_json', '')
+        self.declare_parameter('minimum_caster_load_n', 60.0)
 
         self._truth = None
         self._filtered = None
@@ -315,6 +319,78 @@ class NormalLoadMeasurement(Node):
                         '%.3f' % (100.0 * statistics['contact_ratio'])])
         self.get_logger().info('Wrote %s' % os.path.abspath(path))
 
+    def _summarize(self):
+        """State the G1 load verdict and the exact manoeuvre that limits it."""
+        records = []
+        for label, samples in self._samples.items():
+            category, heading_deg = self._sample_metadata[label]
+            for contact in ('left_wheel', 'right_wheel', 'caster'):
+                statistics = load_statistics(samples[contact])
+                if statistics is None:
+                    continue
+                records.append({
+                    'manoeuvre': label,
+                    'category': category,
+                    'heading_deg': heading_deg,
+                    'contact': contact,
+                    **statistics,
+                })
+        minima = {}
+        for contact in ('left_wheel', 'right_wheel', 'caster'):
+            candidates = [
+                record for record in records if record['contact'] == contact]
+            worst = min(candidates, key=lambda record: record['min'])
+            minima[contact] = {
+                'minimum_n': worst['min'],
+                'manoeuvre': worst['manoeuvre'],
+                'category': worst['category'],
+                'heading_deg': worst['heading_deg'],
+            }
+        caster_limit = float(
+            self.get_parameter('minimum_caster_load_n').value)
+        if not math.isfinite(caster_limit) or caster_limit <= 0.0:
+            raise ValueError('minimum_caster_load_n must be positive and finite')
+        no_lift_off = all(record['zero_samples'] == 0 for record in records)
+        passed = no_lift_off and minima['caster']['minimum_n'] >= caster_limit
+        parameters = {
+            name: self.get_parameter(name).value
+            for name in (
+                'static_duration_s', 'static_settle_duration_s',
+                'static_headings_deg', 'drive_duration_s', 'brake_duration_s',
+                'turn_angle_deg', 'linear_speed_mps', 'angular_speed_rps',
+                'minimum_caster_load_n')
+        }
+        return {
+            'schema_version': 1,
+            'passed': passed,
+            'record_count': len(records),
+            'manoeuvre_count': len(self._samples),
+            'no_lift_off': no_lift_off,
+            'minimum_caster_load_n': caster_limit,
+            'caster_margin_n': minima['caster']['minimum_n'] - caster_limit,
+            'minimum_by_contact': minima,
+            'parameters': parameters,
+            'records': records,
+            'provenance': {'git': git_state()},
+        }
+
+    def _write_summary(self):
+        path = str(self.get_parameter('summary_json').value)
+        summary = self._summarize()
+        if path:
+            expanded = os.path.abspath(os.path.expanduser(path))
+            os.makedirs(os.path.dirname(expanded), exist_ok=True)
+            with open(expanded, 'w') as handle:
+                json.dump(summary, handle, indent=2, sort_keys=True, allow_nan=False)
+                handle.write('\n')
+            self.get_logger().info('Wrote %s' % expanded)
+        self.get_logger().info(
+            'G1_LOAD_PASS=%s caster_min=%.3f N margin=%.3f N records=%d' % (
+                summary['passed'],
+                summary['minimum_by_contact']['caster']['minimum_n'],
+                summary['caster_margin_n'], summary['record_count']))
+        return summary
+
     def run(self):
         self._wait_for_data()
         static_s = float(self.get_parameter('static_duration_s').value)
@@ -358,6 +434,9 @@ class NormalLoadMeasurement(Node):
         self._record_turn('turn_in_place_cw', -1.0)
 
         self._write_csv()
+        summary = self._write_summary()
+        if not summary['passed']:
+            raise RuntimeError('G1 normal-load acceptance failed')
 
 
 def main():
