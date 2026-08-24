@@ -174,7 +174,7 @@ class G2InspectionEvaluator(Node):
             groups[(item.task_id, item.revision, item.segment_index)].append(item)
 
         group_results = []
-        line_centres = []
+        line_centres = defaultdict(list)
         numbering_ok = True
         counts_ok = True
         maximum_target_gap = 0.0
@@ -203,10 +203,17 @@ class G2InspectionEvaluator(Node):
             if target_gaps:
                 maximum_target_gap = max(maximum_target_gap, max(target_gaps))
                 maximum_actual_gap = max(maximum_actual_gap, max(actual_gaps))
-            line_centres.append((
-                sum(item.camera_pose.pose.position.x for item in values) / len(values),
-                sum(item.camera_pose.pose.position.y for item in values) / len(values),
-            ))
+            reference_dx = (values[0].reference_end.x -
+                            values[0].reference_start.x)
+            reference_dy = (values[0].reference_end.y -
+                            values[0].reference_start.y)
+            direction = ('horizontal' if abs(reference_dx) >= abs(reference_dy)
+                         else 'vertical')
+            cross_coordinate = (
+                sum(item.camera_pose.pose.position.y for item in values) / len(values)
+                if direction == 'horizontal' else
+                sum(item.camera_pose.pose.position.x for item in values) / len(values))
+            line_centres[direction].append(cross_coordinate)
             group_results.append({
                 'task_id': key[0], 'revision': key[1], 'segment_index': segment,
                 'captures': len(values), 'expected_captures': expected_count,
@@ -228,19 +235,13 @@ class G2InspectionEvaluator(Node):
         actual_limit = self.task.detection_length * (1.0 - minimum_overlap)
         lateral_limit = self.task.detection_width * (1.0 - minimum_overlap)
         maximum_lateral_spacing = 0.0
-        if len(line_centres) > 1:
-            first_group = next(iter(sorted(groups.items())))[1]
-            dx = (first_group[0].reference_end.x -
-                  first_group[0].reference_start.x)
-            dy = (first_group[0].reference_end.y -
-                  first_group[0].reference_start.y)
-            length = math.hypot(dx, dy)
-            normal = (-dy / length, dx / length)
-            coordinates = sorted(
-                x * normal[0] + y * normal[1] for x, y in line_centres)
-            maximum_lateral_spacing = max(
-                second - first
-                for first, second in zip(coordinates, coordinates[1:]))
+        for coordinates in line_centres.values():
+            coordinates.sort()
+            if len(coordinates) > 1:
+                maximum_lateral_spacing = max(
+                    maximum_lateral_spacing,
+                    max(second - first for first, second in zip(
+                        coordinates, coordinates[1:])))
         polygon = [(point.x, point.y) for point in self.task.coverage_region.points]
         photo_paths = [[(
             item.camera_pose.pose.position.x,
