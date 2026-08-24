@@ -117,6 +117,7 @@
 | `coverage_*_2026-08-14_summary.json` | 历史对照 | 同三个工况的上一版指标，`source_modified=true`，仅供对比趋势 |
 | `g1_camera_2026-08-24_summary.json` | **G1 相机接口正式结果** | 10 s 空闲零帧、单次成对图像、K/D/P、Brown 像素映射、TF、视场及载荷溯源；`commit=8a8537b` 干净树 |
 | `g1_camera_target_2026-08-24_summary.json` | **G1 轴向／网格正式结果** | 非对称三色靶证明图像轴向；5×9 线网格校正后最大残差 `0.295 px`；`commit=36aa520` 干净树 |
+| `localization_g1_camera_2026-08-24_summary.json` | **G1 动态投影中心正式结果** | 四方向最大 EKF 相机中心误差 `2.119 mm < 5 mm`；`commit=2e16505` 干净树 |
 
 每组 `*` 包含一个 `_trajectory.csv.gz`（逐采样真值、融合位姿、动态参考、状态和
 横轨误差）和一个 `_summary.json`（Action 结果、逐段误差、覆盖率和 `provenance`）。
@@ -191,6 +192,17 @@
 `CameraInfo` 的 K/D 校正后 14 条线全部检出，最大直线残差 `0.295 px`。摘要产自
 `commit=36aa520` 干净树；原始 1920×1080 图仅留在
 `/tmp/climbot_g1_grid_formal_20260824.png`。
+
+## G1 随运动相机投影中心（2026-08-24）
+
+`localization_g1_camera_2026-08-24_summary.json` 扩展既有四方向定位实验，但没有把
+Gazebo 真值接入任何业务节点。独立评价器将真值和 EKF 的 `base_link` 位姿分别与共享
+外参 `[0.300,0,0.275] m` 合成，再比较真正的相机中心，而不是继续比较机器人中心。
+
+右、上、左、下四段的相机中心误差依次为 `2.119/1.838/0.337/1.438 mm`，最大值低于
+`5 mm` 门限；同次运行机器人中心最大误差 `1.853 mm`，轮式航位推算最大误差
+`547.7 mm`。摘要产自 `commit=2e16505`，`source_modified=false`、`traceable=true`；
+完整日志为 `/tmp/climbot_g1_projection_formal_{gazebo,evaluator}_20260824.log`。
 
 对比的组要对上模式：第一次我拿 time 模式的新结果去比 `2026-08-19`（distance），
 两组数字碰巧也接近，但那不是同一件事的对比。上表两组都是同模式对同模式。
