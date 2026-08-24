@@ -1,0 +1,219 @@
+{
+  "checks": {
+    "brown_mapping_rms_le_1px": true,
+    "camera_info_d": true,
+    "camera_info_finite": true,
+    "camera_info_k": true,
+    "camera_info_p": true,
+    "distortion_visibly_changes_pixels": true,
+    "effective_view_meets_nominal": true,
+    "idle_zero_frames": true,
+    "matching_stamp_and_frame": true,
+    "nonzero_distortion": true,
+    "one_public_pair": true,
+    "raw_view_meets_nominal": true,
+    "resolution": true,
+    "rotation_error_le_0_1deg": true,
+    "translation_error_le_1mm": true
+  },
+  "configuration": {
+    "camera": {
+      "calibration": {
+        "distortion": [
+          -0.12,
+          0.025,
+          0.0005,
+          -0.0003,
+          -0.004
+        ],
+        "distortion_model": "plumb_bob",
+        "intrinsics": {
+          "cx_px": 959.5,
+          "cy_px": 539.5,
+          "fx_px": 960.0,
+          "fy_px": 960.0,
+          "skew": 0.0
+        }
+      },
+      "footprint": {
+        "effective_length_m": 0.28125,
+        "effective_width_m": 0.5
+      },
+      "image": {
+        "height_px": 1080,
+        "width_px": 1920
+      },
+      "optical_mount": {
+        "center_xyz_m": [
+          0.3,
+          0.0,
+          0.275
+        ],
+        "rpy_rad": [
+          3.141592653589793,
+          0.0,
+          -1.5707963267948966
+        ]
+      }
+    },
+    "inspection_payload": {
+      "bracket": {
+        "centre_xyz_m": [
+          0.2,
+          0.0,
+          0.247
+        ],
+        "inertia_box_size_xyz_m": [
+          0.17,
+          0.12,
+          0.17
+        ],
+        "mass_kg": 0.5,
+        "top_arm_centre_xyz_m": [
+          0.235,
+          0.0,
+          0.3
+        ],
+        "top_arm_size_xyz_m": [
+          0.15,
+          0.12,
+          0.03
+        ],
+        "upright_centre_xyz_m": [
+          0.17,
+          0.0,
+          0.205
+        ],
+        "upright_size_xyz_m": [
+          0.04,
+          0.12,
+          0.14
+        ]
+      },
+      "camera_body": {
+        "centre_xyz_m": [
+          0.3,
+          0.0,
+          0.315
+        ],
+        "mass_kg": 1.5,
+        "size_xyz_m": [
+          0.1,
+          0.14,
+          0.08
+        ]
+      }
+    },
+    "robot_mass_properties": {
+      "centre_of_mass_xyz_m": [
+        -0.05666666666666667,
+        0.0,
+        0.10915151515151517
+      ],
+      "total_mass_kg": 16.5
+    },
+    "simulation_camera": {
+      "far_clip_m": 20.0,
+      "image_format": "R8G8B8",
+      "near_clip_m": 0.05,
+      "noise_mean": 0.0,
+      "noise_stddev": 0.002,
+      "render_overscan_focal_scale": 0.83,
+      "triggered": true,
+      "update_rate_hz": 30.0,
+      "visualize": false
+    }
+  },
+  "effective_view_m": [
+    0.5,
+    0.28125
+  ],
+  "frame": {
+    "brown_mapping_rms_px": 0.0,
+    "checks": {
+      "brown_mapping_rms_le_1px": true,
+      "camera_info_d": true,
+      "camera_info_finite": true,
+      "camera_info_k": true,
+      "camera_info_p": true,
+      "distortion_visibly_changes_pixels": true,
+      "matching_stamp_and_frame": true,
+      "nonzero_distortion": true,
+      "resolution": true
+    },
+    "d": [
+      -0.12,
+      0.025,
+      0.0005,
+      -0.0003,
+      -0.004
+    ],
+    "distortion_model": "plumb_bob",
+    "encoding": "rgb8",
+    "frame_id": "inspection_camera_optical_frame",
+    "height_px": 1080,
+    "ideal_to_distorted_mean_abs_px": 10.05399787808642,
+    "k": [
+      960.0,
+      0.0,
+      959.5,
+      0.0,
+      960.0,
+      539.5,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "p": [
+      960.0,
+      0.0,
+      959.5,
+      0.0,
+      0.0,
+      960.0,
+      539.5,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    "stamp_ns": 22091000000,
+    "width_px": 1920
+  },
+  "full_view_m": [
+    0.55,
+    0.309375
+  ],
+  "idle_observation_s": 10.0,
+  "passed": true,
+  "provenance": {
+    "git": {
+      "branch": "main",
+      "commit": "8a8537b876575a0cb2dcd50c06414425bbccc8e7",
+      "source_modified": false,
+      "traceable": true
+    }
+  },
+  "schema_version": 1,
+  "service_message": "Published one matched inspection image and CameraInfo pair.",
+  "transform": {
+    "checks": {
+      "rotation_error_le_0_1deg": true,
+      "translation_error_le_1mm": true
+    },
+    "rotation_error_deg": 0.0,
+    "rotation_xyzw": [
+      0.7071067811865476,
+      -0.7071067811865475,
+      -4.329780281177466e-17,
+      4.329780281177467e-17
+    ],
+    "translation_error_m": 0.0,
+    "translation_xyz_m": [
+      0.3,
+      0.0,
+      0.275
+    ]
+  }
+}
