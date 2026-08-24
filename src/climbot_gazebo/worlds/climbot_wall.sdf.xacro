@@ -110,6 +110,7 @@
         <material>
           <ambient>1 1 0.01 1</ambient>
           <diffuse>1 1 0.01 1</diffuse>
+          <emissive>1 1 0.01 1</emissive>
           <specular>0 0 0 1</specular>
         </material>
       </visual>
@@ -205,6 +206,7 @@
             <material>
               <ambient>0.95 0.95 0.95 1</ambient>
               <diffuse>0.95 0.95 0.95 1</diffuse>
+              <emissive>0.95 0.95 0.95 1</emissive>
               <specular>0 0 0 1</specular>
             </material>
           </visual>
@@ -213,17 +215,17 @@
           <visual name="g1_target_forward_red">
             <pose>${decal_x + 0.007} ${target_lateral + 0.35 * target_length} ${target_height - centre_z} 0 0 0</pose>
             <geometry><box><size>0.004 ${0.18 * target_length} ${0.10 * target_width}</size></box></geometry>
-            <material><ambient>1 0.02 0.02 1</ambient><diffuse>1 0.02 0.02 1</diffuse></material>
+            <material><ambient>1 0.02 0.02 1</ambient><diffuse>1 0.02 0.02 1</diffuse><emissive>1 0.02 0.02 1</emissive></material>
           </visual>
           <visual name="g1_target_up_green">
             <pose>${decal_x + 0.007} ${target_lateral} ${target_height - centre_z + 0.35 * target_width} 0 0 0</pose>
             <geometry><box><size>0.004 ${0.10 * target_length} ${0.18 * target_width}</size></box></geometry>
-            <material><ambient>0.02 1 0.02 1</ambient><diffuse>0.02 1 0.02 1</diffuse></material>
+            <material><ambient>0.02 1 0.02 1</ambient><diffuse>0.02 1 0.02 1</diffuse><emissive>0.02 1 0.02 1</emissive></material>
           </visual>
           <visual name="g1_target_centre_blue">
             <pose>${decal_x + 0.007} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
             <geometry><box><size>0.004 ${0.08 * target_length} ${0.08 * target_width}</size></box></geometry>
-            <material><ambient>0.02 0.02 1 1</ambient><diffuse>0.02 0.02 1 1</diffuse></material>
+            <material><ambient>0.02 0.02 1 1</ambient><diffuse>0.02 0.02 1 1</diffuse><emissive>0.02 0.02 1 1</emissive></material>
           </visual>
         </xacro:if>
       </link>

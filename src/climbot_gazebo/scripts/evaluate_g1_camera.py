@@ -67,11 +67,11 @@ class G1CameraEvaluator(Node):
         self.public_images = {}
         self.public_infos = {}
         self.ideal_images = {}
-        self.create_subscription(
+        self.public_image_subscription = self.create_subscription(
             Image, '/inspection/camera/image_raw', self._public_image, qos)
-        self.create_subscription(
+        self.public_info_subscription = self.create_subscription(
             CameraInfo, '/inspection/camera/camera_info', self._public_info, qos)
-        self.create_subscription(
+        self.ideal_image_subscription = self.create_subscription(
             Image, '/simulation/inspection_camera/ideal_image', self._ideal_image, qos)
         self.client = self.create_client(Trigger, '/inspection/capture_once')
         self.tf_buffer = Buffer()
@@ -90,6 +90,20 @@ class G1CameraEvaluator(Node):
         deadline = time.monotonic() + duration_s
         while rclpy.ok() and time.monotonic() < deadline:
             rclpy.spin_once(self, timeout_sec=min(0.05, deadline - time.monotonic()))
+
+    def wait_for_sources(self, timeout_s):
+        """Finish DDS discovery before a volatile one-shot frame can be sent."""
+        subscriptions = (
+            self.public_image_subscription,
+            self.public_info_subscription,
+            self.ideal_image_subscription,
+        )
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            if all(item.get_publisher_count() > 0 for item in subscriptions):
+                return
+            self.spin_for(0.05)
+        raise RuntimeError('camera image publishers did not finish DDS discovery')
 
     def capture(self, timeout_s):
         if not self.client.wait_for_service(timeout_sec=timeout_s):
@@ -280,6 +294,69 @@ def calibration_grid_metrics(raw_array, matrix, distortion):
     }
 
 
+def target_obstruction_metrics(raw_array, matrix, distortion, camera):
+    """Require every inset effective-ROI pixel to belong to the emissive target."""
+    rectified = cv2.undistort(raw_array, matrix, distortion)
+    intrinsics = camera['calibration']['intrinsics']
+    footprint = camera['footprint']
+    distance = camera['optical_mount']['center_xyz_m'][2]
+    half_width = (
+        0.5 * footprint['effective_width_m'] * intrinsics['fx_px'] / distance)
+    half_height = (
+        0.5 * footprint['effective_length_m'] * intrinsics['fy_px'] / distance)
+    margin = 20
+    left = int(math.ceil(intrinsics['cx_px'] - half_width)) + margin
+    right = int(math.floor(intrinsics['cx_px'] + half_width)) - margin
+    top = int(math.ceil(intrinsics['cy_px'] - half_height)) + margin
+    bottom = int(math.floor(intrinsics['cy_px'] + half_height)) - margin
+    roi = rectified[top:bottom + 1, left:right + 1]
+    maximum = np.max(roi, axis=2)
+    minimum = np.min(roi, axis=2)
+    white = minimum > 170
+    red = (
+        (roi[:, :, 0] > 120) &
+        (roi[:, :, 1] < 0.25 * roi[:, :, 0]) &
+        (roi[:, :, 2] < 0.25 * roi[:, :, 0]))
+    green = (
+        (roi[:, :, 1] > 120) &
+        (roi[:, :, 0] < 0.25 * roi[:, :, 1]) &
+        (roi[:, :, 2] < 0.25 * roi[:, :, 1]))
+    blue = (
+        (roi[:, :, 2] > 120) &
+        (roi[:, :, 0] < 0.25 * roi[:, :, 2]) &
+        (roi[:, :, 1] < 0.25 * roi[:, :, 2]))
+    yellow = (
+        (roi[:, :, 0] > 80) & (roi[:, :, 1] > 80) &
+        (np.minimum(roi[:, :, 0], roi[:, :, 1]) > 1.4 * roi[:, :, 2]) &
+        (np.abs(
+            roi[:, :, 0].astype(np.int16) - roi[:, :, 1].astype(np.int16)) <
+         0.20 * maximum))
+    known_target = white | red | green | blue | yellow
+    raw_unknown_count = int(np.count_nonzero(~known_target))
+    # Ogre's bilinear edge pixels are blends of two valid target colors and
+    # intentionally fail both strict color tests. Absorb exactly that one
+    # raster pixel; an occluding model still leaves its interior unknown.
+    known_with_edges = cv2.dilate(
+        known_target.astype(np.uint8), np.ones((3, 3), dtype=np.uint8)) > 0
+    unknown = ~known_with_edges
+    unknown_count = int(np.count_nonzero(unknown))
+    pixel_count = int(unknown.size)
+    unknown_ratio = unknown_count / pixel_count
+    minimum_brightest = int(np.min(maximum))
+    return {
+        'rectified_inset_roi_xyxy_px': [left, top, right, bottom],
+        'pixel_count': pixel_count,
+        'raw_unknown_pixel_count': raw_unknown_count,
+        'unknown_after_one_pixel_edge_allowance': unknown_count,
+        'unknown_ratio': unknown_ratio,
+        'minimum_brightest_channel': minimum_brightest,
+        'checks': {
+            'effective_roi_has_no_modelled_obstruction': (
+                unknown_count == 0 and minimum_brightest >= 150),
+        },
+    }
+
+
 def compare_frame(evaluator, camera, render_scale, check_target=False):
     """Validate the single public pair and recompute the Brown pixel mapping."""
     common = set(evaluator.public_images) & set(evaluator.public_infos)
@@ -341,7 +418,10 @@ def compare_frame(evaluator, camera, render_scale, check_target=False):
         target = marker_metrics(raw_array)
         target['calibration_grid'] = calibration_grid_metrics(
             raw_array, matrix, distortion)
+        target['obstruction'] = target_obstruction_metrics(
+            raw_array, matrix, distortion, camera)
         target['checks'].update(target['calibration_grid']['checks'])
+        target['checks'].update(target['obstruction']['checks'])
         result['target'] = target
         result['checks'].update(target['checks'])
     return result
@@ -411,6 +491,7 @@ def main():
     rclpy.init()
     evaluator = G1CameraEvaluator()
     try:
+        evaluator.wait_for_sources(args.timeout)
         evaluator.spin_for(args.idle_seconds)
         idle_frames = len(evaluator.public_images)
         service_message = evaluator.capture(args.timeout)
