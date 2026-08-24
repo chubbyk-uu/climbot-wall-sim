@@ -114,6 +114,7 @@ public:
     detection_width_ = declare_parameter("detection_width", 0.50);
     detection_length_ = declare_parameter("detection_length", 0.01);
     detection_forward_offset_ = declare_parameter("detection_forward_offset", 0.0);
+    detection_edge_overlap_ = declare_parameter("detection_edge_overlap", 0.0);
     overlap_ratio_ = declare_parameter("overlap_ratio", 0.20);
     robot_length_ = declare_parameter("robot_length", -1.0);
     robot_width_ = declare_parameter("robot_width", -1.0);
@@ -213,6 +214,7 @@ private:
     requireFinite("detection_width", detection_width_);
     requireFinite("detection_length", detection_length_);
     requireFinite("detection_forward_offset", detection_forward_offset_);
+    requireFinite("detection_edge_overlap", detection_edge_overlap_);
     requireFinite("overlap_ratio", overlap_ratio_);
     requireFinite("minimum_nominal_coverage_ratio", minimum_nominal_coverage_ratio_);
     requireFinite("robot_length", robot_length_);
@@ -226,6 +228,9 @@ private:
     }
     if (detection_forward_offset_ < 0.0) {
       throw std::invalid_argument("detection_forward_offset must be non-negative.");
+    }
+    if (detection_edge_overlap_ < 0.0) {
+      throw std::invalid_argument("detection_edge_overlap must be non-negative.");
     }
     if (overlap_ratio_ < 0.0 || overlap_ratio_ >= 1.0) {
       throw std::invalid_argument("overlap_ratio must be within [0, 1).");
@@ -500,7 +505,7 @@ private:
       const auto motion = motionRegion();
       auto path = generateFootprintAwareBoustrophedonPath(
         region.polygon, motion, detection_width_, detection_length_, row_spacing_,
-        sweep_direction_, start_corner_, detection_forward_offset_);
+        sweep_direction_, start_corner_, detection_forward_offset_, detection_edge_overlap_);
       double coverage_ratio = sampledCoverageRatio(
         region.polygon, path, detection_width_, detection_length_, 300,
         detection_forward_offset_);
@@ -561,7 +566,7 @@ private:
     }
     const auto finishing = makeTopEdgeFinishingScan(
       coverage_region, motion, detection_width_, detection_length_, path.back(),
-      detection_forward_offset_);
+      detection_forward_offset_, detection_edge_overlap_);
     if (finishing.empty()) {
       return "Top-edge scan skipped: the finishing line does not fit in motion_region.";
     }
@@ -857,6 +862,7 @@ private:
   double detection_width_;
   double detection_length_;
   double detection_forward_offset_;
+  double detection_edge_overlap_;
   double overlap_ratio_;
   double minimum_nominal_coverage_ratio_;
   std::string top_edge_scan_;

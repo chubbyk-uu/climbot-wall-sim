@@ -26,6 +26,7 @@ coverage_planner:
     detection_length: 0.28125
     # The inspection camera optical centre is 0.300 m ahead of base_link.
     detection_forward_offset: 0.300
+    detection_edge_overlap: 0.020
     # 25% nominal leaves tracking margin while G2 requires >=20% actual overlap.
     overlap_ratio: 0.25
     path_height: 0.06

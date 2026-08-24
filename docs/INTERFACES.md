@@ -627,6 +627,7 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 | `detection_width` | m | 检测有效宽度 |
 | `detection_length` | m | 沿行进方向的检测有效长度；G2 标称 `0.28125`，旧回归配置保留 `0.01` |
 | `detection_forward_offset` | m | 检测中心相对 `base_link` 的前向偏移；G2 为 `0.300` |
+| `detection_edge_overlap` | m | 区域四边额外超覆距离；G2 为 `0.020`，不改变真实检测足迹尺寸 |
 | `overlap_ratio` | `[0, 1)` | 相邻扫描带重叠率 |
 | `robot_length`、`robot_width` | m | launch 从 `robot.yaml` 注入 |
 | `edge_clearance` | m | launch 从 `robot.yaml` 注入 |

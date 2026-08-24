@@ -49,7 +49,7 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   const Polygon & coverage_region, const Polygon & motion_region,
   double detection_width, double detection_length, double maximum_spacing,
   const std::string & sweep_direction, const std::string & start_corner,
-  double detection_forward_offset = 0.0);
+  double detection_forward_offset = 0.0, double edge_overlap = 0.0);
 
 // Returns the SCAN line pair of one horizontal finishing scan along the top of
 // coverage_region, entered from whichever end lies nearer to entry.  Returns an
@@ -59,7 +59,7 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
 std::vector<Point2> makeTopEdgeFinishingScan(
   const Polygon & coverage_region, const Polygon & motion_region,
   double detection_width, double detection_length, const Point2 & entry,
-  double detection_forward_offset = 0.0);
+  double detection_forward_offset = 0.0, double edge_overlap = 0.0);
 
 // Estimates the fraction of coverage_region swept by SCAN line pairs.  Each
 // pair is interpreted as a straight segment with a rectangular footprint.

@@ -252,7 +252,7 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   const Polygon & coverage_region, const Polygon & motion_region,
   double detection_width, double detection_length, double maximum_spacing,
   const std::string & sweep_direction, const std::string & start_corner,
-  double detection_forward_offset)
+  double detection_forward_offset, double edge_overlap)
 {
   if (detection_width <= 0.0 || detection_length <= 0.0) {
     throw std::invalid_argument("Detection footprint dimensions must be positive.");
@@ -262,6 +262,9 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   }
   if (!std::isfinite(detection_forward_offset) || detection_forward_offset < 0.0) {
     throw std::invalid_argument("Detection forward offset must be finite and non-negative.");
+  }
+  if (!std::isfinite(edge_overlap) || edge_overlap < 0.0) {
+    throw std::invalid_argument("Edge overlap must be finite and non-negative.");
   }
   const bool horizontal = sweep_direction == "horizontal";
   if (!horizontal && sweep_direction != "vertical") {
@@ -273,7 +276,7 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   if (span <= kEpsilon) {
     throw std::invalid_argument("Coverage region has no sweep span.");
   }
-  const double usable_span = std::max(0.0, span - detection_width);
+  const double usable_span = std::max(0.0, span - detection_width + 2.0 * edge_overlap);
   const double interval_ratio = usable_span / maximum_spacing;
   const int line_count = std::max(
     1, static_cast<int>(std::ceil(interval_ratio - kLineCountTolerance)) + 1);
@@ -288,10 +291,12 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
     const int ordered_index = reverse_order ? line_count - 1 - line_index : line_index;
     const double coordinate = span <= detection_width ?
       0.5 * (minimum + maximum) :
-      minimum + 0.5 * detection_width + spacing * static_cast<double>(ordered_index);
+      minimum + 0.5 * detection_width - edge_overlap +
+      spacing * static_cast<double>(ordered_index);
     auto segment = clipScanLine(coverage_region, coordinate, horizontal);
     const Point2 extension = horizontal ?
-      Point2{0.5 * detection_length, 0.0} : Point2{0.0, 0.5 * detection_length};
+      Point2{0.5 * detection_length + edge_overlap, 0.0} :
+    Point2{0.0, 0.5 * detection_length + edge_overlap};
     segment.first = subtract(segment.first, extension);
     segment.second = add(segment.second, extension);
     bool forward_along_line = horizontal ? start_left : start_low;
@@ -325,7 +330,7 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
 std::vector<Point2> makeTopEdgeFinishingScan(
   const Polygon & coverage_region, const Polygon & motion_region,
   double detection_width, double detection_length, const Point2 & entry,
-  double detection_forward_offset)
+  double detection_forward_offset, double edge_overlap)
 {
   if (detection_width <= 0.0 || detection_length <= 0.0) {
     throw std::invalid_argument("Detection footprint dimensions must be positive.");
@@ -339,9 +344,9 @@ std::vector<Point2> makeTopEdgeFinishingScan(
   // shorter than the footprint is covered whole by one centred line.
   const double coordinate = maximum_y - minimum_y <= detection_width ?
     0.5 * (minimum_y + maximum_y) :
-    maximum_y - 0.5 * detection_width;
+    maximum_y - 0.5 * detection_width + edge_overlap;
   auto segment = clipScanLine(coverage_region, coordinate, true);
-  const Point2 extension{0.5 * detection_length, 0.0};
+  const Point2 extension{0.5 * detection_length + edge_overlap, 0.0};
   segment.first = subtract(segment.first, extension);
   segment.second = add(segment.second, extension);
   // Compare the base_link start for each direction, not the camera endpoint:

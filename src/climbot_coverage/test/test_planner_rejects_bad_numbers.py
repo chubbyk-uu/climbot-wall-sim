@@ -31,6 +31,7 @@ BAD_NUMBERS = [
     ('detection_width', '.nan'),
     ('detection_length', '.nan'),
     ('detection_forward_offset', '.nan'),
+    ('detection_edge_overlap', '.nan'),
     ('overlap_ratio', '.nan'),
     ('wall_width', '.nan'),
     ('wall_height', '.nan'),

@@ -229,6 +229,20 @@ TEST(CoverageGeometry, FrontCameraOffsetShiftsBasePathWithoutChangingCoverage)
       coverage, camera, 0.50, 0.28125, 300, camera_offset), 0.98);
 }
 
+TEST(CoverageGeometry, EdgeOverlapExtendsOuterLinesAndScanEndpoints)
+{
+  constexpr double overlap = 0.02;
+  const auto coverage = makeRectangle({1.0, 1.0}, {5.0, 2.0}).polygon;
+  const auto motion = makeRectangle({0.0, 0.0}, {6.0, 3.0}).polygon;
+  const auto path = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, 0.50, 0.20, 0.40, "horizontal", "lower_left", 0.0, overlap);
+  ASSERT_GE(path.size(), 4U);
+  EXPECT_NEAR(path.front().x, 1.0 - 0.10 - overlap, 1e-12);
+  EXPECT_NEAR(path.front().y, 1.0 + 0.25 - overlap, 1e-12);
+  EXPECT_NEAR(path[1].x, 5.0 + 0.10 + overlap, 1e-12);
+  EXPECT_NEAR(path[path.size() - 2U].y, 2.0 - 0.25 + overlap, 1e-12);
+}
+
 TEST(CoverageGeometry, KeepsExactMultipleOfMaximumSpacingAtTheExpectedLineCount)
 {
   constexpr double detection_width = 0.50;
