@@ -45,3 +45,14 @@ def test_positive_load_at_every_step_is_full_contact():
     result = measurement.load_statistics([35.9, 37.2, 40.1])
     assert result['zero_samples'] == 0
     assert result['contact_ratio'] == pytest.approx(1.0)
+
+
+def test_heading_sweep_wraps_values_and_preserves_order():
+    assert measurement.normalise_headings([0, 15, -15, 390]) == [
+        0.0, 15.0, 345.0, 30.0]
+
+
+@pytest.mark.parametrize('headings', [[], [0, 360], [float('nan')], [float('inf')]])
+def test_heading_sweep_rejects_empty_duplicate_or_non_finite_values(headings):
+    with pytest.raises(ValueError):
+        measurement.normalise_headings(headings)

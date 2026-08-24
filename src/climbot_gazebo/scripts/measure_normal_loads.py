@@ -74,15 +74,34 @@ def load_statistics(values):
     }
 
 
+def normalise_headings(values):
+    """Validate heading degrees and return unique values wrapped to [0, 360)."""
+    headings = []
+    for value in values:
+        heading = float(value)
+        if not math.isfinite(heading):
+            raise ValueError('static_headings_deg must contain finite values')
+        wrapped = heading % 360.0
+        if any(abs(wrapped - existing) < 1e-9 for existing in headings):
+            raise ValueError('static_headings_deg must not contain duplicates')
+        headings.append(wrapped)
+    if not headings:
+        raise ValueError('static_headings_deg must not be empty')
+    return headings
+
+
 class NormalLoadMeasurement(Node):
     """Run the load-distribution test and report per-manoeuvre contact loads."""
 
     def __init__(self):
         super().__init__('normal_load_measurement')
         self.declare_parameter('static_duration_s', 10.0)
+        self.declare_parameter('static_settle_duration_s', 1.0)
+        self.declare_parameter(
+            'static_headings_deg', [float(value) for value in range(0, 360, 15)])
         self.declare_parameter('drive_duration_s', 8.0)
         self.declare_parameter('brake_duration_s', 2.0)
-        self.declare_parameter('turn_duration_s', 6.0)
+        self.declare_parameter('turn_angle_deg', 360.0)
         self.declare_parameter('linear_speed_mps', 0.15)
         self.declare_parameter('angular_speed_rps', 0.6)
         self.declare_parameter('heading_hold_gain', 1.5)
@@ -97,6 +116,7 @@ class NormalLoadMeasurement(Node):
         self._loads = {name: 0.0 for name in CONTACT_TOPICS}
         self._load_stamps = {name: None for name in CONTACT_TOPICS}
         self._samples = {}
+        self._sample_metadata = {}
         self._active_samples = None
         self._recorded_stamps = {name: None for name in CONTACT_TOPICS}
 
@@ -187,7 +207,15 @@ class NormalLoadMeasurement(Node):
         self._publish()
         raise RuntimeError('Timed out turning to requested heading.')
 
-    def _record(self, label, duration_s, linear, angular=0.0, target_yaw=None):
+    def _settle(self, duration_s):
+        """Hold zero command for a simulated-time duration without recording."""
+        target_ns = stamp_nanoseconds(self._truth) + int(duration_s * 1e9)
+        while rclpy.ok() and stamp_nanoseconds(self._truth) < target_ns:
+            rclpy.spin_once(self, timeout_sec=0.02)
+            self._publish()
+
+    def _record(self, label, duration_s, linear, angular=0.0, target_yaw=None,
+                category='dynamic', heading_deg=None):
         """Drive while recording each contact-sensor message exactly once."""
         target_ns = stamp_nanoseconds(self._truth) + int(duration_s * 1e9)
         samples = {name: [] for name in CONTACT_TOPICS}
@@ -209,6 +237,40 @@ class NormalLoadMeasurement(Node):
             self._active_samples = None
             self._publish()
         self._samples[label] = samples
+        self._sample_metadata[label] = (category, heading_deg)
+        self._report(label, samples)
+
+    def _record_turn(self, label, direction):
+        """Record one complete in-place revolution in the requested direction."""
+        requested = math.radians(float(self.get_parameter('turn_angle_deg').value))
+        if not math.isfinite(requested) or requested <= 0.0:
+            raise ValueError('turn_angle_deg must be finite and positive')
+        rate = float(self.get_parameter('angular_speed_rps').value)
+        if not math.isfinite(rate) or rate <= 0.0:
+            raise ValueError('angular_speed_rps must be finite and positive')
+        deadline_ns = stamp_nanoseconds(self._truth) + int(
+            float(self.get_parameter('turn_timeout_s').value) * 1e9)
+        samples = {name: [] for name in CONTACT_TOPICS}
+        self._recorded_stamps = {name: None for name in CONTACT_TOPICS}
+        self._active_samples = samples
+        previous = self._filtered_yaw()
+        progress = 0.0
+        try:
+            while (rclpy.ok() and progress < requested and
+                   stamp_nanoseconds(self._truth) < deadline_ns):
+                rclpy.spin_once(self, timeout_sec=0.02)
+                current = self._filtered_yaw()
+                progress += max(
+                    0.0, direction * wrap_angle(current - previous))
+                previous = current
+                self._publish(angular=direction * rate)
+        finally:
+            self._active_samples = None
+            self._publish()
+        if progress < requested:
+            raise RuntimeError('Timed out recording a complete in-place turn.')
+        self._samples[label] = samples
+        self._sample_metadata[label] = ('turn', None)
         self._report(label, samples)
 
     def _report(self, label, samples):
@@ -233,15 +295,19 @@ class NormalLoadMeasurement(Node):
         with open(path, 'w', newline='') as handle:
             writer = csv.writer(handle)
             writer.writerow([
-                'manoeuvre', 'contact', 'mean_n', 'min_n', 'max_n', 'samples',
-                'zero_samples', 'contact_ratio_percent'])
+                'manoeuvre', 'category', 'heading_deg', 'contact', 'mean_n',
+                'min_n', 'max_n', 'samples', 'zero_samples',
+                'contact_ratio_percent'])
             for label, samples in self._samples.items():
+                category, heading_deg = self._sample_metadata[label]
                 for name in ('left_wheel', 'right_wheel', 'caster'):
                     statistics = load_statistics(samples[name])
                     if statistics is None:
                         continue
                     writer.writerow([
-                        label, name,
+                        label, category,
+                        '' if heading_deg is None else '%.3f' % heading_deg,
+                        name,
                         '%.3f' % statistics['mean'],
                         '%.3f' % statistics['min'],
                         '%.3f' % statistics['max'], statistics['samples'],
@@ -254,28 +320,42 @@ class NormalLoadMeasurement(Node):
         static_s = float(self.get_parameter('static_duration_s').value)
         drive_s = float(self.get_parameter('drive_duration_s').value)
         brake_s = float(self.get_parameter('brake_duration_s').value)
-        turn_s = float(self.get_parameter('turn_duration_s').value)
         speed = float(self.get_parameter('linear_speed_mps').value)
-        turn_rate = float(self.get_parameter('angular_speed_rps').value)
+        settle_s = float(
+            self.get_parameter('static_settle_duration_s').value)
+        if not math.isfinite(static_s) or static_s <= 0.0:
+            raise ValueError('static_duration_s must be finite and positive')
+        if not math.isfinite(settle_s) or settle_s < 0.0:
+            raise ValueError(
+                'static_settle_duration_s must be finite and non-negative')
 
-        self._record('static', static_s, 0.0)
+        headings = normalise_headings(
+            self.get_parameter('static_headings_deg').value)
+        for heading_deg in headings:
+            self._turn_to(math.radians(heading_deg))
+            self._settle(settle_s)
+            self._record(
+                'static_heading_%03d' % round(heading_deg), static_s, 0.0,
+                category='static', heading_deg=heading_deg)
 
         # Right then left, up then down, so the robot stays near its start
         # and never approaches the wall edges.
-        self._turn_to(0.0)
-        self._record('drive_right', drive_s, speed, target_yaw=0.0)
-        self._turn_to(math.pi)
-        self._record('drive_left', drive_s, speed, target_yaw=math.pi)
-        self._turn_to(math.pi / 2.0)
-        self._record('drive_up', drive_s, speed, target_yaw=math.pi / 2.0)
-        self._turn_to(-math.pi / 2.0)
-        self._record('drive_down', drive_s, speed, target_yaw=-math.pi / 2.0)
+        directions = [
+            ('right', 0.0), ('left', math.pi),
+            ('up', math.pi / 2.0), ('down', -math.pi / 2.0),
+        ]
+        for name, yaw in directions:
+            self._turn_to(yaw)
+            self._record(
+                'drive_' + name, drive_s, speed, target_yaw=yaw,
+                heading_deg=math.degrees(yaw) % 360.0)
+            self._record(
+                'brake_from_' + name, brake_s, 0.0, category='brake',
+                heading_deg=math.degrees(yaw) % 360.0)
 
-        # Braking while descending is the worst case for rear-caster unloading.
-        self._record('brake_from_down', brake_s, 0.0)
-
         self._turn_to(0.0)
-        self._record('turn_in_place', turn_s, 0.0, angular=turn_rate)
+        self._record_turn('turn_in_place_ccw', 1.0)
+        self._record_turn('turn_in_place_cw', -1.0)
 
         self._write_csv()
 
