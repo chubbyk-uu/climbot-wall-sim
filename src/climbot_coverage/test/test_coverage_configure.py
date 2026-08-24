@@ -136,6 +136,16 @@ class TestConfigure(unittest.TestCase):
         self.assertIsNotNone(self.config)
         return self.config
 
+    def _wait_for_preview(self):
+        """Wait for the task topic, not only the earlier config callback."""
+        deadline = 5.0
+        while deadline > 0.0:
+            if self.task is not None and len(self.task.waypoints) > 2:
+                return
+            rclpy.spin_once(self.node, timeout_sec=0.05)
+            deadline -= 0.05
+        self.fail('planned preview was not received')
+
     def _rectangle(self):
         self._set(region='rectangle')
         self._call(self.clear, Trigger.Request())
@@ -203,7 +213,7 @@ class TestConfigure(unittest.TestCase):
         config = self._latest_config()
         self.assertEqual(config.selected_points, 3)
         self.assertTrue(config.can_plan)
-        self.assertGreater(len(self.task.waypoints), 2)
+        self._wait_for_preview()
 
     # Three trapezoid points are enough for a rectangle, so this used to
     # reinterpret them as two and draw a different trajectory the moment the
@@ -216,7 +226,7 @@ class TestConfigure(unittest.TestCase):
         self._click(4.4, 1.4, expect=1)
         self._click(7.7, 4.2, expect=2)
         self._click(8.4, 1.4, expect=3)
-        self.assertGreater(len(self.task.waypoints), 2)
+        self._wait_for_preview()
         response = self._set(region='rectangle')
         self.assertTrue(response.success)
         self.assertTrue(response.config.can_plan)

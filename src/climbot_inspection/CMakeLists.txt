@@ -20,7 +20,7 @@ if(BUILD_TESTING)
   find_package(launch_testing_ament_cmake REQUIRED)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
-  add_launch_test(test/test_capture_once_node.py TIMEOUT 45 ENV ROS_DOMAIN_ID=61)
+  add_launch_test(test/test_capture_once_node.py TIMEOUT 45 ENV ROS_DOMAIN_ID=91)
 endif()
 
 ament_package()

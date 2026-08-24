@@ -54,6 +54,17 @@ ros2 launch climbot_bringup coverage_sim.launch.py
 ros2 launch climbot_bringup coverage_mission.launch.py
 ```
 
+上述两个 bringup 入口默认同时启动 G1 相机单拍服务。RViz 的 Displays 中
+`Inspection Camera` 保持订阅，调用一次：
+
+```bash
+ros2 service call /inspection/capture_once std_srvs/srv/Trigger '{}'
+```
+
+成功响应表示一对同时间戳的畸变原图和 `CameraInfo` 已发布，不只是触发消息已发出。
+相机空闲时不连续出图。只做非视觉调试可在 launch 后加 `inspection:=false`；拍墙面
+纹理时还应加 `wall_grid_spacing:=0`。
+
 ### 点选区域
 
 RViz 里从启动起就画着一个**绿色边框**，那是墙面按机器人安全边距内缩后的可达

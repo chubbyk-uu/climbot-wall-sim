@@ -91,3 +91,17 @@ def test_the_wall_grid_display_subscribes_to_what_the_planner_publishes():
               / 'coverage_planner_node.cpp').read_text()
     assert '"{}"'.format(topic) in source, (
         '{} is displayed but the planner advertises no such topic.'.format(topic))
+
+
+def test_inspection_camera_display_uses_the_public_reliable_topic():
+    """The optional image view must not subscribe to Gazebo-private topics."""
+    displays = _config()['Visualization Manager']['Displays']
+    cameras = [entry for entry in displays
+               if entry.get('Name') == 'Inspection Camera']
+    assert len(cameras) == 1
+    camera = cameras[0]
+    assert camera['Class'] == 'rviz_default_plugins/Image'
+    assert camera['Enabled'] is True
+    assert camera['Topic']['Value'] == '/inspection/camera/image_raw'
+    assert camera['Topic']['Reliability Policy'] == 'Reliable'
+    assert camera['Topic']['Durability Policy'] == 'Volatile'
