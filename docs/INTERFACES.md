@@ -965,6 +965,22 @@ float64 estimated_remaining_s
 `maximum_reference_offset_m` 即报错。**聚合系数不受影响**——标定扫描两个方向对称,
 摆动在总体斜率里抵消,所以那份坏数据拟合出的系数仍是 `0.00049`。
 
+`measure_turn_band.py` 用固定小转角检查这个标定在全航向是否仍然平坦，G1 正式运行
+默认 `0°～345°` 每 `15°`、正反各 `30°`，共 48 条：
+
+| 参数 | 默认值 | 含义 |
+| --- | ---: | --- |
+| `headings_deg` | 24 个航向 | 起始航向，每 `15°` 一档 |
+| `angles_deg` | `[30,-30]` | 每个起始航向的正反转角 |
+| `output_csv` | `results/turn_map.csv` | 逐次转向原始记录 |
+| `summary_json` | 空 | 非空时写严格 JSON 判定与 Git 溯源 |
+| `maximum_mm_per_deg` | `0.55` | 任一航向侧滑绝对上限 |
+| `maximum_range_mm_per_deg` | `0.10` | 48 条中最大值减最小值上限，用于排除局部滑移带 |
+| `maximum_turn_error_deg` | `2.0` | 实际转角相对命令转角的最大误差 |
+
+记录数或三个门限任一项不满足时，脚本保留 CSV/JSON 后以非零状态退出。改变质量、
+质心、吸附、摩擦或 WheelSlip 后必须从全新仿真重跑。
+
 ## 侧滑补偿专项验收参数（§14.4）
 
 `evaluate_slip_compensation.py` 在同一仿真、同一段墙面上跑两个阶段，比较横轨闭环
