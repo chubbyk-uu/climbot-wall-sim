@@ -152,14 +152,17 @@ def payload_mass_properties(robot):
 
 
 def message_array(message):
-    """Interpret the configured RGB8 source without a second conversion path."""
-    if message.encoding != 'rgb8' or message.step != message.width * 3:
-        raise ValueError('camera image must be tightly packed rgb8')
+    """Interpret tightly packed RGB8 render frames or mono8 camera output."""
+    channels = {'rgb8': 3, 'mono8': 1}.get(message.encoding)
+    if channels is None or message.step != message.width * channels:
+        raise ValueError('camera image must be tightly packed rgb8 or mono8')
     array = np.frombuffer(bytes(message.data), dtype=np.uint8)
     expected = int(message.height * message.step)
     if array.size != expected:
         raise ValueError('camera image data length does not match height * step')
-    return array.reshape(message.height, message.width, 3)
+    shape = ((message.height, message.width, 3) if channels == 3 else
+             (message.height, message.width))
+    return array.reshape(shape)
 
 
 def marker_metrics(raw_array):
@@ -380,11 +383,13 @@ def compare_frame(evaluator, camera, render_scale, check_target=False):
     map_x, map_y = make_distortion_maps(camera, render_scale)
     ideal_array = message_array(ideal)
     raw_array = message_array(image)
-    expected_raw = cv2.remap(
+    expected_rgb = cv2.remap(
         ideal_array, map_x, map_y, interpolation=cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_REPLICATE)
+    expected_raw = cv2.cvtColor(expected_rgb, cv2.COLOR_RGB2GRAY)
+    ideal_gray = cv2.cvtColor(ideal_array, cv2.COLOR_RGB2GRAY)
     delta = raw_array.astype(np.float64) - expected_raw.astype(np.float64)
-    ideal_delta = raw_array.astype(np.float64) - ideal_array.astype(np.float64)
+    ideal_delta = raw_array.astype(np.float64) - ideal_gray.astype(np.float64)
     result = {
         'stamp_ns': key,
         'width_px': int(image.width),
@@ -399,6 +404,7 @@ def compare_frame(evaluator, camera, render_scale, check_target=False):
         'ideal_to_distorted_mean_abs_px': float(np.mean(np.abs(ideal_delta))),
         'checks': {
             'resolution': image.width == width and image.height == height,
+            'mono8_output': image.encoding == 'mono8',
             'matching_stamp_and_frame': (
                 image.header == info.header and
                 image.header.frame_id == 'inspection_camera_optical_frame'),
@@ -415,11 +421,14 @@ def compare_frame(evaluator, camera, render_scale, check_target=False):
         },
     }
     if check_target:
-        target = marker_metrics(raw_array)
+        # Axis colors are a simulation-only calibration aid. Inspect the
+        # geometrically identical RGB render here; the public industrial
+        # camera output correctly remains mono8.
+        target = marker_metrics(expected_rgb)
         target['calibration_grid'] = calibration_grid_metrics(
-            raw_array, matrix, distortion)
+            expected_rgb, matrix, distortion)
         target['obstruction'] = target_obstruction_metrics(
-            raw_array, matrix, distortion, camera)
+            expected_rgb, matrix, distortion, camera)
         target['checks'].update(target['calibration_grid']['checks'])
         target['checks'].update(target['obstruction']['checks'])
         result['target'] = target
@@ -501,10 +510,10 @@ def main():
             check_target=args.check_target)
         if args.image_output:
             key = next(iter(evaluator.public_images))
-            rgb = message_array(evaluator.public_images[key])
+            captured = message_array(evaluator.public_images[key])
             directory = os.path.dirname(os.path.abspath(args.image_output))
             os.makedirs(directory, exist_ok=True)
-            if not cv2.imwrite(args.image_output, cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)):
+            if not cv2.imwrite(args.image_output, captured):
                 raise RuntimeError('failed to write --image-output')
         transform = compare_tf(evaluator, camera, args.timeout)
         intrinsics = camera['calibration']['intrinsics']

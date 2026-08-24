@@ -58,6 +58,29 @@ def test_configured_overscan_covers_every_distorted_pixel():
     assert maps_fit_source(map_x, map_y, 1920, 1080)
 
 
+def test_full_distorted_view_clears_wall_side_of_chassis():
+    """Check the limiting physical plane, not only the chassis top centre ray."""
+    camera = shared_camera()
+    description = Path(get_package_share_directory('climbot_description'))
+    robot = yaml.safe_load(
+        (description / 'config' / 'robot.yaml').read_text())['robot']
+    simulation = yaml.safe_load(
+        (PACKAGE_ROOT / 'config' / 'simulation.yaml').read_text())['simulation']
+    scale = simulation['inspection_camera']['render_overscan_focal_scale']
+    _, map_y = make_distortion_maps(camera, scale)
+    intrinsics = camera['calibration']['intrinsics']
+    maximum_image_down_ray = float(np.max(
+        (map_y - intrinsics['cy_px']) / (intrinsics['fy_px'] * scale)))
+    optical = camera['optical_mount']['center_xyz_m']
+    base = robot['base']
+    chassis_front = base['centre_xyz'][0] + base['size_xyz'][0] / 2.0
+    chassis_wall_side = base['centre_xyz'][2] - base['size_xyz'][2] / 2.0
+    limiting_ray_x = (
+        optical[0] - maximum_image_down_ray *
+        (optical[2] - chassis_wall_side))
+    assert limiting_ray_x - chassis_front >= 0.020
+
+
 @pytest.mark.parametrize('scale', [0.0, -1.0, 1.01, float('nan')])
 def test_bad_render_focal_scale_is_rejected(scale):
     with pytest.raises(ValueError):

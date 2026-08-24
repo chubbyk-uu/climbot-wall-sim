@@ -24,20 +24,20 @@
   <xacro:arg name="camera_body_size_y" default="0.14"/>
   <xacro:arg name="camera_body_size_z" default="0.08"/>
   <xacro:arg name="camera_body_mass" default="1.5"/>
-  <xacro:arg name="camera_body_x" default="0.300"/>
+  <xacro:arg name="camera_body_x" default="0.340"/>
   <xacro:arg name="camera_body_y" default="0.000"/>
   <xacro:arg name="camera_body_z" default="0.315"/>
-  <xacro:arg name="camera_optical_x" default="0.300"/>
+  <xacro:arg name="camera_optical_x" default="0.340"/>
   <xacro:arg name="camera_optical_y" default="0.000"/>
   <xacro:arg name="camera_optical_z" default="0.275"/>
   <xacro:arg name="camera_optical_roll" default="3.141592653589793"/>
   <xacro:arg name="camera_optical_pitch" default="0.0"/>
   <xacro:arg name="camera_optical_yaw" default="-1.5707963267948966"/>
   <xacro:arg name="camera_bracket_mass" default="0.5"/>
-  <xacro:arg name="camera_bracket_x" default="0.200"/>
+  <xacro:arg name="camera_bracket_x" default="0.220"/>
   <xacro:arg name="camera_bracket_y" default="0.000"/>
   <xacro:arg name="camera_bracket_z" default="0.247"/>
-  <xacro:arg name="camera_bracket_inertia_x" default="0.17"/>
+  <xacro:arg name="camera_bracket_inertia_x" default="0.20"/>
   <xacro:arg name="camera_bracket_inertia_y" default="0.12"/>
   <xacro:arg name="camera_bracket_inertia_z" default="0.17"/>
   <xacro:arg name="camera_bracket_upright_size_x" default="0.04"/>
@@ -46,10 +46,10 @@
   <xacro:arg name="camera_bracket_upright_x" default="0.170"/>
   <xacro:arg name="camera_bracket_upright_y" default="0.000"/>
   <xacro:arg name="camera_bracket_upright_z" default="0.205"/>
-  <xacro:arg name="camera_bracket_arm_size_x" default="0.15"/>
+  <xacro:arg name="camera_bracket_arm_size_x" default="0.18"/>
   <xacro:arg name="camera_bracket_arm_size_y" default="0.12"/>
   <xacro:arg name="camera_bracket_arm_size_z" default="0.03"/>
-  <xacro:arg name="camera_bracket_arm_x" default="0.235"/>
+  <xacro:arg name="camera_bracket_arm_x" default="0.265"/>
   <xacro:arg name="camera_bracket_arm_y" default="0.000"/>
   <xacro:arg name="camera_bracket_arm_z" default="0.300"/>
 

@@ -118,7 +118,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         message.executor_state = state
         message.start.x = 0.0
         message.end.x = 1.0
-        message.detection_forward_offset = 0.300
+        message.detection_forward_offset = 0.340
         message.inspection_enabled = enabled
         self.references.publish(message)
 
@@ -154,7 +154,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(self.capture_calls, 0)
 
         # The first photo centre is half a footprint inside the continuously
-        # swept reference endpoint: 0.300 + 0.125 = 0.425 m.
+        # swept reference endpoint: 0.340 + 0.125 = 0.465 m.
         self._reference(True)
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 1)
@@ -167,19 +167,19 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(first.revision, 7)
         self.assertEqual(first.segment_index, 2)
         self.assertEqual(first.trigger_index, 0)
-        self.assertAlmostEqual(first.target_along_track, 0.425, places=9)
-        self.assertAlmostEqual(first.camera_pose.pose.position.x, 0.475, places=6)
+        self.assertAlmostEqual(first.target_along_track, 0.465, places=9)
+        self.assertAlmostEqual(first.camera_pose.pose.position.x, 0.515, places=6)
         self.assertAlmostEqual(first.wall_heading_rad, 0.0, places=9)
 
         # Five centres span the 0.75 m useful centre interval: the second target
-        # is 0.6125 m. Noise that
+        # is 0.6525 m. Noise that
         # moves back across it cannot duplicate trigger 0 or trigger 1.
         self.image_stamp = Time(sec=12, nanosec=500_000_000)
         self._reference(True)
-        self._odom(12, 0.31)  # camera progress 0.61
+        self._odom(12, 0.31)  # camera progress 0.65
         time.sleep(0.1)
         self.assertEqual(self.capture_calls, 1)
-        self._odom(13, 0.32)  # progress 0.62 crosses target 0.6125
+        self._odom(13, 0.32)  # progress 0.66 crosses target 0.6525
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 2)
         self._odom(14, 0.30)  # reverse below target
@@ -188,7 +188,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         time.sleep(0.1)
         self.assertEqual(self.capture_calls, 2)
         self.assertEqual(self.metadata[1].trigger_index, 1)
-        self.assertAlmostEqual(self.metadata[1].target_along_track, 0.6125, places=9)
+        self.assertAlmostEqual(self.metadata[1].target_along_track, 0.6525, places=9)
 
         # A temporary service rejection retries the same spatial target and
         # keeps trigger numbering contiguous instead of silently losing it.

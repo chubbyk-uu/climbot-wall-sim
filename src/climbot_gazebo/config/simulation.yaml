@@ -1,5 +1,28 @@
 # Gazebo-only contact, rendering, sensor, and initialization parameters.
 simulation:
+  lighting:
+    # Phase G3 starts with the real robot's night / weak-ambient operating
+    # condition. A single bracket-mounted LED is deliberately non-uniform;
+    # its centre-bright field will later be flat-fielded by the patented
+    # calibration method. The weak world term prevents zero-valued shadows.
+    ambient_rgb: [0.025, 0.025, 0.025]
+    environment_intensity: 0.035
+    environment_direction_xyz: [-1.0, 0.2, -0.4]
+    inspection_led:
+      centre_xyz_m: [0.380, 0.000, 0.290]
+      direction_xyz: [0.0, 0.0, -1.0]
+      intensity: 1.2
+      range_m: 2.0
+      attenuation_constant: 0.20
+      attenuation_linear: 0.35
+      attenuation_quadratic: 1.8
+      inner_angle_rad: 0.35
+      # Wider than the distorted camera diagonal, so no artificial circular
+      # cutoff enters the image; falloff still leaves the corners darker.
+      outer_angle_rad: 2.05
+      falloff: 0.55
+      cast_shadows: true
+
   wall:
     # Where the wall body sits in the Gazebo world. This is not free: it has to
     # place the same surface that climbot_description/config/wall.yaml already
@@ -73,6 +96,9 @@ simulation:
     # and the physical mount come from climbot_description.
     triggered: true
     update_rate_hz: 30.0
+    # Ogre2 renders RGB internally so material reflectance and illumination are
+    # preserved. The distortion adapter converts the final calibrated output
+    # to the real industrial camera's mono8 format.
     image_format: R8G8B8
     # Ogre2 does not implement SDF Brown distortion. Render a wider ideal
     # source image, then the simulation-only adapter maps it into the shared

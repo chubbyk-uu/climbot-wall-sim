@@ -5,12 +5,13 @@ inspection_camera:
   image:
     width_px: 1920
     height_px: 1080
+    encoding: mono8
 
   # base_link is on the wall plane at the drive-axle midpoint. The optical
   # frame follows REP 103: +Z looks at the wall, +X is image-right, +Y is
   # image-down. Robot-forward therefore appears toward the top of the image.
   optical_mount:
-    center_xyz_m: [0.300, 0.000, 0.275]
+    center_xyz_m: [0.340, 0.000, 0.275]
     rpy_rad: [3.141592653589793, 0.0, -1.5707963267948966]
 
   calibration:
@@ -30,4 +31,3 @@ inspection_camera:
     # from resolution and focal length: 0.550 x 0.309375 m.
     effective_width_m: 0.500
     effective_length_m: 0.28125
-

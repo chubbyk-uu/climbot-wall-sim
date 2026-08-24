@@ -22,13 +22,13 @@ import pytest
 
 @pytest.mark.parametrize(
     'yaw, expected',
-    [(0.0, [5.3, 2.0, 0.276]),
-     (math.pi / 2.0, [5.0, 2.3, 0.276]),
-     (math.pi, [4.7, 2.0, 0.276]),
-     (-math.pi / 2.0, [5.0, 1.7, 0.276])])
+    [(0.0, [5.34, 2.0, 0.276]),
+     (math.pi / 2.0, [5.0, 2.34, 0.276]),
+     (math.pi, [4.66, 2.0, 0.276]),
+     (-math.pi / 2.0, [5.0, 1.66, 0.276])])
 def test_camera_centre_rotates_the_front_offset(yaw, expected):
     actual = camera_centre(
-        [5.0, 2.0, 0.001], yaw, [0.3, 0.0, 0.275])
+        [5.0, 2.0, 0.001], yaw, [0.34, 0.0, 0.275])
     assert actual == pytest.approx(expected)
 
 

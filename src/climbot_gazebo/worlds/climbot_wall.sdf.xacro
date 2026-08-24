@@ -21,10 +21,17 @@
   <xacro:arg name="spawn_pitch" default="0.0"/>
   <xacro:arg name="spawn_yaw" default="1.5707963267948966"/>
   <xacro:arg name="inspection_target" default="false"/>
-  <xacro:arg name="target_lateral" default="0.3"/>
+  <xacro:arg name="target_lateral" default="0.34"/>
   <xacro:arg name="target_height" default="2.0"/>
   <xacro:arg name="target_length" default="0.28125"/>
   <xacro:arg name="target_width" default="0.5"/>
+  <xacro:arg name="ambient_r" default="0.025"/>
+  <xacro:arg name="ambient_g" default="0.025"/>
+  <xacro:arg name="ambient_b" default="0.025"/>
+  <xacro:arg name="environment_intensity" default="0.035"/>
+  <xacro:arg name="environment_direction_x" default="-1.0"/>
+  <xacro:arg name="environment_direction_y" default="0.2"/>
+  <xacro:arg name="environment_direction_z" default="-0.4"/>
 
   <xacro:property name="centre_x" value="$(arg centre_x)"/>
   <xacro:property name="centre_y" value="$(arg centre_y)"/>
@@ -120,6 +127,10 @@
 
   <world name="climbot_wall">
     <gravity>0 0 -9.81</gravity>
+    <scene>
+      <ambient>$(arg ambient_r) $(arg ambient_g) $(arg ambient_b) 1</ambient>
+      <background>0.005 0.005 0.008 1</background>
+    </scene>
     <physics name="physics" type="ignored">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
@@ -151,12 +162,15 @@
       </persistent>
     </plugin>
 
-    <light type="directional" name="sun">
-      <cast_shadows>true</cast_shadows>
+    <!-- Weak night environment only. It intentionally casts no shadow: the
+         inspection LED on the robot is the dominant, measured illuminant. -->
+    <light type="directional" name="night_environment">
+      <cast_shadows>false</cast_shadows>
       <pose>4 -2 8 0 0 0</pose>
-      <diffuse>0.9 0.9 0.9 1</diffuse>
-      <specular>0.3 0.3 0.3 1</specular>
-      <direction>-1 0.2 -0.4</direction>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.02 0.02 0.02 1</specular>
+      <intensity>$(arg environment_intensity)</intensity>
+      <direction>$(arg environment_direction_x) $(arg environment_direction_y) $(arg environment_direction_z)</direction>
     </light>
 
     <model name="wall">
@@ -248,8 +262,8 @@
         </gz-gui>
         <engine>ogre2</engine>
         <scene>scene</scene>
-        <ambient_light>0.5 0.5 0.5</ambient_light>
-        <background_color>0.12 0.14 0.18</background_color>
+        <ambient_light>$(arg ambient_r) $(arg ambient_g) $(arg ambient_b)</ambient_light>
+        <background_color>0.005 0.005 0.008</background_color>
         <!-- Front-on view centred on the robot's initial pose. -->
         <camera_pose>${face_x + 2.75} $(arg spawn_lateral) $(arg spawn_height) 0 0 3.14159265359</camera_pose>
       </plugin>

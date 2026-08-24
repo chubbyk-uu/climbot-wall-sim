@@ -114,7 +114,7 @@ public:
   : Node("automatic_capture_node"),
     footprint_length_(finitePositive(*this, "effective_length_m", 0.28125)),
     overlap_(finite(*this, "image_overlap_ratio", 0.25)),
-    mount_x_(finite(*this, "camera_mount_x_m", 0.300)),
+    mount_x_(finite(*this, "camera_mount_x_m", 0.340)),
     mount_y_(finite(*this, "camera_mount_y_m", 0.0)),
     mount_z_(finite(*this, "camera_mount_z_m", 0.275)),
     mount_roll_(finite(*this, "camera_mount_roll_rad", std::acos(-1.0))),

@@ -33,6 +33,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
+import yaml
 
 
 def stamp_ns(header):
@@ -61,6 +62,12 @@ class G2InspectionEvaluator(Node):
             get_package_share_directory('climbot_description'),
             'config', 'wall.yaml')
         self.wall = WallFrame.from_yaml(wall_path)
+        camera_path = os.path.join(
+            get_package_share_directory('climbot_description'),
+            'config', 'inspection_camera.yaml')
+        with open(camera_path) as handle:
+            mount = yaml.safe_load(handle)['inspection_camera']['optical_mount']
+        self.camera_offset = tuple(float(value) for value in mount['center_xyz_m'])
         self.task = None
         self.status = None
         self.images = defaultdict(int)
@@ -136,9 +143,11 @@ class G2InspectionEvaluator(Node):
                 continue
             base, heading = truth
             truth_camera = (
-                base[0] + 0.300 * math.cos(heading),
-                base[1] + 0.300 * math.sin(heading),
-                base[2] + 0.275,
+                base[0] + self.camera_offset[0] * math.cos(heading) -
+                self.camera_offset[1] * math.sin(heading),
+                base[1] + self.camera_offset[0] * math.sin(heading) +
+                self.camera_offset[1] * math.cos(heading),
+                base[2] + self.camera_offset[2],
             )
             estimated = metadata.camera_pose.pose.position
             components = (

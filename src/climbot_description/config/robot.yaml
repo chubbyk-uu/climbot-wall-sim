@@ -27,17 +27,17 @@ robot:
       mass_kg: 1.5
       # The wall-facing surface is at z=0.275 m, coincident with the nominal
       # lens plane; the body extends away from the wall.
-      centre_xyz_m: [0.300, 0.000, 0.315]
+      centre_xyz_m: [0.340, 0.000, 0.315]
     bracket:
       mass_kg: 0.5
       # One rigid equivalent inertia for the two-box L bracket rendered by the
       # descriptions below. Replace with CAD inertia when hardware is chosen.
-      centre_xyz_m: [0.200, 0.000, 0.247]
-      inertia_box_size_xyz_m: [0.17, 0.12, 0.17]
+      centre_xyz_m: [0.220, 0.000, 0.247]
+      inertia_box_size_xyz_m: [0.20, 0.12, 0.17]
       upright_size_xyz_m: [0.04, 0.12, 0.14]
       upright_centre_xyz_m: [0.170, 0.000, 0.205]
-      top_arm_size_xyz_m: [0.15, 0.12, 0.03]
-      top_arm_centre_xyz_m: [0.235, 0.000, 0.300]
+      top_arm_size_xyz_m: [0.18, 0.12, 0.03]
+      top_arm_centre_xyz_m: [0.265, 0.000, 0.300]
 
   # The actuator envelope, not the operating point. Both controllers still
   # cruise at 0.20 m/s and plan their profiles from the same rated

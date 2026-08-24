@@ -44,6 +44,9 @@ class CameraDistortionAdapter(Node):
         self._camera = load_calibration(path)
         self._width = int(self._camera['image']['width_px'])
         self._height = int(self._camera['image']['height_px'])
+        self._output_encoding = str(self._camera['image']['encoding'])
+        if self._output_encoding != 'mono8':
+            raise ValueError('inspection camera output encoding must be mono8')
         scale = float(self.get_parameter('render_focal_scale').value)
         self._map_x, self._map_y = make_distortion_maps(self._camera, scale)
         if not maps_fit_source(
@@ -99,8 +102,13 @@ class CameraDistortionAdapter(Node):
         distorted = cv2.remap(
             source, self._map_x, self._map_y, interpolation=cv2.INTER_LINEAR,
             borderMode=cv2.BORDER_CONSTANT)
+        if distorted.ndim != 3 or distorted.shape[2] != 3:
+            self.get_logger().error(
+                'Rejecting ideal image that is not a three-channel RGB frame')
+            return
+        grayscale = cv2.cvtColor(distorted, cv2.COLOR_RGB2GRAY)
         output = self._bridge.cv2_to_imgmsg(
-            distorted, encoding=message.encoding)
+            grayscale, encoding=self._output_encoding)
         output.header = message.header
         self._info_publisher.publish(self._camera_info(message.header))
         self._image_publisher.publish(output)

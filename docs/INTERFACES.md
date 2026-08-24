@@ -626,7 +626,7 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 | `start_corner` | `lower_left` / `lower_right` / `upper_left` / `upper_right` | 起始角点 |
 | `detection_width` | m | 检测有效宽度 |
 | `detection_length` | m | 沿行进方向的检测有效长度；G2 标称 `0.28125`，旧回归配置保留 `0.01` |
-| `detection_forward_offset` | m | 检测中心相对 `base_link` 的前向偏移；G2 为 `0.300` |
+| `detection_forward_offset` | m | 检测中心相对 `base_link` 的前向偏移；巡检相机为 `0.340` |
 | `detection_edge_overlap` | m | 区域四边额外超覆距离；G2 为 `0.020`，不改变真实检测足迹尺寸 |
 | `overlap_ratio` | `[0, 1)` | 相邻扫描带重叠率 |
 | `robot_length`、`robot_width` | m | launch 从 `robot.yaml` 注入 |
@@ -760,7 +760,7 @@ float64 detection_forward_offset
 路点姿态指向下一段，最后一个姿态沿用到达航向。
 
 `detection_forward_offset` 是检测中心沿机器人前向相对 `base_link` 的偏移，普通工具可
-为 `0`，G2 前置相机任务为 `+0.300 m`。
+为 `0`，G2 前置相机任务为 `+0.340 m`。
 
 接收方必须拒绝以下任务：
 
@@ -1103,7 +1103,7 @@ G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`�
 
 `ExecutionReference.inspection_enabled` 只在正式 `SCAN` 的 `TRACK_LINE`／
 `FINAL_APPROACH` 为真；起点进入、对准、转向稳定、动态过渡和小弧线入轨均为假。
-`detection_forward_offset` 来自不可变任务，G2 相机任务必须为 `0.300 m` 并与共享安装
+`detection_forward_offset` 来自不可变任务，G2 相机任务必须为 `0.340 m` 并与共享安装
 外参一致。
 
 `InspectionCapture.header` 必须逐字段等于对应 `image_raw.header`。`camera_pose` 是光学

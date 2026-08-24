@@ -125,6 +125,17 @@ def render_world(gazebo_share, description_share, grid_spacing,
             camera['footprint']['effective_length_m'])),
         'target_width': repr(float(
             camera['footprint']['effective_width_m'])),
+        'ambient_r': repr(float(simulation['lighting']['ambient_rgb'][0])),
+        'ambient_g': repr(float(simulation['lighting']['ambient_rgb'][1])),
+        'ambient_b': repr(float(simulation['lighting']['ambient_rgb'][2])),
+        'environment_intensity': repr(float(
+            simulation['lighting']['environment_intensity'])),
+        'environment_direction_x': repr(float(
+            simulation['lighting']['environment_direction_xyz'][0])),
+        'environment_direction_y': repr(float(
+            simulation['lighting']['environment_direction_xyz'][1])),
+        'environment_direction_z': repr(float(
+            simulation['lighting']['environment_direction_xyz'][2])),
     }
     source = os.path.join(gazebo_share, 'worlds', 'climbot_wall.sdf.xacro')
     document = xacro.process_file(source, mappings=mappings)
@@ -165,6 +176,7 @@ def robot_mappings(gazebo_share, description_share):
     simulated_drive = simulation['drive']
     imu = simulation['imu']
     simulated_camera = simulation['inspection_camera']
+    inspection_led = simulation['lighting']['inspection_led']
     image = camera['image']
     calibration = camera['calibration']
     intrinsics = calibration['intrinsics']
@@ -261,6 +273,30 @@ def robot_mappings(gazebo_share, description_share):
             simulated_camera['noise_stddev'])),
         'camera_visualize': str(bool(
             simulated_camera['visualize'])).lower(),
+        'inspection_led_x': repr(float(inspection_led['centre_xyz_m'][0])),
+        'inspection_led_y': repr(float(inspection_led['centre_xyz_m'][1])),
+        'inspection_led_z': repr(float(inspection_led['centre_xyz_m'][2])),
+        'inspection_led_direction_x': repr(float(
+            inspection_led['direction_xyz'][0])),
+        'inspection_led_direction_y': repr(float(
+            inspection_led['direction_xyz'][1])),
+        'inspection_led_direction_z': repr(float(
+            inspection_led['direction_xyz'][2])),
+        'inspection_led_intensity': repr(float(inspection_led['intensity'])),
+        'inspection_led_range': repr(float(inspection_led['range_m'])),
+        'inspection_led_constant': repr(float(
+            inspection_led['attenuation_constant'])),
+        'inspection_led_linear': repr(float(
+            inspection_led['attenuation_linear'])),
+        'inspection_led_quadratic': repr(float(
+            inspection_led['attenuation_quadratic'])),
+        'inspection_led_inner_angle': repr(float(
+            inspection_led['inner_angle_rad'])),
+        'inspection_led_outer_angle': repr(float(
+            inspection_led['outer_angle_rad'])),
+        'inspection_led_falloff': repr(float(inspection_led['falloff'])),
+        'inspection_led_cast_shadows': str(bool(
+            inspection_led['cast_shadows'])).lower(),
         'max_linear_velocity': repr(float(drive['max_linear_velocity_mps'])),
         'max_angular_velocity': repr(float(drive['max_angular_velocity_rps'])),
         'max_linear_acceleration': repr(

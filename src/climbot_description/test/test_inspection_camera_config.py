@@ -46,7 +46,8 @@ def test_nominal_calibration_is_finite_and_inside_the_image():
     image = camera['image']
     calibration = camera['calibration']
     intrinsics = calibration['intrinsics']
-    assert image == {'width_px': 1920, 'height_px': 1080}
+    assert image == {
+        'width_px': 1920, 'height_px': 1080, 'encoding': 'mono8'}
     assert calibration['distortion_model'] == 'plumb_bob'
     assert finite_vector(calibration['distortion'], 5)
     assert any(value != 0.0 for value in calibration['distortion'])
@@ -130,7 +131,7 @@ def test_proxy_total_mass_and_centre_of_mass_are_reproducible():
         for axis in range(3)
     ]
     assert total_mass == pytest.approx(16.5)
-    assert centre == pytest.approx([-0.0566666667, 0.0, 0.1091515152])
+    assert centre == pytest.approx([-0.0524242424, 0.0, 0.1091515152])
 
 
 def test_urdf_camera_defaults_match_shared_configs():
