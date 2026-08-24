@@ -192,7 +192,9 @@ class G2InspectionEvaluator(Node):
                 values[0].reference_end.x - values[0].reference_start.x,
                 values[0].reference_end.y - values[0].reference_start.y)
             nominal_spacing = self.task.detection_length * (1.0 - nominal_overlap)
-            expected_count = math.ceil(reference_length / nominal_spacing) + 1
+            capture_span = max(0.0, reference_length - self.task.detection_length)
+            expected_count = (1 if capture_span <= 1e-9 else
+                              math.ceil(capture_span / nominal_spacing) + 1)
             counts_ok &= len(values) == expected_count
             target_gaps = [
                 second.target_along_track - first.target_along_track

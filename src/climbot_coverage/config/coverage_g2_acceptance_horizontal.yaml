@@ -4,9 +4,9 @@ coverage_planner:
     task_id: g2-acceptance-horizontal
     input_mode: parameters
     region_type: rectangle
-    lower_left: [4.1, 1.55]
-    upper_right: [5.9, 2.45]
-    lower_right: [5.9, 1.55]
+    lower_left: [4.5, 1.55]
+    upper_right: [5.5, 2.45]
+    lower_right: [5.5, 1.55]
     detection_width: 0.50
     detection_length: 0.28125
     detection_forward_offset: 0.300

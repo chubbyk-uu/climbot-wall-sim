@@ -138,23 +138,28 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         deadline = time.monotonic() + timeout
         while len(self.metadata) < count and time.monotonic() < deadline:
             time.sleep(0.01)
-        self.assertEqual(len(self.metadata), count)
+        self.assertEqual(
+            len(self.metadata), count,
+            'capture_calls=%d targets=%s actual=%s' % (
+                self.capture_calls,
+                [item.target_along_track for item in self.metadata],
+                [item.actual_along_track for item in self.metadata]))
 
     def test_scan_only_monotonic_trigger_and_pose_binding(self):
         # Discovery and a pose do not permit a transition/alignment capture.
         time.sleep(0.3)
-        self._odom(10, 0.0)
+        self._odom(10, 0.125)
         self._reference(False)
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 0)
 
-        # Camera centre is on the first camera target, 0.300 m ahead of the
-        # base-link reference start.
+        # The first photo centre is half a footprint inside the continuously
+        # swept reference endpoint: 0.300 + 0.125 = 0.425 m.
         self._reference(True)
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 1)
         # The image is at 10.5 s. A future sample completes the EKF bracket.
-        self._odom(11, 0.10)
+        self._odom(11, 0.225)
         self._wait_count(1)
         first = self.metadata[0]
         self.assertEqual(first.header.stamp, self.image_stamp)
@@ -162,40 +167,41 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(first.revision, 7)
         self.assertEqual(first.segment_index, 2)
         self.assertEqual(first.trigger_index, 0)
-        self.assertAlmostEqual(first.target_along_track, 0.3, places=9)
-        self.assertAlmostEqual(first.camera_pose.pose.position.x, 0.35, places=6)
+        self.assertAlmostEqual(first.target_along_track, 0.425, places=9)
+        self.assertAlmostEqual(first.camera_pose.pose.position.x, 0.475, places=6)
         self.assertAlmostEqual(first.wall_heading_rad, 0.0, places=9)
 
-        # Six centres span a 1 m line: the second target is 0.5 m. Noise that
+        # Five centres span the 0.75 m useful centre interval: the second target
+        # is 0.6125 m. Noise that
         # moves back across it cannot duplicate trigger 0 or trigger 1.
         self.image_stamp = Time(sec=12, nanosec=500_000_000)
         self._reference(True)
-        self._odom(12, 0.19)  # camera progress 0.49
+        self._odom(12, 0.31)  # camera progress 0.61
         time.sleep(0.1)
         self.assertEqual(self.capture_calls, 1)
-        self._odom(13, 0.21)  # progress 0.51 crosses target 0.50
+        self._odom(13, 0.32)  # progress 0.62 crosses target 0.6125
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 2)
-        self._odom(14, 0.18)  # reverse below target
-        self._odom(15, 0.22)  # recross target
+        self._odom(14, 0.30)  # reverse below target
+        self._odom(15, 0.33)  # recross target
         self._wait_count(2)
         time.sleep(0.1)
         self.assertEqual(self.capture_calls, 2)
         self.assertEqual(self.metadata[1].trigger_index, 1)
-        self.assertAlmostEqual(self.metadata[1].target_along_track, 0.5, places=9)
+        self.assertAlmostEqual(self.metadata[1].target_along_track, 0.6125, places=9)
 
         # A temporary service rejection retries the same spatial target and
         # keeps trigger numbering contiguous instead of silently losing it.
         self.reject_next = True
         self.image_stamp = Time(sec=16, nanosec=500_000_000)
         self._reference(True, segment=4)
-        self._odom(16, 0.0)
+        self._odom(16, 0.125)
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 3)
         self._reference(True, segment=4)
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 4)
-        self._odom(17, 0.1)
+        self._odom(17, 0.225)
         self._wait_count(3)
         self.assertEqual(self.metadata[2].segment_index, 4)
         self.assertEqual(self.metadata[2].trigger_index, 0)
