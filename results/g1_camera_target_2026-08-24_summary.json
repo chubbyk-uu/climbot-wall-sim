@@ -1,6 +1,8 @@
 {
   "checks": {
     "brown_mapping_rms_le_1px": true,
+    "calibration_grid_has_5_horizontal_lines": true,
+    "calibration_grid_has_9_vertical_lines": true,
     "camera_info_d": true,
     "camera_info_finite": true,
     "camera_info_k": true,
@@ -12,6 +14,7 @@
     "nonzero_distortion": true,
     "one_public_pair": true,
     "raw_view_meets_nominal": true,
+    "rectified_line_residual_rms_le_1px": true,
     "resolution": true,
     "robot_forward_appears_image_top": true,
     "rotation_error_le_0_1deg": true,
@@ -136,6 +139,8 @@
     "brown_mapping_rms_px": 0.0,
     "checks": {
       "brown_mapping_rms_le_1px": true,
+      "calibration_grid_has_5_horizontal_lines": true,
+      "calibration_grid_has_9_vertical_lines": true,
       "camera_info_d": true,
       "camera_info_finite": true,
       "camera_info_k": true,
@@ -143,6 +148,7 @@
       "distortion_visibly_changes_pixels": true,
       "matching_stamp_and_frame": true,
       "nonzero_distortion": true,
+      "rectified_line_residual_rms_le_1px": true,
       "resolution": true,
       "robot_forward_appears_image_top": true,
       "target_centre_near_principal_point": true,
@@ -160,7 +166,7 @@
     "encoding": "rgb8",
     "frame_id": "inspection_camera_optical_frame",
     "height_px": 1080,
-    "ideal_to_distorted_mean_abs_px": 15.770924479166666,
+    "ideal_to_distorted_mean_abs_px": 21.371715052726337,
     "k": [
       960.0,
       0.0,
@@ -186,9 +192,56 @@
       1.0,
       0.0
     ],
-    "stamp_ns": 21045000000,
+    "stamp_ns": 23653000000,
     "target": {
+      "calibration_grid": {
+        "checks": {
+          "calibration_grid_has_5_horizontal_lines": true,
+          "calibration_grid_has_9_vertical_lines": true,
+          "rectified_line_residual_rms_le_1px": true
+        },
+        "raw_horizontal_rms_px": [
+          5.90460206680793,
+          3.9562166513888704,
+          0.17125890913043051,
+          3.6381190414843814,
+          6.485931473861633
+        ],
+        "raw_vertical_rms_px": [
+          3.4799217616640203,
+          3.010295472725371,
+          2.3886237391651832,
+          1.222186428126291,
+          0.01973384207819301,
+          1.2210205273001888,
+          2.2571525523560845,
+          3.193369289484414,
+          3.831980440924127
+        ],
+        "rectified_horizontal_rms_px": [
+          0.2950334719952088,
+          0.21796496478122743,
+          0.029375721891093567,
+          0.08427879450665812,
+          0.23372962913141218
+        ],
+        "rectified_max_rms_px": 0.2950334719952088,
+        "rectified_vertical_rms_px": [
+          0.06990856480810209,
+          0.030260958816900704,
+          0.22401013972988848,
+          2.0930889330606647e-12,
+          0.039170891437352064,
+          0.24708764907654585,
+          0.023325244968604743,
+          0.245714698294868,
+          0.03687241470907712
+        ]
+      },
       "checks": {
+        "calibration_grid_has_5_horizontal_lines": true,
+        "calibration_grid_has_9_vertical_lines": true,
+        "rectified_line_residual_rms_le_1px": true,
         "robot_forward_appears_image_top": true,
         "target_centre_near_principal_point": true,
         "target_markers_visible": true,
@@ -197,24 +250,24 @@
       "markers": {
         "blue_centre": {
           "centroid_xy_px": [
-            957.0,
-            539.4931864064603
+            957.000505220613,
+            539.4522566520714
           ],
-          "pixel_count": 11888
+          "pixel_count": 11876
         },
         "green_up": {
           "centroid_xy_px": [
-            355.05046153846155,
-            539.1717647058823
+            355.05555756632526,
+            539.1682652285642
           ],
-          "pixel_count": 27625
+          "pixel_count": 27629
         },
         "red_forward": {
           "centroid_xy_px": [
-            956.8790548406381,
-            188.7381933738162
+            956.87900535096,
+            188.70207743153918
           ],
-          "pixel_count": 31783
+          "pixel_count": 31770
         }
       }
     },
@@ -229,7 +282,7 @@
   "provenance": {
     "git": {
       "branch": "main",
-      "commit": "50b13154f9328b95bc48a2488f894c69e33b782d",
+      "commit": "36aa520bb83a9cb3b216bb1a0b52178cccaea998",
       "source_modified": false,
       "traceable": true
     }
