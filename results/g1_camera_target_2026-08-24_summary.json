@@ -8,6 +8,7 @@
     "camera_info_k": true,
     "camera_info_p": true,
     "distortion_visibly_changes_pixels": true,
+    "effective_roi_has_no_modelled_obstruction": true,
     "effective_view_meets_nominal": true,
     "idle_zero_frames": true,
     "matching_stamp_and_frame": true,
@@ -146,6 +147,7 @@
       "camera_info_k": true,
       "camera_info_p": true,
       "distortion_visibly_changes_pixels": true,
+      "effective_roi_has_no_modelled_obstruction": true,
       "matching_stamp_and_frame": true,
       "nonzero_distortion": true,
       "rectified_line_residual_rms_le_1px": true,
@@ -166,7 +168,7 @@
     "encoding": "rgb8",
     "frame_id": "inspection_camera_optical_frame",
     "height_px": 1080,
-    "ideal_to_distorted_mean_abs_px": 21.371715052726337,
+    "ideal_to_distorted_mean_abs_px": 24.33691245498971,
     "k": [
       960.0,
       0.0,
@@ -192,7 +194,7 @@
       1.0,
       0.0
     ],
-    "stamp_ns": 23653000000,
+    "stamp_ns": 31758000000,
     "target": {
       "calibration_grid": {
         "checks": {
@@ -201,46 +203,47 @@
           "rectified_line_residual_rms_le_1px": true
         },
         "raw_horizontal_rms_px": [
-          5.90460206680793,
-          3.9562166513888704,
-          0.17125890913043051,
-          3.6381190414843814,
-          6.485931473861633
+          6.189177544083438,
+          3.9421083665417247,
+          0.19363111299648245,
+          3.7890041740850178,
+          6.7864631454080016
         ],
         "raw_vertical_rms_px": [
-          3.4799217616640203,
-          3.010295472725371,
-          2.3886237391651832,
-          1.222186428126291,
-          0.01973384207819301,
-          1.2210205273001888,
-          2.2571525523560845,
-          3.193369289484414,
-          3.831980440924127
+          3.6212395522886442,
+          2.9923068321267605,
+          2.272382937010254,
+          1.232136294243463,
+          0.027934464158010774,
+          1.2266304839100588,
+          2.266144380914668,
+          3.2167322476369598,
+          3.823583608842996
         ],
         "rectified_horizontal_rms_px": [
-          0.2950334719952088,
-          0.21796496478122743,
-          0.029375721891093567,
-          0.08427879450665812,
-          0.23372962913141218
+          0.3188966978365417,
+          0.24358024429872135,
+          0.029343581170150426,
+          0.03030144397729531,
+          0.14835075790546204
         ],
-        "rectified_max_rms_px": 0.2950334719952088,
+        "rectified_max_rms_px": 0.3188966978365417,
         "rectified_vertical_rms_px": [
-          0.06990856480810209,
-          0.030260958816900704,
-          0.22401013972988848,
-          2.0930889330606647e-12,
-          0.039170891437352064,
-          0.24708764907654585,
+          0.055337362278802135,
+          0.24109383320416874,
+          0.023325244968601003,
+          0.1729489698857307,
+          0.03919297860642977,
+          3.1787917574309486e-12,
           0.023325244968604743,
-          0.245714698294868,
+          0.07657687193204697,
           0.03687241470907712
         ]
       },
       "checks": {
         "calibration_grid_has_5_horizontal_lines": true,
         "calibration_grid_has_9_vertical_lines": true,
+        "effective_roi_has_no_modelled_obstruction": true,
         "rectified_line_residual_rms_le_1px": true,
         "robot_forward_appears_image_top": true,
         "target_centre_near_principal_point": true,
@@ -250,25 +253,41 @@
       "markers": {
         "blue_centre": {
           "centroid_xy_px": [
-            957.000505220613,
-            539.4522566520714
+            957.0,
+            539.4488421052631
           ],
-          "pixel_count": 11876
+          "pixel_count": 11875
         },
         "green_up": {
           "centroid_xy_px": [
-            355.05555756632526,
-            539.1682652285642
+            357.4835078720524,
+            539.1862577473819
           ],
-          "pixel_count": 27629
+          "pixel_count": 28074
         },
         "red_forward": {
           "centroid_xy_px": [
-            956.87900535096,
-            188.70207743153918
+            957.1265624018591,
+            188.73211481690848
           ],
-          "pixel_count": 31770
+          "pixel_count": 31842
         }
+      },
+      "obstruction": {
+        "checks": {
+          "effective_roi_has_no_modelled_obstruction": true
+        },
+        "minimum_brightest_channel": 187,
+        "pixel_count": 1607052,
+        "raw_unknown_pixel_count": 2854,
+        "rectified_inset_roi_xyxy_px": [
+          107,
+          69,
+          1812,
+          1010
+        ],
+        "unknown_after_one_pixel_edge_allowance": 0,
+        "unknown_ratio": 0.0
       }
     },
     "width_px": 1920
@@ -282,7 +301,7 @@
   "provenance": {
     "git": {
       "branch": "main",
-      "commit": "36aa520bb83a9cb3b216bb1a0b52178cccaea998",
+      "commit": "73c629ab4f82000e71d729a31aa36a6c02d70bbf",
       "source_modified": false,
       "traceable": true
     }
