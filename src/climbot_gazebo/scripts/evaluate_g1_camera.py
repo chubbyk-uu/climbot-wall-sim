@@ -113,6 +113,30 @@ def finite_list(values):
     return all(math.isfinite(float(value)) for value in values)
 
 
+def payload_mass_properties(robot):
+    """Recompute the same proxy total mass and COM used by description tests."""
+    wheel = robot['drive_wheel']
+    components = [
+        (robot['base']['mass_kg'], robot['base']['centre_xyz']),
+        (wheel['mass_kg'], [
+            wheel['axle_x_m'], wheel['separation_m'] / 2.0, wheel['radius_m']]),
+        (wheel['mass_kg'], [
+            wheel['axle_x_m'], -wheel['separation_m'] / 2.0, wheel['radius_m']]),
+        (robot['caster']['mass_kg'], [
+            robot['caster']['centre_x_m'], 0.0, robot['caster']['radius_m']]),
+        (robot['inspection_payload']['camera_body']['mass_kg'],
+         robot['inspection_payload']['camera_body']['centre_xyz_m']),
+        (robot['inspection_payload']['bracket']['mass_kg'],
+         robot['inspection_payload']['bracket']['centre_xyz_m']),
+    ]
+    total_mass = float(sum(mass for mass, _ in components))
+    centre = [
+        float(sum(mass * xyz[axis] for mass, xyz in components) / total_mass)
+        for axis in range(3)
+    ]
+    return {'total_mass_kg': total_mass, 'centre_of_mass_xyz_m': centre}
+
+
 def message_array(message):
     """Interpret the configured RGB8 source without a second conversion path."""
     if message.encoding != 'rgb8' or message.step != message.width * 3:
@@ -234,8 +258,11 @@ def main():
     description = get_package_share_directory('climbot_description')
     gazebo = get_package_share_directory('climbot_gazebo')
     camera_path = os.path.join(description, 'config', 'inspection_camera.yaml')
+    robot_path = os.path.join(description, 'config', 'robot.yaml')
     simulation_path = os.path.join(gazebo, 'config', 'simulation.yaml')
     camera = load_calibration(camera_path)
+    with open(robot_path) as handle:
+        robot = yaml.safe_load(handle)['robot']
     with open(simulation_path) as handle:
         simulation = yaml.safe_load(handle)['simulation']['inspection_camera']
 
@@ -282,6 +309,8 @@ def main():
             'transform': transform,
             'configuration': {
                 'camera': camera,
+                'inspection_payload': robot['inspection_payload'],
+                'robot_mass_properties': payload_mass_properties(robot),
                 'simulation_camera': simulation,
             },
             'provenance': {'git': git_state()},
