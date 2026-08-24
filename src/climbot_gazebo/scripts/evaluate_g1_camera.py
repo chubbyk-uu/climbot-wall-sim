@@ -199,6 +199,87 @@ def marker_metrics(raw_array):
     return {'markers': markers, 'checks': checks}
 
 
+def contiguous_groups(indices):
+    """Turn sorted threshold indices into inclusive pixel bands."""
+    if not len(indices):
+        return []
+    groups = [[int(indices[0]), int(indices[0])]]
+    for value in indices[1:]:
+        value = int(value)
+        if value == groups[-1][1] + 1:
+            groups[-1][1] = value
+        else:
+            groups.append([value, value])
+    return groups
+
+
+def straight_line_residuals(mask, horizontal):
+    """Fit the centre of each long colored stripe, ignoring its thickness."""
+    height, width = mask.shape
+    if horizontal:
+        groups = contiguous_groups(np.flatnonzero(
+            np.sum(mask, axis=1) > 0.20 * width))
+    else:
+        groups = contiguous_groups(np.flatnonzero(
+            np.sum(mask, axis=0) > 0.20 * height))
+    residuals = []
+    for start, end in groups:
+        coordinates = []
+        centres = []
+        if horizontal:
+            for column in range(width):
+                rows = np.flatnonzero(mask[start:end + 1, column]) + start
+                if rows.size:
+                    coordinates.append(column)
+                    centres.append(float(np.mean(rows)))
+        else:
+            for row in range(height):
+                columns = np.flatnonzero(mask[row, start:end + 1]) + start
+                if columns.size:
+                    coordinates.append(row)
+                    centres.append(float(np.mean(columns)))
+        if len(coordinates) < 100:
+            continue
+        fit = np.polyfit(coordinates, centres, 1)
+        errors = np.asarray(centres) - np.polyval(fit, coordinates)
+        residuals.append(float(np.sqrt(np.mean(errors * errors))))
+    return residuals
+
+
+def calibration_grid_metrics(raw_array, matrix, distortion):
+    """Undistort the rendered target and measure its physical straight lines."""
+    rectified = cv2.undistort(raw_array, matrix, distortion)
+
+    def yellow_mask(image):
+        minimum_rg = np.minimum(image[:, :, 0], image[:, :, 1])
+        return (
+            (image[:, :, 0] > 40) & (image[:, :, 1] > 40) &
+            (minimum_rg > 1.5 * image[:, :, 2]))
+
+    raw_mask = yellow_mask(raw_array)
+    rectified_mask = yellow_mask(rectified)
+    raw_horizontal = straight_line_residuals(raw_mask, horizontal=True)
+    raw_vertical = straight_line_residuals(raw_mask, horizontal=False)
+    rectified_horizontal = straight_line_residuals(rectified_mask, horizontal=True)
+    rectified_vertical = straight_line_residuals(rectified_mask, horizontal=False)
+    rectified_all = rectified_horizontal + rectified_vertical
+    maximum = max(rectified_all) if rectified_all else None
+    checks = {
+        'calibration_grid_has_5_horizontal_lines': len(rectified_horizontal) == 5,
+        'calibration_grid_has_9_vertical_lines': len(rectified_vertical) == 9,
+        'rectified_line_residual_rms_le_1px': (
+            maximum is not None and maximum <= 1.0),
+    }
+    return {
+        'raw_horizontal_rms_px': raw_horizontal,
+        'raw_vertical_rms_px': raw_vertical,
+        'rectified_horizontal_rms_px': rectified_horizontal,
+        'rectified_vertical_rms_px': rectified_vertical,
+        'rectified_max_rms_px': maximum,
+        'checks': checks,
+    }
+
+
 def compare_frame(evaluator, camera, render_scale, check_target=False):
     """Validate the single public pair and recompute the Brown pixel mapping."""
     common = set(evaluator.public_images) & set(evaluator.public_infos)
@@ -258,6 +339,9 @@ def compare_frame(evaluator, camera, render_scale, check_target=False):
     }
     if check_target:
         target = marker_metrics(raw_array)
+        target['calibration_grid'] = calibration_grid_metrics(
+            raw_array, matrix, distortion)
+        target['checks'].update(target['calibration_grid']['checks'])
         result['target'] = target
         result['checks'].update(target['checks'])
     return result

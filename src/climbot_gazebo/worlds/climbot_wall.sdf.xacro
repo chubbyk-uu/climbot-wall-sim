@@ -95,6 +95,28 @@
     </xacro:if>
   </xacro:macro>
 
+  <xacro:macro name="g1_target_line" params="axis index count">
+    <xacro:if value="${index &lt; count}">
+      <xacro:property name="fraction" value="${-0.4 + 0.8 * index / (count - 1)}"/>
+      <visual name="g1_target_grid_${axis}_${index}">
+        <xacro:if value="${axis == 'forward'}">
+          <pose>${decal_x + 0.0055} ${target_lateral + fraction * target_length} ${target_height - centre_z} 0 0 0</pose>
+          <geometry><box><size>0.003 ${0.010 * target_length} ${0.90 * target_width}</size></box></geometry>
+        </xacro:if>
+        <xacro:unless value="${axis == 'forward'}">
+          <pose>${decal_x + 0.0055} ${target_lateral} ${target_height - centre_z + fraction * target_width} 0 0 0</pose>
+          <geometry><box><size>0.003 ${0.90 * target_length} ${0.006 * target_width}</size></box></geometry>
+        </xacro:unless>
+        <material>
+          <ambient>1 1 0.01 1</ambient>
+          <diffuse>1 1 0.01 1</diffuse>
+          <specular>0 0 0 1</specular>
+        </material>
+      </visual>
+      <xacro:g1_target_line axis="${axis}" index="${index + 1}" count="${count}"/>
+    </xacro:if>
+  </xacro:macro>
+
   <world name="climbot_wall">
     <gravity>0 0 -9.81</gravity>
     <physics name="physics" type="ignored">
@@ -186,6 +208,8 @@
               <specular>0 0 0 1</specular>
             </material>
           </visual>
+          <xacro:g1_target_line axis="forward" index="0" count="5"/>
+          <xacro:g1_target_line axis="cross" index="0" count="9"/>
           <visual name="g1_target_forward_red">
             <pose>${decal_x + 0.007} ${target_lateral + 0.35 * target_length} ${target_height - centre_z} 0 0 0</pose>
             <geometry><box><size>0.004 ${0.18 * target_length} ${0.10 * target_width}</size></box></geometry>
