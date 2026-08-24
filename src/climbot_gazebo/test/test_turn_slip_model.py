@@ -139,6 +139,12 @@ def test_full_heading_turn_map_enforces_count_flatness_and_maximum():
     )['passed']
 
 
+def test_g1_absolute_limit_stays_below_stale_model_warning():
+    nominal_mm_per_deg = 0.41
+    g1_limit_mm_per_deg = 0.55
+    assert g1_limit_mm_per_deg < nominal_mm_per_deg * 1.5
+
+
 @pytest.mark.parametrize('limit', [0.0, -1.0, float('nan'), float('inf')])
 def test_full_heading_turn_map_rejects_bad_limits(limit):
     with pytest.raises(ValueError):

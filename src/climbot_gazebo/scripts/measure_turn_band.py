@@ -78,7 +78,10 @@ class TurnBandMeasurement(Node):
         self.declare_parameter('wall_config', default_wall_config())
         self.declare_parameter('output_csv', 'results/turn_map.csv')
         self.declare_parameter('summary_json', '')
-        self.declare_parameter('maximum_mm_per_deg', 0.50)
+        # Keep the absolute bound below the controller's 50% stale-model
+        # warning (0.615 mm/deg for the current 0.41 mm/deg calibration),
+        # while leaving margin for the G1 payload's measured load shift.
+        self.declare_parameter('maximum_mm_per_deg', 0.55)
         self.declare_parameter('maximum_range_mm_per_deg', 0.10)
         self.declare_parameter('maximum_turn_error_deg', 2.0)
 
