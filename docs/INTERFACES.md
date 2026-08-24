@@ -1111,6 +1111,39 @@ G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`�
 仿真最终输出端白噪声标准差为 `0.004 × 255 ≈ 1.02 DN`，随机种子固定用于回归，但
 每次曝光继续推进随机序列。SDF 渲染器内部的噪声配置不能作为独立帧保证。
 
+`image_compensated` 是可选预览接口，不属于正式归档输入。正式数据记录器只能消费
+`image_raw`；未提供 `flat_field_file` 时补偿节点不启动。
+
+## 计划中的 G4 任务归档接口
+
+G4 在 `climbot_inspection` 中增加任务级记录器，输入 `image_raw`、`CameraInfo`、
+`InspectionCapture` 和冻结任务快照，输出到受配置约束的 `output_root/task_id/`。操作员
+选择根目录，节点生成并校验任务子目录；不得直接拼接未经校验的任务 ID 形成路径。
+
+建议的第一版目录契约：
+
+```text
+task_id/
+├── manifest.json
+├── calibration/
+│   ├── camera_info.yaml
+│   ├── camera_extrinsics.yaml
+│   └── flat_field_reference.json
+├── images/raw/000000.png
+└── metadata/000000.json
+```
+
+单张标签以 `(task_id, revision, segment_index, trigger_index)` 为业务主键，以图像 header
+为曝光配对键。PNG 必须是原始畸变 `mono8` 像素的无损编码，并记录文件 SHA-256；标签
+保存墙面相机位置、航向、完整协方差、目标／实际沿轨位置和所有标定哈希。`manifest`
+保存任务区域、规划、软件提交、计数和失败清单。只有图片和标签均经临时文件写入、校验
+并原子改名后才增加成功计数；任务结束时必须验证主键、文件名和时间戳一一对应。
+
+离线 `climbot_image_processing` 先在畸变原图坐标中应用暗场／平场，再去畸变；
+`climbot_mosaic` 以 EKF 位姿和协方差为绝对先验，以重叠特征匹配为相对约束做鲁棒位姿
+图优化或束调整。优化目标是加权残差而不是直接压低协方差；输出必须附残差、内点率、
+连通性和后验不确定度。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |
