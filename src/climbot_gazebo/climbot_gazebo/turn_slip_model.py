@@ -113,3 +113,41 @@ def summarise(records):
         'residual_rms_m': residual_rms(records, offset, slip),
         'turns': len(records),
     }
+
+
+def summarise_turn_map(records, expected_count, maximum_mm_per_deg,
+                       maximum_range_mm_per_deg, maximum_turn_error_deg):
+    """Return an executable verdict for a full-heading turn-slip map."""
+    if not records:
+        raise ValueError('turn map must contain records')
+    limits = [maximum_mm_per_deg, maximum_range_mm_per_deg,
+              maximum_turn_error_deg]
+    if not all(math.isfinite(value) and value > 0.0 for value in limits):
+        raise ValueError('turn-map limits must be positive and finite')
+    per_degree = [float(record['mm_per_deg']) for record in records]
+    turn_errors = [
+        abs(abs(float(record['achieved_deg'])) -
+            abs(float(record['commanded_deg'])))
+        for record in records]
+    minimum = min(per_degree)
+    maximum = max(per_degree)
+    spread = maximum - minimum
+    passed = (
+        len(records) == expected_count and
+        maximum <= maximum_mm_per_deg and
+        spread <= maximum_range_mm_per_deg and
+        max(turn_errors) <= maximum_turn_error_deg)
+    return {
+        'passed': passed,
+        'record_count': len(records),
+        'expected_record_count': expected_count,
+        'minimum_mm_per_deg': minimum,
+        'maximum_mm_per_deg': maximum,
+        'range_mm_per_deg': spread,
+        'maximum_turn_error_deg': max(turn_errors),
+        'limits': {
+            'maximum_mm_per_deg': maximum_mm_per_deg,
+            'maximum_range_mm_per_deg': maximum_range_mm_per_deg,
+            'maximum_turn_error_deg': maximum_turn_error_deg,
+        },
+    }

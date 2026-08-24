@@ -29,6 +29,7 @@
 # See results/band_variants/ and docs/STATUS.md.
 
 import csv
+import json
 import math
 import os
 import time
@@ -40,7 +41,9 @@ from climbot_description.geometry import (
     yaw_from_quaternion,
 )
 from climbot_description.wall_frame import WallFrame
+from climbot_gazebo.provenance import git_state
 from climbot_gazebo.safe_stop import install_stop_on_termination
+from climbot_gazebo.turn_slip_model import summarise_turn_map
 from geometry_msgs.msg import Twist
 from measure_turn_slip import plan_turn, sample_turn, stamp_nanoseconds
 from nav_msgs.msg import Odometry
@@ -74,6 +77,10 @@ class TurnBandMeasurement(Node):
         self.declare_parameter('recentre_speed_mps', 0.15)
         self.declare_parameter('wall_config', default_wall_config())
         self.declare_parameter('output_csv', 'results/turn_map.csv')
+        self.declare_parameter('summary_json', '')
+        self.declare_parameter('maximum_mm_per_deg', 0.50)
+        self.declare_parameter('maximum_range_mm_per_deg', 0.10)
+        self.declare_parameter('maximum_turn_error_deg', 2.0)
 
         self._wall_frame = WallFrame.from_yaml(
             str(self.get_parameter('wall_config').value))
@@ -219,6 +226,39 @@ class TurnBandMeasurement(Node):
         self.get_logger().info(
             'Wrote %d turns to %s' % (len(self._records), path))
 
+    def _write_summary(self, expected_count):
+        summary = summarise_turn_map(
+            self._records, expected_count,
+            float(self.get_parameter('maximum_mm_per_deg').value),
+            float(self.get_parameter('maximum_range_mm_per_deg').value),
+            float(self.get_parameter('maximum_turn_error_deg').value))
+        summary.update({
+            'schema_version': 1,
+            'parameters': {
+                name: self.get_parameter(name).value
+                for name in (
+                    'headings_deg', 'angles_deg',
+                    'angular_acceleration_rps2', 'max_rate_rps',
+                    'heading_tolerance_deg', 'turn_tolerance_deg',
+                    'settle_duration_s')
+            },
+            'records': self._records,
+            'provenance': {'git': git_state()},
+        })
+        path = str(self.get_parameter('summary_json').value)
+        if path:
+            expanded = os.path.abspath(os.path.expanduser(path))
+            os.makedirs(os.path.dirname(expanded), exist_ok=True)
+            with open(expanded, 'w') as handle:
+                json.dump(summary, handle, indent=2, sort_keys=True, allow_nan=False)
+                handle.write('\n')
+            self.get_logger().info('Wrote %s' % expanded)
+        self.get_logger().info(
+            'G1_TURN_MAP_PASS=%s range=%.4f..%.4f mm/deg spread=%.4f' % (
+                summary['passed'], summary['minimum_mm_per_deg'],
+                summary['maximum_mm_per_deg'], summary['range_mm_per_deg']))
+        return summary
+
     def run(self):
         """Sweep the grid, recentring and re-facing before every turn."""
         self._wait_for_data()
@@ -237,6 +277,9 @@ class TurnBandMeasurement(Node):
                         record['slide_mm'], record['mm_per_deg']))
         if self._records:
             self._write_csv()
+            summary = self._write_summary(len(headings) * len(angles))
+            if not summary['passed']:
+                raise RuntimeError('G1 full-heading turn-slip acceptance failed')
 
 
 def main():

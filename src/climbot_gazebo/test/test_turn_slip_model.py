@@ -20,6 +20,7 @@ from climbot_gazebo.turn_slip_model import fit
 from climbot_gazebo.turn_slip_model import residual_rms
 from climbot_gazebo.turn_slip_model import slip_per_degree_ignoring_swing
 from climbot_gazebo.turn_slip_model import summarise
+from climbot_gazebo.turn_slip_model import summarise_turn_map
 import pytest
 
 
@@ -114,3 +115,31 @@ def test_rejects_input_that_cannot_constrain_a_fit():
         slip_per_degree_ignoring_swing([])
     with pytest.raises(ValueError):
         slip_per_degree_ignoring_swing([_turn(90.0, 0.0)])
+
+
+def _map_record(value, commanded=30.0, achieved=30.0):
+    return {
+        'mm_per_deg': value,
+        'commanded_deg': commanded,
+        'achieved_deg': achieved,
+    }
+
+
+def test_full_heading_turn_map_enforces_count_flatness_and_maximum():
+    records = [_map_record(0.40), _map_record(0.44, -30.0, -29.5)]
+    result = summarise_turn_map(records, 2, 0.50, 0.10, 2.0)
+    assert result['passed']
+    assert result['range_mm_per_deg'] == pytest.approx(0.04)
+    assert result['maximum_turn_error_deg'] == pytest.approx(0.5)
+    assert not summarise_turn_map(records, 3, 0.50, 0.10, 2.0)['passed']
+    assert not summarise_turn_map(
+        records + [_map_record(0.55)], 3, 0.60, 0.10, 2.0)['passed']
+    assert not summarise_turn_map(
+        records + [_map_record(0.45, 30.0, 27.0)], 3, 0.50, 0.10, 2.0
+    )['passed']
+
+
+@pytest.mark.parametrize('limit', [0.0, -1.0, float('nan'), float('inf')])
+def test_full_heading_turn_map_rejects_bad_limits(limit):
+    with pytest.raises(ValueError):
+        summarise_turn_map([_map_record(0.4)], 1, limit, 0.1, 2.0)
