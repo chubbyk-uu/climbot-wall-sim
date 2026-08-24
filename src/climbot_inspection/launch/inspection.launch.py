@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Launch the simulator-agnostic one-frame inspection adapter."""
+"""Launch simulator-agnostic manual and position-triggered inspection."""
 
 import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -37,6 +38,17 @@ def generate_launch_description():
             parameters=[LaunchConfiguration('config_file'), {
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
             }],
+            output='screen',
+        ),
+        DeclareLaunchArgument('automatic_capture', default_value='true'),
+        Node(
+            package='climbot_inspection',
+            executable='automatic_capture_node',
+            name='automatic_capture_node',
+            parameters=[LaunchConfiguration('config_file'), {
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+            }],
+            condition=IfCondition(LaunchConfiguration('automatic_capture')),
             output='screen',
         ),
     ])

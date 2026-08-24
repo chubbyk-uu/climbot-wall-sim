@@ -54,7 +54,7 @@ climbot_sim/
     ├── climbot_coverage/        C++ 覆盖规划与 RViz
     ├── climbot_rviz_plugins/    RViz 操作面板
     ├── climbot_control/         C++ 轨迹跟踪和速度安全
-    ├── climbot_inspection/      C++ 单次拍照与图像关联
+    ├── climbot_inspection/      C++ 单拍、沿轨位置触发与曝光位姿关联
     └── climbot_bringup/         整系统组合 launch
 ```
 

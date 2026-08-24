@@ -263,6 +263,9 @@ std::optional<std::string> validateCoverageTask(
   {
     return "detection dimensions must be finite and positive";
   }
+  if (!std::isfinite(task.detection_forward_offset) || task.detection_forward_offset < 0.0) {
+    return "detection_forward_offset must be finite and non-negative";
+  }
   if (task.waypoints.size() < 2U ||
     task.segment_types.size() + 1U != task.waypoints.size())
   {

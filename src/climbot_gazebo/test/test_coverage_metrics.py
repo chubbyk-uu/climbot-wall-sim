@@ -48,6 +48,14 @@ def test_separate_scan_paths_do_not_cover_the_transition_between_them():
     assert result['ratio'] == pytest.approx(1.0 / 3.0)
 
 
+def test_front_camera_offset_moves_the_evaluated_footprint():
+    polygon = [(0.3, -0.25), (1.3, -0.25), (1.3, 0.25), (0.3, 0.25)]
+    result = footprint_coverage(
+        polygon, [[(0.0, 0.0, 0.0), (1.0, 0.0, 0.0)]],
+        width=0.5, length=0.1, resolution=0.01, forward_offset=0.3)
+    assert result['ratio'] == pytest.approx(1.0)
+
+
 @pytest.mark.parametrize(
     'width,length,resolution',
     [(0.0, 0.1, 0.01), (0.5, -0.1, 0.01), (0.5, 0.1, 0.0)])

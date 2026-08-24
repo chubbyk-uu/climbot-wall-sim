@@ -10,6 +10,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CoverageTask.msg"
   "msg/CoverageStatus.msg"
   "msg/CoverageConfig.msg"
+  "msg/ExecutionReference.msg"
+  "msg/InspectionCapture.msg"
   "srv/ConfigureCoverage.srv"
   "action/ExecuteCoverage.action"
   DEPENDENCIES geometry_msgs std_msgs

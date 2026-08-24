@@ -113,6 +113,7 @@ public:
     task_id_ = declare_parameter("task_id", "coverage-task");
     detection_width_ = declare_parameter("detection_width", 0.50);
     detection_length_ = declare_parameter("detection_length", 0.01);
+    detection_forward_offset_ = declare_parameter("detection_forward_offset", 0.0);
     overlap_ratio_ = declare_parameter("overlap_ratio", 0.20);
     robot_length_ = declare_parameter("robot_length", -1.0);
     robot_width_ = declare_parameter("robot_width", -1.0);
@@ -211,6 +212,7 @@ private:
     }
     requireFinite("detection_width", detection_width_);
     requireFinite("detection_length", detection_length_);
+    requireFinite("detection_forward_offset", detection_forward_offset_);
     requireFinite("overlap_ratio", overlap_ratio_);
     requireFinite("minimum_nominal_coverage_ratio", minimum_nominal_coverage_ratio_);
     requireFinite("robot_length", robot_length_);
@@ -221,6 +223,9 @@ private:
     requireFinite("wall_grid_spacing", wall_grid_spacing_);
     if (detection_width_ <= 0.0 || detection_length_ <= 0.0) {
       throw std::invalid_argument("Detection footprint dimensions must be positive.");
+    }
+    if (detection_forward_offset_ < 0.0) {
+      throw std::invalid_argument("detection_forward_offset must be non-negative.");
     }
     if (overlap_ratio_ < 0.0 || overlap_ratio_ >= 1.0) {
       throw std::invalid_argument("overlap_ratio must be within [0, 1).");
@@ -495,9 +500,10 @@ private:
       const auto motion = motionRegion();
       auto path = generateFootprintAwareBoustrophedonPath(
         region.polygon, motion, detection_width_, detection_length_, row_spacing_,
-        sweep_direction_, start_corner_);
+        sweep_direction_, start_corner_, detection_forward_offset_);
       double coverage_ratio = sampledCoverageRatio(
-        region.polygon, path, detection_width_, detection_length_);
+        region.polygon, path, detection_width_, detection_length_, 300,
+        detection_forward_offset_);
       const std::string finishing_scan =
         appendTopEdgeFinishingScan(region.polygon, motion, path, coverage_ratio);
       if (coverage_ratio < minimum_nominal_coverage_ratio_) {
@@ -554,7 +560,8 @@ private:
       return {};
     }
     const auto finishing = makeTopEdgeFinishingScan(
-      coverage_region, motion, detection_width_, detection_length_, path.back());
+      coverage_region, motion, detection_width_, detection_length_, path.back(),
+      detection_forward_offset_);
     if (finishing.empty()) {
       return "Top-edge scan skipped: the finishing line does not fit in motion_region.";
     }
@@ -562,7 +569,8 @@ private:
     std::vector<Point2> extended = path;
     extended.insert(extended.end(), finishing.begin(), finishing.end());
     const double after = sampledCoverageRatio(
-      coverage_region, extended, detection_width_, detection_length_);
+      coverage_region, extended, detection_width_, detection_length_, 300,
+      detection_forward_offset_);
     path = std::move(extended);
     coverage_ratio = after;
     std::ostringstream note;
@@ -583,6 +591,7 @@ private:
       climbot_interfaces::msg::CoverageTask::SWEEP_VERTICAL;
     task.detection_width = detection_width_;
     task.detection_length = detection_length_;
+    task.detection_forward_offset = detection_forward_offset_;
     return task;
   }
 
@@ -847,6 +856,7 @@ private:
   Point2 lower_right_;
   double detection_width_;
   double detection_length_;
+  double detection_forward_offset_;
   double overlap_ratio_;
   double minimum_nominal_coverage_ratio_;
   std::string top_edge_scan_;

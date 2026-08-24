@@ -251,13 +251,17 @@ Polygon insetConvexPolygon(const Polygon & polygon, double margin)
 std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   const Polygon & coverage_region, const Polygon & motion_region,
   double detection_width, double detection_length, double maximum_spacing,
-  const std::string & sweep_direction, const std::string & start_corner)
+  const std::string & sweep_direction, const std::string & start_corner,
+  double detection_forward_offset)
 {
   if (detection_width <= 0.0 || detection_length <= 0.0) {
     throw std::invalid_argument("Detection footprint dimensions must be positive.");
   }
   if (maximum_spacing <= 0.0) {
     throw std::invalid_argument("Track spacing must be positive.");
+  }
+  if (!std::isfinite(detection_forward_offset) || detection_forward_offset < 0.0) {
+    throw std::invalid_argument("Detection forward offset must be finite and non-negative.");
   }
   const bool horizontal = sweep_direction == "horizontal";
   if (!horizontal && sweep_direction != "vertical") {
@@ -290,18 +294,27 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
       Point2{0.5 * detection_length, 0.0} : Point2{0.0, 0.5 * detection_length};
     segment.first = subtract(segment.first, extension);
     segment.second = add(segment.second, extension);
-    if (!insideConvex(motion_region, segment.first) || !insideConvex(motion_region,
-        segment.second))
-    {
-      throw std::invalid_argument(
-              "Detection footprint requires a robot-centre waypoint outside motion_region.");
-    }
     bool forward_along_line = horizontal ? start_left : start_low;
     if (line_index % 2 == 1) {
       forward_along_line = !forward_along_line;
     }
     if (!forward_along_line) {
       std::swap(segment.first, segment.second);
+    }
+    const double length = std::hypot(
+      segment.second.x - segment.first.x, segment.second.y - segment.first.y);
+    const Point2 offset{
+      detection_forward_offset * (segment.second.x - segment.first.x) / length,
+      detection_forward_offset * (segment.second.y - segment.first.y) / length};
+    // The clipped/extended segment describes the camera-centre sweep. Convert
+    // it to base_link waypoints without changing the inspected footprint.
+    segment.first = subtract(segment.first, offset);
+    segment.second = subtract(segment.second, offset);
+    if (!insideConvex(motion_region, segment.first) || !insideConvex(motion_region,
+        segment.second))
+    {
+      throw std::invalid_argument(
+              "Camera offset requires a robot-centre waypoint outside motion_region.");
     }
     path.push_back(segment.first);
     path.push_back(segment.second);
@@ -311,7 +324,8 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
 
 std::vector<Point2> makeTopEdgeFinishingScan(
   const Polygon & coverage_region, const Polygon & motion_region,
-  double detection_width, double detection_length, const Point2 & entry)
+  double detection_width, double detection_length, const Point2 & entry,
+  double detection_forward_offset)
 {
   if (detection_width <= 0.0 || detection_length <= 0.0) {
     throw std::invalid_argument("Detection footprint dimensions must be positive.");
@@ -330,27 +344,30 @@ std::vector<Point2> makeTopEdgeFinishingScan(
   const Point2 extension{0.5 * detection_length, 0.0};
   segment.first = subtract(segment.first, extension);
   segment.second = add(segment.second, extension);
+  // Compare the base_link start for each direction, not the camera endpoint:
+  // the forward mount offset changes which transition is actually shorter.
+  const Point2 first_base{segment.first.x - detection_forward_offset, segment.first.y};
+  const Point2 second_base{segment.second.x + detection_forward_offset, segment.second.y};
+  const double to_first = std::hypot(first_base.x - entry.x, first_base.y - entry.y);
+  const double to_second = std::hypot(second_base.x - entry.x, second_base.y - entry.y);
+  if (to_second < to_first) {
+    std::swap(segment.first, segment.second);
+  }
+  const double direction = segment.second.x > segment.first.x ? 1.0 : -1.0;
+  segment.first.x -= direction * detection_forward_offset;
+  segment.second.x -= direction * detection_forward_offset;
   if (!insideConvex(motion_region, segment.first) ||
     !insideConvex(motion_region, segment.second))
   {
-    // PROJECT_GUIDE 10.7 requires the finishing line and its transition to lie
-    // in motion_region. Refusing here leaves the caller a task it can execute,
-    // rather than one the executor will reject at goal acceptance.
     return {};
-  }
-  // Enter from the end nearer the last scan so the transition onto the line is
-  // the short one, not a traverse back across the whole region.
-  const double to_first = std::hypot(segment.first.x - entry.x, segment.first.y - entry.y);
-  const double to_second = std::hypot(segment.second.x - entry.x, segment.second.y - entry.y);
-  if (to_second < to_first) {
-    std::swap(segment.first, segment.second);
   }
   return {segment.first, segment.second};
 }
 
 double sampledCoverageRatio(
   const Polygon & coverage_region, const std::vector<Point2> & scan_path,
-  double detection_width, double detection_length, int samples_per_axis)
+  double detection_width, double detection_length, int samples_per_axis,
+  double detection_forward_offset)
 {
   if (scan_path.size() % 2 != 0 || detection_width <= 0.0 || detection_length <= 0.0 ||
     samples_per_axis <= 0)
@@ -373,8 +390,18 @@ double sampledCoverageRatio(
       }
       ++inside_count;
       for (std::size_t index = 0; index < scan_path.size(); index += 2U) {
+        const double dx = scan_path[index + 1U].x - scan_path[index].x;
+        const double dy = scan_path[index + 1U].y - scan_path[index].y;
+        const double length = std::hypot(dx, dy);
+        if (length <= kEpsilon) {
+          throw std::invalid_argument("Coverage path contains a zero-length SCAN.");
+        }
+        const Point2 offset{
+          detection_forward_offset * dx / length, detection_forward_offset * dy / length};
+        const Point2 sensor_start = add(scan_path[index], offset);
+        const Point2 sensor_end = add(scan_path[index + 1U], offset);
         if (coveredByFootprint(
-            sample, scan_path[index], scan_path[index + 1U], detection_width, detection_length))
+            sample, sensor_start, sensor_end, detection_width, detection_length))
         {
           ++covered_count;
           break;

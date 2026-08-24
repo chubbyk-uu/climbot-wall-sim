@@ -32,6 +32,7 @@
 #include "climbot_control/travel_profile.hpp"
 #include "climbot_control/turn_profile.hpp"
 #include "climbot_interfaces/action/execute_coverage.hpp"
+#include "climbot_interfaces/msg/execution_reference.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -254,6 +255,9 @@ public:
     command_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/control/cmd_vel", 10);
     reference_publisher_ = create_publisher<nav_msgs::msg::Path>("/control/reference_path",
       rclcpp::QoS(1).reliable().transient_local());
+    execution_reference_publisher_ =
+      create_publisher<climbot_interfaces::msg::ExecutionReference>(
+      "/control/execution_reference", rclcpp::QoS(10).reliable());
     completion_publisher_ = create_publisher<std_msgs::msg::Bool>(
       "/control/segment_complete", rclcpp::QoS(1).reliable().transient_local());
     odometry_subscription_ = create_subscription<nav_msgs::msg::Odometry>(
@@ -1220,6 +1224,7 @@ private:
     feedback->planned_total_s = schedule_.plannedTotal();
     feedback->schedule_lag_s = scheduleLagSeconds();
     feedback->estimated_remaining_s = estimatedRemaining(feedback->progress, command);
+    publishExecutionReference(*feedback);
     try {
       active_goal_->publish_feedback(feedback);
     } catch (const rclcpp::exceptions::RCLError &) {
@@ -1228,6 +1233,29 @@ private:
       }
       clearActiveGoal();
     }
+  }
+
+  void publishExecutionReference(const ExecuteCoverage::Feedback & feedback)
+  {
+    climbot_interfaces::msg::ExecutionReference reference;
+    reference.header.stamp = now();
+    reference.header.frame_id = frame_id_;
+    reference.task_id = active_task_->task_id;
+    reference.revision = active_task_->revision;
+    reference.segment_index = feedback.current_segment;
+    reference.segment_type = feedback.segment_type;
+    reference.executor_state = feedback.state;
+    reference.start.x = start_.x;
+    reference.start.y = start_.y;
+    reference.end.x = end_.x;
+    reference.end.y = end_.y;
+    reference.detection_forward_offset = active_task_->detection_forward_offset;
+    reference.inspection_enabled =
+      !approaching_start_ && !arc_entry_active_ && reference_prepared_ &&
+      feedback.segment_type == climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN &&
+      (feedback.state == ExecuteCoverage::Feedback::TRACK_LINE ||
+      feedback.state == ExecuteCoverage::Feedback::FINAL_APPROACH);
+    execution_reference_publisher_->publish(reference);
   }
 
   void publishReferencePath()
@@ -1753,6 +1781,8 @@ private:
   std::unique_ptr<climbot_control::CrossTrackOscillationMonitor> oscillation_monitor_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr command_publisher_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr reference_publisher_;
+  rclcpp::Publisher<climbot_interfaces::msg::ExecutionReference>::SharedPtr
+    execution_reference_publisher_;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr completion_publisher_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
   rclcpp_action::Server<ExecuteCoverage>::SharedPtr action_server_;

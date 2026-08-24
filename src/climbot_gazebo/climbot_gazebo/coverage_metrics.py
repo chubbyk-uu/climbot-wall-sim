@@ -61,11 +61,13 @@ def _interpolated_poses(path, maximum_step):
             )
 
 
-def footprint_coverage(polygon, scan_paths, width, length, resolution=0.01):
+def footprint_coverage(polygon, scan_paths, width, length, resolution=0.01,
+                       forward_offset=0.0):
     """Rasterize oriented rectangular footprints swept along actual scan paths."""
     if len(polygon) < 3:
         raise ValueError('coverage polygon requires at least three points')
-    if width <= 0.0 or length <= 0.0 or resolution <= 0.0:
+    if (width <= 0.0 or length <= 0.0 or resolution <= 0.0 or
+            not math.isfinite(forward_offset) or forward_offset < 0.0):
         raise ValueError('footprint dimensions and resolution must be positive')
     values = [coordinate for point in polygon for coordinate in point]
     if not all(math.isfinite(value) for value in values):
@@ -97,6 +99,8 @@ def footprint_coverage(polygon, scan_paths, width, length, resolution=0.01):
         for x, y, yaw in _interpolated_poses(path, maximum_step):
             cosine = math.cos(yaw)
             sine = math.sin(yaw)
+            x += forward_offset * cosine
+            y += forward_offset * sine
             extent_x = abs(cosine) * half_length + abs(sine) * half_width
             extent_y = abs(sine) * half_length + abs(cosine) * half_width
             first_column = max(

@@ -36,3 +36,7 @@ geometry_msgs/Polygon motion_region
 # Dimensions of the two-dimensional inspection footprint, in metres.
 float64 detection_width
 float64 detection_length
+
+# Detection-centre displacement along robot-forward from base_link. Zero is
+# valid for legacy/contact tools; the front inspection camera uses +0.300 m.
+float64 detection_forward_offset

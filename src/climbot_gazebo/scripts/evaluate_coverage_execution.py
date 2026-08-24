@@ -690,7 +690,8 @@ class CoverageExecutionEvaluator(Node):
         coverage = footprint_coverage(
             polygon, scan_paths, goal.task.detection_width,
             goal.task.detection_length,
-            float(self.get_parameter('coverage_grid_resolution_m').value))
+            float(self.get_parameter('coverage_grid_resolution_m').value),
+            goal.task.detection_forward_offset)
         minimum_coverage = float(
             self.get_parameter('minimum_actual_coverage_ratio').value)
         self.get_logger().info(

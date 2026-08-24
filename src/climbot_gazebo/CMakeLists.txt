@@ -25,6 +25,7 @@ install(
     scripts/evaluate_localization.py
     scripts/evaluate_coverage_execution.py
     scripts/evaluate_g1_camera.py
+    scripts/evaluate_g2_inspection.py
     scripts/evaluate_slip_compensation.py
     scripts/measure_normal_loads.py
     scripts/measure_turn_band.py

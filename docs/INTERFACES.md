@@ -1086,6 +1086,25 @@ Gazebo SDF 中畸变标签的书写顺序不等于 ROS 数组顺序，桥接或�
 G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`、相机驱动和未来 G2
 触发节点均不得订阅 `/model/climbot/ground_truth`。
 
+## `climbot_inspection` G2 自动采集接口
+
+| 名称 | 类型 | 语义 |
+| --- | --- | --- |
+| `/control/execution_reference` | `climbot_interfaces/msg/ExecutionReference` | 执行器当前冻结的有向直线、任务版本、段号、段类型和采集许可；不是规划器的名义预览 |
+| `/odometry/filtered` | `nav_msgs/msg/Odometry` | 触发位置和曝光时间位姿插值的唯一业务定位源 |
+| `/inspection/capture_metadata` | `climbot_interfaces/msg/InspectionCapture` | 一张成功原图的任务、触发点、冻结参考和曝光时刻 EKF 相机位姿 |
+
+`ExecutionReference.inspection_enabled` 只在正式 `SCAN` 的 `TRACK_LINE`／
+`FINAL_APPROACH` 为真；起点进入、对准、转向稳定、动态过渡和小弧线入轨均为假。
+`detection_forward_offset` 来自不可变任务，G2 相机任务必须为 `0.300 m` 并与共享安装
+外参一致。
+
+`InspectionCapture.header` 必须逐字段等于对应 `image_raw.header`。`camera_pose` 是光学
+中心在 `header.frame_id` 下的 EKF 插值位姿，协方差包含前置杠杆对航向不确定度的传播；
+`wall_heading_rad` 是机器人前进方向在墙面内的航向，亦为标称安装下图像向上的方向。
+消费者以 `(task_id, revision, segment_index, trigger_index)` 作为业务主键，以图像时间戳
+核对数据配对，不按消息到达顺序猜测。
+
 仿真内部接口不属于真机公共 API：Gazebo 在
 `/simulation/inspection_camera/trigger` 收到触发后发布较宽视场的
 `ideal_image/ideal_camera_info`，仿真畸变适配器再输出

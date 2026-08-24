@@ -209,6 +209,26 @@ TEST(CoverageGeometry, FootprintAwarePathCoversRequestedRegionInsideMotionRegion
   }
 }
 
+TEST(CoverageGeometry, FrontCameraOffsetShiftsBasePathWithoutChangingCoverage)
+{
+  constexpr double camera_offset = 0.30;
+  const auto coverage = makeRectangle({1.0, 1.0}, {5.0, 3.0}).polygon;
+  const auto motion = makeRectangle({0.0, 0.0}, {6.0, 4.0}).polygon;
+  const auto centred = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, 0.50, 0.28125, 0.40, "horizontal", "lower_left");
+  const auto camera = generateFootprintAwareBoustrophedonPath(
+    coverage, motion, 0.50, 0.28125, 0.40, "horizontal", "lower_left", camera_offset);
+  ASSERT_EQ(camera.size(), centred.size());
+  for (std::size_t index = 0; index < camera.size(); index += 2U) {
+    const double direction = centred[index + 1U].x > centred[index].x ? 1.0 : -1.0;
+    EXPECT_NEAR(camera[index].x, centred[index].x - direction * camera_offset, 1e-12);
+    EXPECT_NEAR(camera[index + 1U].x,
+      centred[index + 1U].x - direction * camera_offset, 1e-12);
+  }
+  EXPECT_GE(sampledCoverageRatio(
+      coverage, camera, 0.50, 0.28125, 300, camera_offset), 0.98);
+}
+
 TEST(CoverageGeometry, KeepsExactMultipleOfMaximumSpacingAtTheExpectedLineCount)
 {
   constexpr double detection_width = 0.50;
