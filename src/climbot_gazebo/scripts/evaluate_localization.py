@@ -36,6 +36,7 @@ from climbot_description.geometry import (
     yaw_from_quaternion,
 )
 from climbot_description.wall_frame import WallFrame
+from climbot_gazebo.camera_projection import camera_centre
 from climbot_gazebo.provenance import CONTROL_SOURCES
 from climbot_gazebo.provenance import git_state
 from climbot_gazebo.provenance import NOISE_SOURCES
@@ -45,12 +46,20 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
+import yaml
 
 
 def default_wall_config():
     """Return the installed wall description, so no path is hardcoded."""
     return os.path.join(
         get_package_share_directory('climbot_description'), 'config', 'wall.yaml')
+
+
+def default_camera_config():
+    """Return the shared camera geometry used for projection-centre evidence."""
+    return os.path.join(
+        get_package_share_directory('climbot_description'),
+        'config', 'inspection_camera.yaml')
 
 
 def stamp_nanoseconds(message):
@@ -70,9 +79,12 @@ class LocalizationEvaluator(Node):
         self.declare_parameter('settle_duration_s', 1.0)
         self.declare_parameter('heading_hold_gain', 1.5)
         self.declare_parameter('wall_config', default_wall_config())
+        self.declare_parameter('camera_config', default_camera_config())
         self.declare_parameter('summary_json', '')
         self._wall_frame = WallFrame.from_yaml(
             str(self.get_parameter('wall_config').value))
+        with open(str(self.get_parameter('camera_config').value)) as handle:
+            self._camera = yaml.safe_load(handle)['inspection_camera']
         self._truth = None
         self._wheel_odom = None
         self._filtered = None
@@ -186,12 +198,19 @@ class LocalizationEvaluator(Node):
         wheel_moved = tuple(
             value - origin for value, origin in zip(wheel_wall, self._origin_wheel))
         wheel_error = math.dist(truth_moved, wheel_moved)
-        truth_yaw = math.degrees(yaw_from_quaternion(
+        truth_yaw_rad = yaw_from_quaternion(
             self._wall_frame.orientation_from_world(
-                quaternion_tuple(self._truth.pose.pose.orientation))))
-        ekf_yaw = math.degrees(self._filtered_yaw())
+                quaternion_tuple(self._truth.pose.pose.orientation)))
+        ekf_yaw_rad = self._filtered_yaw()
+        truth_yaw = math.degrees(truth_yaw_rad)
+        ekf_yaw = math.degrees(ekf_yaw_rad)
         wheel_yaw = math.degrees(yaw_from_quaternion(
             quaternion_tuple(self._wheel_odom.pose.pose.orientation)))
+        optical = self._camera['optical_mount']['center_xyz_m']
+
+        truth_camera = camera_centre(truth_wall, truth_yaw_rad, optical)
+        ekf_camera = camera_centre(estimate_wall, ekf_yaw_rad, optical)
+        camera_error = math.dist(truth_camera, ekf_camera)
         self._records.append({
             'label': label,
             'truth_wall_m': list(truth_wall),
@@ -204,15 +223,18 @@ class LocalizationEvaluator(Node):
             'truth_yaw_deg': truth_yaw,
             'ekf_yaw_deg': ekf_yaw,
             'wheel_yaw_deg': wheel_yaw,
+            'truth_camera_centre_wall_m': truth_camera,
+            'ekf_camera_centre_wall_m': ekf_camera,
+            'ekf_camera_centre_error_m': camera_error,
         })
         self.get_logger().info(
             '%s: truth_wall=(%.3f, %.3f, %.3f) '
             'ekf=(%.3f, %.3f, %.3f) error=%.4f m; '
             'wheel_dead_reckoning=(%.3f, %.3f, %.3f) error=%.4f m; '
-            'yaw_deg truth=%.2f ekf=%.2f wheel=%.2f' % (
+            'yaw_deg truth=%.2f ekf=%.2f wheel=%.2f; camera_error=%.4f m' % (
                 label, *truth_wall, *estimate_wall, error,
                 *wheel_moved, wheel_error,
-                truth_yaw, ekf_yaw, wheel_yaw))
+                truth_yaw, ekf_yaw, wheel_yaw, camera_error))
 
     def _summarize(self):
         """State the 14.5 comparison as a number, not as a list to eyeball."""
@@ -222,6 +244,7 @@ class LocalizationEvaluator(Node):
         driven = [record for record in self._records if record['label'] != 'start']
         ekf = [record['ekf_position_error_m'] for record in driven]
         wheel = [record['wheel_dead_reckoning_error_m'] for record in driven]
+        camera = [record['ekf_camera_centre_error_m'] for record in driven]
         summary = {
             'records': self._records,
             'legs': len(driven),
@@ -229,6 +252,10 @@ class LocalizationEvaluator(Node):
             'maximum_wheel_dead_reckoning_error_m': max(wheel) if wheel else None,
             'final_ekf_position_error_m': ekf[-1] if ekf else None,
             'final_wheel_dead_reckoning_error_m': wheel[-1] if wheel else None,
+            'maximum_ekf_camera_centre_error_m': max(camera) if camera else None,
+            'ekf_camera_centre_limit_m': 0.005,
+            'camera_projection_passed': bool(camera) and max(camera) <= 0.005,
+            'camera_geometry': self._camera,
             'provenance': {
                 'recorded_utc': datetime.now(timezone.utc).isoformat(),
                 'git': git_state(),
@@ -239,7 +266,8 @@ class LocalizationEvaluator(Node):
         if ekf and wheel and max(ekf) > 0.0:
             summary['wheel_to_ekf_maximum_ratio'] = max(wheel) / max(ekf)
         if ekf and wheel:
-            summary['passed'] = max(wheel) > max(ekf)
+            summary['passed'] = (
+                max(wheel) > max(ekf) and summary['camera_projection_passed'])
             self.get_logger().info(
                 'max position error: ekf=%.4f m wheel=%.4f m (%.1fx)' % (
                     max(ekf), max(wheel),
