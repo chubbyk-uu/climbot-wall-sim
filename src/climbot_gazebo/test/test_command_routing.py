@@ -49,6 +49,13 @@ def test_wall_launch_starts_watchdog():
     assert "'/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist'" not in source
 
 
+def test_wall_launch_uses_the_current_total_station_delay_default():
+    """Keep the documented 10 ms delivery delay from silently drifting."""
+    source = LAUNCH_PATH.read_text()
+    argument = source.rsplit("'total_station_delay_s'", maxsplit=1)[1]
+    assert "default_value='0.01'" in argument.split('DeclareLaunchArgument', maxsplit=1)[0]
+
+
 def test_rendered_launch_assets_are_removed_on_shutdown(tmp_path):
     """Do not leak the generated SDF and temporary model directory into /tmp."""
     world_path = tmp_path / 'climbot_wall.sdf'

@@ -272,7 +272,6 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `line_tracker` | `arc_entry_max_angular_speed` | `0.25 rad/s` | 小弧线最大角速度 |
 | `line_tracker` | `arc_entry_timeout_s` | `15 s` | 小弧线未收敛时的停车失败门限 |
 | `line_tracker` | `cruise_speed` | `0.20 m/s` | 扫描和换道期望巡航速度 |
-| `line_tracker` | `inspection_cruise_speed` | `0.04 m/s` | `detection_forward_offset>0` 的连续拍照任务巡航速度；为 50 ms 绝对定位延迟和 1 mm 测量噪声保留曝光位姿误差余量 |
 | `line_tracker` | `max_linear_speed` | `0.25 m/s` | 位置控制模式的线速度上限，高于巡航值以容纳上爬打滑 |
 | `line_tracker` | `visible_oscillation_amplitude_m` | `0.03 m` | 仅记录肉眼可见幅度的横轨往复；小误差反复过零不算故障 |
 | `line_tracker` | `control_frequency_hz` | `50 Hz` | 直线跟踪控制频率 |

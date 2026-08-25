@@ -117,7 +117,7 @@
 | L-02 | TF 连续且无环 | 通过 | `test_ekf_startup.py`、`test_wall_frame.py`；单一 TF 发布职责 |
 | L-03 | 正常条件下融合定位不中断、不跳变 | 通过 | 四方向 [定位摘要](../results/localization_2026-08-19_summary.json)，最大误差 `2.636 mm` |
 | L-04 | 轮里程计体现不可观测侧滑误差 | 通过 | 同一定位实验轮式航位推算最终误差 `511.553 mm` |
-| L-05 | 全站仪频率、噪声、延迟可配置 | 通过 | 默认 `12 Hz / 1 mm / 50 ms`；`nstd*`、`nrate*`、`ndrop*` 扫描 |
+| L-05 | 全站仪频率、噪声、延迟可配置 | 通过 | 默认 `12 Hz / 1 mm / 10 ms`；`nstd*`、`nrate*`、`ndrop*` 扫描 |
 | L-06 | 融合长期误差显著小于轮里程计 | 通过 | 最大误差比 `194×`，EKF 不增长而轮式误差累积 |
 | L-07 | 评价不得以估计值冒充真值 | 通过 | Gazebo `ground_truth` 独立输入评价器；`test_trajectory_io.py` |
 | L-08 | 使用 `robot_localization/ekf_node` 融合三类输入 | 通过 | `ekf_wall.yaml`、`climbot_wall.launch.py`、`test_ekf_startup.py` |

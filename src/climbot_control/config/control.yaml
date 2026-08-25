@@ -1,10 +1,6 @@
 line_tracker:
   ros__parameters:
     cruise_speed: 0.20
-    # A 50 ms total-station delay is 10 mm at 0.20 m/s. Continuous inspection
-    # therefore uses a slower task-level work point until fixed-lag smoothing
-    # is available; non-camera coverage remains at cruise_speed.
-    inspection_cruise_speed: 0.04
     cross_gain: 1.0
     cross_integral_gain: 0.30
     cross_integral_limit_m_s: 0.10

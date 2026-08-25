@@ -610,7 +610,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'total_station_delay_s',
-            default_value='0.05',
+            default_value='0.01',
             description='Fixed total-station delivery delay in seconds.',
         ),
         DeclareLaunchArgument(

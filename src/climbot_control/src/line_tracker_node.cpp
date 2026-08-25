@@ -73,7 +73,6 @@ public:
     end_ = {
       declare_parameter("end_x", 1.0), declare_parameter("end_y", 0.0)};
     cruise_speed_ = declare_parameter("cruise_speed", 0.20);
-    inspection_cruise_speed_ = declare_parameter("inspection_cruise_speed", 0.04);
     cross_gain_ = declare_parameter("cross_gain", 1.0);
     cross_integral_gain_ = declare_parameter("cross_integral_gain", 0.30);
     cross_integral_limit_ = declare_parameter("cross_integral_limit_m_s", 0.10);
@@ -379,10 +378,6 @@ private:
       throw std::invalid_argument("The line segment must have non-zero length.");
     }
     requirePositive("cruise_speed", cruise_speed_);
-    requirePositive("inspection_cruise_speed", inspection_cruise_speed_);
-    if (inspection_cruise_speed_ > cruise_speed_) {
-      throw std::invalid_argument("inspection_cruise_speed cannot exceed cruise_speed.");
-    }
     requireFinite("cross_gain", cross_gain_);
     if (cross_gain_ < 0.0) {
       throw std::invalid_argument("cross_gain must be non-negative.");
@@ -634,13 +629,7 @@ private:
 
   double taskCruiseSpeed() const
   {
-    return isInspectionTask() ?
-           inspection_cruise_speed_ : cruise_speed_;
-  }
-
-  bool isInspectionTask() const
-  {
-    return active_task_ && active_task_->detection_forward_offset > 0.0;
+    return cruise_speed_;
   }
 
   /// Estimate how long each segment takes, so progress can be weighted by
@@ -869,7 +858,7 @@ private:
       time_along_gain_ * schedule_lag_ + integral_term;
     return climbot_control::guardSpeed(
       std::clamp(
-        raw, 0.0, isInspectionTask() ? taskCruiseSpeed() : catch_up_max_linear_speed_),
+        raw, 0.0, catch_up_max_linear_speed_),
       command.cross, command.heading_error, limits_);
   }
 
@@ -1714,7 +1703,6 @@ private:
   double travel_stretch_credit_{0.0};
   double schedule_lag_{0.0};
   double cruise_speed_{0.20};
-  double inspection_cruise_speed_{0.04};
   double cross_gain_{1.0};
   double cross_integral_gain_{0.30};
   double cross_integral_limit_{0.10};
