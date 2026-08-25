@@ -113,7 +113,11 @@ visualization_msgs::msg::Marker dashedLineMarker(
     const double dx = second.x - first.x;
     const double dy = second.y - first.y;
     const double length = std::hypot(dx, dy);
-    for (double start = 0.0; start < length; start += dash_length + gap_length) {
+    for (std::size_t dash_index = 0U;; ++dash_index) {
+      const double start = static_cast<double>(dash_index) * (dash_length + gap_length);
+      if (start >= length) {
+        break;
+      }
       const double end = std::min(length, start + dash_length);
       marker.points.push_back(markerPoint(
           {first.x + dx * start / length, first.y + dy * start / length}, height));

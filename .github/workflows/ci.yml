@@ -35,7 +35,9 @@ jobs:
       - name: Build
         run: |
           source /opt/ros/jazzy/setup.bash
-          colcon build --event-handlers console_direct+
+          colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --event-handlers console_direct+
+      - name: Static analysis
+        run: bash tools/run_clang_tidy.sh --log clang-tidy.log
       - name: Test serially
         run: |
           source install/setup.bash
@@ -50,5 +52,6 @@ jobs:
           name: colcon-test-logs
           path: |
             log/
+            clang-tidy.log
             build/**/Testing/Temporary/
           if-no-files-found: ignore

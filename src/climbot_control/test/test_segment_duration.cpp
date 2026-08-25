@@ -94,7 +94,8 @@ TEST(SegmentDuration, a_short_segment_never_claims_to_reach_cruise_speed)
 TEST(SegmentDuration, duration_grows_monotonically_with_length_and_angle)
 {
   double previous = 0.0;
-  for (double length = 0.0; length < 5.0; length += 0.25) {
+  for (int index = 0; index < 20; ++index) {
+    const double length = 0.25 * static_cast<double>(index);
     const double value = climbot_control::estimateTravelDuration(length, model());
     EXPECT_GE(value, previous);
     previous = value;

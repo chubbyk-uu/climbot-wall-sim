@@ -176,6 +176,17 @@ colcon test-result --verbose
 `use_sim_time` 下、由测试自己发布 `/clock` 并以 `10×` 推进:控制环仍是 `50 Hz`
 **仿真时间**,所有超时也仍以仿真秒计,只是墙钟等待没有了。
 
+核心 C++ 的 Clang 静态分析只检查维护的产品源码，不扫描 Qt 自动生成文件、GoogleTest
+或测试源码。首次或清理过 `build/` 后先生成编译数据库：
+
+```bash
+colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+bash tools/run_clang_tidy.sh --log /tmp/climbot-clang-tidy.log
+```
+
+该检查启用 `clang-analyzer-*`；有产品源码告警即返回非零。GitHub CI 在每个 main 推送和
+Pull Request 上运行同一构建、静态分析与串行测试流程。
+
 ## 启动
 
 一条命令启动仿真、规划器、RViz、跟踪器和任务管理器：
