@@ -142,6 +142,37 @@ class TestArchiveRecorderNode(unittest.TestCase):
         self.assertTrue(future.done(), 'archive service did not answer')
         return future.result()
 
+    def _publish_capture(self, stamp, trigger_index, target=0.0, actual=0.0):
+        image = Image()
+        image.header.stamp = stamp
+        image.header.frame_id = 'inspection_camera_optical_frame'
+        image.width = 8
+        image.height = 6
+        image.encoding = 'mono8'
+        image.step = 8
+        image.data = list(range(48))
+        info = CameraInfo()
+        info.header = image.header
+        info.width = image.width
+        info.height = image.height
+        info.distortion_model = 'plumb_bob'
+        info.k[0] = 10.0
+        info.k[4] = 10.0
+        info.k[8] = 1.0
+        capture = InspectionCapture()
+        capture.header = image.header
+        capture.task_id = 'g4-node-test'
+        capture.revision = 3
+        capture.segment_index = 0
+        capture.trigger_index = trigger_index
+        capture.target_along_track = target
+        capture.actual_along_track = actual
+        capture.camera_pose.pose.orientation.w = 1.0
+        capture.reference_end.x = 0.25
+        self.images.publish(image)
+        self.infos.publish(info)
+        self.metadata.publish(capture)
+
     def _set_recorder_parameter(self, name, value):
         self.assertTrue(self.parameters.wait_for_service(timeout_sec=5.0))
         request = SetParameters.Request()
@@ -335,6 +366,62 @@ class TestArchiveRecorderNode(unittest.TestCase):
             (Path(prepared.task_directory) / 'manifest.json').read_text(encoding='utf-8'))
         self.assertEqual(manifest['outcome'], 'failed')
         self.assertEqual(manifest['failed_images'], 2)
+
+    def test_pair_timeout_is_degraded_until_finalization(self):
+        """A transient incomplete triple must not kill the live recorder."""
+        self.assertTrue(self.prepare.wait_for_service(timeout_sec=10.0))
+        request = PrepareInspectionArchive.Request()
+        request.task = self._task()
+        request.output_root = str(ARCHIVE_ROOT)
+        prepared = self._call(self.prepare, request)
+        self.assertTrue(prepared.success, prepared.message)
+        time.sleep(0.30)
+        image = Image()
+        image.header.stamp = Time(sec=70)
+        image.header.frame_id = 'inspection_camera_optical_frame'
+        image.width = 8
+        image.height = 6
+        image.encoding = 'mono8'
+        image.step = 8
+        image.data = list(range(48))
+        self.images.publish(image)
+        deadline = time.monotonic() + 3.0
+        while (not self.status or self.status[-1].failed_images != 1) and \
+                time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertEqual(self.status[-1].state, InspectionArchiveStatus.READY)
+        self.assertEqual(self.status[-1].failed_images, 1)
+        finish = FinalizeInspectionArchive.Request()
+        finish.run_id = prepared.run_id
+        finish.outcome = FinalizeInspectionArchive.Request.CANCELED
+        self.assertTrue(self._call(self.finalize, finish).success)
+
+    def test_rejects_actual_spacing_that_loses_longitudinal_overlap(self):
+        self.assertTrue(self.prepare.wait_for_service(timeout_sec=10.0))
+        request = PrepareInspectionArchive.Request()
+        request.task = self._task()
+        request.output_root = str(ARCHIVE_ROOT)
+        prepared = self._call(self.prepare, request)
+        self.assertTrue(prepared.success, prepared.message)
+        time.sleep(0.30)
+        self._reference(length=0.25)
+        deadline = time.monotonic() + 3.0
+        while (not self.status or self.status[-1].expected_images != 2) and \
+                time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertEqual(self.status[-1].expected_images, 2)
+        self._publish_capture(Time(sec=80), 0, target=0.0, actual=0.0)
+        self._publish_capture(Time(sec=81), 1, target=0.23, actual=0.23)
+        deadline = time.monotonic() + 3.0
+        while (not self.status or self.status[-1].state != InspectionArchiveStatus.FAILED) and \
+                time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertEqual(self.status[-1].state, InspectionArchiveStatus.FAILED)
+        self.assertIn('adjacent captures', self.status[-1].message)
+        finish = FinalizeInspectionArchive.Request()
+        finish.run_id = prepared.run_id
+        finish.outcome = FinalizeInspectionArchive.Request.FAILED
+        self.assertTrue(self._call(self.finalize, finish).success)
 
 
 @launch_testing.post_shutdown_test()

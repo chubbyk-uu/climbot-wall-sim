@@ -1,0 +1,16 @@
+# Request one matched raw image and CameraInfo pair.
+---
+bool success
+
+# The request was accepted and one matched pair was published.
+uint8 OK=0
+# The source transport has not completed warm-up yet.
+uint8 WARMING=1
+# Another request owns the current exposure.
+uint8 BUSY=2
+# A timed-out request is draining possible late frames.
+uint8 DRAINING=3
+# The current request timed out; the node is now draining late frames.
+uint8 TIMEOUT=4
+uint8 reason
+string message

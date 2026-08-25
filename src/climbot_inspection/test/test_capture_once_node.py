@@ -21,6 +21,7 @@ import time
 import unittest
 
 from builtin_interfaces.msg import Time
+from climbot_interfaces.srv import CaptureOnce
 import launch
 import launch_ros.actions
 import launch_testing.actions
@@ -30,7 +31,6 @@ import rclpy
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Bool
-from std_srvs.srv import Trigger
 
 
 @pytest.mark.launch_test
@@ -46,6 +46,10 @@ def generate_test_description():
             'discovery_settle_s': 0.05,
             'warmup_retry_s': 0.2,
             'warmup_quiet_s': 0.10,
+            # This test deliberately uses fixed small timestamps rather than
+            # a simulated /clock. Causal timestamp filtering is covered by
+            # integration on the synchronized Gazebo transport.
+            'enforce_trigger_stamp': False,
         }],
     )
     return launch.LaunchDescription([
@@ -71,7 +75,7 @@ class TestCaptureOnceNode(unittest.TestCase):
             Image, '/inspection/camera/image_raw', self._on_output_image, qos)
         self.node.create_subscription(
             CameraInfo, '/inspection/camera/camera_info', self._on_output_info, qos)
-        self.client = self.node.create_client(Trigger, '/inspection/capture_once')
+        self.client = self.node.create_client(CaptureOnce, '/inspection/capture_once')
         self.lock = Lock()
         self.trigger_count = 0
         self.output_images = []
@@ -139,7 +143,7 @@ class TestCaptureOnceNode(unittest.TestCase):
             self.output_infos.append(message)
 
     def _call(self, timeout=3.0):
-        future = self.client.call_async(Trigger.Request())
+        future = self.client.call_async(CaptureOnce.Request())
         deadline = time.monotonic() + timeout
         while not future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
@@ -152,11 +156,11 @@ class TestCaptureOnceNode(unittest.TestCase):
             result = self._call()
             if result.success:
                 return result
-            self.assertIn('warming up', result.message)
+            self.assertEqual(result.reason, CaptureOnce.Response.WARMING)
             time.sleep(0.05)
         self.fail('camera transport did not finish warm-up')
 
-    def test_one_request_one_pair_concurrency_and_timeout_fault(self):
+    def test_one_request_one_pair_concurrency_and_timeout_recovery(self):
         self.assertTrue(self.client.wait_for_service(timeout_sec=10.0))
 
         first = self._call_until_ready()
@@ -172,11 +176,11 @@ class TestCaptureOnceNode(unittest.TestCase):
         with self.lock:
             self.mode = 'delay'
         self.trigger_event.clear()
-        first_future = self.client.call_async(Trigger.Request())
+        first_future = self.client.call_async(CaptureOnce.Request())
         self.assertTrue(self.trigger_event.wait(2.0))
         concurrent = self._call()
         self.assertFalse(concurrent.success)
-        self.assertIn('already pending', concurrent.message)
+        self.assertEqual(concurrent.reason, CaptureOnce.Response.BUSY)
         deadline = time.monotonic() + 2.0
         while not first_future.done() and time.monotonic() < deadline:
             time.sleep(0.01)
@@ -187,13 +191,20 @@ class TestCaptureOnceNode(unittest.TestCase):
             self.mode = 'drop'
         timed_out = self._call(timeout=2.0)
         self.assertFalse(timed_out.success)
-        self.assertIn('faulted', timed_out.message)
+        self.assertEqual(timed_out.reason, CaptureOnce.Response.TIMEOUT)
         rejected = self._call()
         self.assertFalse(rejected.success)
-        self.assertIn('restart the node', rejected.message)
+        self.assertEqual(rejected.reason, CaptureOnce.Response.DRAINING)
+        # A timeout isolates only that exposure. Once the quiet drain elapsed,
+        # a later valid capture is accepted without restarting the node.
         with self.lock:
-            self.assertEqual(len(self.output_images), 2)
-            self.assertEqual(len(self.output_infos), 2)
+            self.mode = 'immediate'
+        time.sleep(0.20)
+        recovered = self._call()
+        self.assertTrue(recovered.success, recovered.message)
+        with self.lock:
+            self.assertEqual(len(self.output_images), 3)
+            self.assertEqual(len(self.output_infos), 3)
 
 
 @launch_testing.post_shutdown_test()

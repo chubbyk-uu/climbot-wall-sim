@@ -13,7 +13,8 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from std_srvs.srv import Trigger
+
+from climbot_interfaces.srv import CaptureOnce
 
 from climbot_inspection.flat_field import compute_calibration, image_hash
 
@@ -46,7 +47,7 @@ class Calibrator(Node):
             Image, str(self.get_parameter('image_topic').value),
             self._on_image, 10)
         self.client = self.create_client(
-            Trigger, str(self.get_parameter('capture_service').value))
+            CaptureOnce, str(self.get_parameter('capture_service').value))
 
     def _on_image(self, message):
         stamp = (message.header.stamp.sec, message.header.stamp.nanosec)
@@ -84,7 +85,7 @@ class Calibrator(Node):
             before = len(self.frames)
             ready_deadline = time.monotonic() + readiness_timeout
             while True:
-                future = self.client.call_async(Trigger.Request())
+                future = self.client.call_async(CaptureOnce.Request())
                 rclpy.spin_until_future_complete(
                     self, future, timeout_sec=timeout)
                 if not future.done() or future.result() is None:
@@ -93,7 +94,7 @@ class Calibrator(Node):
                 if future.result().success:
                     break
                 detail = future.result().message
-                if ('still warming up' not in detail or
+                if (future.result().reason != CaptureOnce.Response.WARMING or
                         time.monotonic() >= ready_deadline):
                     raise RuntimeError(
                         f'capture {number + 1} failed: {detail}')

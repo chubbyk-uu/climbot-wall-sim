@@ -1086,7 +1086,9 @@ G1 使用标准 ROS 图像接口，命名不带 `gz`，使仿真相机和真机�
 | --- | --- | --- |
 | `/inspection/camera/image_raw` | `sensor_msgs/msg/Image` | 畸变原图，`1920 × 1080`；每次成功触发发布一帧 |
 | `/inspection/camera/camera_info` | `sensor_msgs/msg/CameraInfo` | 与原图同时间戳、同 `frame_id`，Transient Local 不用于替代逐帧匹配 |
-| `/inspection/capture_once` | `std_srvs/srv/Trigger` | G1 人工单拍；成功返回前对应图像必须已发布 |
+| `/inspection/capture_once` | `climbot_interfaces/srv/CaptureOnce` | G1 人工单拍；成功返回前对应图像必须已发布。`reason` 是稳定枚举：`OK`、`WARMING`、`BUSY`、`DRAINING`、`TIMEOUT`，调用者不得解析英文 `message`。 |
+| `/inspection/capture_state` | `std_msgs/msg/UInt8` | 单拍节点的 transient-local 当前状态，编码与 `CaptureOnce.reason` 对应：`OK`=可接受请求、`WARMING`=预热、`BUSY`=当前曝光、`DRAINING`=排空可能迟到帧。 |
+| `/inspection/capture_reset` | `std_srvs/srv/Trigger` | 人工恢复入口；不会立即放行曝光，而是重新开始 `warmup_quiet_s` 的排空期。不能取消一个正在等待的曝光。 |
 
 `image_raw.header.frame_id` 和 `camera_info.header.frame_id` 均为
 `inspection_camera_optical_frame`。两条消息必须具有相同时间戳；消费者以时间戳配对，
@@ -1132,9 +1134,9 @@ G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`�
 | 名称 | 类型 | 方向与权威语义 |
 | --- | --- | --- |
 | `/inspection/archive/prepare` | `climbot_interfaces/srv/PrepareInspectionArchive` | 管理器 → 记录器。提交冻结 `CoverageTask` 与输出根目录；成功响应给出 `run_id`、绝对目录、名义容量预估。此响应只代表归档准备完成，随后才允许发送运动 Goal。 |
-| `/inspection/archive/finalize` | `climbot_interfaces/srv/FinalizeInspectionArchive` | 管理器 → 记录器。按 `run_id` 封存为 `COMPLETED`／`CANCELED`／`FAILED`；完成时严格核对冻结参考计划与实际归档张数。 |
+| `/inspection/archive/finalize` | `climbot_interfaces/srv/FinalizeInspectionArchive` | 管理器 → 记录器。按 `run_id` 封存为 `COMPLETED`／`CANCELED`／`FAILED`；完成时严格核对冻结参考计划、实际归档张数以及每段相邻实际曝光位置的最大间距。 |
 | `/inspection/archive/status` | `climbot_interfaces/msg/InspectionArchiveStatus` | 记录器 → 管理器／RViz，Reliable + transient-local。它是本次归档状态、实际预计张数、保存／失败计数和最终目录的权威来源。 |
-| `/simulation/inspection_camera/trigger` | `std_srvs/srv/Trigger` | 仅 Gazebo 内部：`capture_once_node` → 相机传感器。真机不实现该服务。 |
+| `/simulation/inspection_camera/trigger` | `std_msgs/msg/Bool` | 仅 Gazebo 内部：`capture_once_node` → 相机传感器的单次触发 topic。真机不实现该接口。 |
 | `/simulation/inspection_camera/ideal_image`、`ideal_camera_info` | `sensor_msgs/msg/Image`、`CameraInfo` | 仅 Gazebo 内部的无镜头畸变渲染输出。 |
 | `/simulation/inspection_camera/image_raw`、`camera_info` | `sensor_msgs/msg/Image`、`CameraInfo` | 仅 Gazebo 内部的畸变适配器输出；桥接到正式 `/inspection/camera/*` 输入前必须时间戳成对。 |
 
@@ -1169,6 +1171,13 @@ output_root/
 精确位姿，最后一个点保留在终点前一个间隔内，以适配控制器的终点容差。只有图片和标签
 均经临时文件写入、校验并原子改名后才增加成功计数；任务结束时必须验证主键、文件名和
 时间戳一一对应。
+
+不完整的 `image_raw`／`CameraInfo`／`InspectionCapture` 三元组在 `pair_timeout_s` 后仅计入
+`failed_images` 与 manifest 的失败清单，记录器保持 `RECORDING`，使上游有机会补拍；是否可
+以 `COMPLETED` 封存仍由冻结段、成功张数和实际几何三项最终裁决。每段相邻标签的
+`actual_along_track_m` 间距不得超过 `detection_length × (1 − overlap)` 加
+`actual_spacing_tolerance_m`，且单帧相对 `target_along_track_m` 的后滞不得超过
+`maximum_target_lag_m`。这些是归档时的运行时质量门，不只是离线 G2 评估指标。
 
 `/coverage/manager_status` 为这两个口径分别提供
 `archive_preflight_expected_images` 和 `archive_expected_images`：前者是开始前固定的名义

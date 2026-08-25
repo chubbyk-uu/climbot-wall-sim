@@ -15,12 +15,12 @@ ament_python_install_package(${PROJECT_NAME})
 add_executable(capture_once_node src/capture_once_node.cpp)
 target_compile_features(capture_once_node PUBLIC cxx_std_17)
 ament_target_dependencies(capture_once_node
-  rclcpp sensor_msgs std_msgs std_srvs)
+  climbot_interfaces rclcpp sensor_msgs std_msgs std_srvs)
 
 add_executable(automatic_capture_node src/automatic_capture_node.cpp)
 target_compile_features(automatic_capture_node PUBLIC cxx_std_17)
 ament_target_dependencies(automatic_capture_node
-  climbot_interfaces nav_msgs rclcpp sensor_msgs std_srvs)
+  climbot_interfaces nav_msgs rclcpp sensor_msgs)
 
 install(TARGETS capture_once_node automatic_capture_node DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})

@@ -24,10 +24,12 @@
 #include <type_traits>
 #include <unordered_map>
 
+#include "climbot_interfaces/srv/capture_once.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/u_int8.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
 namespace
@@ -69,6 +71,8 @@ std::string requiredString(
 class CaptureOnceNode : public rclcpp::Node
 {
 public:
+  using CaptureOnce = climbot_interfaces::srv::CaptureOnce;
+
   CaptureOnceNode()
   : Node("capture_once_node"),
     expected_frame_(requiredString(*this, "expected_frame_id", "inspection_camera_optical_frame")),
@@ -91,11 +95,18 @@ public:
       *this, "output_camera_info_topic", "/inspection/camera/camera_info");
     const auto service_name = requiredString(
       *this, "capture_service", "/inspection/capture_once");
+    const auto reset_service_name = requiredString(
+      *this, "capture_reset_service", "/inspection/capture_reset");
+    const auto state_topic = requiredString(
+      *this, "capture_state_topic", "/inspection/capture_state");
+    enforce_trigger_stamp_ = declare_parameter<bool>("enforce_trigger_stamp", true);
 
     const auto image_qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable();
     trigger_publisher_ = create_publisher<std_msgs::msg::Bool>(trigger_topic, image_qos);
     image_publisher_ = create_publisher<sensor_msgs::msg::Image>(output_image, image_qos);
     info_publisher_ = create_publisher<sensor_msgs::msg::CameraInfo>(output_info, image_qos);
+    state_publisher_ = create_publisher<std_msgs::msg::UInt8>(
+      state_topic, rclcpp::QoS(1).reliable().transient_local());
 
     source_group_ = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     service_group_ = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
@@ -107,19 +118,30 @@ public:
     info_subscription_ = create_subscription<sensor_msgs::msg::CameraInfo>(
       source_info, image_qos,
       std::bind(&CaptureOnceNode::onInfo, this, std::placeholders::_1), options);
-    service_ = create_service<std_srvs::srv::Trigger>(
+    service_ = create_service<CaptureOnce>(
       service_name,
       std::bind(
         &CaptureOnceNode::capture, this, std::placeholders::_1, std::placeholders::_2),
       rclcpp::ServicesQoS(), service_group_);
+    reset_service_ = create_service<std_srvs::srv::Trigger>(
+      reset_service_name,
+      std::bind(
+        &CaptureOnceNode::reset, this, std::placeholders::_1, std::placeholders::_2),
+      rclcpp::ServicesQoS(), service_group_);
     warmup_timer_ = create_wall_timer(
       std::chrono::milliseconds(50), std::bind(&CaptureOnceNode::warmupTick, this), source_group_);
+    publishState();
     RCLCPP_INFO(
       get_logger(), "Waiting for the camera trigger transport; warm-up frames will be discarded.");
   }
 
+  void notifyShutdownWaiters()
+  {
+    condition_.notify_all();
+  }
+
 private:
-  enum class State {WARMING, READY, CAPTURING, FAULTED};
+  enum class State : uint8_t {WARMING, READY, CAPTURING, DRAINING};
 
   static SteadyClock::duration seconds(double value)
   {
@@ -141,6 +163,38 @@ private:
            message.header.frame_id == expected_frame_;
   }
 
+  void publishState()
+  {
+    std_msgs::msg::UInt8 message;
+    switch (state_) {
+      case State::READY:
+        message.data = CaptureOnce::Response::OK;
+        break;
+      case State::WARMING:
+        message.data = CaptureOnce::Response::WARMING;
+        break;
+      case State::CAPTURING:
+        message.data = CaptureOnce::Response::BUSY;
+        break;
+      case State::DRAINING:
+        message.data = CaptureOnce::Response::DRAINING;
+        break;
+    }
+    state_publisher_->publish(message);
+  }
+
+  void enterDrainingLocked()
+  {
+    images_.clear();
+    infos_.clear();
+    capture_image_.reset();
+    capture_info_.reset();
+    capture_ready_ = false;
+    state_ = State::DRAINING;
+    last_drain_frame_ = SteadyClock::now();
+    publishState();
+  }
+
   void onImage(const sensor_msgs::msg::Image::SharedPtr message)
   {
     if (!validImage(*message)) {
@@ -149,7 +203,20 @@ private:
       return;
     }
     std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ == State::DRAINING) {
+      // A frame from the timed-out request is not evidence for a later request.
+      // Extend the quiet interval each time one arrives and discard it.
+      last_drain_frame_ = SteadyClock::now();
+      return;
+    }
     if (state_ != State::WARMING && state_ != State::CAPTURING) {
+      return;
+    }
+    if (state_ == State::CAPTURING && enforce_trigger_stamp_ &&
+      stampKey(message->header.stamp) < trigger_stamp_key_)
+    {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 5000, "Discarded an image older than the capture trigger.");
       return;
     }
     images_[stampKey(message->header.stamp)] = message;
@@ -165,7 +232,19 @@ private:
       return;
     }
     std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ == State::DRAINING) {
+      last_drain_frame_ = SteadyClock::now();
+      return;
+    }
     if (state_ != State::WARMING && state_ != State::CAPTURING) {
+      return;
+    }
+    if (state_ == State::CAPTURING && enforce_trigger_stamp_ &&
+      stampKey(message->header.stamp) < trigger_stamp_key_)
+    {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 5000,
+        "Discarded CameraInfo older than the capture trigger.");
       return;
     }
     infos_[stampKey(message->header.stamp)] = message;
@@ -204,6 +283,16 @@ private:
   void warmupTick()
   {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ == State::DRAINING) {
+      if (SteadyClock::now() - last_drain_frame_ >= warmup_quiet_) {
+        state_ = State::READY;
+        images_.clear();
+        infos_.clear();
+        publishState();
+        RCLCPP_INFO(get_logger(), "Late-frame drain complete; capture service is ready.");
+      }
+      return;
+    }
     if (state_ != State::WARMING) {
       return;
     }
@@ -213,6 +302,7 @@ private:
         state_ = State::READY;
         images_.clear();
         infos_.clear();
+        publishState();
         RCLCPP_INFO(get_logger(), "Camera warm-up complete; capture service is ready.");
       }
       return;
@@ -237,24 +327,26 @@ private:
   }
 
   void capture(
-    const std_srvs::srv::Trigger::Request::SharedPtr,
-    const std_srvs::srv::Trigger::Response::SharedPtr response)
+    const CaptureOnce::Request::SharedPtr,
+    const CaptureOnce::Response::SharedPtr response)
   {
     std::unique_lock<std::mutex> lock(mutex_);
     if (state_ == State::WARMING) {
       response->success = false;
+      response->reason = CaptureOnce::Response::WARMING;
       response->message = "Camera transport is still warming up.";
       return;
     }
     if (state_ == State::CAPTURING) {
       response->success = false;
+      response->reason = CaptureOnce::Response::BUSY;
       response->message = "Another capture request is already pending.";
       return;
     }
-    if (state_ == State::FAULTED) {
+    if (state_ == State::DRAINING) {
       response->success = false;
-      response->message =
-        "Capture is faulted after a timeout; restart the node to exclude a late frame.";
+      response->reason = CaptureOnce::Response::DRAINING;
+      response->message = "Capture transport is draining possible late frames.";
       return;
     }
 
@@ -264,14 +356,17 @@ private:
     capture_image_.reset();
     capture_info_.reset();
     capture_ready_ = false;
+    trigger_stamp_key_ = get_clock()->now().nanoseconds();
+    publishState();
     publishTrigger();
     const bool received = condition_.wait_for(
       lock, capture_timeout_, [this]() {return capture_ready_ || !rclcpp::ok();});
     if (!received || !capture_ready_) {
-      state_ = State::FAULTED;
+      enterDrainingLocked();
       response->success = false;
+      response->reason = CaptureOnce::Response::TIMEOUT;
       response->message =
-        "Timed out waiting for a matching image/CameraInfo pair; capture is now faulted.";
+        "Timed out waiting for a matching image/CameraInfo pair; draining possible late frames.";
       return;
     }
     const auto image = capture_image_;
@@ -286,9 +381,26 @@ private:
     capture_info_.reset();
     capture_ready_ = false;
     state_ = State::READY;
+    publishState();
     lock.unlock();
     response->success = true;
+    response->reason = CaptureOnce::Response::OK;
     response->message = "Published one matched inspection image and CameraInfo pair.";
+  }
+
+  void reset(
+    const std_srvs::srv::Trigger::Request::SharedPtr,
+    const std_srvs::srv::Trigger::Response::SharedPtr response)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ == State::CAPTURING) {
+      response->success = false;
+      response->message = "A capture request is pending; it cannot be reset safely.";
+      return;
+    }
+    enterDrainingLocked();
+    response->success = true;
+    response->message = "Capture reset accepted; draining possible late frames before re-arming.";
   }
 
   const std::string expected_frame_;
@@ -298,6 +410,7 @@ private:
   const SteadyClock::duration discovery_settle_;
   const SteadyClock::duration warmup_retry_;
   const SteadyClock::duration warmup_quiet_;
+  bool enforce_trigger_stamp_{};
 
   std::mutex mutex_;
   std::condition_variable condition_;
@@ -309,6 +422,8 @@ private:
   SteadyClock::time_point discovery_time_{};
   SteadyClock::time_point last_warmup_trigger_{};
   SteadyClock::time_point last_warmup_frame_{};
+  SteadyClock::time_point last_drain_frame_{};
+  int64_t trigger_stamp_key_{};
   std::unordered_map<int64_t, sensor_msgs::msg::Image::SharedPtr> images_;
   std::unordered_map<int64_t, sensor_msgs::msg::CameraInfo::SharedPtr> infos_;
   sensor_msgs::msg::Image::SharedPtr capture_image_;
@@ -319,17 +434,20 @@ private:
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr trigger_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_publisher_;
+  rclcpp::Publisher<std_msgs::msg::UInt8>::SharedPtr state_publisher_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr info_subscription_;
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_;
+  rclcpp::Service<CaptureOnce>::SharedPtr service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_service_;
   rclcpp::TimerBase::SharedPtr warmup_timer_;
 };
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
+  std::shared_ptr<CaptureOnceNode> node;
   try {
-    auto node = std::make_shared<CaptureOnceNode>();
+    node = std::make_shared<CaptureOnceNode>();
     rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 4);
     executor.add_node(node);
     executor.spin();
@@ -339,6 +457,7 @@ int main(int argc, char ** argv)
     rclcpp::shutdown();
     return 1;
   }
+  node->notifyShutdownWaiters();
   rclcpp::shutdown();
   return 0;
 }

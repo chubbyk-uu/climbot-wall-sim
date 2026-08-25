@@ -6,6 +6,8 @@ capture_once_node:
     output_image_topic: /inspection/camera/image_raw
     output_camera_info_topic: /inspection/camera/camera_info
     capture_service: /inspection/capture_once
+    capture_reset_service: /inspection/capture_reset
+    capture_state_topic: /inspection/capture_state
     expected_frame_id: inspection_camera_optical_frame
     expected_width: 1920
     expected_height: 1080
@@ -13,6 +15,9 @@ capture_once_node:
     discovery_settle_s: 0.5
     warmup_retry_s: 1.0
     warmup_quiet_s: 0.25
+    # Reject frames timestamped before the trigger. This assumes source clocks
+    # are synchronized, as they are in the Gazebo transport.
+    enforce_trigger_stamp: true
 
 automatic_capture_node:
   ros__parameters:
@@ -30,6 +35,8 @@ automatic_capture_node:
     image_wait_timeout_s: 1.0
     pose_wait_timeout_s: 0.5
     pose_cache_duration_s: 3.0
+    # Retry temporary WARMING/BUSY/DRAINING responses without hammering the service.
+    capture_retry_delay_s: 0.30
 
 archive_recorder_node:
   ros__parameters:
@@ -46,3 +53,7 @@ archive_recorder_node:
     minimum_free_bytes: 536870912
     pair_timeout_s: 2.0
     image_overlap_ratio: 0.20
+    # Runtime guard for the actual, labelled camera positions. The nominal
+    # longitudinal spacing is length * (1 - image_overlap_ratio).
+    actual_spacing_tolerance_m: 0.010
+    maximum_target_lag_m: 0.025

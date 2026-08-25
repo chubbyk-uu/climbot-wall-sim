@@ -19,6 +19,7 @@ import unittest
 
 from builtin_interfaces.msg import Time
 from climbot_interfaces.msg import ExecutionReference, InspectionCapture
+from climbot_interfaces.srv import CaptureOnce
 import launch
 import launch_ros.actions
 import launch_testing.actions
@@ -28,7 +29,6 @@ import pytest
 import rclpy
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
-from std_srvs.srv import Trigger
 
 
 @pytest.mark.launch_test
@@ -73,7 +73,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.drop_next_image = False
         self.image_stamp = Time(sec=10, nanosec=500_000_000)
         self.node.create_service(
-            Trigger, '/inspection/capture_once', self._capture_callback)
+            CaptureOnce, '/inspection/capture_once', self._capture_callback)
         self.metadata = []
         self.event = Event()
         self.stop = Event()
@@ -95,6 +95,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         if self.reject_next:
             self.reject_next = False
             response.success = False
+            response.reason = CaptureOnce.Response.BUSY
             response.message = 'camera is temporarily busy'
             return response
         if self.drop_next_image:
@@ -107,6 +108,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             image.height = 6
             self.images.publish(image)
         response.success = True
+        response.reason = CaptureOnce.Response.OK
         response.message = 'captured'
         return response
 
@@ -168,6 +170,11 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(self.capture_calls, 1)
         # The image is at 10.5 s. A future sample completes the EKF bracket.
         self._odom(11, 0.15)
+        # The subscriptions use sensor-data QoS. Repeat the same timestamp so
+        # the test verifies interpolation rather than relying on one best-
+        # effort delivery during DDS discovery.
+        time.sleep(0.05)
+        self._odom(11, 0.15)
         self._wait_count(1)
         first = self.metadata[0]
         self.assertEqual(first.header.stamp, self.image_stamp)
@@ -207,14 +214,16 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 3)
         self._reference(True, segment=4)
-        time.sleep(0.2)
+        deadline = time.monotonic() + 1.0
+        while self.capture_calls < 4 and time.monotonic() < deadline:
+            time.sleep(0.01)
         self.assertEqual(self.capture_calls, 4)
         self._odom(17, 0.15)
         self._wait_count(3)
         self.assertEqual(self.metadata[2].segment_index, 4)
         self.assertEqual(self.metadata[2].trigger_index, 0)
 
-    def test_missing_image_retries_the_same_spatial_target(self):
+    def test_z_missing_image_retries_the_same_spatial_target(self):
         """A successful trigger without an image cannot wedge the whole task."""
         # Unlike the longer existing test this one starts immediately after
         # setup, so allow endpoint discovery to settle before publishing the

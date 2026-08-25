@@ -165,6 +165,7 @@ class Session:
     keys: set[tuple[str, int, int, int]] = field(default_factory=set)
     failures: list[str] = field(default_factory=list)
     references: dict[int, dict[str, Any]] = field(default_factory=dict)
+    actual_progress: dict[int, dict[int, float]] = field(default_factory=dict)
     camera_snapshot: dict[str, Any] | None = None
 
 
@@ -185,6 +186,10 @@ class ArchiveRecorderNode(Node):
             'output_root', '~/climbot_data').value)
         self._minimum_free_bytes = self._positive_int('minimum_free_bytes', 536_870_912)
         self._pending_timeout_s = self._positive_float('pair_timeout_s', 2.0)
+        self._actual_spacing_tolerance = self._positive_float(
+            'actual_spacing_tolerance_m', 0.010)
+        self._maximum_target_lag = self._positive_float(
+            'maximum_target_lag_m', 0.025)
         self._camera_config_file = str(self.declare_parameter(
             'camera_config_file', str(Path(get_package_share_directory(
                 'climbot_description')) / 'config' / 'inspection_camera.yaml')).value)
@@ -309,6 +314,11 @@ class ArchiveRecorderNode(Node):
             'failed_images': session.failed_images,
             'estimated_bytes': session.estimated_bytes,
             'failures': session.failures,
+            'capture_geometry_guard': {
+                'nominal_spacing_m': self._effective_length * (1.0 - self._overlap),
+                'actual_spacing_tolerance_m': self._actual_spacing_tolerance,
+                'maximum_target_lag_m': self._maximum_target_lag,
+            },
             'frozen_scan_references': [
                 session.references[index] for index in sorted(session.references)],
             'software_git_commit': self._software_git_commit,
@@ -575,10 +585,54 @@ class ArchiveRecorderNode(Node):
         elif snapshot != session.camera_snapshot:
             raise ArchiveError('CameraInfo changed during one immutable archive.')
 
+    def _validate_capture_geometry(self, metadata: InspectionCapture) -> None:
+        """Reject a labelled exposure that would violate the overlap contract.
+
+        Image count alone cannot show whether a delayed/retried exposure consumed
+        the longitudinal overlap.  The recorder is the final authority because
+        it sees the immutable labels that will later feed mosaicking.
+        """
+        session = self._session
+        assert session is not None
+        segment = int(metadata.segment_index)
+        trigger = int(metadata.trigger_index)
+        actual = finite(metadata.actual_along_track, 'actual_along_track')
+        target = finite(metadata.target_along_track, 'target_along_track')
+        reference = session.references.get(segment)
+        if reference is None:
+            raise ArchiveError(f'capture arrived before frozen SCAN reference for segment {segment}.')
+        lag = actual - target
+        if lag > self._maximum_target_lag:
+            raise ArchiveError(
+                f'capture is {lag:.4f} m after its target, exceeding '
+                f'{self._maximum_target_lag:.4f} m.')
+        progress = session.actual_progress.setdefault(segment, {})
+        if trigger in progress:
+            raise ArchiveError(f'duplicate actual-progress trigger index {trigger} in segment {segment}.')
+        spacing = self._effective_length * (1.0 - self._overlap)
+        for neighbor in (trigger - 1, trigger + 1):
+            if neighbor not in progress:
+                continue
+            first, second = sorted(((neighbor, progress[neighbor]), (trigger, actual)))
+            gap = second[1] - first[1]
+            if gap < -self._actual_spacing_tolerance or \
+                    gap > spacing + self._actual_spacing_tolerance:
+                raise ArchiveError(
+                    f'adjacent captures {first[0]}->{second[0]} in segment {segment} are '
+                    f'{gap:.4f} m apart; allowed [0, '
+                    f'{spacing + self._actual_spacing_tolerance:.4f}] m.')
+
+    def _commit_capture_geometry(self, metadata: InspectionCapture) -> None:
+        session = self._session
+        assert session is not None
+        session.actual_progress.setdefault(int(metadata.segment_index), {})[
+            int(metadata.trigger_index)] = float(metadata.actual_along_track)
+
     def _persist(self, image: Image, info: CameraInfo, metadata: InspectionCapture) -> None:
         session = self._session
         assert session is not None
         key = self._validate_pair(image, info, metadata)
+        self._validate_capture_geometry(metadata)
         pixels = self._image_array(image)
         self._write_camera_info_once(session, info)
         encoded_ok, encoded = cv2.imencode('.png', pixels)
@@ -609,6 +663,7 @@ class ArchiveRecorderNode(Node):
             image_path.unlink(missing_ok=True)
             label_path.unlink(missing_ok=True)
             raise ArchiveError('raw PNG SHA-256 changed after atomic write.')
+        self._commit_capture_geometry(metadata)
         session.keys.add(key)
         session.saved_images += 1
         session.state = InspectionArchiveStatus.RECORDING
@@ -645,10 +700,25 @@ class ArchiveRecorderNode(Node):
             self._images.pop(key, None)
             self._infos.pop(key, None)
             self._metadata.pop(key, None)
-            self._record_failure(
+            self._record_degraded(
                 f'Exposure stamp {key} timed out waiting for a complete image/CameraInfo/metadata '
                 f'triple; received: {present}.')
-            break
+
+    def _record_degraded(self, reason: str) -> None:
+        """Record one lost exposure while preserving the session for recovery."""
+        session = self._session
+        if session is None:
+            return
+        session.failed_images += 1
+        session.failures.append(reason)
+        session.message = f'Archive recording degraded: {reason}'
+        try:
+            self._write_manifest(session)
+        except (ArchiveError, OSError, ValueError) as error:
+            self._record_failure(f'Could not persist degraded archive state: {error}')
+            return
+        self.get_logger().warning(session.message)
+        self._publish()
 
     def _record_failure(self, reason: str, failed_images: int = 1) -> None:
         session = self._session

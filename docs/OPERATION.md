@@ -71,10 +71,13 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 `Inspection Camera` 保持订阅，调用一次：
 
 ```bash
-ros2 service call /inspection/capture_once std_srvs/srv/Trigger '{}'
+ros2 service call /inspection/capture_once climbot_interfaces/srv/CaptureOnce '{}'
 ```
 
-成功响应表示一对同时间戳的畸变原图和 `CameraInfo` 已发布，不只是触发消息已发出。
+成功响应（`success: true, reason: 0`）表示一对同时间戳的畸变原图和 `CameraInfo` 已发布，
+不只是触发消息已发出。临时状态用稳定的 `reason` 枚举报告：预热 `1`、忙 `2`、排空迟到帧
+`3`、本次超时 `4`；不要依赖返回文案。`/inspection/capture_reset` 可人工重新开始排空期，
+但不会绕过排空而立即曝光。
 相机空闲时不连续出图。只做非视觉调试可在 launch 后加 `inspection:=false`；拍墙面
 纹理时还应加 `wall_grid_spacing:=0`。
 

@@ -27,10 +27,10 @@
 
 #include "climbot_interfaces/msg/execution_reference.hpp"
 #include "climbot_interfaces/msg/inspection_capture.hpp"
+#include "climbot_interfaces/srv/capture_once.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
-#include "std_srvs/srv/trigger.hpp"
 
 namespace
 {
@@ -60,6 +60,12 @@ std::string nonEmpty(rclcpp::Node & node, const std::string & name, const std::s
     throw std::invalid_argument(name + " must not be empty.");
   }
   return value;
+}
+
+std::chrono::steady_clock::duration steadySeconds(double value)
+{
+  return std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+    std::chrono::duration<double>(value));
 }
 
 double stampSeconds(const builtin_interfaces::msg::Time & stamp)
@@ -110,6 +116,7 @@ class AutomaticCaptureNode : public rclcpp::Node
 public:
   using Reference = climbot_interfaces::msg::ExecutionReference;
   using Metadata = climbot_interfaces::msg::InspectionCapture;
+  using CaptureOnce = climbot_interfaces::srv::CaptureOnce;
 
   AutomaticCaptureNode()
   : Node("automatic_capture_node"),
@@ -124,7 +131,9 @@ public:
     reference_timeout_(finitePositive(*this, "reference_timeout_s", 0.5)),
     image_wait_timeout_(finitePositive(*this, "image_wait_timeout_s", 1.0)),
     pose_wait_timeout_(finitePositive(*this, "pose_wait_timeout_s", 0.5)),
-    cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0))
+    cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0)),
+    capture_retry_delay_(steadySeconds(
+        finitePositive(*this, "capture_retry_delay_s", 0.30)))
   {
     if (overlap_ < 0.0 || overlap_ >= 1.0) {
       throw std::invalid_argument("image_overlap_ratio must be within [0, 1).");
@@ -147,7 +156,7 @@ public:
     image_subscription_ = create_subscription<sensor_msgs::msg::Image>(
       image_topic, rclcpp::QoS(1).reliable(),
       std::bind(&AutomaticCaptureNode::onImage, this, std::placeholders::_1));
-    capture_client_ = create_client<std_srvs::srv::Trigger>(service);
+    capture_client_ = create_client<CaptureOnce>(service);
     metadata_publisher_ = create_publisher<Metadata>(metadata_topic, rclcpp::QoS(10).reliable());
     timeout_timer_ = create_wall_timer(
       std::chrono::milliseconds(50), std::bind(&AutomaticCaptureNode::checkTimeouts, this));
@@ -272,7 +281,8 @@ private:
       !latest_reference_time_ ||
       std::chrono::duration<double>(
         std::chrono::steady_clock::now() - *latest_reference_time_).count() > reference_timeout_ ||
-      next_trigger_ >= trigger_count_ || !capture_client_->service_is_ready())
+      next_trigger_ >= trigger_count_ || !capture_client_->service_is_ready() ||
+      (retry_not_before_ && std::chrono::steady_clock::now() < *retry_not_before_))
     {
       return;
     }
@@ -293,21 +303,18 @@ private:
     pending.metadata.reference_end = reference_->end;
     pending_ = pending;
     ++next_trigger_;
-    auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+    auto request = std::make_shared<CaptureOnce::Request>();
     capture_client_->async_send_request(
-      request, [this](rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture future) {
-        if (!future.get()->success && pending_ && !pending_->image_stamp) {
-          RCLCPP_WARN(get_logger(), "Automatic capture rejected: %s",
-          future.get()->message.c_str());
+      request, [this](rclcpp::Client<CaptureOnce>::SharedFuture future) {
+        const auto response = future.get();
+        if (!response->success && pending_ && !pending_->image_stamp) {
+          RCLCPP_WARN(get_logger(), "Automatic capture rejected (reason %u): %s",
+          response->reason, response->message.c_str());
           // A busy or warming camera has not consumed this spatial target.
           // Put the same number back rather than silently creating a hole.
           next_trigger_ = std::min(next_trigger_, pending_->metadata.trigger_index);
-          if (future.get()->message.find("faulted") != std::string::npos ||
-          future.get()->message.find("restart the node") != std::string::npos)
-          {
-            disabled_key_ = key_;
-          }
           pending_.reset();
+          retry_not_before_ = std::chrono::steady_clock::now() + capture_retry_delay_;
         }
       });
   }
@@ -319,6 +326,9 @@ private:
     }
     pending_->metadata.header = message->header;
     pending_->image_stamp = rclcpp::Time(message->header.stamp, get_clock()->get_clock_type());
+    // The image may arrive after both surrounding EKF samples. Resolve here
+    // as well as from onOdometry(), otherwise no later odometry is available
+    // to complete a valid interpolation bracket.
     resolvePending();
   }
 
@@ -417,6 +427,9 @@ private:
   void checkTimeouts()
   {
     if (!pending_) {
+      // The retry delay is wall-clock based; a paused simulation must not
+      // permanently strand an exposure after a temporary camera response.
+      tryTrigger();
       return;
     }
     const double age = std::chrono::duration<double>(
@@ -427,6 +440,7 @@ private:
         "Capture service succeeded but no inspection image arrived; retrying the same target.");
       next_trigger_ = std::min(next_trigger_, pending_->metadata.trigger_index);
       pending_.reset();
+      retry_not_before_ = std::chrono::steady_clock::now() + capture_retry_delay_;
       tryTrigger();
       return;
     }
@@ -444,6 +458,7 @@ private:
   const double mount_x_, mount_y_, mount_z_;
   const double mount_roll_, mount_pitch_, mount_yaw_;
   const double reference_timeout_, image_wait_timeout_, pose_wait_timeout_, cache_duration_;
+  const std::chrono::steady_clock::duration capture_retry_delay_;
   double spacing_{};
   std::optional<Key> key_, disabled_key_;
   std::optional<Reference> reference_;
@@ -453,11 +468,12 @@ private:
   double trigger_interval_{};
   double first_trigger_{};
   std::optional<std::chrono::steady_clock::time_point> latest_reference_time_;
+  std::optional<std::chrono::steady_clock::time_point> retry_not_before_;
   std::deque<nav_msgs::msg::Odometry::SharedPtr> poses_;
   rclcpp::Subscription<Reference>::SharedPtr reference_subscription_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
-  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr capture_client_;
+  rclcpp::Client<CaptureOnce>::SharedPtr capture_client_;
   rclcpp::Publisher<Metadata>::SharedPtr metadata_publisher_;
   rclcpp::TimerBase::SharedPtr timeout_timer_;
 };

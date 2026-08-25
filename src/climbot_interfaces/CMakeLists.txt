@@ -14,6 +14,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/InspectionCapture.msg"
   "msg/InspectionArchiveStatus.msg"
   "srv/ConfigureCoverage.srv"
+  "srv/CaptureOnce.srv"
   "srv/PrepareInspectionArchive.srv"
   "srv/FinalizeInspectionArchive.srv"
   "srv/StartCoverage.srv"

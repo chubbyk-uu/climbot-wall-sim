@@ -22,6 +22,7 @@ import os
 import time
 
 from ament_index_python.packages import get_package_share_directory
+from climbot_interfaces.srv import CaptureOnce
 from climbot_gazebo.camera_distortion import (
     apply_relative_exposure,
     load_calibration,
@@ -35,7 +36,6 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
-from std_srvs.srv import Trigger
 from tf2_ros import Buffer, TransformListener
 import yaml
 
@@ -74,7 +74,7 @@ class G1CameraEvaluator(Node):
             CameraInfo, '/inspection/camera/camera_info', self._public_info, qos)
         self.ideal_image_subscription = self.create_subscription(
             Image, '/simulation/inspection_camera/ideal_image', self._ideal_image, qos)
-        self.client = self.create_client(Trigger, '/inspection/capture_once')
+        self.client = self.create_client(CaptureOnce, '/inspection/capture_once')
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
@@ -111,14 +111,14 @@ class G1CameraEvaluator(Node):
             raise RuntimeError('/inspection/capture_once is unavailable')
         deadline = time.monotonic() + timeout_s
         while time.monotonic() < deadline:
-            future = self.client.call_async(Trigger.Request())
+            future = self.client.call_async(CaptureOnce.Request())
             rclpy.spin_until_future_complete(self, future, timeout_sec=timeout_s)
             if not future.done() or future.result() is None:
                 raise RuntimeError('capture_once did not answer')
             result = future.result()
             if result.success:
                 return result.message
-            if 'warming up' not in result.message:
+            if result.reason != CaptureOnce.Response.WARMING:
                 raise RuntimeError('capture_once failed: ' + result.message)
             self.spin_for(0.10)
         raise RuntimeError('camera did not finish warm-up')
