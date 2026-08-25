@@ -52,6 +52,9 @@ from PyQt5.QtWidgets import (
 # ``Panels`` in coverage.rviz: Qt restores a dock by objectName and silently
 # ignores one it cannot find.
 PANELS = ['Displays', 'Tool Properties', 'Coverage Task']
+# Tool Properties is needed only while adjusting an RViz tool. Keep it one
+# click away but do not spend the default task-planning height on it.
+HIDDEN_PANELS = {'Tool Properties'}
 
 # Of the roughly 764 px the left column gets in an 1200x850 window. Displays
 # needs room for the display tree, Tool Properties holds two rows, and the rest
@@ -93,6 +96,8 @@ def build(width, heights):
     QApplication.processEvents()
     window.resizeDocks(docks, [width] * len(docks), Qt.Horizontal)
     window.resizeDocks(docks, heights, Qt.Vertical)
+    for dock in docks:
+        dock.setVisible(dock.objectName() not in HIDDEN_PANELS)
     QApplication.processEvents()
     return window, docks
 

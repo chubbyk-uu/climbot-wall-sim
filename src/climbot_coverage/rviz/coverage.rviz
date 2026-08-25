@@ -124,15 +124,16 @@ Window Geometry:
   Displays:
     collapsed: false
   Tool Properties:
-    collapsed: false
+    collapsed: true
   Coverage Task:
     collapsed: false
   # Qt's QMainWindow::saveState() hex, restored by dock objectName, which
   # RViz sets to the panel name above. Without it Qt splits the left column
   # evenly and Tool Properties -- two rows of tool settings -- takes as much
-  # height as the operator panel. This gives the left column roughly
-  # 300 / 90 / 374 px for Displays / Tool Properties / Coverage Task.
+  # height as the operator panel. Tool Properties starts collapsed; it is
+  # opened only when setting an RViz tool needs editing, leaving the vertical
+  # space for the task panel.
   # Regenerate with ../scripts/make_rviz_window_state.py after adding a panel:
   # a stale blob names panels that no longer exist and Qt then falls back
   # to the even split without saying so.
-  QMainWindow State: 000000ff00000000fd00000001000000000000015600000341fc0200000003fb000000100044006900730070006c0061007900730100000011000001420000001700fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000159000000610000001700fffffffb0000001a0043006f0076006500720061006700650020005400610073006b01000001c0000001920000001700ffffff000003540000034100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000015600000341fc0200000003fb000000100044006900730070006c0061007900730100000011000001700000001700fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007300000001290000005a0000001700fffffffb0000001a0043006f0076006500720061006700650020005400610073006b0100000187000001cb0000001700ffffff000003540000034100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000

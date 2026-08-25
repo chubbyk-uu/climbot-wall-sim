@@ -168,7 +168,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 ![Coverage Task 面板](images/rviz_coverage_task.png)
 
 面板上方公共区始终显示 State、Segment、Progress 和 Inspection 摘要；中间页签分别为
-`Plan`、`Capture`、`Details`，底部停车和恢复按钮不随页签滚动。
+`Plan`、`Capture`、`Details`，底部的 Start 与停车按钮不随页签滚动。
 
 | 页签／行 | 内容 |
 | --- | --- |
@@ -180,13 +180,13 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 | --- | --- |
 | **Start** | 开始执行，State 转为 `Executing` |
 | **Cancel / Stop** | 中途停车 |
-| **Force abandon** | 仅在 Start 应答永久未知时使用；5 秒内二次点击后进入恢复锁，不代表任务已停止 |
-| **Rearm after verification** | 确认硬件急停、驱动失能或执行器确已终止后解除恢复锁 |
+| **Force abandon** | 仅在 Start 应答永久未知时才显示；5 秒内二次点击后进入恢复锁，不代表任务已停止 |
+| **Rearm after verification** | 仅在恢复锁时显示；确认硬件急停、驱动失能或执行器确已终止后解除恢复锁 |
 | **Clear points** | 点错角点时清空重选 |
 | **Replan** | 用当前角点重新规划 |
 
 **任务运行期间，Plan 页的五个规划控件以及 Capture 页的开关和根目录全部置灰。**
-正常运行中只保留 Cancel；仅在异常恢复状态才可能开放 Force abandon 或 Rearm。这些规划
+正常运行中只保留 Cancel；仅在异常恢复状态才显示并开放 Force abandon 或 Rearm。这些规划
 控件发出的请求确实只改预览、不动正在执行的 Goal，但预览就是画在机器人身上的那条轨迹，
 运行中改它看起来就像任务被换掉了。
 

@@ -178,6 +178,7 @@ private:
   QPushButton * clear_button_{nullptr};
   QPushButton * start_button_{nullptr};
   QPushButton * cancel_button_{nullptr};
+  QWidget * recovery_controls_{nullptr};
   QPushButton * force_abandon_button_{nullptr};
   QPushButton * rearm_button_{nullptr};
   QTimer * refresh_timer_{nullptr};

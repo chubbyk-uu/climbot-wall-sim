@@ -219,6 +219,8 @@ TEST(CoveragePanelConfig, recoveryLockKeepsMotionAndPlanningControlsClosed)
   EXPECT_FALSE(panel.findChild<QPushButton *>("cancel_button")->isEnabled());
   EXPECT_FALSE(panel.findChild<QPushButton *>("force_abandon_button")->isEnabled());
   EXPECT_TRUE(panel.findChild<QPushButton *>("rearm_button")->isEnabled());
+  EXPECT_TRUE(panel.findChild<QPushButton *>("force_abandon_button")->isHidden());
+  EXPECT_FALSE(panel.findChild<QPushButton *>("rearm_button")->isHidden());
   EXPECT_FALSE(panel.findChild<QPushButton *>("replan_button")->isEnabled());
   EXPECT_FALSE(panel.findChild<QPushButton *>("clear_button")->isEnabled());
   EXPECT_FALSE(box(panel, "region_box")->isEnabled());

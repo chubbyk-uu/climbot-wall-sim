@@ -450,8 +450,17 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   auto * safety_buttons = new QGridLayout();
   safety_buttons->addWidget(start_button_, 0, 0);
   safety_buttons->addWidget(cancel_button_, 0, 1);
-  safety_buttons->addWidget(force_abandon_button_, 1, 0, 1, 2);
-  safety_buttons->addWidget(rearm_button_, 2, 0, 1, 2);
+  // These are real-robot recovery actions, not routine task controls. Keep
+  // them out of the normal operator footprint and reveal only the one that
+  // the manager has explicitly permitted in an exceptional state.
+  recovery_controls_ = new QFrame();
+  recovery_controls_->setObjectName("recovery_controls");
+  auto * recovery_layout = new QVBoxLayout();
+  recovery_layout->setContentsMargins(0, 0, 0, 0);
+  recovery_layout->addWidget(force_abandon_button_);
+  recovery_layout->addWidget(rearm_button_);
+  recovery_controls_->setLayout(recovery_layout);
+  recovery_controls_->setVisible(false);
 
   auto * layout = new QVBoxLayout();
   layout->addLayout(overview);
@@ -460,6 +469,7 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   // These controls stay outside every page scroll: an operator reaching for
   // Cancel must not have to switch tabs or scroll to find it.
   layout->addLayout(safety_buttons);
+  layout->addWidget(recovery_controls_);
   setLayout(layout);
   // No explicit minimum width. An explicit one overrides the layout's own, so
   // naming a number below what the rows actually need lets a dock shrink the
@@ -825,6 +835,7 @@ void CoveragePanel::renderDisconnected()
   cancel_button_->setEnabled(false);
   force_abandon_button_->setEnabled(false);
   rearm_button_->setEnabled(false);
+  recovery_controls_->setVisible(false);
   inspection_enabled_box_->setEnabled(true);
   archive_root_edit_->setEnabled(true);
   browse_archive_root_button_->setEnabled(true);
@@ -895,6 +906,9 @@ void CoveragePanel::renderStatus(const Status & status)
   cancel_button_->setEnabled(status.can_cancel);
   force_abandon_button_->setEnabled(status.can_force_abandon);
   rearm_button_->setEnabled(status.can_rearm);
+  force_abandon_button_->setVisible(status.can_force_abandon);
+  rearm_button_->setVisible(status.can_rearm);
+  recovery_controls_->setVisible(status.can_force_abandon || status.can_rearm);
   if (!status.can_force_abandon) {
     force_confirmation_armed_ = false;
     force_abandon_button_->setText(tr("Force abandon"));

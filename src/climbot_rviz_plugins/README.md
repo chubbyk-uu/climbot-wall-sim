@@ -55,7 +55,8 @@ Algorithm 走参数接口而不是 `/coverage/configure`，因为后者是规划
 Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点击只显示“这不证明任务
 停止”的风险说明，5 秒内第二次点击才调用服务；管理器随后进入 `RECOVERY_LOCKED` 并
 持续请求 hold，Start 仍不可用。完成硬件急停、驱动失能或执行器终止确认后，操作员才
-使用单独的 Rearm。面板只实现二次确认交互，恢复锁及许可判断仍全部属于管理器。
+使用单独的 Rearm。两个恢复按钮平时隐藏，只有管理器明确允许其中一个时才显示；面板只
+实现二次确认交互，恢复锁及许可判断仍全部属于管理器。
 
 **任务运行期间，Region、Sweep、Algorithm、Replan、Clear points 五个控件全部置灰**，
 只留 Cancel。它们发出的请求确实只改预览、不动运行中的 Goal，但预览就是画在机器人
@@ -85,7 +86,8 @@ Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点�
 - dock 的高度分配不归面板管，归 `coverage.rviz` 里的 `QMainWindow State`（Qt 的
   `saveState()` 十六进制，按 dock 的 `objectName` 恢复，RViz 把它设成面板名）。
   没有这一段时 Qt 把左列平分，Tool Properties 只有两行工具设置却和操作面板一样高。
-  现在左列约 `300 / 90 / 374 px` 给 Displays / Tool Properties / Coverage Task。
+  默认隐藏 Tool Properties，把左列主要高度留给 Displays 和 Coverage Task；需要调整
+  RViz 工具属性时可从 `Panels` 菜单重新打开。
   改面板名或加面板后要用 `climbot_coverage/scripts/make_rviz_window_state.py`
   重新生成，否则 Qt 静默退回平分。
 - 面板不设显式 `setMinimumWidth`：显式最小宽度会覆盖布局算出来的那个，一旦写小了
@@ -99,7 +101,8 @@ G4 不会把巡检控件继续堆到现有正文底部，也不会新增另一�
 - 中部三个可滚动页签：`任务规划` 放现有规划配置和 Replan／Clear points，`巡检采集`
   放任务级采集开关、根目录、浏览／恢复默认、预计数量／空间、归档计数／目录／错误，
   `详情` 放 Manager／Planner／Last request 等长文本；
-- 底部固定安全区：Start、Cancel / Stop、Force abandon 和 Rearm，不随页签隐藏。
+- 底部固定安全区：Start、Cancel / Stop，不随页签隐藏；Force abandon 或 Rearm 仅在
+  对应异常恢复状态临时出现。
 
 默认宽度和渲染窗口占用保持不变。路径编辑在窄面板中独占一行，浏览按钮另起一行；
 机器相关默认路径来自 launch／YAML，不保存进公共 `.rviz`。实现后继续使用 240、300、

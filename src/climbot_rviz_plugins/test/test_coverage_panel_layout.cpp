@@ -238,7 +238,7 @@ TEST_P(CoveragePanelLayout, showsEveryMessageInFullAtOperatorDockWidths)
   expectNothingIsCut(
     panel, width,
     {"state_value", "segment_value", "inspection_summary_value"},
-    {"start_button", "cancel_button", "force_abandon_button", "rearm_button"});
+    {"start_button", "cancel_button"});
   dumpIfRequested(panel, QString("%1_plan").arg(width));
   selectTab(panel, 1);
   layOut(panel, width, 640);
@@ -267,7 +267,7 @@ TEST(CoveragePanelSizing, showsTheStartupNoticeInFull)
   expectNothingIsCut(
     panel, 240,
     {"state_value", "segment_value", "inspection_summary_value"},
-    {"start_button", "cancel_button", "force_abandon_button", "rearm_button"});
+    {"start_button", "cancel_button"});
   dumpIfRequested(panel, "startup");
 }
 
@@ -315,7 +315,12 @@ TEST(CoveragePanelSizing, keepsTheButtonsReachableWhenTheDockIsTooShort)
   ASSERT_NE(scroll, nullptr);
   EXPECT_TRUE(scroll->verticalScrollBar()->maximum() > 0)
     << "the messages were cut off instead of made scrollable";
-  for (auto * button : panel.findChildren<QPushButton *>()) {
+  // Routine stop stays permanently visible. Exceptional recovery controls
+  // intentionally stay hidden until the manager permits one, and all other
+  // buttons live inside their scrollable tab.
+  for (const auto * name : {"start_button", "cancel_button"}) {
+    auto * button = panel.findChild<QPushButton *>(name);
+    ASSERT_NE(button, nullptr);
     const QPoint corner = button->mapTo(&panel, QPoint(0, button->height()));
     EXPECT_LE(corner.y(), panel.height())
       << button->text().toStdString() << " was pushed out of the panel";
