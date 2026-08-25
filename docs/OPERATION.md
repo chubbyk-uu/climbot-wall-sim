@@ -157,15 +157,14 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 
 ![Coverage Task 面板](images/rviz_coverage_task.png)
 
-| 行 | 内容 |
+面板上方公共区始终显示 State、Segment、Progress 和 Inspection 摘要；中间页签分别为
+`Plan`、`Capture`、`Details`，底部停车和恢复按钮不随页签滚动。
+
+| 页签／行 | 内容 |
 | --- | --- |
-| **Region** / **Sweep** | 区域形状与扫描方向，见下节 |
-| **Algorithm** | 直线段的控制律：`Position only` 或 `Timed trajectory`，见下节 |
-| **Points** | 点选模式下已选/需要的点数 |
-| **State** | 管理器状态 |
-| **Segment** | 当前段 / 总段数 |
-| **Progress** | 按各段**预计耗时**加权的完成比例 |
-| **Schedule** | 任务总时长、预计剩余、以及相对时间表的滞后 |
+| **Plan** | Region、Sweep、Algorithm、点选状态、Replan 与 Clear points |
+| **Capture** | 本次任务的原图归档开关、记录器端根目录、预计／已保存／失败数量、最终目录和归档状态 |
+| **Details** | Task、Schedule、Manager、Planner 与 Last request |
 
 | 按钮 | 作用 |
 | --- | --- |
@@ -176,14 +175,27 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 | **Clear points** | 点错角点时清空重选 |
 | **Replan** | 用当前角点重新规划 |
 
-**任务运行期间，Region、Sweep、Algorithm、Replan、Clear points 五个控件全部
-置灰。** 运行中唯一能做的事是 Cancel。这些控件发出的请求确实只改预览、不动
-正在执行的 Goal，但预览就是画在机器人身上的那条轨迹，运行中改它看起来就像任务
-被换掉了。
+**任务运行期间，Plan 页的五个规划控件以及 Capture 页的开关和根目录全部置灰。**
+正常运行中只保留 Cancel；仅在异常恢复状态才可能开放 Force abandon 或 Rearm。这些规划
+控件发出的请求确实只改预览、不动正在执行的 Goal，但预览就是画在机器人身上的那条轨迹，
+运行中改它看起来就像任务被换掉了。
 
 Start、Cancel、Force abandon 和 Rearm 的置灰由管理器发布的许可位决定；恢复锁和
 运行期间五个规划控件都置灰，不是面板另外判断一遍任务状态。无论面板显示什么，
 非法请求都由管理器拒绝，原因显示在 Last request 一行。
+
+### 任务级原始图像归档
+
+默认启动的完整 `coverage_mission` 开启采集。规划完成后在 `Capture` 页确认
+**Capture raw images** 和记录器端根目录（默认 `~/climbot_data`），再按 Start。该服务
+只表示“归档准备请求已受理”：管理器先让记录器检查目录、标定和可写性，成功后才向
+执行器发送运动 Goal。运行目录、计数和故障以公共区／Capture 页中的任务状态为准。
+
+Start 后开关和根目录冻结，直到任务完成、取消或归档失败后封存。取消准备阶段不会让
+机器人运动；记录器若迟到返回，管理器仍会将那次独立归档取消，不能把任务重新变为
+可执行。运行中归档失败会请求受控停车。归档只保存畸变 `mono8` 原图、同曝光标签和
+标定／任务 manifest；补偿图只用于预览。目录结构和离线处理边界见
+[接口规范](INTERFACES.md#G4-任务归档接口)。
 
 若 State 显示 `Stopping` 且管理器一直等待未知的 Start 应答，默认保持这个状态最安全。
 只有已经从机器人外部确认停车条件时才使用 Force abandon：第一次点击只显示风险，
