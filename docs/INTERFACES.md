@@ -434,7 +434,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | 服务 | 类型 | 行为 |
 | --- | --- | --- |
 | `/coverage/start` | `std_srvs/srv/Trigger` | 锁定管理器当前显示的有效 `task_id + revision`，校验后发送 `/coverage/execute` Goal |
-| `/coverage/cancel` | `std_srvs/srv/Trigger` | 请求取消当前 Goal；服务响应只确认请求已受理，最终停车状态看 `/coverage/manager_status` |
+| `/coverage/cancel` | `std_srvs/srv/Trigger` | 请求取消当前 Goal；若仍在等待 hold 释放则丢弃未发送 Goal、重施 hold 并进入恢复锁；最终状态看 `/coverage/manager_status` |
 | `/coverage/force_abandon` | `std_srvs/srv/Trigger` | 仅在 Start 应答未知的 `STOPPING` 中放弃等待；进入 `RECOVERY_LOCKED`，不代表任务已停止 |
 | `/coverage/rearm` | `std_srvs/srv/Trigger` | 操作员确认硬件停车或执行器终止后解除恢复锁；hold 留到下一次 Start 才释放 |
 
@@ -471,7 +471,7 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | `IDLE` | 拒绝，无有效任务 | 拒绝，无执行中任务 | 允许；`Replan` 在点选模式下需先选够点 |
 | `INVALID` | 拒绝，无有效任务 | 拒绝 | 同上 |
 | `READY` | **接受**，发送 Goal | 拒绝 | 允许，重新生成预览 |
-| `STARTING` | 拒绝，已有任务在启动 | 拒绝，尚在正常应答期限内；超时后转为 `STOPPING` 并接受 | **面板置灰**；服务层仍会受理，只改预览 |
+| `STARTING` | 拒绝，已有任务在启动 | 等待 hold 释放时**接受**，丢弃未发送 Goal 后进入恢复锁；已发送 Goal 的正常应答期限内拒绝 | **面板置灰**；服务层仍会受理，只改预览 |
 | `EXECUTING` | 拒绝 | **接受**，请求取消 | **面板置灰**；`tracking_mode` 由执行器直接拒绝 |
 | `STOPPING` | 拒绝，仍在停机 | **接受**，重试速度保持与取消 | **面板置灰** |
 | `RECOVERY_LOCKED` | 拒绝，外部停车尚未确认 | 拒绝，无受监督 Goal handle | **面板置灰** |
@@ -577,6 +577,12 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 `/control/hold` 成功应答或 `/control/hold_active=false` 确认后才真正发送 Action Goal，
 避免旧锁存状态或消息到达竞态让 Goal 已开始而轮子仍被 hold 锁住。
 
+这段“已排队、尚未发送 Goal”的 `STARTING` 同样有 `start_response_timeout_s` 上限。解除
+hold 超时、执行器在解除后消失，或操作员按 Cancel 时，管理器丢弃队列 Goal、以新代次
+重施 `hold=true`，并进入 `RECOVERY_LOCKED`。因为解除请求可能已生效但应答丢失，它不能
+直接报 READY；操作员确认停车后才可 Rearm。此时 Force abandon 不适用：它只处理已经发出、
+但 Action 接受结果未知的 Goal。
+
 ### 运行时构型
 
 `region_type` 和 `sweep_direction` 可以在运行中改,不必重启 launch。二者由
@@ -636,7 +642,7 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 | `path_height` | m | RViz 路径离墙显示高度 |
 | `bottom_warning_tolerance` | m | 梯形底边点高度修正提示阈值 |
 | `minimum_nominal_coverage_ratio` | `[0, 1]` | 规划期可选覆盖率门限；默认 `0` 只报告、不因覆盖不足拒绝安全路径 |
-| `top_edge_scan` | `auto` / `always` / `never` | 顶部收边扫描，默认 `auto` |
+| `top_edge_scan` | `auto` / `always` / `never` | 顶部收边扫描，默认 `never`；`auto` 需配置正覆盖率门限 |
 
 规划器内部计算：
 
@@ -702,7 +708,7 @@ C（右下）。A、C 的高度取平均值修正为水平底边。
 
 | 取值 | 行为 |
 | --- | --- |
-| `auto`（默认） | 仅当**预计**覆盖率低于 `minimum_nominal_coverage_ratio` 时追加 |
+| `auto` | 仅当**预计**覆盖率低于显式正的 `minimum_nominal_coverage_ratio` 时追加 |
 | `always` | 只要蓝色收边线能放进橙色任务可走区就追加 |
 | `never` | 从不追加 |
 
@@ -715,8 +721,8 @@ C（右下）。A、C 的高度取平均值修正为水平底边。
 重复同一覆盖用途。`always` 配横向扫描时
 不追加，并在状态里说明。
 
-**`auto` 用的是预计覆盖率，看不到执行损失。** 默认覆盖率门限为零，因此 `auto` 默认
-不追加；部署显式配置正数门限时，它才会在预计比例不足时尝试追加。实测覆盖不足时，
+**`auto` 用的是预计覆盖率，看不到执行损失。** 默认模式为 `never`；部署显式配置
+`auto` 和正数门限时，它才会在预计比例不足时尝试追加。实测覆盖不足时，
 操作员可用 `always` 增加一条仍位于橙色可走区内的顶边扫描，或扩大可走区后重新规划，
 而不是让机器人为追求规则覆盖边界越过限制。
 

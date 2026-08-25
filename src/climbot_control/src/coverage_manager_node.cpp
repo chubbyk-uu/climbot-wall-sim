@@ -235,7 +235,7 @@ private:
     // the same moment contact was lost, which is the one moment an operator
     // watching the robot still move has nothing else to reach for.
     status_.can_cancel = active_goal_ != nullptr || stopping_since_.has_value() ||
-      archive_prepare_pending_;
+      queued_goal_.has_value() || archive_prepare_pending_;
     status_.can_force_abandon = stopping_since_.has_value() && unresolved_goal_response_;
     status_.can_rearm = recovery_locked_;
   }
@@ -353,6 +353,10 @@ private:
   {
     if (recovery_locked_) {
       engageHold();
+      return;
+    }
+    expireQueuedStart();
+    if (recovery_locked_) {
       return;
     }
     continueQueuedStart();
@@ -544,6 +548,56 @@ private:
       "and waiting for the request's real outcome.");
   }
 
+  /// A queued goal has not reached the executor, but a missing answer to the
+  /// hold-release request still leaves the actuator state unknown: the release
+  /// may have taken effect and only its reply was lost.  Do not silently return
+  /// to READY in that case.  Retire the unsent goal, re-engage hold, and make
+  /// the operator explicitly verify the stop before allowing another Start.
+  void abandonQueuedStart(const std::string & reason)
+  {
+    if (!queued_goal_) {
+      return;
+    }
+    const auto task_id = queued_goal_->task.task_id;
+    queued_goal_.reset();
+    queued_goal_since_.reset();
+    hold_release_confirmed_ = false;
+    ++goal_generation_;
+    // An inspection archive can have been prepared before the release request.
+    // It belongs to this never-dispatched task and must not look like a usable
+    // completed run after we discard the Goal.
+    if (!status_.archive_run_id.empty()) {
+      finalizeDetachedArchive(
+        status_.archive_run_id, FinalizeArchive::Request::CANCELED,
+        reason + " Goal was never dispatched.");
+      status_.archive_state = ArchiveStatus::CANCELED;
+      status_.archive_message = "Archive canceled before motion started.";
+    }
+    active_inspection_enabled_ = false;
+    recovery_locked_ = true;
+    // Do not use engageHold(): a stale true status cannot prove that the
+    // preceding release request did not take effect.  Supersede it explicitly.
+    maintainHoldRequest(true);
+    publishStatus(
+      Status::RECOVERY_LOCKED,
+      reason + " " + task_id + " was not sent to the executor; speed hold was "
+      "re-engaged. Verify the stop before rearming.");
+  }
+
+  void expireQueuedStart()
+  {
+    if (!queued_goal_ || !queued_goal_since_) {
+      return;
+    }
+    if (std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - *queued_goal_since_).count() <
+      start_response_timeout_s_)
+    {
+      return;
+    }
+    abandonQueuedStart("Timed out waiting for speed-hold release.");
+  }
+
   bool requestStart(
     bool inspection_enabled, const std::string & output_root, std::string & response_message)
   {
@@ -688,6 +742,7 @@ private:
     if (hold_client_->service_is_ready() || holdStatusIsRecent()) {
       queued_goal_ = goal;
       queued_goal_generation_ = generation;
+      queued_goal_since_ = std::chrono::steady_clock::now();
       hold_release_confirmed_ = false;
       maintainHoldRequest(false);
       publishStatus(
@@ -788,6 +843,7 @@ private:
         auto goal = *queued_goal_;
         const auto generation = queued_goal_generation_;
         queued_goal_.reset();
+        queued_goal_since_.reset();
         dispatchGoal(goal, generation);
         return;
       }
@@ -795,18 +851,13 @@ private:
       return;
     }
     if (!action_client_->action_server_is_ready()) {
-      const auto task_id = queued_goal_->task.task_id;
-      queued_goal_.reset();
-      ++goal_generation_;
-      publishStatus(
-        cached_task_ ? Status::READY : Status::IDLE,
-        "Released the speed hold, but the executor disappeared before " + task_id +
-        " could be sent.");
+      abandonQueuedStart("The executor disappeared after speed hold release.");
       return;
     }
     auto goal = *queued_goal_;
     const auto generation = queued_goal_generation_;
     queued_goal_.reset();
+    queued_goal_since_.reset();
     hold_release_confirmed_ = false;
     dispatchGoal(goal, generation);
   }
@@ -948,6 +999,14 @@ private:
       response->message = "Archive preparation canceled before motion started.";
       return;
     }
+    if (queued_goal_) {
+      abandonQueuedStart("Start canceled while waiting for speed-hold release.");
+      response->success = true;
+      response->message =
+        "Queued start discarded and speed hold re-engaged; verification is required before "
+        "rearming.";
+      return;
+    }
     if (stopping_since_) {
       if (active_goal_) {
         action_client_->async_cancel_goal(active_goal_);
@@ -1038,6 +1097,7 @@ private:
   std::optional<std::chrono::steady_clock::time_point> last_motion_command_;
   std::optional<std::chrono::steady_clock::time_point> hold_request_since_;
   std::optional<std::chrono::steady_clock::time_point> last_hold_status_;
+  std::optional<std::chrono::steady_clock::time_point> queued_goal_since_;
   // No value until the speed watchdog has published: absent and false are
   // different answers, and only the second one is evidence of anything.
   std::optional<bool> hold_active_;

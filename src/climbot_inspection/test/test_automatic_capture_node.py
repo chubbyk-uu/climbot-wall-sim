@@ -40,6 +40,7 @@ def generate_test_description():
             'effective_length_m': 0.25,
             'image_overlap_ratio': 0.20,
             'reference_timeout_s': 2.0,
+            'image_wait_timeout_s': 0.25,
             'pose_wait_timeout_s': 1.0,
         }],
     )
@@ -66,6 +67,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             self._metadata_callback, reliable)
         self.capture_calls = 0
         self.reject_next = False
+        self.drop_next_image = False
         self.image_stamp = Time(sec=10, nanosec=500_000_000)
         self.node.create_service(
             Trigger, '/inspection/capture_once', self._capture_callback)
@@ -92,12 +94,15 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             response.success = False
             response.message = 'camera is temporarily busy'
             return response
-        image = Image()
-        image.header.stamp = self.image_stamp
-        image.header.frame_id = 'inspection_camera_optical_frame'
-        image.width = 8
-        image.height = 6
-        self.images.publish(image)
+        if self.drop_next_image:
+            self.drop_next_image = False
+        else:
+            image = Image()
+            image.header.stamp = self.image_stamp
+            image.header.frame_id = 'inspection_camera_optical_frame'
+            image.width = 8
+            image.height = 6
+            self.images.publish(image)
         response.success = True
         response.message = 'captured'
         return response
@@ -205,6 +210,27 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self._wait_count(3)
         self.assertEqual(self.metadata[2].segment_index, 4)
         self.assertEqual(self.metadata[2].trigger_index, 0)
+
+    def test_missing_image_retries_the_same_spatial_target(self):
+        """A successful trigger without an image cannot wedge the whole task."""
+        # Unlike the longer existing test this one starts immediately after
+        # setup, so allow endpoint discovery to settle before publishing the
+        # one transient reference it relies on.
+        time.sleep(0.3)
+        self.drop_next_image = True
+        self.image_stamp = Time(sec=30, nanosec=500_000_000)
+        self._odom(30, 0.125)
+        self._reference(True, segment=9)
+        deadline = time.monotonic() + 3.0
+        while self.capture_calls < 2 and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertGreaterEqual(self.capture_calls, 2)
+        # The retry publishes a frame for trigger 0.  Supply the later pose
+        # required to bind that image to an interpolated EKF pose.
+        self._odom(31, 0.15)
+        self._wait_count(1)
+        self.assertEqual(self.metadata[0].segment_index, 9)
+        self.assertEqual(self.metadata[0].trigger_index, 0)
 
 
 @launch_testing.post_shutdown_test()

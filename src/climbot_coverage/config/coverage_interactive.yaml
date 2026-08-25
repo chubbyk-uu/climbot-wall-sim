@@ -31,5 +31,8 @@ coverage_planner:
     detection_edge_overlap: 0.0
     # 25% nominal leaves tracking margin while G2 requires >=20% actual overlap.
     overlap_ratio: 0.25
+    # Default missions report camera coverage but do not add a special return
+    # scan. A contract requiring top-edge completion can opt into auto/always.
+    top_edge_scan: never
     path_height: 0.06
     bottom_warning_tolerance: 0.05

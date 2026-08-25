@@ -121,6 +121,7 @@ public:
     mount_pitch_(finite(*this, "camera_mount_pitch_rad", 0.0)),
     mount_yaw_(finite(*this, "camera_mount_yaw_rad", -0.5 * std::acos(-1.0))),
     reference_timeout_(finitePositive(*this, "reference_timeout_s", 0.5)),
+    image_wait_timeout_(finitePositive(*this, "image_wait_timeout_s", 1.0)),
     pose_wait_timeout_(finitePositive(*this, "pose_wait_timeout_s", 0.5)),
     cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0))
   {
@@ -416,6 +417,15 @@ private:
       return;
     }
     const double age = (now() - pending_->requested).seconds();
+    if (!pending_->image_stamp && age > image_wait_timeout_) {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Capture service succeeded but no inspection image arrived; retrying the same target.");
+      next_trigger_ = std::min(next_trigger_, pending_->metadata.trigger_index);
+      pending_.reset();
+      tryTrigger();
+      return;
+    }
     if (pending_->image_stamp && age > pose_wait_timeout_) {
       RCLCPP_ERROR(
         get_logger(),
@@ -429,7 +439,7 @@ private:
   const double overlap_;
   const double mount_x_, mount_y_, mount_z_;
   const double mount_roll_, mount_pitch_, mount_yaw_;
-  const double reference_timeout_, pose_wait_timeout_, cache_duration_;
+  const double reference_timeout_, image_wait_timeout_, pose_wait_timeout_, cache_duration_;
   double spacing_{};
   std::optional<Key> key_, disabled_key_;
   std::optional<Reference> reference_;

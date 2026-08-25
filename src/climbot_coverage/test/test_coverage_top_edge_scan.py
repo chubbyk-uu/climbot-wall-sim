@@ -72,6 +72,11 @@ def generate_test_description():
     return launch.LaunchDescription([
         _planner('never_planner', 'vertical', 'never'),
         _planner('auto_planner', 'vertical', 'auto'),
+        _planner('strict_never_planner', 'vertical', 'never',
+                 detection_length=0.28125, detection_forward_offset=0.340),
+        _planner('auto_needed_planner', 'vertical', 'auto',
+                 detection_length=0.28125, detection_forward_offset=0.340,
+                 minimum_nominal_coverage_ratio=0.97),
         _planner('always_planner', 'vertical', 'always'),
         _planner('horizontal_planner', 'horizontal', 'always'),
         # An odd column count ends the sweep at the top, so the return leg is
@@ -91,7 +96,8 @@ class TestTopEdgeScan(unittest.TestCase):
         self.tasks = {}
         self.events = {}
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        for name in ('never_planner', 'auto_planner', 'always_planner',
+        for name in ('never_planner', 'auto_planner', 'strict_never_planner',
+                     'auto_needed_planner', 'always_planner',
                      'horizontal_planner', 'odd_planner'):
             self.events[name] = Event()
             self.node.create_subscription(
@@ -133,6 +139,14 @@ class TestTopEdgeScan(unittest.TestCase):
         baseline = self._task('never_planner')
         automatic = self._task('auto_planner')
         self.assertEqual(len(automatic.waypoints), len(baseline.waypoints))
+
+    def test_auto_appends_when_an_explicit_positive_threshold_requires_it(self):
+        """`auto` is useful only with a deployment-supplied positive threshold."""
+        baseline = self._task('strict_never_planner')
+        automatic = self._task('auto_needed_planner')
+        self.assertEqual(len(automatic.waypoints), len(baseline.waypoints) + 2)
+        self.assertEqual(
+            self._scan_count(automatic), self._scan_count(baseline) + 1)
 
     def test_always_appends_one_horizontal_scan_at_the_top(self):
         baseline = self._task('never_planner')

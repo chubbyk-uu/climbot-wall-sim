@@ -34,8 +34,12 @@ class GazeboSupervisor:
 
     def _stop(self, _signum, _frame) -> None:
         """Use TERM because Gazebo 8 can crash while handling SIGINT in Ogre."""
-        self._stopping = True
-        self._deadline = time.monotonic() + 8.0
+        # launch escalates SIGINT -> SIGTERM -> SIGKILL.  The child process
+        # group must be reaped before launch kills this supervisor, so repeated
+        # signals may never extend the first deadline.
+        if not self._stopping:
+            self._stopping = True
+            self._deadline = time.monotonic() + 4.0
         if self._child is not None and self._child.poll() is None:
             try:
                 os.killpg(self._child.pid, signal.SIGTERM)

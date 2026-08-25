@@ -12,6 +12,9 @@ __pycache__/
 *.doc
 *.docx
 
+# Windows alternate data streams occasionally appear as ordinary WSL files.
+*:Zone.Identifier
+
 # Baked wall texture: ~200 MB of generated BC1 blocks. Reproducible from
 # tools/fetch_wall_texture.sh (which pins the source archive by checksum) and
 # tools/bake_wall_texture.py with the seed recorded in the manifest.

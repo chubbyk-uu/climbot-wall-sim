@@ -36,6 +36,7 @@ def generate_launch_description():
     mount = camera['optical_mount']
     geometry = {
         'effective_length_m': camera['footprint']['effective_length_m'],
+        'image_overlap_ratio': camera['capture_policy']['nominal_overlap_ratio'],
         'camera_mount_x_m': mount['center_xyz_m'][0],
         'camera_mount_y_m': mount['center_xyz_m'][1],
         'camera_mount_z_m': mount['center_xyz_m'][2],

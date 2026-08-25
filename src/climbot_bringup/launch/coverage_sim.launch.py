@@ -88,8 +88,8 @@ def generate_launch_description():
         DeclareLaunchArgument('sweep_direction', default_value='horizontal'),
         DeclareLaunchArgument(
             'inspection',
-            default_value='true',
-            description='Start G1 manual and G2 position-triggered inspection.',
+            default_value='false',
+            description='Optional G1/G2 nodes for preview; use coverage_mission for execution.',
         ),
         DeclareLaunchArgument(
             'flat_field_file',

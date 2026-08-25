@@ -37,6 +37,20 @@ def generate_launch_description():
         footprint = yaml.safe_load(handle)['robot']['footprint']
     with open(os.path.join(description_share, 'config', 'wall.yaml')) as handle:
         wall_surface = yaml.safe_load(handle)['wall']['surface']
+    with open(os.path.join(description_share, 'config', 'inspection_camera.yaml')) as handle:
+        inspection_camera = yaml.safe_load(handle)['inspection_camera']
+    inspection_geometry = {
+        # A planner launched through the supported entry point always plans
+        # with the installed camera, not placeholder values left in legacy
+        # demonstration YAML files. Tests that intentionally exercise a
+        # synthetic sensor run the node directly and pass their own values.
+        'detection_width': float(inspection_camera['footprint']['effective_width_m']),
+        'detection_length': float(inspection_camera['footprint']['effective_length_m']),
+        'detection_forward_offset': float(
+            inspection_camera['optical_mount']['center_xyz_m'][0]),
+        'overlap_ratio': float(
+            inspection_camera['capture_policy']['nominal_overlap_ratio']),
+    }
 
     planner = Node(
         package='climbot_coverage',
@@ -59,6 +73,7 @@ def generate_launch_description():
             # RViz. Tying the two together would take the operator's grid away
             # on exactly the runs where they still want it.
             'wall_grid_spacing': reference_grid_spacing(),
+            **inspection_geometry,
         }],
         output='screen',
     )

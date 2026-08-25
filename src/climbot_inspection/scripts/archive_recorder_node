@@ -276,13 +276,20 @@ class ArchiveRecorderNode(Node):
                 f'bytes including reserve, have {available}.')
 
     def _git_commit(self) -> str:
+        # launch inherits the operator's shell CWD, which is not provenance.
+        # Walk upward from this installed package instead, so an archive made
+        # from another directory still identifies the workspace revision.
         try:
-            output = subprocess.run(
-                ['git', 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True,
-                timeout=2.0).stdout.strip()
-            return output if output else 'unknown'
+            package_root = Path(get_package_share_directory('climbot_inspection')).resolve()
+            for candidate in (package_root, *package_root.parents):
+                result = subprocess.run(
+                    ['git', '-C', str(candidate), 'rev-parse', 'HEAD'], check=False,
+                    capture_output=True, text=True, timeout=2.0)
+                if result.returncode == 0 and result.stdout.strip():
+                    return result.stdout.strip()
         except (OSError, subprocess.SubprocessError):
-            return 'unknown'
+            pass
+        return 'unavailable'
 
     def _manifest(self, session: Session, outcome: str | None = None) -> dict[str, Any]:
         return {

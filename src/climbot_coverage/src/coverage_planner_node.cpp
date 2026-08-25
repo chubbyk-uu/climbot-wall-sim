@@ -224,7 +224,7 @@ public:
     // value, but the default workflow prioritises the operator's drive limit.
     minimum_nominal_coverage_ratio_ = declare_parameter(
       "minimum_nominal_coverage_ratio", 0.0);
-    top_edge_scan_ = declare_parameter("top_edge_scan", "auto");
+    top_edge_scan_ = declare_parameter("top_edge_scan", "never");
     validatePhysicalParameters();
     row_spacing_ = detection_width_ * (1.0 - overlap_ratio_);
     // The robot turns in place at waypoints, so the inset must contain its

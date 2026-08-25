@@ -60,9 +60,11 @@ row_spacing = detection_width × (1 - overlap_ratio)
 safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 ```
 
-`detection_length` 是沿行进方向的检测有效长度。G2 相机配置使用 `0.28125 m`，旧的
-非视觉回归配置仍保留 `0.01 m` 以维持原测试语义。相机外参和检测长度只用于推导黄色
-覆盖及覆盖率，不得把蓝色机器人端点推出橙色任务可走区。真机仍须按实际检测载荷标定。
+`detection_width`、`detection_length`、前向偏移和巡检重叠率的标准 launch 权威来源是
+`climbot_description/config/inspection_camera.yaml`；当前值为 `0.500 m`、`0.28125 m`、
+`0.340 m`、`25%`。旧 YAML 中的字面量仅供直接运行规划器的合成回归，标准 launch 会
+覆盖它们。相机外参和检测长度只用于推导黄色覆盖及覆盖率，不得把蓝色机器人端点推出
+橙色任务可走区。真机仍须按实际检测载荷标定。
 
 机器人轮廓和墙面尺寸由 `climbot_description` 注入。规划器只生成直线段和
 路点处原地转向，不生成圆角或切弯。控制器可能在转后偏差较大时执行一次采集关闭的
@@ -80,9 +82,9 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
   planner_config_file:=<带 top_edge_scan: always 的配置>
 ```
 
-`auto`（默认）只看**预计**覆盖率，而顶部漏扫是执行损失、名义几何里不存在，所以
-`auto` 在当前两个竖向工况下不会触发——它们的预计覆盖率都是 `100%`。需要收边时请
-显式设 `always`。横向扫描恒不追加：它最高一条扫描线已经压在区域顶边上。
+默认 `never`，因为顶部漏扫是执行损失、名义几何里通常不可见。`auto` 仅在同时显式
+设置正 `minimum_nominal_coverage_ratio` 且预计覆盖不足时追加；需要确定补边时请设
+`always`。横向扫描恒不追加：它最高一条扫描线已经压在区域顶边上。
 
 ## 测试
 

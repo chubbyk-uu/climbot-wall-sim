@@ -207,7 +207,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 | **Start** | 开始执行，State 转为 `Executing` |
 | **Cancel / Stop** | 中途停车 |
 | **Force abandon** | 仅在 Start 应答永久未知时才显示；5 秒内二次点击后进入恢复锁，不代表任务已停止 |
-| **Rearm after verification** | 仅在恢复锁时显示；确认硬件急停、驱动失能或执行器确已终止后解除恢复锁 |
+| **Rearm after verification** | 仅在恢复锁时显示；确认硬件急停、驱动失能、执行器确已终止，或 hold 解除等待已安全收回后解除恢复锁 |
 | **Clear points** | 点错角点时清空重选 |
 | **Replan** | 用当前角点重新规划 |
 

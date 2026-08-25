@@ -15,7 +15,12 @@
 """Guard the single actuator-facing velocity-command route."""
 
 import importlib.util
+import os
 from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
@@ -65,6 +70,34 @@ def test_gazebo_supervisor_forwards_shutdown_to_its_whole_process_group():
     assert 'start_new_session=True' in source
     assert 'os.killpg(self._child.pid, signal.SIGTERM)' in source
     assert 'return 0 if self._stopping else self._child.returncode' in source
+
+
+def test_gazebo_supervisor_does_not_extend_its_kill_deadline_on_a_second_signal():
+    """Launch escalation must not kill the supervisor before it reaps GZ."""
+    supervisor_path = PACKAGE_ROOT / 'scripts' / 'gz_sim_supervisor.py'
+    child = (
+        'import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); '
+        'time.sleep(60)')
+    runner = (
+        'import importlib.util,sys; '
+        'spec=importlib.util.spec_from_file_location("supervisor", {!r}); '.format(
+            str(supervisor_path)) +
+        'module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); '
+        'raise SystemExit(module.GazeboSupervisor([sys.executable, "-c", {!r}]).run())'.format(
+            child))
+    process = subprocess.Popen([sys.executable, '-c', runner])
+    try:
+        time.sleep(0.2)
+        os.kill(process.pid, signal.SIGINT)
+        time.sleep(0.2)
+        os.kill(process.pid, signal.SIGTERM)
+        # If SIGTERM reset the deadline to eight more seconds, this wait would
+        # time out. The fixed supervisor kills its whole child group in ~4 s.
+        assert process.wait(timeout=5.5) == 0
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5.0)
 
 
 def test_simulation_adapters_exit_cleanly_after_launch_sigint():

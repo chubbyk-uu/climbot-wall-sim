@@ -286,17 +286,13 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   if (span <= kEpsilon) {
     throw std::invalid_argument("Coverage region has no sweep span.");
   }
-  // The operator now selects the permitted base_link route region.  Put the
-  // outer robot tracks on that region and distribute the intermediate tracks
-  // uniformly within maximum_spacing.  Camera footprints are derived from
-  // these tracks afterwards; they no longer move the robot route outside the
-  // selected polygon.
-  // Camera geometry deliberately has no influence on the base_link route.
-  // edge_overlap is retained in the public interface for compatibility, but
-  // cannot add physical camera coverage without moving the robot.  Using it
-  // here would silently move the blue route when a camera is added or its
-  // calibration changes.  Keep the robot tracks at the same
-  // detection-width-derived positions as the no-camera planner.
+  // The operator selects the permitted base_link route region.  Keep every
+  // route inside it, while using half the effective cross-track footprint as
+  // an inward placement distance so the outer camera bands meet the selected
+  // boundary instead of extending far beyond it.  Thus the camera determines
+  // *where inside* the permitted region the blue lines lie, never a route
+  // outside that region. edge_overlap remains a compatibility field and does
+  // not change physical coverage or move the route.
   const double cross_inset = std::min(0.5 * span, 0.5 * detection_width);
   const double usable_span = std::max(0.0, span - 2.0 * cross_inset);
   const double interval_ratio = usable_span / maximum_spacing;
