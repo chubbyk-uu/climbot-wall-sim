@@ -635,7 +635,7 @@ hold 超时、执行器在解除后消失，或操作员按 Cancel 时，管理�
 | `detection_length` | m | 沿行进方向的检测有效长度；G2 标称 `0.28125`，旧回归配置保留 `0.01` |
 | `detection_forward_offset` | m | 检测中心相对 `base_link` 的前向偏移；巡检相机为 `0.340` |
 | `detection_edge_overlap` | m | 兼容保留参数；可走区优先语义下不改变蓝线或真实检测足迹，当前不参与覆盖面积计算 |
-| `overlap_ratio` | `[0, 1)` | 相邻扫描带重叠率 |
+| `overlap_ratio` | `[0, 1)` | 相邻扫描带的**横向**重叠率；默认 `0.20`，独立于拍照触发重叠 |
 | `robot_length`、`robot_width` | m | launch 从 `robot.yaml` 注入 |
 | `edge_clearance` | m | launch 从 `robot.yaml` 注入 |
 | `wall_width`、`wall_height` | m | launch 从 `wall.yaml` 注入 |
@@ -650,6 +650,11 @@ hold 超时、执行器在解除后消失，或操作员按 Cancel 时，管理�
 row_spacing = detection_width × (1 - overlap_ratio)
 safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 ```
+
+`inspection_geometry_profile` 是 `coverage_planner.launch.py` 的 launch 参数，不写入
+`CoverageTask`：`calibrated`（默认）从共享相机描述注入物理足迹和前向偏移；`configured`
+严格采用 planner YAML，用于复现冻结的历史回归。无论 profile 如何，`overlap_ratio` 都只
+来自任务 YAML；纵向照片重叠由巡检节点的 `image_overlap_ratio` 独立决定。
 
 矩形点选顺序为 A（左下）、B（右上）；等腰梯形为 A（左下）、B（右上）、
 C（右下）。A、C 的高度取平均值修正为水平底边。

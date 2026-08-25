@@ -31,10 +31,3 @@ inspection_camera:
     # from resolution and focal length: 0.550 x 0.309375 m.
     effective_width_m: 0.500
     effective_length_m: 0.28125
-
-  # This is a capture-policy calibration for this payload, rather than an
-  # intrinsic lens property. It lives beside the effective footprint so the
-  # planner, trigger node and archive recorder cannot silently use different
-  # longitudinal overlap values for one inspection mission.
-  capture_policy:
-    nominal_overlap_ratio: 0.25

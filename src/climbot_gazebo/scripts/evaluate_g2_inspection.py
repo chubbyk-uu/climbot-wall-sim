@@ -53,7 +53,7 @@ class G2InspectionEvaluator(Node):
         super().__init__('g2_inspection_evaluator')
         self.declare_parameter('summary_path', '')
         self.declare_parameter('timeout_s', 600.0)
-        self.declare_parameter('nominal_overlap_ratio', 0.25)
+        self.declare_parameter('nominal_overlap_ratio', 0.20)
         self.declare_parameter('minimum_actual_overlap_ratio', 0.20)
         self.declare_parameter('maximum_camera_position_error_m', 0.005)
         self.declare_parameter('maximum_heading_error_deg', 1.0)

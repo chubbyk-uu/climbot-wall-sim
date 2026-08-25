@@ -61,9 +61,9 @@ def test_run_directory_is_unique_per_run_and_stays_under_root(tmp_path):
 def test_expected_images_matches_per_scan_capture_rule():
     # The nominal task estimate reserves enough archive space before dynamic
     # SCAN references exist. It is deliberately not a final capture contract.
-    # effective length 0.28125, overlap 25% => 0.2109375 m spacing. The
-    # first 1 m SCAN estimates five frames; the final 0.6 m SCAN estimates three.
-    assert expected_image_count(task(), 0.28125, 0.25) == 8
+    # effective length 0.28125, overlap 20% => 0.225 m spacing. The first
+    # 1 m SCAN estimates five frames; the final 0.6 m SCAN estimates three.
+    assert expected_image_count(task(), 0.28125, 0.20) == 8
     assert estimated_archive_bytes(8, 1920, 1080) > 8 * 1920 * 1080
 
 

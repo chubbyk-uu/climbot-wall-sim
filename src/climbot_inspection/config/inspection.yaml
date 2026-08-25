@@ -21,9 +21,9 @@ automatic_capture_node:
     image_topic: /inspection/camera/image_raw
     capture_service: /inspection/capture_once
     metadata_topic: /inspection/capture_metadata
-    # 25% nominal leaves trigger/localization margin while G2 acceptance still
-    # requires at least 20% actual longitudinal overlap.
-    image_overlap_ratio: 0.25
+    # Longitudinal photo-trigger policy. It is intentionally independent from
+    # the planner's lateral overlap_ratio; both defaults are 20% for G2.
+    image_overlap_ratio: 0.20
     reference_timeout_s: 0.5
     # Service success is not evidence that its image arrived. Retry the same
     # spatial target if the image transport/QoS path is broken or drops a frame.
@@ -45,4 +45,4 @@ archive_recorder_node:
     output_root: ~/climbot_data
     minimum_free_bytes: 536870912
     pair_timeout_s: 2.0
-    image_overlap_ratio: 0.25
+    image_overlap_ratio: 0.20

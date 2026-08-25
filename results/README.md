@@ -1210,6 +1210,11 @@ tools/run_coverage_regression.sh bigV bigTH         # 只跑指定工况
 tools/run_coverage_regression.sh -k                 # 保留未压缩轨迹
 ```
 
+该脚本显式传入 `inspection_geometry_profile:=configured`，因此历史八工况严格使用各自
+YAML 的冻结检测几何（`0.01 m` 长度、零前向偏移、`20%` 横向重叠），可重生成已归档的
+2026-08-20 基线。实际相机巡检使用标准 launch 的 `calibrated` profile；其物理相机几何
+不得倒灌到历史控制回归。
+
 脚本从新启动的无界面世界执行每个工况，写出 `results/coverage_<工况>_<标签>_*`，
 末尾打印验收汇总表；**任一工况不达标返回退出码 1** 并列出工况名，可直接进 CI。
 八个工况四路并行约 11 分钟，串行约 70 分钟。
@@ -1249,6 +1254,7 @@ ros2 launch climbot_gazebo climbot_wall.launch.py use_sim_time:=true headless:=t
 ros2 launch climbot_coverage coverage_planner.launch.py \
   use_sim_time:=true rviz:=false \
   config_file:="$(pwd)/src/climbot_coverage/config/coverage_horizontal_demo.yaml" \
+  inspection_geometry_profile:=configured \
   input_mode:=parameters region_type:=rectangle sweep_direction:=horizontal
 
 # 终端 3：跟踪器和管理器
@@ -1478,8 +1484,9 @@ ros2 run climbot_gazebo measure_turn_band.py --ros-args \
 | 竖向矩形 | 188.64 mm | 373.31 mm | 99.944% | 4.999 mm | 0.170° |
 | 短顶边梯形 | 190.42 mm | 220.47 mm | 99.815% | 4.116 mm | 0.129° |
 
-有效照片足迹为 `0.500 × 0.28125 m`，名义前后、左右重叠均为 `25%`；正式门限
-要求实际重叠至少 `20%`，即相邻中心间距分别不超过 `0.225 m` 和 `0.400 m`。
+有效照片足迹为 `0.500 × 0.28125 m`。这批历史证据的名义前后、左右重叠为 `25%`；
+当前运行配置已将横向扫描带和纵向拍照重叠拆为两个独立参数，默认均为 `20%`。
+当前策略对应相邻中心间距分别不超过 `0.225 m` 和 `0.400 m`，其 G2 正式证据待重跑。
 评价器以每张实际曝光位置的离散足迹求并集，不用连续扫描带代替照片覆盖率。
 竖向位置误差离 `5 mm` 门限仅约 `0.0008 mm`，结果有效但裕量很窄。
 

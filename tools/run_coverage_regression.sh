@@ -367,6 +367,7 @@ run_lane() {
       setsid ros2 launch climbot_coverage coverage_planner.launch.py \
         use_sim_time:=true rviz:=false \
         config_file:="$WS/src/climbot_coverage/config/$cfg" \
+        inspection_geometry_profile:=configured \
         input_mode:=parameters region_type:="$region" sweep_direction:="$sweep" \
         > "$log/planner.log" 2>&1 &
       lane_remember "$lane" $!

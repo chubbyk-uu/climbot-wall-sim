@@ -29,8 +29,8 @@ coverage_planner:
     # Compatibility field: camera geometry is displayed after route planning,
     # never fed back into the permitted base_link route.
     detection_edge_overlap: 0.0
-    # 25% nominal leaves tracking margin while G2 requires >=20% actual overlap.
-    overlap_ratio: 0.25
+    # Lateral scan-band overlap. Independent from longitudinal image triggering.
+    overlap_ratio: 0.20
     # Default missions report camera coverage but do not add a special return
     # scan. A contract requiring top-edge completion can opt into auto/always.
     top_edge_scan: never

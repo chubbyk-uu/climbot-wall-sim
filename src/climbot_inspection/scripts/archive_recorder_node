@@ -176,7 +176,7 @@ class ArchiveRecorderNode(Node):
         self._width = self._positive_int('expected_width', 1920)
         self._height = self._positive_int('expected_height', 1080)
         self._effective_length = self._positive_float('effective_length_m', 0.28125)
-        self._overlap = float(self.declare_parameter('image_overlap_ratio', 0.25).value)
+        self._overlap = float(self.declare_parameter('image_overlap_ratio', 0.20).value)
         if not math.isfinite(self._overlap) or not 0.0 <= self._overlap < 1.0:
             raise ArchiveError('image_overlap_ratio must be finite and within [0, 1).')
         self._expected_frame = str(self.declare_parameter(

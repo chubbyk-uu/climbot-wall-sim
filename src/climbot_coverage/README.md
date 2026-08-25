@@ -60,11 +60,13 @@ row_spacing = detection_width × (1 - overlap_ratio)
 safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 ```
 
-`detection_width`、`detection_length`、前向偏移和巡检重叠率的标准 launch 权威来源是
+`detection_width`、`detection_length` 和前向偏移的标定权威来源是
 `climbot_description/config/inspection_camera.yaml`；当前值为 `0.500 m`、`0.28125 m`、
-`0.340 m`、`25%`。旧 YAML 中的字面量仅供直接运行规划器的合成回归，标准 launch 会
-覆盖它们。相机外参和检测长度只用于推导黄色覆盖及覆盖率，不得把蓝色机器人端点推出
-橙色任务可走区。真机仍须按实际检测载荷标定。
+`0.340 m`。横向 `overlap_ratio` 是规划任务策略，纵向 `image_overlap_ratio` 是采图策略；
+两者独立配置，当前默认均为 `20%`。标准 launch 默认 `inspection_geometry_profile:=calibrated`
+并注入上述物理相机几何；历史回归显式使用 `configured`，严格复现其 YAML 冻结几何。
+相机外参和检测长度只用于推导黄色覆盖及覆盖率，不得把蓝色机器人端点推出橙色任务可走区。
+真机仍须按实际检测载荷标定。
 
 机器人轮廓和墙面尺寸由 `climbot_description` 注入。规划器只生成直线段和
 路点处原地转向，不生成圆角或切弯。控制器可能在转后偏差较大时执行一次采集关闭的

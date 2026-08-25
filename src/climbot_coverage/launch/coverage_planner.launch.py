@@ -19,11 +19,51 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from climbot_description.wall_frame import reference_grid_spacing
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 import yaml
+
+
+def _planner_node(context, *, footprint, wall_surface, inspection_camera):
+    """Create the planner after resolving its explicit geometry profile."""
+    profile = LaunchConfiguration('inspection_geometry_profile').perform(context)
+    if profile not in ('calibrated', 'configured'):
+        raise RuntimeError(
+            'inspection_geometry_profile must be calibrated or configured.')
+    parameters = {
+        'use_sim_time': LaunchConfiguration('use_sim_time'),
+        'input_mode': LaunchConfiguration('input_mode'),
+        'region_type': LaunchConfiguration('region_type'),
+        'sweep_direction': LaunchConfiguration('sweep_direction'),
+        'robot_length': float(footprint['length_m']),
+        'robot_width': float(footprint['width_m']),
+        'edge_clearance': float(footprint['edge_clearance_m']),
+        'wall_width': float(wall_surface['width_m']),
+        'wall_height': float(wall_surface['height_m']),
+        # Not a launch argument. The wall_grid_spacing argument switches the
+        # grid painted on the wall face in Gazebo, which is the one that ends
+        # up in photographs; this overlay is only ever looked at by a person.
+        'wall_grid_spacing': reference_grid_spacing(),
+    }
+    if profile == 'calibrated':
+        # Physical camera geometry is common to planning and inspection. The
+        # lateral scan overlap is deliberately absent: it is a mission policy,
+        # independent of the longitudinal photo-trigger overlap.
+        parameters.update({
+            'detection_width': float(inspection_camera['footprint']['effective_width_m']),
+            'detection_length': float(inspection_camera['footprint']['effective_length_m']),
+            'detection_forward_offset': float(
+                inspection_camera['optical_mount']['center_xyz_m'][0]),
+        })
+    return [Node(
+        package='climbot_coverage',
+        executable='coverage_planner_node',
+        name='coverage_planner',
+        parameters=[LaunchConfiguration('config_file'), parameters],
+        output='screen',
+    )]
 
 
 def generate_launch_description():
@@ -39,45 +79,6 @@ def generate_launch_description():
         wall_surface = yaml.safe_load(handle)['wall']['surface']
     with open(os.path.join(description_share, 'config', 'inspection_camera.yaml')) as handle:
         inspection_camera = yaml.safe_load(handle)['inspection_camera']
-    inspection_geometry = {
-        # A planner launched through the supported entry point always plans
-        # with the installed camera, not placeholder values left in legacy
-        # demonstration YAML files. Tests that intentionally exercise a
-        # synthetic sensor run the node directly and pass their own values.
-        'detection_width': float(inspection_camera['footprint']['effective_width_m']),
-        'detection_length': float(inspection_camera['footprint']['effective_length_m']),
-        'detection_forward_offset': float(
-            inspection_camera['optical_mount']['center_xyz_m'][0]),
-        'overlap_ratio': float(
-            inspection_camera['capture_policy']['nominal_overlap_ratio']),
-    }
-
-    planner = Node(
-        package='climbot_coverage',
-        executable='coverage_planner_node',
-        name='coverage_planner',
-        parameters=[LaunchConfiguration('config_file'), {
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'input_mode': LaunchConfiguration('input_mode'),
-            'region_type': LaunchConfiguration('region_type'),
-            'sweep_direction': LaunchConfiguration('sweep_direction'),
-            'robot_length': float(footprint['length_m']),
-            'robot_width': float(footprint['width_m']),
-            'edge_clearance': float(footprint['edge_clearance_m']),
-            'wall_width': float(wall_surface['width_m']),
-            'wall_height': float(wall_surface['height_m']),
-            # Not a launch argument. The wall_grid_spacing argument switches
-            # the grid painted on the wall face in Gazebo, which is the one
-            # that ends up in photographs; this overlay is only ever looked at
-            # by a person, and the switch for it is unticking the display in
-            # RViz. Tying the two together would take the operator's grid away
-            # on exactly the runs where they still want it.
-            'wall_grid_spacing': reference_grid_spacing(),
-            **inspection_geometry,
-        }],
-        output='screen',
-    )
-
     rviz = Node(
         package='rviz2',
         executable='rviz2',
@@ -94,6 +95,16 @@ def generate_launch_description():
         DeclareLaunchArgument('input_mode', default_value='parameters'),
         DeclareLaunchArgument('region_type', default_value='rectangle'),
         DeclareLaunchArgument('sweep_direction', default_value='horizontal'),
-        planner,
+        DeclareLaunchArgument(
+            'inspection_geometry_profile', default_value='calibrated',
+            description=(
+                'calibrated uses shared camera geometry; configured preserves '
+                'YAML geometry.'),
+        ),
+        OpaqueFunction(function=_planner_node, kwargs={
+            'footprint': footprint,
+            'wall_surface': wall_surface,
+            'inspection_camera': inspection_camera,
+        }),
         rviz,
     ])
