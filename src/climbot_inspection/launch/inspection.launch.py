@@ -47,6 +47,8 @@ def generate_launch_description():
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('config_file', default_value=default_config),
         DeclareLaunchArgument('flat_field_file', default_value=''),
+        DeclareLaunchArgument('archive_recorder', default_value='true'),
+        DeclareLaunchArgument('inspection_output_root', default_value='~/climbot_data'),
         Node(
             package='climbot_inspection',
             executable='capture_once_node',
@@ -77,6 +79,18 @@ def generate_launch_description():
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
             }],
             condition=IfCondition(LaunchConfiguration('automatic_capture')),
+            output='screen',
+        ),
+        Node(
+            package='climbot_inspection',
+            executable='archive_recorder_node',
+            name='archive_recorder_node',
+            parameters=[LaunchConfiguration('config_file'), geometry, {
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+                'output_root': LaunchConfiguration('inspection_output_root'),
+                'flat_field_file': LaunchConfiguration('flat_field_file'),
+            }],
+            condition=IfCondition(LaunchConfiguration('archive_recorder')),
             output='screen',
         ),
     ])

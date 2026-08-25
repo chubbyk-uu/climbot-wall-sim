@@ -1,0 +1,11 @@
+# Creates one unique, preflighted archive for the immutable task snapshot.
+# output_root is interpreted on the recorder host, not the RViz host.
+CoverageTask task
+string output_root
+---
+bool success
+string run_id
+string task_directory
+uint32 expected_images
+uint64 estimated_bytes
+string message

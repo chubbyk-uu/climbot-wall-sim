@@ -27,6 +27,7 @@ install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 install(PROGRAMS
   scripts/calibrate_flat_field
   scripts/flat_field_node
+  scripts/archive_recorder_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
@@ -36,6 +37,8 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(test_flat_field test/test_flat_field.py)
+  ament_add_pytest_test(test_archive_core test/test_archive_core.py)
+  add_launch_test(test/test_archive_recorder_node.py TIMEOUT 45 ENV ROS_DOMAIN_ID=93)
   add_launch_test(test/test_capture_once_node.py TIMEOUT 45 ENV ROS_DOMAIN_ID=91)
   add_launch_test(test/test_automatic_capture_node.py TIMEOUT 45 ENV ROS_DOMAIN_ID=92)
 endif()

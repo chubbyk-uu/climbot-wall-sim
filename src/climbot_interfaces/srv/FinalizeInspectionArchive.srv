@@ -1,0 +1,11 @@
+# Finalizes the active archive without deleting already committed frame pairs.
+uint8 COMPLETED=1
+uint8 CANCELED=2
+uint8 FAILED=3
+
+string run_id
+uint8 outcome
+string message
+---
+bool success
+string message

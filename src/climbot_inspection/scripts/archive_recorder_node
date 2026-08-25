@@ -1,0 +1,582 @@
+#!/usr/bin/env python3
+# Copyright 2026 jerry
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""G4 recorder for raw mono8 frames and their frozen exposure labels."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+import json
+import math
+from pathlib import Path
+import shutil
+import subprocess
+import time
+from typing import Any
+
+from ament_index_python.packages import get_package_share_directory
+import cv2
+import numpy
+import rclpy
+from rclpy.executors import ExternalShutdownException
+from rclpy.node import Node
+from sensor_msgs.msg import CameraInfo, Image
+import yaml
+
+from climbot_interfaces.msg import InspectionArchiveStatus, InspectionCapture
+from climbot_interfaces.srv import FinalizeInspectionArchive, PrepareInspectionArchive
+from climbot_inspection.archive_core import (
+    ArchiveError,
+    atomic_write_bytes,
+    atomic_write_json,
+    estimated_archive_bytes,
+    expected_image_count,
+    new_run_id,
+    resolved_output_root,
+    run_directory,
+    safe_task_id,
+    sha256_bytes,
+    sha256_file,
+)
+
+
+def stamp_key(header) -> int:
+    return int(header.stamp.sec) * 1_000_000_000 + int(header.stamp.nanosec)
+
+
+def finite(value: float, name: str) -> float:
+    value = float(value)
+    if not math.isfinite(value):
+        raise ArchiveError(f"{name} must be finite.")
+    return value
+
+
+def point_dict(point) -> dict[str, float]:
+    return {"x": finite(point.x, "point.x"), "y": finite(point.y, "point.y"),
+            "z": finite(point.z, "point.z")}
+
+
+def quaternion_dict(quaternion) -> dict[str, float]:
+    return {"x": finite(quaternion.x, "orientation.x"),
+            "y": finite(quaternion.y, "orientation.y"),
+            "z": finite(quaternion.z, "orientation.z"),
+            "w": finite(quaternion.w, "orientation.w")}
+
+
+def pose_dict(pose) -> dict[str, Any]:
+    return {"position": point_dict(pose.position), "orientation": quaternion_dict(pose.orientation)}
+
+
+def header_dict(header) -> dict[str, Any]:
+    return {"stamp_ns": stamp_key(header), "frame_id": header.frame_id}
+
+
+def task_dict(task) -> dict[str, Any]:
+    return {
+        "header": header_dict(task.header),
+        "task_id": task.task_id,
+        "revision": int(task.revision),
+        "sweep_direction": int(task.sweep_direction),
+        "waypoints": [pose_dict(item) for item in task.waypoints],
+        "segment_types": [int(item) for item in task.segment_types],
+        "coverage_region": [point_dict(item) for item in task.coverage_region.points],
+        "motion_region": [point_dict(item) for item in task.motion_region.points],
+        "detection_width_m": finite(task.detection_width, "detection_width"),
+        "detection_length_m": finite(task.detection_length, "detection_length"),
+        "detection_forward_offset_m": finite(
+            task.detection_forward_offset, "detection_forward_offset"),
+    }
+
+
+def camera_info_dict(message: CameraInfo) -> dict[str, Any]:
+    values = list(message.k) + list(message.d) + list(message.r) + list(message.p)
+    if not all(math.isfinite(float(value)) for value in values):
+        raise ArchiveError("CameraInfo contains a non-finite intrinsic or distortion value.")
+    return {
+        "header": header_dict(message.header),
+        "width": int(message.width), "height": int(message.height),
+        "distortion_model": message.distortion_model,
+        "k": [float(value) for value in message.k],
+        "d": [float(value) for value in message.d],
+        "r": [float(value) for value in message.r],
+        "p": [float(value) for value in message.p],
+        "binning_x": int(message.binning_x), "binning_y": int(message.binning_y),
+        "roi": {
+            "x_offset": int(message.roi.x_offset), "y_offset": int(message.roi.y_offset),
+            "height": int(message.roi.height), "width": int(message.roi.width),
+            "do_rectify": bool(message.roi.do_rectify),
+        },
+    }
+
+
+def capture_dict(message: InspectionCapture) -> dict[str, Any]:
+    covariance = [finite(value, "camera_pose.covariance") for value in message.camera_pose.covariance]
+    return {
+        "header": header_dict(message.header),
+        "task_id": message.task_id,
+        "revision": int(message.revision),
+        "segment_index": int(message.segment_index),
+        "trigger_index": int(message.trigger_index),
+        "target_along_track_m": finite(message.target_along_track, "target_along_track"),
+        "actual_along_track_m": finite(message.actual_along_track, "actual_along_track"),
+        "camera_pose": {"pose": pose_dict(message.camera_pose.pose), "covariance": covariance},
+        "wall_heading_rad": finite(message.wall_heading_rad, "wall_heading_rad"),
+        "reference_start": point_dict(message.reference_start),
+        "reference_end": point_dict(message.reference_end),
+    }
+
+
+@dataclass
+class Session:
+    task: Any
+    task_snapshot: dict[str, Any]
+    root: Path
+    directory: Path
+    run_id: str
+    expected_images: int
+    estimated_bytes: int
+    started_utc: str
+    saved_images: int = 0
+    failed_images: int = 0
+    state: int = InspectionArchiveStatus.READY
+    message: str = "Archive prepared; waiting for the first SCAN exposure."
+    keys: set[tuple[str, int, int, int]] = field(default_factory=set)
+    failures: list[str] = field(default_factory=list)
+    camera_snapshot: dict[str, Any] | None = None
+
+
+class ArchiveRecorderNode(Node):
+    """Writes only G4 canonical raw images; compensated previews never enter here."""
+
+    def __init__(self) -> None:
+        super().__init__('archive_recorder_node')
+        self._width = self._positive_int('expected_width', 1920)
+        self._height = self._positive_int('expected_height', 1080)
+        self._effective_length = self._positive_float('effective_length_m', 0.28125)
+        self._overlap = float(self.declare_parameter('image_overlap_ratio', 0.25).value)
+        if not math.isfinite(self._overlap) or not 0.0 <= self._overlap < 1.0:
+            raise ArchiveError('image_overlap_ratio must be finite and within [0, 1).')
+        self._expected_frame = str(self.declare_parameter(
+            'expected_frame_id', 'inspection_camera_optical_frame').value)
+        self._default_root = str(self.declare_parameter(
+            'output_root', '~/climbot_data').value)
+        self._minimum_free_bytes = self._positive_int('minimum_free_bytes', 536_870_912)
+        self._pending_timeout_s = self._positive_float('pair_timeout_s', 2.0)
+        self._camera_config_file = str(self.declare_parameter(
+            'camera_config_file', str(Path(get_package_share_directory(
+                'climbot_description')) / 'config' / 'inspection_camera.yaml')).value)
+        self._flat_field_file = str(self.declare_parameter('flat_field_file', '').value)
+
+        image_topic = str(self.declare_parameter(
+            'image_topic', '/inspection/camera/image_raw').value)
+        info_topic = str(self.declare_parameter(
+            'camera_info_topic', '/inspection/camera/camera_info').value)
+        metadata_topic = str(self.declare_parameter(
+            'metadata_topic', '/inspection/capture_metadata').value)
+        status_topic = str(self.declare_parameter(
+            'status_topic', '/inspection/archive/status').value)
+        self._images: dict[int, tuple[float, Image]] = {}
+        self._infos: dict[int, tuple[float, CameraInfo]] = {}
+        self._metadata: dict[int, tuple[float, InspectionCapture]] = {}
+        self._session: Session | None = None
+        self._status_pub = self.create_publisher(InspectionArchiveStatus, status_topic, 1)
+        self.create_subscription(Image, image_topic, self._on_image, 10)
+        self.create_subscription(CameraInfo, info_topic, self._on_info, 10)
+        self.create_subscription(InspectionCapture, metadata_topic, self._on_metadata, 10)
+        self.create_service(PrepareInspectionArchive, '/inspection/archive/prepare', self._prepare)
+        self.create_service(FinalizeInspectionArchive, '/inspection/archive/finalize', self._finalize)
+        self.create_timer(0.2, self._expire_pending)
+        self._publish_idle('Idle: waiting for archive preparation.')
+
+    def _positive_float(self, name: str, default: float) -> float:
+        value = float(self.declare_parameter(name, default).value)
+        if not math.isfinite(value) or value <= 0.0:
+            raise ArchiveError(f'{name} must be positive and finite.')
+        return value
+
+    def _positive_int(self, name: str, default: int) -> int:
+        value = int(self.declare_parameter(name, default).value)
+        if value <= 0:
+            raise ArchiveError(f'{name} must be positive.')
+        return value
+
+    def _publish_idle(self, message: str) -> None:
+        status = InspectionArchiveStatus()
+        status.header.stamp = self.get_clock().now().to_msg()
+        status.state = InspectionArchiveStatus.IDLE
+        status.message = message
+        self._status_pub.publish(status)
+
+    def _publish(self) -> None:
+        if self._session is None:
+            self._publish_idle('Idle: no archive is active.')
+            return
+        session = self._session
+        status = InspectionArchiveStatus()
+        status.header.stamp = self.get_clock().now().to_msg()
+        status.state = session.state
+        status.inspection_enabled = True
+        status.task_id = session.task.task_id
+        status.revision = session.task.revision
+        status.run_id = session.run_id
+        status.task_directory = str(session.directory)
+        status.expected_images = session.expected_images
+        status.saved_images = session.saved_images
+        status.failed_images = session.failed_images
+        status.estimated_bytes = session.estimated_bytes
+        status.message = session.message
+        self._status_pub.publish(status)
+
+    def _preflight_root(self, root: Path, required_bytes: int) -> None:
+        root.mkdir(parents=True, exist_ok=True)
+        if not root.is_dir():
+            raise ArchiveError('output_root is not a directory.')
+        probe = root / f'.climbot_archive_probe_{new_run_id()}'
+        try:
+            with probe.open('xb') as stream:
+                stream.write(b'climbot archive writable probe\n')
+                stream.flush()
+            probe.unlink()
+        except OSError as error:
+            probe.unlink(missing_ok=True)
+            raise ArchiveError(f'output_root is not writable: {error}') from error
+        available = shutil.disk_usage(root).free
+        if available < required_bytes + self._minimum_free_bytes:
+            raise ArchiveError(
+                f'insufficient free space: need at least {required_bytes + self._minimum_free_bytes} '
+                f'bytes including reserve, have {available}.')
+
+    def _git_commit(self) -> str:
+        try:
+            output = subprocess.run(
+                ['git', 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True,
+                timeout=2.0).stdout.strip()
+            return output if output else 'unknown'
+        except (OSError, subprocess.SubprocessError):
+            return 'unknown'
+
+    def _manifest(self, session: Session, outcome: str | None = None) -> dict[str, Any]:
+        return {
+            'archive_format_version': 1,
+            'task': session.task_snapshot,
+            'run_id': session.run_id,
+            'started_utc': session.started_utc,
+            'finished_utc': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ') if outcome else None,
+            'outcome': outcome or 'recording',
+            'expected_images': session.expected_images,
+            'saved_images': session.saved_images,
+            'failed_images': session.failed_images,
+            'estimated_bytes': session.estimated_bytes,
+            'failures': session.failures,
+            'software_git_commit': self._git_commit(),
+            'canonical_image': {
+                'encoding': 'mono8', 'format': 'png', 'distorted': True,
+                'illumination_compensated': False,
+            },
+        }
+
+    def _write_manifest(self, session: Session, outcome: str | None = None) -> None:
+        atomic_write_json(session.directory / 'manifest.json', self._manifest(session, outcome))
+
+    def _write_calibration_manifest(self, session: Session) -> None:
+        calibration = session.directory / 'calibration'
+        source = Path(self._camera_config_file).expanduser()
+        if not source.is_file():
+            raise ArchiveError(f'camera_config_file does not exist: {source}')
+        try:
+            config = yaml.safe_load(source.read_text(encoding='utf-8'))
+            optical_mount = config['inspection_camera']['optical_mount']
+        except (OSError, KeyError, TypeError, yaml.YAMLError) as error:
+            raise ArchiveError(f'camera_config_file is not a valid inspection camera config: {error}') from error
+        calibration.mkdir(parents=True, exist_ok=False)
+        atomic_write_bytes(
+            calibration / 'camera_extrinsics.yaml',
+            yaml.safe_dump({'optical_mount': optical_mount, 'source_sha256': sha256_file(source)},
+                           allow_unicode=True, sort_keys=True).encode('utf-8'))
+        flat = Path(self._flat_field_file).expanduser() if self._flat_field_file else None
+        reference: dict[str, Any] = {'available': False}
+        if flat is not None:
+            if not flat.is_file():
+                raise ArchiveError(f'flat_field_file does not exist: {flat}')
+            reference = {'available': True, 'file_sha256': sha256_file(flat), 'file_name': flat.name}
+        atomic_write_json(calibration / 'flat_field_reference.json', reference)
+
+    def _prepare(self, request, response):
+        if self._session is not None and self._session.state in {
+                InspectionArchiveStatus.READY, InspectionArchiveStatus.RECORDING,
+                InspectionArchiveStatus.FINALIZING}:
+            response.success = False
+            response.message = 'Another inspection archive is already active.'
+            return response
+        try:
+            safe_task_id(request.task.task_id)
+            snapshot = task_dict(request.task)
+            root = resolved_output_root(request.output_root or self._default_root)
+            expected = expected_image_count(request.task, self._effective_length, self._overlap)
+            if expected <= 0:
+                raise ArchiveError('task has no SCAN exposure positions to archive.')
+            estimate = estimated_archive_bytes(expected, self._width, self._height)
+            self._preflight_root(root, estimate)
+            started = datetime.now(timezone.utc)
+            run_id = new_run_id()
+            directory = run_directory(
+                root, request.task.task_id, int(request.task.revision),
+                started.strftime('%Y%m%dT%H%M%SZ'), run_id)
+            # `root` is preflighted above; the safe task-id component is the
+            # only new parent and the run-id leaf must still be unique.
+            directory.mkdir(parents=True, exist_ok=False)
+            session = Session(
+                task=request.task, task_snapshot=snapshot, root=root, directory=directory,
+                run_id=run_id, expected_images=expected, estimated_bytes=estimate,
+                started_utc=started.strftime('%Y-%m-%dT%H:%M:%SZ'))
+            self._write_calibration_manifest(session)
+            self._write_manifest(session)
+            self._images.clear()
+            self._infos.clear()
+            self._metadata.clear()
+            self._session = session
+            self._publish()
+            response.success = True
+            response.run_id = run_id
+            response.task_directory = str(directory)
+            response.expected_images = expected
+            response.estimated_bytes = estimate
+            response.message = session.message
+        except (ArchiveError, OSError, ValueError) as error:
+            response.success = False
+            response.message = f'Archive preparation failed: {error}'
+            self.get_logger().error(response.message)
+        return response
+
+    def _finalize(self, request, response):
+        session = self._session
+        if session is None or request.run_id != session.run_id:
+            response.success = False
+            response.message = 'No active archive matches run_id.'
+            return response
+        outcomes = {
+            FinalizeInspectionArchive.Request.COMPLETED: ('completed', InspectionArchiveStatus.COMPLETED),
+            FinalizeInspectionArchive.Request.CANCELED: ('canceled', InspectionArchiveStatus.CANCELED),
+            FinalizeInspectionArchive.Request.FAILED: ('failed', InspectionArchiveStatus.FAILED),
+        }
+        if request.outcome not in outcomes:
+            response.success = False
+            response.message = 'Unknown archive finalization outcome.'
+            return response
+        name, state = outcomes[request.outcome]
+        self._expire_pending(force=True)
+        if name == 'completed' and session.saved_images != session.expected_images:
+            session.failed_images += abs(session.expected_images - session.saved_images)
+            session.failures.append(
+                f'completed motion reported {session.saved_images}/{session.expected_images} archived images.')
+            name, state = 'failed', InspectionArchiveStatus.FAILED
+        if request.message:
+            session.failures.append(request.message)
+        session.state = InspectionArchiveStatus.FINALIZING
+        session.message = 'Finalizing archive manifest.'
+        self._publish()
+        try:
+            self._write_manifest(session, name)
+            session.state = state
+            session.message = f'Archive {name}: {session.saved_images}/{session.expected_images} images committed.'
+            self._publish()
+            response.success = state != InspectionArchiveStatus.FAILED or request.outcome == \
+                FinalizeInspectionArchive.Request.FAILED
+            response.message = session.message
+        except (ArchiveError, OSError, ValueError) as error:
+            session.state = InspectionArchiveStatus.FAILED
+            session.message = f'Archive finalization failed: {error}'
+            self._publish()
+            response.success = False
+            response.message = session.message
+        return response
+
+    def _on_image(self, message: Image) -> None:
+        if self._session is None or self._session.state not in {
+                InspectionArchiveStatus.READY, InspectionArchiveStatus.RECORDING}:
+            return
+        self._images[stamp_key(message.header)] = (time.monotonic(), message)
+        self._match(stamp_key(message.header))
+
+    def _on_info(self, message: CameraInfo) -> None:
+        if self._session is None or self._session.state not in {
+                InspectionArchiveStatus.READY, InspectionArchiveStatus.RECORDING}:
+            return
+        self._infos[stamp_key(message.header)] = (time.monotonic(), message)
+        self._match(stamp_key(message.header))
+
+    def _on_metadata(self, message: InspectionCapture) -> None:
+        if self._session is None or self._session.state not in {
+                InspectionArchiveStatus.READY, InspectionArchiveStatus.RECORDING}:
+            return
+        self._metadata[stamp_key(message.header)] = (time.monotonic(), message)
+        self._match(stamp_key(message.header))
+
+    def _image_array(self, image: Image) -> numpy.ndarray:
+        if image.encoding != 'mono8':
+            raise ArchiveError(f'raw image encoding must be mono8, got {image.encoding!r}.')
+        if image.width != self._width or image.height != self._height:
+            raise ArchiveError(
+                f'raw image dimensions must be {self._width}x{self._height}, got '
+                f'{image.width}x{image.height}.')
+        if image.header.frame_id != self._expected_frame:
+            raise ArchiveError(f'raw image frame_id must be {self._expected_frame!r}.')
+        if image.step < image.width or len(image.data) < image.step * image.height:
+            raise ArchiveError('raw image data length/step is inconsistent.')
+        rows = numpy.frombuffer(bytes(image.data), dtype=numpy.uint8).reshape(image.height, image.step)
+        return rows[:, :image.width].copy()
+
+    def _validate_pair(self, image: Image, info: CameraInfo, metadata: InspectionCapture) -> tuple[str, int, int, int]:
+        session = self._session
+        assert session is not None
+        if stamp_key(image.header) != stamp_key(info.header) or stamp_key(image.header) != stamp_key(metadata.header):
+            raise ArchiveError('image, CameraInfo and capture metadata timestamps differ.')
+        if image.header.frame_id != info.header.frame_id or image.header.frame_id != metadata.header.frame_id:
+            raise ArchiveError('image, CameraInfo and capture metadata frame_id values differ.')
+        if info.width != image.width or info.height != image.height:
+            raise ArchiveError('CameraInfo dimensions differ from the raw image.')
+        if metadata.task_id != session.task.task_id or metadata.revision != session.task.revision:
+            raise ArchiveError('capture metadata belongs to a different task or revision.')
+        if metadata.segment_index < 0 or metadata.trigger_index < 0:
+            raise ArchiveError('capture metadata has an invalid segment or trigger index.')
+        key = (metadata.task_id, int(metadata.revision), int(metadata.segment_index), int(metadata.trigger_index))
+        if key in session.keys:
+            raise ArchiveError(f'duplicate capture business key {key}.')
+        return key
+
+    def _write_camera_info_once(self, session: Session, info: CameraInfo) -> None:
+        snapshot = camera_info_dict(info)
+        snapshot['header'].pop('stamp_ns')
+        if session.camera_snapshot is None:
+            session.camera_snapshot = snapshot
+            atomic_write_bytes(
+                session.directory / 'calibration' / 'camera_info.yaml',
+                yaml.safe_dump(snapshot, allow_unicode=True, sort_keys=True).encode('utf-8'))
+        elif snapshot != session.camera_snapshot:
+            raise ArchiveError('CameraInfo changed during one immutable archive.')
+
+    def _persist(self, image: Image, info: CameraInfo, metadata: InspectionCapture) -> None:
+        session = self._session
+        assert session is not None
+        key = self._validate_pair(image, info, metadata)
+        pixels = self._image_array(image)
+        self._write_camera_info_once(session, info)
+        encoded_ok, encoded = cv2.imencode('.png', pixels)
+        if not encoded_ok:
+            raise ArchiveError('OpenCV could not encode raw mono8 PNG.')
+        image_bytes = bytes(encoded)
+        digest = sha256_bytes(image_bytes)
+        index = session.saved_images
+        image_name = f'{index:06d}.png'
+        metadata_name = f'{index:06d}.json'
+        label = capture_dict(metadata)
+        label.update({
+            'archive_schema_version': 1,
+            'image_file': f'images/raw/{image_name}',
+            'image_sha256': digest,
+            'image_width': int(image.width), 'image_height': int(image.height),
+            'image_encoding': image.encoding,
+        })
+        image_path = session.directory / 'images' / 'raw' / image_name
+        label_path = session.directory / 'metadata' / metadata_name
+        atomic_write_bytes(image_path, image_bytes)
+        try:
+            atomic_write_json(label_path, label)
+        except Exception:
+            image_path.unlink(missing_ok=True)
+            raise
+        if sha256_file(image_path) != digest:
+            image_path.unlink(missing_ok=True)
+            label_path.unlink(missing_ok=True)
+            raise ArchiveError('raw PNG SHA-256 changed after atomic write.')
+        session.keys.add(key)
+        session.saved_images += 1
+        session.state = InspectionArchiveStatus.RECORDING
+        session.message = f'Recording: committed {session.saved_images}/{session.expected_images} images.'
+        self._write_manifest(session)
+        self._publish()
+
+    def _match(self, key: int) -> None:
+        if key not in self._images or key not in self._infos or key not in self._metadata:
+            return
+        _, image = self._images.pop(key)
+        _, info = self._infos.pop(key)
+        _, metadata = self._metadata.pop(key)
+        try:
+            self._persist(image, info, metadata)
+        except (ArchiveError, OSError, ValueError, cv2.error) as error:
+            self._record_failure(f'Capture at stamp {key} was rejected: {error}')
+
+    def _expire_pending(self, force: bool = False) -> None:
+        if self._session is None or self._session.state not in {
+                InspectionArchiveStatus.READY, InspectionArchiveStatus.RECORDING}:
+            return
+        now = time.monotonic()
+        keys = set(self._images) | set(self._infos) | set(self._metadata)
+        for key in sorted(keys):
+            ages = [
+                entry[0] for entries in (self._images, self._infos, self._metadata)
+                if (entry := entries.get(key)) is not None]
+            if not ages or not force and now - min(ages) < self._pending_timeout_s:
+                continue
+            present = ', '.join(name for name, entries in (
+                ('image', self._images), ('CameraInfo', self._infos), ('metadata', self._metadata))
+                if key in entries)
+            self._images.pop(key, None)
+            self._infos.pop(key, None)
+            self._metadata.pop(key, None)
+            self._record_failure(
+                f'Exposure stamp {key} timed out waiting for a complete image/CameraInfo/metadata '
+                f'triple; received: {present}.')
+            break
+
+    def _record_failure(self, reason: str) -> None:
+        session = self._session
+        if session is None:
+            return
+        session.failed_images += 1
+        session.failures.append(reason)
+        session.state = InspectionArchiveStatus.FAILED
+        session.message = f'Archive failed: {reason}'
+        try:
+            self._write_manifest(session, 'failed')
+        except (ArchiveError, OSError, ValueError) as error:
+            session.message += f' Manifest update also failed: {error}'
+        self.get_logger().error(session.message)
+        self._publish()
+
+
+def main() -> int:
+    rclpy.init()
+    node = None
+    try:
+        node = ArchiveRecorderNode()
+        rclpy.spin(node)
+        return 0
+    except (KeyboardInterrupt, ExternalShutdownException):
+        return 0
+    except Exception as error:  # noqa: BLE001 - node startup must fail loudly.
+        rclpy.logging.get_logger('archive_recorder_node').fatal(f'Node failed: {error}')
+        return 1
+    finally:
+        if node is not None:
+            node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

@@ -1,0 +1,9 @@
+# Starts the cached coverage task with immutable task-level capture options.
+# An empty output_root means the manager's configured default root.
+bool inspection_enabled
+string output_root
+---
+bool success
+string run_id
+string task_directory
+string message

@@ -1,5 +1,10 @@
 # Goal: a fully validated, immutable CoverageTask.
 CoverageTask task
+# A task-level decision made by the manager before Goal dispatch. It is not a
+# geometry property of CoverageTask: the same preview may be run as motion-only
+# or as a formally archived inspection. The executor freezes this value for the
+# complete Goal and only enables SCAN references when it is true.
+bool inspection_enabled
 ---
 # Result codes.
 uint16 SUCCESS=0

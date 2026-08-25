@@ -27,3 +27,19 @@ automatic_capture_node:
     reference_timeout_s: 0.5
     pose_wait_timeout_s: 0.5
     pose_cache_duration_s: 3.0
+
+archive_recorder_node:
+  ros__parameters:
+    image_topic: /inspection/camera/image_raw
+    camera_info_topic: /inspection/camera/camera_info
+    metadata_topic: /inspection/capture_metadata
+    status_topic: /inspection/archive/status
+    expected_frame_id: inspection_camera_optical_frame
+    expected_width: 1920
+    expected_height: 1080
+    # This is a reserve in addition to the conservative per-task estimate.
+    # The root is interpreted on this node's host, not necessarily RViz's host.
+    output_root: ~/climbot_data
+    minimum_free_bytes: 536870912
+    pair_timeout_s: 2.0
+    image_overlap_ratio: 0.25
