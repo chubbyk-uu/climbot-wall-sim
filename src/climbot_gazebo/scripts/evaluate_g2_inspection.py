@@ -54,7 +54,10 @@ class G2InspectionEvaluator(Node):
         self.declare_parameter('summary_path', '')
         self.declare_parameter('timeout_s', 600.0)
         self.declare_parameter('nominal_overlap_ratio', 0.20)
-        self.declare_parameter('minimum_actual_overlap_ratio', 0.20)
+        # 20% is the nominal planning/capture policy.  A 15% measured lower
+        # bound keeps the same physical tolerance as the former 25% nominal /
+        # 20% actual contract: 25 mm laterally and 14.0625 mm along-track.
+        self.declare_parameter('minimum_actual_overlap_ratio', 0.15)
         self.declare_parameter('maximum_camera_position_error_m', 0.005)
         self.declare_parameter('maximum_heading_error_deg', 1.0)
         # The normal task drive region is a safety constraint, not an implied
