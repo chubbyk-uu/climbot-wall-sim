@@ -196,7 +196,9 @@ private:
     latest_reference_time_ = std::chrono::steady_clock::now();
     if (!message->inspection_enabled || message->segment_index < 0) {
       reference_.reset();
-      publishInactiveGate("no active inspection SCAN reference");
+      publishInactiveGate(
+        Key{message->task_id, message->revision, message->segment_index},
+        "no active inspection SCAN reference");
       return;
     }
     const double dx = message->end.x - message->start.x;
@@ -205,7 +207,9 @@ private:
     if (!std::isfinite(length) || length <= 1e-6) {
       RCLCPP_ERROR(get_logger(), "Rejected zero or non-finite execution reference.");
       reference_.reset();
-      publishInactiveGate("invalid execution reference");
+      publishInactiveGate(
+        Key{message->task_id, message->revision, message->segment_index},
+        "invalid execution reference");
       return;
     }
     if (!std::isfinite(message->detection_forward_offset) ||
@@ -215,7 +219,13 @@ private:
         get_logger(), *get_clock(), 5000,
         "Task detection_forward_offset does not match the camera mount; automatic capture disabled.");
       reference_.reset();
-      publishInactiveGate("camera mount does not match execution reference");
+      // Deliberately no gate at all, active or inactive. An inactive gate means
+      // "nothing to wait for, drive on", and this SCAN is the opposite: the
+      // mismatch is a configuration fault that cannot resolve while the task
+      // runs, so every exposure on this line would be missed. Withholding the
+      // heartbeat is what states that: the tracker's gate supervision then
+      // stops the SCAN in capture_gate_start_timeout_s instead of driving the
+      // whole line and discovering the empty archive at finalization.
       return;
     }
     const Key key{message->task_id, message->revision, message->segment_index};
@@ -469,7 +479,7 @@ private:
         "No EKF interpolation bracket arrived for an inspection image; segment disabled.");
       disabled_key_ = key_;
       pending_.reset();
-      publishInactiveGate("inspection segment disabled after EKF interpolation timeout");
+      publishInactiveGate(key_, "inspection segment disabled after EKF interpolation timeout");
     }
   }
 
@@ -492,11 +502,11 @@ private:
   void publishGateForNextTarget()
   {
     if (!reference_ || !key_) {
-      publishInactiveGate("no active inspection SCAN reference");
+      publishInactiveGate(key_, "no active inspection SCAN reference");
       return;
     }
     if (disabled_key_ && *disabled_key_ == *key_) {
-      publishInactiveGate("inspection segment disabled");
+      publishInactiveGate(key_, "inspection segment disabled");
       return;
     }
     // A service response or its frame may still be outstanding.  References are
@@ -507,7 +517,7 @@ private:
       return;
     }
     if (next_trigger_ >= trigger_count_) {
-      publishInactiveGate("all captures for frozen SCAN reference are complete");
+      publishInactiveGate(key_, "all captures for frozen SCAN reference are complete");
       return;
     }
     publishGate(
@@ -515,14 +525,21 @@ private:
       "waiting for next inspection capture");
   }
 
-  void publishInactiveGate(const std::string & reason)
+  /// Release the barrier for one identified SCAN.
+  ///
+  /// The identity is a parameter rather than key_ because the early returns in
+  /// onReference() run before key_ has been updated for the message in hand:
+  /// publishing under key_ there announces the release of whichever SCAN ran
+  /// previously, and the tracker - which matches task/revision/segment before
+  /// honouring a gate - then keeps holding the one it is actually driving.
+  void publishInactiveGate(const std::optional<Key> & identity, const std::string & reason)
   {
     CaptureGate gate;
     gate.header.stamp = now();
-    if (key_) {
-      gate.task_id = key_->task_id;
-      gate.revision = key_->revision;
-      gate.segment_index = key_->segment;
+    if (identity) {
+      gate.task_id = identity->task_id;
+      gate.revision = identity->revision;
+      gate.segment_index = identity->segment;
     }
     gate.active = false;
     gate.reason = reason;

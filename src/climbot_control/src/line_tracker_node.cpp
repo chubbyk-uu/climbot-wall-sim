@@ -814,6 +814,7 @@ private:
     travel_start_ = current_time;
     travel_stretch_credit_ = 0.0;
     time_along_integral_ = 0.0;
+    time_along_integral_candidate_ = 0.0;
     schedule_lag_ = 0.0;
     const double dx = end_.x - start_.x;
     const double dy = end_.y - start_.y;
@@ -855,7 +856,17 @@ private:
       travel_stretch_credit_ += dt;
     }
 
+    // Proposed rather than applied, and committed by commitTimeAlongIntegral()
+    // once the capture gate has had its say. The gate can hold the robot on a
+    // scan line for as long as an exposure takes to resolve, and every one of
+    // those cycles is a cycle whose lag the linear channel was not permitted
+    // to work off. Integrating them is the definition of windup: the anti-
+    // windup test below cannot see it, because a gated hold looks exactly like
+    // a robot that is at the floor because it is behind - at_floor is true and
+    // schedule_lag_ is positive, so would_wind_up is false and the term grows.
+    // Same candidate/commit shape the cross-track integral already uses.
     double integral_term = 0.0;
+    time_along_integral_candidate_ = time_along_integral_;
     if (time_along_integral_gain_ > 0.0) {
       const bool at_ceiling = previous_command_.linear >= catch_up_max_linear_speed_ - 1e-9;
       const bool at_floor = previous_command_.linear <= 1e-9;
@@ -863,10 +874,10 @@ private:
         (at_floor && schedule_lag_ < 0.0);
       if (!would_wind_up) {
         const double bound = time_along_integral_limit_ / time_along_integral_gain_;
-        time_along_integral_ = std::clamp(
+        time_along_integral_candidate_ = std::clamp(
           time_along_integral_ + schedule_lag_ * dt, -bound, bound);
       }
-      integral_term = time_along_integral_gain_ * time_along_integral_;
+      integral_term = time_along_integral_gain_ * time_along_integral_candidate_;
     }
 
     // Acceleration feedforward. The plant reaches a commanded speed only after
@@ -882,6 +893,12 @@ private:
       std::clamp(
         raw, 0.0, catch_up_max_linear_speed_),
       command.cross, command.heading_error, limits_);
+  }
+
+  /// Accept the integral timeReferenceSpeed() proposed for this cycle.
+  void commitTimeAlongIntegral()
+  {
+    time_along_integral_ = time_along_integral_candidate_;
   }
 
   double linearAccelerationLimit() const
@@ -1336,6 +1353,24 @@ private:
     return CaptureGateHealth::WAITING_FOR_FIRST_GATE;
   }
 
+  /// What the capture side last said about the barrier, for an operator.
+  ///
+  /// The gate carries a reason precisely so the constraint can explain itself,
+  /// and every message this node emitted about the gate used to discard it. The
+  /// last gate is reported whether or not it matches the running SCAN: a gate
+  /// stamped with another segment is itself the diagnosis, and it is the case
+  /// an operator has the least chance of working out from the topic alone.
+  std::string captureGateReasonSuffix() const
+  {
+    if (!capture_gate_ || capture_gate_->reason.empty()) {
+      return {};
+    }
+    std::ostringstream suffix;
+    suffix << " Last capture gate (segment " << capture_gate_->segment_index << ", " <<
+      (capture_gate_->active ? "active" : "inactive") << "): " << capture_gate_->reason;
+    return suffix.str();
+  }
+
   std::optional<double> captureGateRemaining() const
   {
     if (!captureGateIsRequired() || !captureGateMatchesCurrentScan() ||
@@ -1595,7 +1630,8 @@ private:
     if (capture_gate_health == CaptureGateHealth::TIMED_OUT) {
       finishGoal(
         ExecuteCoverage::Result::TRACKING_FAILED,
-        "Inspection capture gate heartbeat was not received for the active SCAN.");
+        "Inspection capture gate heartbeat was not received for the active SCAN." +
+        captureGateReasonSuffix());
       return;
     }
     const bool waiting_for_capture_gate =
@@ -1603,7 +1639,8 @@ private:
     if (waiting_for_capture_gate) {
       RCLCPP_WARN_THROTTLE(
         get_logger(), *control_clock_, 2000,
-        "Waiting for the active SCAN's inspection capture gate; holding motion.");
+        "Waiting for the active SCAN's inspection capture gate; holding motion.%s",
+        captureGateReasonSuffix().c_str());
     }
     if (!waiting_for_capture_gate && desired.linear > 0.0 && cross_integral_gain_ > 0.0) {
       const double candidate_integral = std::clamp(
@@ -1644,10 +1681,17 @@ private:
     } else {
       desired.linear = timeReferenceSpeed(current_time, dt, desired);
     }
+    const double ungated_linear = desired.linear;
     if (waiting_for_capture_gate) {
       desired.linear = 0.0;
     } else {
       applyCaptureGate(desired);
+    }
+    // The gate only ever lowers the speed, so an unchanged command means it did
+    // not hold the robot back this cycle and the lag really was the linear
+    // channel's to answer for.
+    if (!distance_drives_linear && desired.linear >= ungated_linear - 1e-12) {
+      commitTimeAlongIntegral();
     }
     if (oscillation_monitor_->update(desired.cross, desired.along) &&
       !oscillation_warning_emitted_)
@@ -1819,6 +1863,9 @@ private:
   double time_along_integral_gain_{0.0};
   double time_along_integral_limit_{0.05};
   double time_along_integral_{0.0};
+  // What timeReferenceSpeed() proposed this cycle, applied only if the capture
+  // gate did not hold the robot back. See commitTimeAlongIntegral().
+  double time_along_integral_candidate_{0.0};
   double time_profile_acceleration_{0.20};
   double time_profile_deceleration_{0.20};
   double catch_up_max_linear_speed_{0.35};

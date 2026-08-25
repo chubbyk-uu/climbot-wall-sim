@@ -35,6 +35,9 @@
   <exec_depend>python3-yaml</exec_depend>
   <exec_depend>python3-matplotlib</exec_depend>
 
+  <!-- test_inspection_contract.py reads the deployed inspection config
+       through the ament index, so that package must be built first. -->
+  <test_depend>climbot_inspection</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

@@ -16,22 +16,31 @@
 
 from pathlib import Path
 
+from ament_index_python.packages import get_package_share_directory
 from climbot_gazebo.inspection_contract import DEFAULT_MINIMUM_ACTUAL_OVERLAP_RATIO
 import pytest
 import yaml
 
 
-WORKSPACE = Path(__file__).resolve().parents[3]
+def _config(package: str, name: str) -> dict:
+    """
+    Read one installed package config.
+
+    Resolved through the ament index rather than by walking up from this file
+    to a sibling package's source tree: that arithmetic encodes a workspace
+    layout this test has no reason to know, and it breaks as soon as the test
+    runs anywhere other than a src/<pkg>/test checkout. The share directory is
+    also what the nodes themselves load, so this compares the deployed values.
+    """
+    path = Path(get_package_share_directory(package)) / 'config' / name
+    return yaml.safe_load(path.read_text(encoding='utf-8'))
 
 
 def test_archive_spacing_guard_fits_within_the_g2_measured_overlap_limit():
     """A nominally valid archive must be eligible to pass the formal evaluator."""
-    description = WORKSPACE / 'src' / 'climbot_description'
-    inspection = WORKSPACE / 'src' / 'climbot_inspection'
-    camera = yaml.safe_load(
-        (description / 'config' / 'inspection_camera.yaml').read_text())['inspection_camera']
-    parameters = yaml.safe_load(
-        (inspection / 'config' / 'inspection.yaml').read_text())
+    camera = _config(
+        'climbot_description', 'inspection_camera.yaml')['inspection_camera']
+    parameters = _config('climbot_inspection', 'inspection.yaml')
     automatic = parameters['automatic_capture_node']['ros__parameters']
     recorder = parameters['archive_recorder_node']['ros__parameters']
     effective_length = float(camera['footprint']['effective_length_m'])
@@ -45,9 +54,7 @@ def test_archive_spacing_guard_fits_within_the_g2_measured_overlap_limit():
 
 def test_capture_gate_lag_is_stricter_than_the_archive_lag_limit():
     """The control barrier must never permit a capture the recorder rejects."""
-    inspection = WORKSPACE / 'src' / 'climbot_inspection'
-    parameters = yaml.safe_load(
-        (inspection / 'config' / 'inspection.yaml').read_text())
+    parameters = _config('climbot_inspection', 'inspection.yaml')
     automatic = parameters['automatic_capture_node']['ros__parameters']
     recorder = parameters['archive_recorder_node']['ros__parameters']
     assert 0.0 < float(automatic['capture_gate_max_lag_m']) < float(

@@ -125,7 +125,8 @@ class TestAutomaticCaptureNode(unittest.TestCase):
 
     def _reference(self, enabled, segment=2,
                    state=ExecutionReference.TRACK_LINE if hasattr(
-                       ExecutionReference, 'TRACK_LINE') else 3):
+                       ExecutionReference, 'TRACK_LINE') else 3,
+                   forward_offset=0.340):
         message = ExecutionReference()
         message.header.frame_id = 'odom'
         message.task_id = 'g2-test'
@@ -135,7 +136,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         message.executor_state = state
         message.start.x = 0.0
         message.end.x = 1.0
-        message.detection_forward_offset = 0.340
+        message.detection_forward_offset = forward_offset
         message.inspection_enabled = enabled
         self.references.publish(message)
 
@@ -161,6 +162,72 @@ class TestAutomaticCaptureNode(unittest.TestCase):
                 self.capture_calls,
                 [item.target_along_track for item in self.metadata],
                 [item.actual_along_track for item in self.metadata]))
+
+    def _pump_until(self, predicate, publish, timeout=3.0):
+        """
+        Wait for a condition while refreshing the reference that drives it.
+
+        Discovery is asynchronous and the execution-reference topic is not
+        transient-local, so a single sample published before the subscription
+        matched is simply lost. The executor republishes at the control rate;
+        this mirrors that rather than testing DDS timing.
+        """
+        deadline = time.monotonic() + timeout
+        while not predicate() and time.monotonic() < deadline:
+            publish()
+            time.sleep(0.01)
+        return predicate()
+
+    def _active_gate(self, segment):
+        return any(
+            gate.segment_index == segment and gate.active for gate in self.gates)
+
+    def test_camera_mount_mismatch_withholds_the_gate_heartbeat(self):
+        """A SCAN this node cannot serve must not be released to drive on."""
+        self._odom(10, 0.125)
+        # Establish that gates do flow for a well-formed SCAN, so the absence
+        # asserted below is evidence about the mismatch and not about
+        # discovery having failed to complete.
+        self.assertTrue(self._pump_until(
+            lambda: self._active_gate(11),
+            lambda: self._reference(True, segment=11)))
+
+        # An inactive gate would tell the tracker "nothing to wait for"; the
+        # mismatch is a configuration fault that cannot resolve mid-task, so
+        # the heartbeat is withheld and the tracker's gate supervision stops
+        # the SCAN instead of driving a line no exposure will ever cover.
+        self.gates.clear()
+        calls = self.capture_calls
+        deadline = time.monotonic() + 1.0
+        while time.monotonic() < deadline:
+            self._reference(True, segment=12, forward_offset=0.200)
+            time.sleep(0.01)
+        # No gate at all, not merely no gate labelled 12: one labelled with the
+        # previous SCAN is the identity bug this pairs with, and it would
+        # release whichever line the tracker is actually driving.
+        self.assertEqual(
+            [(gate.segment_index, gate.active, gate.reason) for gate in self.gates], [],
+            'a mismatched camera mount must publish no gate at all')
+        self.assertEqual(self.capture_calls, calls)
+
+    def test_disabled_reference_releases_its_own_segment(self):
+        """An early return must release the SCAN in hand, not the previous one."""
+        self._odom(10, 0.125)
+        self.assertTrue(self._pump_until(
+            lambda: self._active_gate(13),
+            lambda: self._reference(True, segment=13)))
+
+        # A transition/alignment reference for the NEXT segment. The release
+        # has to carry segment 14, which is the one the tracker is driving;
+        # announcing 13 would leave the tracker holding the line it is on.
+        self.gates.clear()
+        self.assertTrue(self._pump_until(
+            lambda: any(gate.segment_index == 14 for gate in self.gates),
+            lambda: self._reference(False, segment=14)))
+        released = [gate for gate in self.gates if gate.segment_index == 14][-1]
+        self.assertFalse(released.active)
+        self.assertEqual(released.task_id, 'g2-test')
+        self.assertEqual(released.revision, 7)
 
     def test_scan_only_monotonic_trigger_and_pose_binding(self):
         # Discovery and a pose do not permit a transition/alignment capture.
