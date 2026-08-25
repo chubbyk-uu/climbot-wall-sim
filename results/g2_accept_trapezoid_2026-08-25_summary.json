@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "task_id": "g2-acceptance-trapezoid",
+  "revision": 1,
+  "captures": 9,
+  "scan_segments": 2,
+  "captured_segments": [
+    0,
+    2
+  ],
+  "scan_only": true,
+  "all_scan_segments_captured": true,
+  "numbering_complete": true,
+  "capture_counts_complete": true,
+  "exact_image_metadata_pairing": true,
+  "nominal_overlap_ratio": 0.2,
+  "minimum_actual_overlap_ratio": 0.15,
+  "maximum_target_gap_m": 0.20626321996915797,
+  "maximum_actual_gap_m": 0.21006979063619102,
+  "maximum_actual_gap_limit_m": 0.23906249999999998,
+  "maximum_lateral_spacing_m": 0.41478819290944346,
+  "maximum_lateral_spacing_limit_m": 0.425,
+  "photo_coverage": {
+    "ratio": 0.7889998766802319,
+    "missed_ratio": 0.21100012331976814,
+    "covered_cells": 6398,
+    "region_cells": 8109,
+    "resolution_m": 0.01,
+    "covered_area_m2": 0.6398,
+    "region_area_m2": 0.8109000000000001
+  },
+  "minimum_photo_coverage_ratio": 0.0,
+  "maximum_camera_position_error_m": 0.0027207797501103987,
+  "maximum_camera_position_error_components_m": [
+    0.0009616425303846654,
+    0.002259796017572757,
+    0.0017442392761713998
+  ],
+  "maximum_camera_position_error_limit_m": 0.005,
+  "maximum_heading_error_deg": 0.19848696445834513,
+  "maximum_heading_error_limit_deg": 1.0,
+  "groups": [
+    {
+      "task_id": "g2-acceptance-trapezoid",
+      "revision": 1,
+      "segment_index": 0,
+      "captures": 5,
+      "expected_captures": 5,
+      "maximum_target_gap_m": 0.20626321996915797,
+      "maximum_actual_gap_m": 0.21006979063619102
+    },
+    {
+      "task_id": "g2-acceptance-trapezoid",
+      "revision": 1,
+      "segment_index": 2,
+      "captures": 4,
+      "expected_captures": 4,
+      "maximum_target_gap_m": 0.19166666666666649,
+      "maximum_actual_gap_m": 0.19383879907814894
+    }
+  ],
+  "provenance": {
+    "recorded_utc": "2026-08-25T09:56:29.287613+00:00",
+    "git": {
+      "commit": "f52a99915afbb2a271c0c1f1c25a7df137087cc2",
+      "branch": "main",
+      "source_modified": false,
+      "traceable": true
+    }
+  }
+}
