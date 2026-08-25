@@ -10,7 +10,7 @@ coverage_planner:
     detection_width: 0.50
     detection_length: 0.28125
     detection_forward_offset: 0.340
-    detection_edge_overlap: 0.020
+    detection_edge_overlap: 0.0
     overlap_ratio: 0.25
     sweep_direction: vertical
     start_corner: lower_left

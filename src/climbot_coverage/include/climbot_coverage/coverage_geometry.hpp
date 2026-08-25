@@ -43,21 +43,26 @@ RegionResult makeIsoscelesTrapezoid(
 
 Polygon insetConvexPolygon(const Polygon & polygon, double margin);
 
-// Generates SCAN line pairs whose rectangular swept detection footprint covers
-// coverage_region.  Every robot-centre waypoint must lie in motion_region.
+// True when every candidate vertex lies inside (or on) the convex container.
+// Coverage regions are convex rectangles or isosceles trapezoids, so checking
+// their vertices is sufficient to prove that the entire requested region fits.
+bool containsConvexPolygon(const Polygon & container, const Polygon & candidate);
+
+// Generates base_link SCAN line pairs inside drive_region.  Detection geometry
+// affects coverage evaluation, not the user-selected robot route boundary.
 std::vector<Point2> generateFootprintAwareBoustrophedonPath(
-  const Polygon & coverage_region, const Polygon & motion_region,
+  const Polygon & drive_region, const Polygon & motion_region,
   double detection_width, double detection_length, double maximum_spacing,
   const std::string & sweep_direction, const std::string & start_corner,
   double detection_forward_offset = 0.0, double edge_overlap = 0.0);
 
-// Returns the SCAN line pair of one horizontal finishing scan along the top of
-// coverage_region, entered from whichever end lies nearer to entry.  Returns an
+// Returns the base_link SCAN line pair of one horizontal finishing scan along
+// the top of drive_region, entered from whichever end lies nearer to entry. Returns an
 // empty vector when either end would fall outside motion_region.  Only vertical
 // sweeps can need this: a horizontal sweep's topmost line already tops out on
 // the region edge (PROJECT_GUIDE 10.7).
 std::vector<Point2> makeTopEdgeFinishingScan(
-  const Polygon & coverage_region, const Polygon & motion_region,
+  const Polygon & drive_region, const Polygon & motion_region,
   double detection_width, double detection_length, const Point2 & entry,
   double detection_forward_offset = 0.0, double edge_overlap = 0.0);
 

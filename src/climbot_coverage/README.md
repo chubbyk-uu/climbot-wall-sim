@@ -43,8 +43,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 
 - `/coverage/task`：权威 `CoverageTask` 预览，包含路径、线段类型、区域和检测足迹；
 - `/coverage/path`：从任务派生、带逐段目标航向的 `nav_msgs/Path`，用于通用显示；
-- `/coverage/markers`：墙面、可达区域（绿框，墙面按安全边距内缩，与点选无关，
-  从启动起常驻）、点选区域、路径和方向；
+- `/coverage/markers`：墙面、全局安全区域（绿色虚线，启动起常驻）、用户任务可走区
+  （橙色实线）、机器人路径（蓝色实线）、相机预计覆盖（黄色半透明带）和方向；
 - `/coverage/status`：规划状态和错误原因；
 - `/coverage/clear_points`：清空 RViz 点选；
 - `/coverage/replan`：使用当前输入重新规划。
@@ -61,7 +61,8 @@ safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 ```
 
 `detection_length` 是沿行进方向的检测有效长度。G2 相机配置使用 `0.28125 m`，旧的
-非视觉回归配置仍保留 `0.01 m` 以维持原测试语义。真机仍须按实际检测载荷标定。
+非视觉回归配置仍保留 `0.01 m` 以维持原测试语义。相机外参和检测长度只用于推导黄色
+覆盖及覆盖率，不得把蓝色机器人端点推出橙色任务可走区。真机仍须按实际检测载荷标定。
 
 机器人轮廓和墙面尺寸由 `climbot_description` 注入。规划器只生成直线段和
 路点处原地转向，不生成圆角或切弯。控制器可能在转后偏差较大时执行一次采集关闭的

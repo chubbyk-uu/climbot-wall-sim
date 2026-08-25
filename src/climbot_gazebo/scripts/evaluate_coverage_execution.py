@@ -107,7 +107,11 @@ class CoverageExecutionEvaluator(Node):
         ('maximum_turn_end_heading_error_deg', 2.0),
         ('maximum_horizontal_height_drift_m', 0.030),
         ('maximum_scan_line_spacing_error_m', 0.020),
-        ('minimum_actual_coverage_ratio', 0.95),
+        # A selected polygon limits robot motion; it is not automatically a
+        # contractual inspection-area boundary.  Normal runs report actual
+        # camera coverage, while a contract test may explicitly set a positive
+        # threshold.
+        ('minimum_actual_coverage_ratio', 0.0),
         ('coverage_grid_resolution_m', 0.01),
         ('trajectory_csv', ''),
         ('summary_json', ''),

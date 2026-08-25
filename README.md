@@ -186,7 +186,7 @@ source install/setup.bash
 ros2 launch climbot_bringup coverage_mission.launch.py
 ```
 
-在 RViz 的 `Publish Point` 工具下点选区域角点，然后用左侧 **Coverage Task**
+在 RViz 的 `Publish Point` 工具下点选机器人任务可走区角点，然后用左侧 **Coverage Task**
 面板的 Start 按钮执行。
 
 ![执行中的覆盖任务](docs/images/rviz_coverage_task.png)
@@ -198,10 +198,11 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 - **灰色方块**是 `10 × 8 m` 的作业面，上面 `1 m` 一格的参考网格线由
   `Wall Reference Grid` 显示项画，随时可勾掉；Gazebo 墙面上那套是另一个开关，见
   [docs/OPERATION.md](docs/OPERATION.md)；
-- **绿框**是墙面按机器人安全边距内缩后的可达区域，从启动起常驻，点必须落在里面；
-- **橙色四边形**是作业区域，`A`/`B`/`C`/`D` 是四个顶点。梯形只需点三下——
+- **绿色虚线框**是墙面按机器人安全边距内缩后的绝对安全区域，从启动起常驻，点必须落在里面；
+- **橙色四边形**是用户限制的机器人任务可走区，`A`/`B`/`C`/`D` 是四个顶点。梯形只需点三下——
   `A` 左下、`B` 右上、`C` 右下，`D` 由这三点定出来；
-- **蓝色折线**是规划出的弓字扫描路径，机器人正走在 35 段中的第 18 段；
+- **蓝色折线**是完全位于橙区内的 `base_link` 弓字扫描路径；
+- **黄色半透明带**是规划后由相机外参和有效视场推导的预计拍摄覆盖，可自然伸出橙区并形成不规则边缘；
 - 左下面板的 `Plan` 页给出区域形状、扫描方向、直线控制算法和点选状态；`Capture`
   页为本次任务选择是否归档原始照片及记录器端根目录，并显示归档计数、最终目录和错误；
   `Details` 页显示 Task、Schedule、管理器、规划器和最近请求。公共区显示进度和采集

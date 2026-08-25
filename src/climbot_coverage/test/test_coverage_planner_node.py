@@ -41,7 +41,7 @@ def generate_test_description():
         parameters=[{
             'input_mode': 'parameters',
             'region_type': 'rectangle',
-            'lower_left': [3.0, 0.5],
+            'lower_left': [3.0, 1.0],
             'upper_right': [9.0, 6.5],
             'detection_width': 0.5,
             'overlap_ratio': 0.2,

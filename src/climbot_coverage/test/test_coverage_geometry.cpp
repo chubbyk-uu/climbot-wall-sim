@@ -209,7 +209,7 @@ TEST(CoverageGeometry, FootprintAwarePathCoversRequestedRegionInsideMotionRegion
   }
 }
 
-TEST(CoverageGeometry, FrontCameraOffsetShiftsBasePathWithoutChangingCoverage)
+TEST(CoverageGeometry, FrontCameraOffsetDoesNotMoveTheRobotPath)
 {
   constexpr double camera_offset = 0.30;
   const auto coverage = makeRectangle({1.0, 1.0}, {5.0, 3.0}).polygon;
@@ -219,28 +219,60 @@ TEST(CoverageGeometry, FrontCameraOffsetShiftsBasePathWithoutChangingCoverage)
   const auto camera = generateFootprintAwareBoustrophedonPath(
     coverage, motion, 0.50, 0.28125, 0.40, "horizontal", "lower_left", camera_offset);
   ASSERT_EQ(camera.size(), centred.size());
-  for (std::size_t index = 0; index < camera.size(); index += 2U) {
-    const double direction = centred[index + 1U].x > centred[index].x ? 1.0 : -1.0;
-    EXPECT_NEAR(camera[index].x, centred[index].x - direction * camera_offset, 1e-12);
-    EXPECT_NEAR(camera[index + 1U].x,
-      centred[index + 1U].x - direction * camera_offset, 1e-12);
+  for (std::size_t index = 0; index < camera.size(); ++index) {
+    EXPECT_DOUBLE_EQ(camera[index].x, centred[index].x);
+    EXPECT_DOUBLE_EQ(camera[index].y, centred[index].y);
   }
   EXPECT_GE(sampledCoverageRatio(
-      coverage, camera, 0.50, 0.28125, 300, camera_offset), 0.98);
+      coverage, camera, 0.50, 0.28125, 300, camera_offset), 0.965);
 }
 
-TEST(CoverageGeometry, EdgeOverlapExtendsOuterLinesAndScanEndpoints)
+TEST(CoverageGeometry, RobotEndpointsStayOnTheSelectedDriveBoundary)
 {
-  constexpr double overlap = 0.02;
   const auto coverage = makeRectangle({1.0, 1.0}, {5.0, 2.0}).polygon;
   const auto motion = makeRectangle({0.0, 0.0}, {6.0, 3.0}).polygon;
   const auto path = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.50, 0.20, 0.40, "horizontal", "lower_left", 0.0, overlap);
+    coverage, motion, 0.50, 0.20, 0.40, "horizontal", "lower_left", 0.0, 0.02);
   ASSERT_GE(path.size(), 4U);
-  EXPECT_NEAR(path.front().x, 1.0 - 0.10 - overlap, 1e-12);
-  EXPECT_NEAR(path.front().y, 1.0 + 0.25 - overlap, 1e-12);
-  EXPECT_NEAR(path[1].x, 5.0 + 0.10 + overlap, 1e-12);
-  EXPECT_NEAR(path[path.size() - 2U].y, 2.0 - 0.25 + overlap, 1e-12);
+  EXPECT_NEAR(path.front().x, 1.0, 1e-12);
+  EXPECT_NEAR(path.front().y, 1.0 + 0.25, 1e-12);
+  EXPECT_NEAR(path[1].x, 5.0, 1e-12);
+  EXPECT_NEAR(path[path.size() - 2U].y, 2.0 - 0.25, 1e-12);
+}
+
+TEST(CoverageGeometry, CameraGeometryNeverExpandsTheRobotDrivePath)
+{
+  constexpr double camera_offset = 0.340;
+  constexpr double detection_length = 0.28125;
+  constexpr double edge_overlap = 0.020;
+  const auto motion = makeRectangle({0.0, 0.0}, {10.0, 4.0}).polygon;
+  const auto drive = makeRectangle({0.2, 0.5}, {9.8, 3.5}).polygon;
+  const auto path = generateFootprintAwareBoustrophedonPath(
+    drive, motion, 0.50, detection_length, 0.40, "horizontal", "lower_left",
+    camera_offset, edge_overlap);
+  for (const auto & waypoint : path) {
+    EXPECT_TRUE(insideConvex(drive, waypoint));
+    EXPECT_TRUE(insideConvex(motion, waypoint));
+  }
+  EXPECT_GE(sampledCoverageRatio(
+      drive, path, 0.50, detection_length, 300, camera_offset), 0.965);
+}
+
+TEST(CoverageGeometry, CameraCalibrationDoesNotMoveTheBlueBaseLinkRoute)
+{
+  const auto drive = makeIsoscelesTrapezoid({0.4, 0.8}, {7.8, 4.1}, {8.8, 0.8}).polygon;
+  const auto motion = makeRectangle({0.0, 0.5}, {9.2, 4.5}).polygon;
+  for (const auto & direction : {std::string("horizontal"), std::string("vertical")}) {
+    const auto no_camera = generateFootprintAwareBoustrophedonPath(
+      drive, motion, 0.50, 0.01, 0.40, direction, "lower_left");
+    const auto calibrated_camera = generateFootprintAwareBoustrophedonPath(
+      drive, motion, 0.50, 0.28125, 0.40, direction, "lower_left", 0.340, 0.020);
+    ASSERT_EQ(calibrated_camera.size(), no_camera.size());
+    for (std::size_t index = 0; index < no_camera.size(); ++index) {
+      EXPECT_DOUBLE_EQ(calibrated_camera[index].x, no_camera[index].x);
+      EXPECT_DOUBLE_EQ(calibrated_camera[index].y, no_camera[index].y);
+    }
+  }
 }
 
 TEST(CoverageGeometry, KeepsExactMultipleOfMaximumSpacingAtTheExpectedLineCount)
@@ -309,10 +341,9 @@ TEST(TopEdgeFinishingScan, SweepsTheStripAVerticalPassLeavesAtTheTop)
   const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
   const auto line = makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, {3.0, 6.5});
   ASSERT_EQ(line.size(), 2U);
-  // Half a footprint below the top edge, so the swept band tops out on it.
-  EXPECT_NEAR(line.front().y, 6.25, 1e-9);
-  EXPECT_NEAR(line.back().y, 6.25, 1e-9);
-  EXPECT_NEAR(std::abs(line.back().x - line.front().x), 3.0 + 0.01, 1e-9);
+  EXPECT_NEAR(line.front().y, 6.5, 1e-9);
+  EXPECT_NEAR(line.back().y, 6.5, 1e-9);
+  EXPECT_NEAR(std::abs(line.back().x - line.front().x), 3.0, 1e-9);
 }
 
 TEST(TopEdgeFinishingScan, ClosesTheGapAVerticalSweepLeaves)
@@ -358,7 +389,7 @@ TEST(TopEdgeFinishingScan, CentresOnARegionShorterThanTheFootprint)
   const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
   const auto line = makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, {3.0, 2.3});
   ASSERT_EQ(line.size(), 2U);
-  EXPECT_NEAR(line.front().y, 2.15, 1e-9);
+  EXPECT_NEAR(line.front().y, 2.3, 1e-9);
 }
 
 TEST(TopEdgeFinishingScan, RejectsInvalidFootprints)

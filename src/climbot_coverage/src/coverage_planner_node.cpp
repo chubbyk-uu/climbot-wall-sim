@@ -94,6 +94,94 @@ visualization_msgs::msg::Marker lineMarker(
   return marker;
 }
 
+visualization_msgs::msg::Marker dashedLineMarker(
+  const Polygon & polygon, const std_msgs::msg::Header & header, int id,
+  const std::string & marker_namespace, float red, float green, float blue,
+  double height)
+{
+  auto marker = lineMarker(
+    {}, header, id, marker_namespace, red, green, blue, height);
+  marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+  // RViz has no dashed LINE_STRIP type.  Emit short line pairs instead so the
+  // physical boundary remains visibly distinct from the operator's solid
+  // coverage boundary at every zoom level.
+  constexpr double dash_length = 0.12;
+  constexpr double gap_length = 0.08;
+  for (std::size_t index = 0; index < polygon.size(); ++index) {
+    const auto & first = polygon[index];
+    const auto & second = polygon[(index + 1U) % polygon.size()];
+    const double dx = second.x - first.x;
+    const double dy = second.y - first.y;
+    const double length = std::hypot(dx, dy);
+    for (double start = 0.0; start < length; start += dash_length + gap_length) {
+      const double end = std::min(length, start + dash_length);
+      marker.points.push_back(markerPoint(
+          {first.x + dx * start / length, first.y + dy * start / length}, height));
+      marker.points.push_back(markerPoint(
+          {first.x + dx * end / length, first.y + dy * end / length}, height));
+    }
+  }
+  return marker;
+}
+
+visualization_msgs::msg::Marker cameraCoverageMarker(
+  const std::vector<Point2> & path, const std_msgs::msg::Header & header,
+  double detection_width, double detection_length, double forward_offset,
+  double height)
+{
+  visualization_msgs::msg::Marker marker;
+  marker.header = header;
+  marker.ns = "camera_coverage";
+  marker.id = 0;
+  marker.type = visualization_msgs::msg::Marker::TRIANGLE_LIST;
+  marker.action = visualization_msgs::msg::Marker::ADD;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = marker.scale.y = marker.scale.z = 1.0;
+  marker.color.r = 1.0F;
+  marker.color.g = 0.82F;
+  marker.color.b = 0.05F;
+  marker.color.a = 0.20F;
+  for (std::size_t index = 0; index + 1U < path.size(); index += 2U) {
+    const auto & first = path[index];
+    const auto & second = path[index + 1U];
+    const double dx = second.x - first.x;
+    const double dy = second.y - first.y;
+    const double length = std::hypot(dx, dy);
+    if (length <= 1e-9) {
+      continue;
+    }
+    const Point2 tangent{dx / length, dy / length};
+    const Point2 normal{-tangent.y, tangent.x};
+    const Point2 sensor_first{
+      first.x + forward_offset * tangent.x,
+      first.y + forward_offset * tangent.y};
+    const Point2 sensor_second{
+      second.x + forward_offset * tangent.x,
+      second.y + forward_offset * tangent.y};
+    const Point2 corners[4]{
+      {sensor_first.x - 0.5 * detection_length * tangent.x +
+        0.5 * detection_width * normal.x,
+        sensor_first.y - 0.5 * detection_length * tangent.y +
+        0.5 * detection_width * normal.y},
+      {sensor_first.x - 0.5 * detection_length * tangent.x -
+        0.5 * detection_width * normal.x,
+        sensor_first.y - 0.5 * detection_length * tangent.y -
+        0.5 * detection_width * normal.y},
+      {sensor_second.x + 0.5 * detection_length * tangent.x -
+        0.5 * detection_width * normal.x,
+        sensor_second.y + 0.5 * detection_length * tangent.y -
+        0.5 * detection_width * normal.y},
+      {sensor_second.x + 0.5 * detection_length * tangent.x +
+        0.5 * detection_width * normal.x,
+        sensor_second.y + 0.5 * detection_length * tangent.y +
+        0.5 * detection_width * normal.y}};
+    for (const int corner : {0, 1, 2, 0, 2, 3}) {
+      marker.points.push_back(markerPoint(corners[corner], height));
+    }
+  }
+  return marker;
+}
+
 }  // namespace
 
 class CoveragePlannerNode : public rclcpp::Node
@@ -131,11 +219,11 @@ public:
     wall_grid_spacing_ = declare_parameter("wall_grid_spacing", 1.0);
     path_height_ = declare_parameter("path_height", 0.06);
     bottom_warning_tolerance_ = declare_parameter("bottom_warning_tolerance", 0.05);
-    // Above the acceptance gate by more than execution costs. Measured loss
-    // from nominal to executed footprint coverage is 0.37 to 1.09 points
-    // across the three baselines, against a 95 percent acceptance gate.
+    // Zero means report the predicted coverage without rejecting a safe route.
+    // A deployment that has a contractual coverage floor can set a positive
+    // value, but the default workflow prioritises the operator's drive limit.
     minimum_nominal_coverage_ratio_ = declare_parameter(
-      "minimum_nominal_coverage_ratio", 0.965);
+      "minimum_nominal_coverage_ratio", 0.0);
     top_edge_scan_ = declare_parameter("top_edge_scan", "auto");
     validatePhysicalParameters();
     row_spacing_ = detection_width_ * (1.0 - overlap_ratio_);
@@ -235,11 +323,11 @@ private:
     if (overlap_ratio_ < 0.0 || overlap_ratio_ >= 1.0) {
       throw std::invalid_argument("overlap_ratio must be within [0, 1).");
     }
-    if (minimum_nominal_coverage_ratio_ <= 0.0 ||
+    if (minimum_nominal_coverage_ratio_ < 0.0 ||
       minimum_nominal_coverage_ratio_ > 1.0)
     {
       throw std::invalid_argument(
-              "minimum_nominal_coverage_ratio must be within (0, 1].");
+              "minimum_nominal_coverage_ratio must be within [0, 1].");
     }
     if (top_edge_scan_ != "auto" && top_edge_scan_ != "always" &&
       top_edge_scan_ != "never")
@@ -286,6 +374,12 @@ private:
       publishStatus(
         "Rejected clicked point: expected frame " + frame_id_ + ", received " +
         message->header.frame_id + ".");
+      return;
+    }
+    const Polygon clicked{{message->point.x, message->point.y}};
+    if (!containsConvexPolygon(wallSafeRegion(), clicked)) {
+      publishStatus(
+        "Rejected clicked point: it lies outside the green wall-safe region.");
       return;
     }
     const std::size_t required_points = requiredPoints();
@@ -389,6 +483,9 @@ private:
     const bool shape_changed = region != region_type_;
     region_type_ = region;
     sweep_direction_ = sweep;
+    // Refresh the persistent safety boundary and selected point markers while
+    // the operator is midway through configuring a task.
+    publishMarkers({}, {});
 
     std::ostringstream note;
     note << (unchanged ? "Configuration unchanged: " : "Configuration set to ") <<
@@ -502,29 +599,35 @@ private:
       } else {
         throw std::invalid_argument("region_type must be rectangle or trapezoid.");
       }
-      const auto motion = motionRegion();
+      const auto wall_safe = wallSafeRegion();
+      if (!containsConvexPolygon(wall_safe, region.polygon)) {
+        throw std::invalid_argument(
+                "Requested robot drive region lies outside the green wall-safe region.");
+      }
       auto path = generateFootprintAwareBoustrophedonPath(
-        region.polygon, motion, detection_width_, detection_length_, row_spacing_,
+        region.polygon, region.polygon, detection_width_, detection_length_, row_spacing_,
         sweep_direction_, start_corner_, detection_forward_offset_, detection_edge_overlap_);
       double coverage_ratio = sampledCoverageRatio(
         region.polygon, path, detection_width_, detection_length_, 300,
         detection_forward_offset_);
       const std::string finishing_scan =
-        appendTopEdgeFinishingScan(region.polygon, motion, path, coverage_ratio);
-      if (coverage_ratio < minimum_nominal_coverage_ratio_) {
+        appendTopEdgeFinishingScan(region.polygon, region.polygon, path, coverage_ratio);
+      if (minimum_nominal_coverage_ratio_ > 0.0 &&
+        coverage_ratio < minimum_nominal_coverage_ratio_)
+      {
         std::ostringstream reason;
         reason << "Nominal detection footprint covers " << coverage_ratio * 100.0 <<
           " percent, below the required " << minimum_nominal_coverage_ratio_ * 100.0 <<
           " percent.";
         throw std::invalid_argument(reason.str());
       }
-      publishTask(makeTask(region.polygon, motion, path));
+      publishTask(makeTask(region.polygon, wall_safe, path));
       publishMarkers(region.polygon, path);
       std::ostringstream status;
       status << "Generated " << sweep_direction_ << " " << region_type_ <<
         " coverage path with " << path.size() << " waypoints; row spacing <= " <<
-        row_spacing_ << " m, nominal footprint coverage " << coverage_ratio * 100.0 <<
-        "% and safety margin " << safety_margin_ << " m.";
+        row_spacing_ << " m, selected-drive-region camera coverage " <<
+        coverage_ratio * 100.0 << "% and wall safety margin " << safety_margin_ << " m.";
       if (!finishing_scan.empty()) {
         status << " " << finishing_scan;
       }
@@ -609,7 +712,7 @@ private:
     return message;
   }
 
-  Polygon motionRegion() const
+  Polygon wallSafeRegion() const
   {
     // The work frame's origin is the wall's lower-left corner, so the surface
     // is the first quadrant and no region coordinate is ever negative.
@@ -720,11 +823,9 @@ private:
     grid_publisher_->publish(markers);
   }
 
-  /// The motion region is deliberately not taken from the caller. It is the
-  /// wall inset by the safety margin and does not depend on what was clicked,
-  /// so it is the one thing an operator needs to see *before* clicking - a
-  /// point outside it yields a region the footprint cannot cover, and drawing
-  /// the boundary only once a plan succeeds hid it exactly when it was needed.
+  /// The green dashed wall-safe boundary is visible before clicking.  Orange
+  /// is the selected robot drive region, blue is the base_link route inside
+  /// it, and the yellow translucent strips are derived camera coverage.
   void publishMarkers(
     const Polygon & original,
     const std::vector<Point2> & path)
@@ -785,12 +886,15 @@ private:
         markers.markers.push_back(label);
       }
     }
-    const auto reachable = motionRegion();
-    if (!reachable.empty()) {
-      markers.markers.push_back(lineMarker(reachable, header, 0, "effective", 0.1F, 1.0F, 0.3F,
-          0.04));
+    const auto motion = wallSafeRegion();
+    if (!motion.empty()) {
+      markers.markers.push_back(dashedLineMarker(
+          motion, header, 0, "effective", 0.1F, 1.0F, 0.3F, 0.04));
     }
     if (!path.empty()) {
+      markers.markers.push_back(cameraCoverageMarker(
+          path, header, detection_width_, detection_length_,
+          detection_forward_offset_, 0.025));
       visualization_msgs::msg::Marker path_marker;
       path_marker.header = header;
       path_marker.ns = "coverage_path";

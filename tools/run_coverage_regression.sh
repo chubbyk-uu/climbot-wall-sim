@@ -457,11 +457,12 @@ def get(d, path, default=None):
 def column(value, form, scale=1.0):
     return 'n/a' if value is None else form % (value * scale)
 
-limits = {'endpoint': 30.0, 'turn': 2.0, 'spacing': 20.0, 'coverage': 95.0}
+limits = {'endpoint': 30.0, 'turn': 2.0, 'spacing': 20.0}
 head = ('case', 'pass', 'endpt_mm', 'turn_deg', 'spacing_mm', 'cover_%',
         'sim_s', 'plan_s', 'act/plan', 'lag_s', 'RTF')
 print('%-22s %-5s %9s %9s %11s %8s %8s %8s %9s %7s %6s' % head)
 failed = []
+coverage_limits = set()
 for name in names:
     path = os.path.join(ws, 'results', 'coverage_%s_%s_summary.json' % (name, tag))
     if not os.path.exists(path):
@@ -474,6 +475,9 @@ for name in names:
         failed.append(name)
     planned = get(d, 'schedule.planned_total_s', 0.0)
     lag = get(d, 'schedule.schedule_lag_max_s', 0.0)
+    coverage_limit = get(
+        d, 'provenance.evaluator_parameters.minimum_actual_coverage_ratio', 0.0)
+    coverage_limits.add(float(coverage_limit))
     print('%-22s %-5s %9s %9s %11s %8.2f %8.1f %8.1f %9s %7.2f %6s' % (
         name, 'yes' if ok else 'NO',
         column(get(d, 'execution_quality.maximum_endpoint_error_m'), '%.2f', 1000),
@@ -487,9 +491,14 @@ for name in names:
     if reason:
         print('    %s' % reason)
 print()
-print('limits: endpoint <= %.0f mm, turn end <= %.1f deg, spacing <= %.0f mm, '
-      'coverage >= %.0f%%' % (limits['endpoint'], limits['turn'],
-                              limits['spacing'], limits['coverage']))
+if coverage_limits == {0.0}:
+    coverage_requirement = 'coverage reported (no default area gate)'
+elif len(coverage_limits) == 1:
+    coverage_requirement = 'coverage >= %.0f%%' % (100.0 * coverage_limits.pop())
+else:
+    coverage_requirement = 'coverage thresholds vary by case'
+print('limits: endpoint <= %.0f mm, turn end <= %.1f deg, spacing <= %.0f mm, %s' % (
+    limits['endpoint'], limits['turn'], limits['spacing'], coverage_requirement))
 if failed:
     print('FAILED: %s' % ', '.join(failed))
     sys.exit(1)

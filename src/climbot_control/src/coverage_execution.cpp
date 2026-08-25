@@ -276,6 +276,11 @@ std::optional<std::string> validateCoverageTask(
   {
     return "coverage_region and motion_region must be finite convex polygons";
   }
+  for (const auto & point : task.coverage_region.points) {
+    if (!pointInPolygon(point.x, point.y, task.motion_region, 1e-6)) {
+      return "coverage_region must lie inside motion_region";
+    }
+  }
 
   for (std::size_t index = 0; index < task.waypoints.size(); ++index) {
     const auto & pose = task.waypoints[index];
@@ -294,8 +299,8 @@ std::optional<std::string> validateCoverageTask(
     if (quaternion_norm <= 1e-9) {
       return "waypoint quaternion cannot be zero";
     }
-    if (!pointInPolygon(position.x, position.y, task.motion_region, 1e-6)) {
-      return "every waypoint must lie inside motion_region";
+    if (!pointInPolygon(position.x, position.y, task.coverage_region, 1e-6)) {
+      return "every nominal waypoint must lie inside coverage_region";
     }
     if (index + 1U < task.waypoints.size()) {
       const auto & next = task.waypoints[index + 1U].position;

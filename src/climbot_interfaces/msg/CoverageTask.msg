@@ -28,8 +28,10 @@ uint8 sweep_direction
 geometry_msgs/Pose[] waypoints
 uint8[] segment_types
 
-# Both polygons inherit header.frame_id. coverage_region is the required
-# inspection area; motion_region bounds every nominal and dynamic robot path.
+# Both polygons inherit header.frame_id. For wire compatibility,
+# coverage_region now carries the operator-selected nominal robot drive region;
+# motion_region is the larger absolute wall-safe region used for approach and
+# runtime safety. Every nominal waypoint lies inside coverage_region.
 geometry_msgs/Polygon coverage_region
 geometry_msgs/Polygon motion_region
 

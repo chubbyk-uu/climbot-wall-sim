@@ -248,8 +248,18 @@ Polygon insetConvexPolygon(const Polygon & polygon, double margin)
   return inset;
 }
 
+bool containsConvexPolygon(const Polygon & container, const Polygon & candidate)
+{
+  if (container.size() < 3U || candidate.empty()) {
+    return false;
+  }
+  return std::all_of(
+    candidate.begin(), candidate.end(),
+    [&container](const Point2 & point) {return insideConvex(container, point);});
+}
+
 std::vector<Point2> generateFootprintAwareBoustrophedonPath(
-  const Polygon & coverage_region, const Polygon & motion_region,
+  const Polygon & drive_region, const Polygon & motion_region,
   double detection_width, double detection_length, double maximum_spacing,
   const std::string & sweep_direction, const std::string & start_corner,
   double detection_forward_offset, double edge_overlap)
@@ -271,12 +281,24 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
     throw std::invalid_argument("Sweep direction must be horizontal or vertical.");
   }
   validateStartCorner(start_corner);
-  const auto [minimum, maximum] = bounds(coverage_region, horizontal);
+  const auto [minimum, maximum] = bounds(drive_region, horizontal);
   const double span = maximum - minimum;
   if (span <= kEpsilon) {
     throw std::invalid_argument("Coverage region has no sweep span.");
   }
-  const double usable_span = std::max(0.0, span - detection_width + 2.0 * edge_overlap);
+  // The operator now selects the permitted base_link route region.  Put the
+  // outer robot tracks on that region and distribute the intermediate tracks
+  // uniformly within maximum_spacing.  Camera footprints are derived from
+  // these tracks afterwards; they no longer move the robot route outside the
+  // selected polygon.
+  // Camera geometry deliberately has no influence on the base_link route.
+  // edge_overlap is retained in the public interface for compatibility, but
+  // cannot add physical camera coverage without moving the robot.  Using it
+  // here would silently move the blue route when a camera is added or its
+  // calibration changes.  Keep the robot tracks at the same
+  // detection-width-derived positions as the no-camera planner.
+  const double cross_inset = std::min(0.5 * span, 0.5 * detection_width);
+  const double usable_span = std::max(0.0, span - 2.0 * cross_inset);
   const double interval_ratio = usable_span / maximum_spacing;
   const int line_count = std::max(
     1, static_cast<int>(std::ceil(interval_ratio - kLineCountTolerance)) + 1);
@@ -289,16 +311,9 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   path.reserve(static_cast<std::size_t>(2 * line_count));
   for (int line_index = 0; line_index < line_count; ++line_index) {
     const int ordered_index = reverse_order ? line_count - 1 - line_index : line_index;
-    const double coordinate = span <= detection_width ?
-      0.5 * (minimum + maximum) :
-      minimum + 0.5 * detection_width - edge_overlap +
-      spacing * static_cast<double>(ordered_index);
-    auto segment = clipScanLine(coverage_region, coordinate, horizontal);
-    const Point2 extension = horizontal ?
-      Point2{0.5 * detection_length + edge_overlap, 0.0} :
-    Point2{0.0, 0.5 * detection_length + edge_overlap};
-    segment.first = subtract(segment.first, extension);
-    segment.second = add(segment.second, extension);
+    const double coordinate = line_count == 1 ? 0.5 * (minimum + maximum) :
+      minimum + cross_inset + spacing * static_cast<double>(ordered_index);
+    auto segment = clipScanLine(drive_region, coordinate, horizontal);
     bool forward_along_line = horizontal ? start_left : start_low;
     if (line_index % 2 == 1) {
       forward_along_line = !forward_along_line;
@@ -306,20 +321,11 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
     if (!forward_along_line) {
       std::swap(segment.first, segment.second);
     }
-    const double length = std::hypot(
-      segment.second.x - segment.first.x, segment.second.y - segment.first.y);
-    const Point2 offset{
-      detection_forward_offset * (segment.second.x - segment.first.x) / length,
-      detection_forward_offset * (segment.second.y - segment.first.y) / length};
-    // The clipped/extended segment describes the camera-centre sweep. Convert
-    // it to base_link waypoints without changing the inspected footprint.
-    segment.first = subtract(segment.first, offset);
-    segment.second = subtract(segment.second, offset);
     if (!insideConvex(motion_region, segment.first) || !insideConvex(motion_region,
         segment.second))
     {
       throw std::invalid_argument(
-              "Camera offset requires a robot-centre waypoint outside motion_region.");
+              "A robot-centre waypoint lies outside motion_region.");
     }
     path.push_back(segment.first);
     path.push_back(segment.second);
@@ -328,39 +334,30 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
 }
 
 std::vector<Point2> makeTopEdgeFinishingScan(
-  const Polygon & coverage_region, const Polygon & motion_region,
+  const Polygon & drive_region, const Polygon & motion_region,
   double detection_width, double detection_length, const Point2 & entry,
   double detection_forward_offset, double edge_overlap)
 {
   if (detection_width <= 0.0 || detection_length <= 0.0) {
     throw std::invalid_argument("Detection footprint dimensions must be positive.");
   }
-  if (coverage_region.size() < 3U) {
-    throw std::invalid_argument("Coverage region requires at least three points.");
+  if (drive_region.size() < 3U) {
+    throw std::invalid_argument("Drive region requires at least three points.");
   }
-  const auto [minimum_y, maximum_y] = bounds(coverage_region, true);
-  // The footprint reaches half its width above the line, so this is the highest
-  // line whose swept band still tops out exactly on the region edge. A region
-  // shorter than the footprint is covered whole by one centred line.
-  const double coordinate = maximum_y - minimum_y <= detection_width ?
-    0.5 * (minimum_y + maximum_y) :
-    maximum_y - 0.5 * detection_width + edge_overlap;
-  auto segment = clipScanLine(coverage_region, coordinate, true);
-  const Point2 extension{0.5 * detection_length + edge_overlap, 0.0};
-  segment.first = subtract(segment.first, extension);
-  segment.second = add(segment.second, extension);
-  // Compare the base_link start for each direction, not the camera endpoint:
-  // the forward mount offset changes which transition is actually shorter.
-  const Point2 first_base{segment.first.x - detection_forward_offset, segment.first.y};
-  const Point2 second_base{segment.second.x + detection_forward_offset, segment.second.y};
-  const double to_first = std::hypot(first_base.x - entry.x, first_base.y - entry.y);
-  const double to_second = std::hypot(second_base.x - entry.x, second_base.y - entry.y);
+  if (!std::isfinite(detection_forward_offset) || detection_forward_offset < 0.0 ||
+    !std::isfinite(edge_overlap) || edge_overlap < 0.0)
+  {
+    throw std::invalid_argument(
+            "Detection offset and edge overlap must be finite and non-negative.");
+  }
+  const auto [minimum_y, maximum_y] = bounds(drive_region, true);
+  (void)minimum_y;
+  auto segment = clipScanLine(drive_region, maximum_y, true);
+  const double to_first = std::hypot(segment.first.x - entry.x, segment.first.y - entry.y);
+  const double to_second = std::hypot(segment.second.x - entry.x, segment.second.y - entry.y);
   if (to_second < to_first) {
     std::swap(segment.first, segment.second);
   }
-  const double direction = segment.second.x > segment.first.x ? 1.0 : -1.0;
-  segment.first.x -= direction * detection_forward_offset;
-  segment.second.x -= direction * detection_forward_offset;
   if (!insideConvex(motion_region, segment.first) ||
     !insideConvex(motion_region, segment.second))
   {

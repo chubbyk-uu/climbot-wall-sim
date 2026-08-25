@@ -73,7 +73,7 @@ RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出�
 | `gpu_backend` | `auto` | `auto`、`wsl_d3d12` 或 `native` |
 | `total_station_rate_hz` | `12.0` | 模拟全站仪频率 |
 | `total_station_stddev_m` | `0.001` | 全站仪位置一倍标准差 |
-| `total_station_delay_s` | `0.05` | 固定传输延迟 |
+| `total_station_delay_s` | `0.01` | 固定传输延迟（10 ms）；位姿延迟误差保留给标签和后处理，不以巡检限速掩盖 |
 | `wheel_forward_velocity_stddev_mps` | `0.03` | 轮式前向速度标准差 |
 | `wheel_yaw_rate_stddev_rps` | `0.05` | 轮式角速度标准差 |
 | `imu_orientation_stddev_rad` | `0.00174532925` | IMU 姿态标准差（0.1°） |
@@ -145,9 +145,9 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 
 评价器按 Gazebo 真值位置与航向栅格化实际
 `detection_width × detection_length` 矩形检测足迹，只累计正式 `SCAN` 直线，不把
-转向、换道或小弧线入轨误算成覆盖。`minimum_actual_coverage_ratio` 默认 `0.95`，
-`coverage_grid_resolution_m` 默认 `0.01 m`；低于门限时进程返回失败。该门限于
-2026-08-14 由 `0.98` 放宽到 `0.95`，见 §14.3。
+转向、换道或小弧线入轨误算成覆盖。`minimum_actual_coverage_ratio` 默认 `0`，
+`coverage_grid_resolution_m` 默认 `0.01 m`；正常任务仅记录覆盖比例，不因可走区未完整
+拍到而失败。需要合同覆盖验收时才显式设置正数门限；低于该门限时进程返回失败。
 `trajectory_csv` 和 `summary_json` 默认为空，显式配置后分别保存完整真值/融合轨迹和
 机器可读的 Action、逐段误差、覆盖/漏扫面积摘要。两者都在 `try/finally` 中写出：
 超时或异常时同样落盘，摘要里 `completed=false`、`passed=false` 并记录
@@ -409,16 +409,17 @@ transient local、depth 1）。启动时为 `false`，同时满足终点位置�
 | --- | --- | --- | --- |
 | `/clicked_point` | `geometry_msgs/msg/PointStamped` | depth 10 | RViz `Publish Point` 输入 |
 | `/coverage/path` | `nav_msgs/msg/Path` | transient local, depth 1 | 墙面覆盖路径；失败或清空时发布空路径 |
-| `/coverage/markers` | `visualization_msgs/msg/MarkerArray` | transient local, depth 1 | 墙面、可达区域、点选区域、路径和方向 |
+| `/coverage/markers` | `visualization_msgs/msg/MarkerArray` | transient local, depth 1 | 墙面、绿色虚线绝对安全区、橙色任务可走区、蓝色机器人路径、黄色相机覆盖带和方向 |
 | `/coverage/wall_grid` | `visualization_msgs/msg/MarkerArray` | transient local, depth 1 | 参考网格线，启动时发一次。单独一个话题是为了在 RViz 里能单独勾掉；线位于工作系原点整数倍处、只画内部线，与 Gazebo 墙面上那套规则一致。间距只从 `wall.yaml` 取，不受 `wall_grid_spacing` 影响 |
 | `/coverage/status` | `std_msgs/msg/String` | transient local, depth 1 | 等待、成功和失败原因 |
 
 所有覆盖接口默认使用 `odom`。RViz 点选消息的 `frame_id` 不匹配时会被拒绝。
 
-`effective` 命名空间里的**绿色可达区域**是墙面按 `safety_margin` 内缩的结果，
-与点选的角点无关，因此从节点启动起就一直发布，包括一个点都没选、以及规划失败时。
-它曾经只在规划成功后才画出来——也就是在操作员最需要它的时刻藏起来：点在它外面
-正是规划失败的原因。
+`effective` 命名空间里的**绿色虚线绝对安全区**是墙面按 `safety_margin` 内缩的结果，
+与点选角点无关，因此从节点启动起一直发布。`original` 的橙色实线是用户点选的机器人
+任务可走区，`coverage_path` 的蓝色实线是 `base_link` 名义路径；所有蓝色路点必须位于
+橙区内。`camera_coverage` 只有规划成功后才发布，用黄色半透明 `TRIANGLE_LIST` 逐条画出
+相机矩形扫掠带；它是可重叠的不规则并集，不冒充一个矩形或梯形 Polygon。
 
 ### 服务
 
@@ -626,14 +627,14 @@ progress = (已完成各段预计耗时 + 当前段已完成部分) / 全任务�
 | `detection_width` | m | 检测有效宽度 |
 | `detection_length` | m | 沿行进方向的检测有效长度；G2 标称 `0.28125`，旧回归配置保留 `0.01` |
 | `detection_forward_offset` | m | 检测中心相对 `base_link` 的前向偏移；巡检相机为 `0.340` |
-| `detection_edge_overlap` | m | 区域四边额外超覆距离；G2 为 `0.020`，不改变真实检测足迹尺寸 |
+| `detection_edge_overlap` | m | 兼容保留参数；可走区优先语义下不改变蓝线或真实检测足迹，当前不参与覆盖面积计算 |
 | `overlap_ratio` | `[0, 1)` | 相邻扫描带重叠率 |
 | `robot_length`、`robot_width` | m | launch 从 `robot.yaml` 注入 |
 | `edge_clearance` | m | launch 从 `robot.yaml` 注入 |
 | `wall_width`、`wall_height` | m | launch 从 `wall.yaml` 注入 |
 | `path_height` | m | RViz 路径离墙显示高度 |
 | `bottom_warning_tolerance` | m | 梯形底边点高度修正提示阈值 |
-| `minimum_nominal_coverage_ratio` | `(0, 1]` | 规划期覆盖率门限，默认 `0.965` |
+| `minimum_nominal_coverage_ratio` | `[0, 1]` | 规划期可选覆盖率门限；默认 `0` 只报告、不因覆盖不足拒绝安全路径 |
 | `top_edge_scan` | `auto` / `always` / `never` | 顶部收边扫描，默认 `auto` |
 
 规划器内部计算：
@@ -646,18 +647,19 @@ safety_margin = 0.5 × hypot(robot_length, robot_width) + edge_clearance
 矩形点选顺序为 A（左下）、B（右上）；等腰梯形为 A（左下）、B（右上）、
 C（右下）。A、C 的高度取平均值修正为水平底边。
 
-完整任务接口区分检测覆盖区域 `coverage_region` 和机器人中心安全运动区域
-`motion_region`。以下参数和输出已经进入规划／执行接口：
+由于消息字段需要兼容现有 Action 和归档，`coverage_region` 现承载用户选择的机器人任务
+可走区；`motion_region` 承载整面墙的绝对安全运动区。相机实际覆盖不是单个 Polygon，
+而是从 `SCAN` 与检测足迹推导的扫掠带并集。以下参数和输出已经进入规划／执行接口：
 
 | 项目 | 含义 |
 | --- | --- |
 | `detection_length` | 沿行进方向的检测有效长度；与 `detection_width` 共同形成二维检测足迹 |
-| `turn_clearance` | 竖向底部转向相对 `motion_region` 下边界的安全余量，初值 `0.06 m` |
+| `turn_clearance` | 竖向底部转向相对绝对安全边界的安全余量，初值 `0.06 m` |
 | `/control/reference_path` | 转向后根据 EKF 实际位置生成的动态直线执行参考，仅供显示和评价 |
 
 竖向为主时，控制器以第一次转向后的实际位置为斜直线 `TRANSITION` 起点，第二次
 转向后按统一入轨判据冻结与名义线平行的 `SCAN`，不得逐列倒车返回名义起点。覆盖率
-必须按二维检测足迹重新计算；低于 95% 时增加一条顶部水平收边扫描。
+必须按二维检测足迹重新计算并报告；只有合同门限或操作员显式要求时才增加顶部水平收边扫描。
 
 ### 换道段的转向下坠预留
 
@@ -700,23 +702,22 @@ C（右下）。A、C 的高度取平均值修正为水平底边。
 | 取值 | 行为 |
 | --- | --- |
 | `auto`（默认） | 仅当**预计**覆盖率低于 `minimum_nominal_coverage_ratio` 时追加 |
-| `always` | 只要能放进 `motion_region` 就追加 |
+| `always` | 只要蓝色收边线能放进橙色任务可走区就追加 |
 | `never` | 从不追加 |
 
-收边线位于 `区域顶边 - 0.5 × detection_width`，即其扫过的条带上沿正好落在区域
-顶边；区域高度不足一个 `detection_width` 时取区域中线。进入方向取距离上一条扫描
-线终点较近的一端，避免为了上线横穿整个区域。两个端点必须都在 `motion_region`
+收边蓝线位于橙色任务可走区顶边，相机足迹自然越过该边缘。进入方向取距离上一条扫描
+线终点较近的一端，避免为了上线横穿整个区域。两个端点必须都在橙色任务可走区
 内，否则不追加并在 `/coverage/status` 说明原因——宁可少扫，也不生成一个执行器会在
 接受 Goal 阶段拒绝的任务。
 
-**只对竖向扫描生效。** 横向扫描的最高一条扫描线本来就在
-`区域顶边 - 0.5 × detection_width`，收边线会与它完全重合。`always` 配横向扫描时
+**只对竖向扫描生效。** 横向扫描的最高一条扫描线已经按检测宽度布置，另加收边会
+重复同一覆盖用途。`always` 配横向扫描时
 不追加，并在状态里说明。
 
-**`auto` 用的是预计覆盖率，看不到执行损失。** 实测的顶部漏扫来自扫描柱末端的足迹
-姿态，名义几何里并不存在（当前两个竖向工况的预计覆盖率都是 `100%`）。因此 §10.7
-所说的"实测覆盖率低于 95%"这一半是操作流程：验收发现不足时，把
-`top_edge_scan` 设为 `always` 重新规划，而不是期待 `auto` 自己触发。
+**`auto` 用的是预计覆盖率，看不到执行损失。** 默认覆盖率门限为零，因此 `auto` 默认
+不追加；部署显式配置正数门限时，它才会在预计比例不足时尝试追加。实测覆盖不足时，
+操作员可用 `always` 增加一条仍位于橙色可走区内的顶边扫描，或扩大可走区后重新规划，
+而不是让机器人为追求规则覆盖边界越过限制。
 
 ## 阶段 E 冻结接口
 
@@ -771,8 +772,9 @@ float64 detection_forward_offset
   已录制的 bag 换个含义；但没有任何执行器为它定义过行为，收下它等于按默认分支去走一段
   谁都没定义、谁都没测过的轨迹。在任务边界上拒绝，意味着真要用它的人在启动时就知道，
   而不是从跑出来的形状里猜；
-- Polygon 非法，或任一名义路点位于 `motion_region` 外；
-- `SCAN` 无法对 `coverage_region` 达到规划器声明的覆盖要求。
+- Polygon 非法、`coverage_region` 不在 `motion_region` 内，或任一名义路点位于用户
+  `coverage_region` 外；
+- 显式配置了正数覆盖率门限，且 `SCAN` 对用户可走区达不到该门限。默认门限为零，只报告。
 
 `coverage_region`、`motion_region` 和 `waypoints` 不带各自 Header，统一继承任务
 Header，避免同一任务内部出现多个坐标系或时间戳。
@@ -787,12 +789,12 @@ Header，避免同一任务内部出现多个坐标系或时间戳。
 
 规划失败、清空或开始新区块时，规划器同时发布空 `/coverage/path` 和空路点的
 `/coverage/task`，并增加 revision，使旧预览失效。空任务永远不能作为执行 Goal。
-当前规划器以原始用户区域填充 `coverage_region`，以整面墙按机器人安全边距内缩的
-多边形填充 `motion_region`。E2 已按 `detection_width × detection_length` 的矩形足迹
-布置标称 `SCAN`：中心线覆盖目标区域，端点沿行进方向按半个检测长度外延；每个中心
-路点必须位于 `motion_region`，否则拒绝规划。标称覆盖率低于
-`minimum_nominal_coverage_ratio`（默认 `0.965`）也会拒绝规划；该值高于 §14.3 的
-`95%` 验收门限，留出实测 `0.37～1.09` 个百分点的执行损失。
+当前规划器以原始用户区域填充 `coverage_region`（任务可走区），以整面墙按机器人安全
+边距内缩的多边形填充 `motion_region`（绝对安全区）。扫描方向上的蓝色端点直接取橙色
+边界，不再为相机偏移向外延长；横向布线仍按检测宽度和重叠率均匀分配。黄色相机覆盖
+由蓝线叠加 `detection_forward_offset` 和真实二维足迹得到。规划器报告橙区被预计拍到的
+比例；`minimum_nominal_coverage_ratio=0` 为默认的“尽量覆盖”模式，只有显式配置正数
+门限时才因覆盖不足拒绝。
 竖向执行中的转向下滑属于实际轨迹问题，E9 将用同一足迹评估实际轨迹，并在需要时追加
 一条顶部水平收边扫描。
 

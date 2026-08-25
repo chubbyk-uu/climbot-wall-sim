@@ -146,8 +146,7 @@ class TestTopEdgeScan(unittest.TestCase):
         first, last = forced.waypoints[-2].position, forced.waypoints[-1].position
         self.assertAlmostEqual(first.y, last.y, places=6)
         self.assertNotAlmostEqual(first.x, last.x, places=3)
-        # Half a detection width below the top edge, so its band tops out on it.
-        self.assertAlmostEqual(first.y, 6.505 - 0.25, places=6)
+        self.assertAlmostEqual(first.y, 6.505, places=6)
 
     def test_every_waypoint_stays_inside_the_motion_region(self):
         """The finishing line and its transition are bound by 10.7 too."""
@@ -180,7 +179,7 @@ class TestTopEdgeScan(unittest.TestCase):
         first = odd.waypoints[-2].position
         last = odd.waypoints[-1].position
         self.assertAlmostEqual(first.y, last.y, places=6)
-        self.assertAlmostEqual(first.y, 6.505 - 0.25, places=6)
+        self.assertAlmostEqual(first.y, 6.505, places=6)
 
     def test_both_last_column_directions_are_actually_covered(self):
         """Guard the pair itself, so neither case is silently lost."""
@@ -194,6 +193,8 @@ class TestTopEdgeScan(unittest.TestCase):
         """Its topmost scan line already tops out on the edge."""
         task = self._task('horizontal_planner')
         top = max(point.position.y for point in task.waypoints)
+        # Horizontal tracks are base_link routes; the last one remains inside
+        # the user drive region while its camera footprint extends beyond it.
         self.assertAlmostEqual(top, 6.505 - 0.25, places=6)
         self.assertEqual(
             sum(1 for point in task.waypoints

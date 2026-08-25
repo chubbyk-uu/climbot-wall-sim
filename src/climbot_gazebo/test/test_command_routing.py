@@ -56,6 +56,12 @@ def test_wall_launch_uses_the_current_total_station_delay_default():
     assert "default_value='0.01'" in argument.split('DeclareLaunchArgument', maxsplit=1)[0]
 
 
+def test_total_station_node_uses_the_same_delay_when_run_standalone():
+    """Launching the adapter directly must not restore the retired 50 ms default."""
+    source = (PACKAGE_ROOT / 'scripts' / 'total_station_sim.py').read_text()
+    assert "self.declare_parameter('fixed_delay_s', 0.01)" in source
+
+
 def test_rendered_launch_assets_are_removed_on_shutdown(tmp_path):
     """Do not leak the generated SDF and temporary model directory into /tmp."""
     world_path = tmp_path / 'climbot_wall.sdf'

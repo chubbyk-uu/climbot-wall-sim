@@ -50,6 +50,9 @@ def generate_test_description():
             'input_mode': 'rviz',
             'region_type': 'rectangle',
             'detection_width': 0.5,
+            'detection_length': 0.28125,
+            'detection_forward_offset': 0.340,
+            'detection_edge_overlap': 0.020,
             'overlap_ratio': 0.2,
             'robot_length': 0.76,
             'robot_width': 0.475,
@@ -134,6 +137,13 @@ class TestCoveragePlannerRvizInput(unittest.TestCase):
             marker for marker in self.markers.markers
             if marker.ns == 'clicked_points']
 
+    def _markers_in(self, marker_namespace):
+        if self.markers is None:
+            return []
+        return [
+            marker for marker in self.markers.markers
+            if marker.ns == marker_namespace]
+
     def _call(self, client):
         self.assertTrue(client.wait_for_service(timeout_sec=10.0))
         future = client.call_async(Trigger.Request())
@@ -182,6 +192,24 @@ class TestCoveragePlannerRvizInput(unittest.TestCase):
         self.assertFalse(self._call(self.replan_client).success)
         self.assertEqual(len(self.task.waypoints), 0)
 
+    def test_startup_shows_only_the_dashed_wall_safe_limit(self):
+        self._wait_for(
+            lambda: self.markers is not None,
+            description='the startup boundary markers')
+        green = self._markers_in('effective')
+        self.assertEqual(len(green), 1)
+        self.assertEqual(green[0].type, green[0].LINE_LIST)
+        self.assertEqual(self._markers_in('camera_coverage'), [])
+
+        self._wait_for(
+            lambda: self.click_publisher.get_subscription_count() > 0,
+            description='the planner to subscribe to /clicked_point')
+        self._click(0.50, 1.0)
+        self._wait_for(
+            lambda: any('green wall-safe' in text for text in self.status),
+            description='the wall-safety rejection')
+        self.assertEqual(self._clicked_point_markers(), [])
+
     def test_two_clicks_produce_the_task_the_corners_describe(self):
         self._wait_for(
             lambda: self.click_publisher.get_subscription_count() > 0,
@@ -209,6 +237,10 @@ class TestCoveragePlannerRvizInput(unittest.TestCase):
             lambda: len(self.task.waypoints) > 2,
             description='a planned path from the clicked corners')
         self.assertEqual(len(self._clicked_point_markers()), 2)
+        yellow = self._markers_in('camera_coverage')
+        self.assertEqual(len(yellow), 1)
+        self.assertEqual(yellow[0].type, yellow[0].TRIANGLE_LIST)
+        self.assertGreater(len(yellow[0].points), 0)
         self.assertEqual(self.task.header.frame_id, 'odom')
         self.assertEqual(len(self.task.coverage_region.points), 4)
         self.assertEqual(

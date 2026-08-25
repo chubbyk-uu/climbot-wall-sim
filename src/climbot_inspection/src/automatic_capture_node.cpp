@@ -201,17 +201,13 @@ private:
     if (!key_ || !(key == *key_)) {
       key_ = key;
       next_trigger_ = 0U;
-      const double capture_span = std::max(0.0, length - footprint_length_);
-      first_trigger_ = message->detection_forward_offset +
-        std::min(0.5 * footprint_length_, 0.5 * length);
-      if (capture_span <= 1e-9) {
-        trigger_count_ = 1U;
-        trigger_interval_ = 0.0;
-      } else {
-        trigger_count_ =
-          static_cast<uint32_t>(std::ceil(capture_span / spacing_)) + 1U;
-        trigger_interval_ = capture_span / static_cast<double>(trigger_count_ - 1U);
-      }
+      // The reference is now the user-bounded base_link route, not an
+      // artificially extended camera-centre sweep.  Photograph at both robot
+      // endpoints and distribute the remaining exposures over the whole base
+      // segment.  The front offset is applied only to camera progress.
+      first_trigger_ = message->detection_forward_offset;
+      trigger_count_ = static_cast<uint32_t>(std::ceil(length / spacing_)) + 1U;
+      trigger_interval_ = length / static_cast<double>(trigger_count_ - 1U);
     } else if (reference_) {
       const double shift = std::hypot(
         message->start.x - reference_->start.x, message->start.y - reference_->start.y) +
