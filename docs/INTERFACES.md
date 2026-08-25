@@ -1117,20 +1117,24 @@ G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`�
 ## 计划中的 G4 任务归档接口
 
 G4 在 `climbot_inspection` 中增加任务级记录器，输入 `image_raw`、`CameraInfo`、
-`InspectionCapture` 和冻结任务快照，输出到受配置约束的 `output_root/task_id/`。操作员
-选择根目录，节点生成并校验任务子目录；不得直接拼接未经校验的任务 ID 形成路径。
+`InspectionCapture` 和冻结任务快照，输出到受配置约束的任务目录。操作员选择根目录，
+节点生成并校验任务子目录；不得直接拼接未经校验的任务 ID 形成路径。第一版使用
+`<output_root>/<safe-task-id>/r<revision>_<UTC-time>_<run-id>/`，同一 revision 重跑也必须
+产生新目录，绝不覆盖旧数据。
 
 建议的第一版目录契约：
 
 ```text
-task_id/
-├── manifest.json
-├── calibration/
-│   ├── camera_info.yaml
-│   ├── camera_extrinsics.yaml
-│   └── flat_field_reference.json
-├── images/raw/000000.png
-└── metadata/000000.json
+output_root/
+└── safe-task-id/
+    └── r000123_20260825T103015Z_run-id/
+        ├── manifest.json
+        ├── calibration/
+        │   ├── camera_info.yaml
+        │   ├── camera_extrinsics.yaml
+        │   └── flat_field_reference.json
+        ├── images/raw/000000.png
+        └── metadata/000000.json
 ```
 
 单张标签以 `(task_id, revision, segment_index, trigger_index)` 为业务主键，以图像 header
@@ -1138,6 +1142,28 @@ task_id/
 保存墙面相机位置、航向、完整协方差、目标／实际沿轨位置和所有标定哈希。`manifest`
 保存任务区域、规划、软件提交、计数和失败清单。只有图片和标签均经临时文件写入、校验
 并原子改名后才增加成功计数；任务结束时必须验证主键、文件名和时间戳一一对应。
+
+### G4 计划中的任务启动与 RViz 接口
+
+现有 `/coverage/start` 不携带任务选项。G4 第一版计划在 `climbot_interfaces` 增加一个
+由管理器提供的带选项启动服务，至少携带 `inspection_enabled` 和 `output_root`；响应
+返回是否接受、`run_id`、记录器解析出的绝对任务目录和错误说明。RViz 面板只调用这个
+管理器接口，管理器内部完成“准备归档 → 成功后发送执行 Goal”的顺序，不允许 UI 自己
+拼接两次服务调用。旧 `/coverage/start` 保留给命令行和兼容测试，使用管理器参数中的
+`inspection_default_enabled` 与 `inspection_output_root`，建议默认分别为 `true` 和
+`~/climbot_data`。具体消息／服务名称在实现接口文件时确定，语义不得分裂。
+
+管理器状态将聚合记录器的权威状态，供面板显示：是否启用、`PREPARING`／`READY`／
+`RECORDING`／`FINALIZING`／`COMPLETED`／`CANCELED`／`FAILED`、预计／成功／失败照片数、
+最终目录和最后错误。采集启用时，归档准备失败必须使 Start 失败且不发送运动 Goal；
+执行中发生不可恢复的归档错误默认请求受控取消。取消或运动故障只改变 manifest 结果，
+不得删除已经提交的照片。
+
+RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采集摘要；中间三个页签
+`任务规划`、`巡检采集`、`详情`；底部固定 Start、Cancel / Stop 和恢复操作。采集页提供
+任务级开关、根目录编辑／浏览／恢复默认、预计照片数量与空间、保存计数、最终目录和
+错误。Start 后这些设置冻结，直到本次任务封存。路径由记录器所在主机解释；分机部署时
+本地文件选择器只是一项便利，记录器返回的绝对路径才是权威结果。
 
 离线 `climbot_image_processing` 先在畸变原图坐标中应用暗场／平场，再去畸变；
 `climbot_mosaic` 以 EKF 位姿和协方差为绝对先验，以重叠特征匹配为相对约束做鲁棒位姿
