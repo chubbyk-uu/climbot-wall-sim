@@ -51,6 +51,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_coverage_metrics test/test_coverage_metrics.py)
   ament_add_pytest_test(test_ekf_startup test/test_ekf_startup.py)
   ament_add_pytest_test(test_execution_metrics test/test_execution_metrics.py)
+  ament_add_pytest_test(test_inspection_contract test/test_inspection_contract.py)
   ament_add_pytest_test(test_model_defaults test/test_model_defaults.py)
   ament_add_pytest_test(
     test_normal_load_statistics test/test_normal_load_statistics.py)

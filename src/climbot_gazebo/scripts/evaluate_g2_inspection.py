@@ -26,6 +26,10 @@ from ament_index_python.packages import get_package_share_directory
 from climbot_description.geometry import quaternion_tuple, yaw_from_quaternion
 from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.coverage_metrics import footprint_coverage
+from climbot_gazebo.inspection_contract import (
+    DEFAULT_MINIMUM_ACTUAL_OVERLAP_RATIO,
+    DEFAULT_NOMINAL_OVERLAP_RATIO,
+)
 from climbot_gazebo.provenance import git_state
 from climbot_interfaces.msg import CoverageStatus, CoverageTask, InspectionCapture
 from nav_msgs.msg import Odometry
@@ -53,11 +57,12 @@ class G2InspectionEvaluator(Node):
         super().__init__('g2_inspection_evaluator')
         self.declare_parameter('summary_path', '')
         self.declare_parameter('timeout_s', 600.0)
-        self.declare_parameter('nominal_overlap_ratio', 0.20)
+        self.declare_parameter('nominal_overlap_ratio', DEFAULT_NOMINAL_OVERLAP_RATIO)
         # 20% is the nominal planning/capture policy.  A 15% measured lower
         # bound keeps the same physical tolerance as the former 25% nominal /
         # 20% actual contract: 25 mm laterally and 14.0625 mm along-track.
-        self.declare_parameter('minimum_actual_overlap_ratio', 0.15)
+        self.declare_parameter(
+            'minimum_actual_overlap_ratio', DEFAULT_MINIMUM_ACTUAL_OVERLAP_RATIO)
         self.declare_parameter('maximum_camera_position_error_m', 0.005)
         self.declare_parameter('maximum_heading_error_deg', 1.0)
         # The normal task drive region is a safety constraint, not an implied

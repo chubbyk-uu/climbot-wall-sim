@@ -69,6 +69,8 @@ def generate_test_description():
             # stale-input behavior has a dedicated short-timeout launch test.
             'odometry_timeout_s': 2.0,
             'segment_timeout_s': 15.0,
+            'capture_gate_timeout_s': 0.15,
+            'capture_gate_start_timeout_s': 0.15,
             'alignment_settle_duration_s': 0.05,
             'goal_settle_duration_s': 0.05,
             'final_approach_distance_m': 0.08,
@@ -289,6 +291,34 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertEqual(
             wrapped.result.result_code, ExecuteCoverage.Result.CANCELED)
         self._advance(0.05)
+        linear, angular, _ = self._current_command()
+        self.assertEqual((linear, angular), (0.0, 0.0))
+
+    def test_inspection_scan_requires_a_fresh_capture_gate(self):
+        """A lost capture process must abort promptly, not stall until segment timeout."""
+        self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
+        for _ in range(5):
+            self._publish_odometry(0.0, 0.0, 0.0)
+            self._advance(0.02)
+        goal = ExecuteCoverage.Goal()
+        goal.task = _task()
+        goal.inspection_enabled = True
+        send_future = self.client.send_goal_async(goal)
+        for _ in self._pending(send_future, 12.0):
+            self._publish_odometry(0.0, 0.0, 0.0)
+            self._advance()
+        self.assertTrue(send_future.done())
+        handle = send_future.result()
+        self.assertTrue(handle.accepted)
+        result_future = handle.get_result_async()
+        for _ in self._pending(result_future, 15.0):
+            self._publish_odometry(0.0, 0.0, 0.0)
+            self._advance()
+        self.assertTrue(result_future.done())
+        result = result_future.result()
+        self.assertEqual(result.status, GoalStatus.STATUS_ABORTED)
+        self.assertEqual(result.result.result_code, ExecuteCoverage.Result.TRACKING_FAILED)
+        self.assertIn('capture gate heartbeat', result.result.message)
         linear, angular, _ = self._current_command()
         self.assertEqual((linear, angular), (0.0, 0.0))
 

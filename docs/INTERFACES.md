@@ -1230,7 +1230,7 @@ RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采
 | `/control/execution_reference` | `climbot_interfaces/msg/ExecutionReference` | 执行器当前冻结的有向直线、任务版本、段号、段类型和采集许可；不是规划器的名义预览 |
 | `/odometry/filtered` | `nav_msgs/msg/Odometry` | 触发位置和曝光时间位姿插值的唯一业务定位源 |
 | `/inspection/capture_metadata` | `climbot_interfaces/msg/InspectionCapture` | 一张成功原图的任务、触发点、冻结参考和曝光时刻 EKF 相机位姿 |
-| `/inspection/capture_gate` | `climbot_interfaces/msg/InspectionCaptureGate` | 自动采集器 → 跟踪器，Reliable + transient-local。`active=true` 时，匹配同一任务／版本／SCAN 段的相机中心不得越过 `maximum_camera_along_track`；成功配对、禁用或离开该段后发布 `active=false`。 |
+| `/inspection/capture_gate` | `climbot_interfaces/msg/InspectionCaptureGate` | 自动采集器 → 跟踪器，Reliable + transient-local。启用采集的 `SCAN` 必须持续收到同一任务／版本／段的 gate；`active=true` 时相机中心不得越过 `maximum_camera_along_track`，成功配对、禁用或离开该段后发布 `active=false`。 |
 
 `ExecutionReference.inspection_enabled` 只在正式 `SCAN` 的 `TRACK_LINE`／
 `FINAL_APPROACH` 为真；起点进入、对准、转向稳定、动态过渡和小弧线入轨均为假。
@@ -1246,6 +1246,15 @@ RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采
 都相同的消息。可选平场节点在启动时即校验 NPZ gain 与共享相机的 `1920×1080` 分辨率
 相符、有限且严格为正；不兼容标定不等待第一帧才暴露。运行中遇到异常图像只丢弃补偿
 预览，不影响正式 `image_raw` 归档。
+
+gate 是存活监督而不只是位置上限：跟踪器从进入启用采集的 `SCAN` 起，使用本机稳态时钟
+在一次性的 `capture_gate_start_timeout_s`（默认 `2.0 s`）建立窗口内等待第一条匹配 gate，
+收到后要求每条消息在 `capture_gate_timeout_s`（默认 `0.50 s`）内刷新。首次或后续心跳超时
+均发布零速度并以 `TRACKING_FAILED` 中止 Action，不能把过期 gate 当作 inactive 后继续运动。
+`header.stamp` 只用于消息可追溯性，不能用于时效判断，因为
+`use_sim_time` 暂停时它不会前进。完整 inspection launch 同时强制
+`capture_gate_max_lag_m < maximum_target_lag_m`、采集器与记录器的纵向重叠一致；v1 gate
+接口明确要求 `camera_mount_y_m == 0`，非零横向安装须先扩展接口。
 
 `InspectionCapture.header` 必须逐字段等于对应 `image_raw.header`。`camera_pose` 是光学
 中心在 `header.frame_id` 下的 EKF 插值位姿，协方差包含前置杠杆对航向不确定度的传播；

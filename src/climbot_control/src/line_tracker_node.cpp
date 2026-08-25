@@ -66,6 +66,14 @@ public:
     REALIGN,
   };
 
+  enum class CaptureGateHealth
+  {
+    NOT_REQUIRED,
+    WAITING_FOR_FIRST_GATE,
+    FRESH,
+    TIMED_OUT,
+  };
+
   LineTrackerNode()
   : Node("line_tracker")
   {
@@ -83,6 +91,8 @@ public:
     frame_id_ = declare_parameter("frame_id", "odom");
     standalone_mode_ = declare_parameter("standalone_mode", true);
     segment_timeout_s_ = declare_parameter("segment_timeout_s", 120.0);
+    capture_gate_timeout_s_ = declare_parameter("capture_gate_timeout_s", 0.50);
+    capture_gate_start_timeout_s_ = declare_parameter("capture_gate_start_timeout_s", 2.0);
     motion_region_tolerance_ = declare_parameter("motion_region_tolerance_m", 0.02);
     turn_slip_per_degree_ = declare_parameter("turn_slip_per_degree_m", 0.0005);
     parallel_scan_offset_ = declare_parameter("parallel_scan_offset_m", 0.045);
@@ -271,6 +281,7 @@ public:
           return;
         }
         capture_gate_ = *message;
+        capture_gate_received_at_ = std::chrono::steady_clock::now();
       });
     completion_publisher_ = create_publisher<std_msgs::msg::Bool>(
       "/control/segment_complete", rclcpp::QoS(1).reliable().transient_local());
@@ -405,6 +416,8 @@ private:
     requirePositive("control_frequency_hz", control_frequency_hz_);
     requirePositive("odometry_timeout_s", odometry_timeout_s_);
     requirePositive("segment_timeout_s", segment_timeout_s_);
+    requirePositive("capture_gate_timeout_s", capture_gate_timeout_s_);
+    requirePositive("capture_gate_start_timeout_s", capture_gate_start_timeout_s_);
     requireFinite("turn_slip_per_degree_m", turn_slip_per_degree_);
     if (turn_slip_per_degree_ < 0.0) {
       throw std::invalid_argument("turn_slip_per_degree_m must be non-negative.");
@@ -1139,6 +1152,8 @@ private:
     active_goal_.reset();
     active_task_.reset();
     capture_gate_.reset();
+    capture_gate_received_at_.reset();
+    capture_gate_wait_started_.reset();
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
   }
 
@@ -1275,16 +1290,56 @@ private:
     execution_reference_publisher_->publish(reference);
   }
 
+  bool captureGateIsRequired() const
+  {
+    return active_task_ && inspection_enabled_ && !approaching_start_ && !arc_entry_active_ &&
+           reference_prepared_ &&
+           current_segment_ < active_task_->segment_types.size() &&
+           active_task_->segment_types[current_segment_] ==
+           climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN &&
+           (motion_state_ == MotionState::TRACK_LINE ||
+           motion_state_ == MotionState::FINAL_APPROACH);
+  }
+
+  bool captureGateMatchesCurrentScan() const
+  {
+    return capture_gate_ && active_task_ &&
+           capture_gate_->task_id == active_task_->task_id &&
+           capture_gate_->revision == active_task_->revision &&
+           capture_gate_->segment_index == static_cast<int32_t>(current_segment_);
+  }
+
+  CaptureGateHealth captureGateHealth()
+  {
+    if (!captureGateIsRequired()) {
+      capture_gate_wait_started_.reset();
+      return CaptureGateHealth::NOT_REQUIRED;
+    }
+    const auto current_time = std::chrono::steady_clock::now();
+    if (captureGateMatchesCurrentScan() && capture_gate_received_at_ &&
+      std::chrono::duration<double>(current_time - *capture_gate_received_at_).count() <=
+      capture_gate_timeout_s_)
+    {
+      capture_gate_wait_started_.reset();
+      return CaptureGateHealth::FRESH;
+    }
+    if (!capture_gate_wait_started_) {
+      capture_gate_wait_started_ = current_time;
+    }
+    const double timeout = captureGateMatchesCurrentScan() ?
+      capture_gate_timeout_s_ : capture_gate_start_timeout_s_;
+    if (std::chrono::duration<double>(current_time - *capture_gate_wait_started_).count() >
+      timeout)
+    {
+      return CaptureGateHealth::TIMED_OUT;
+    }
+    return CaptureGateHealth::WAITING_FOR_FIRST_GATE;
+  }
+
   std::optional<double> captureGateRemaining() const
   {
-    if (!capture_gate_ || !capture_gate_->active || !active_task_ || !inspection_enabled_ ||
-      !reference_prepared_ || current_segment_ >= active_task_->segment_types.size() ||
-      active_task_->segment_types[current_segment_] !=
-      climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN ||
-      (motion_state_ != MotionState::TRACK_LINE && motion_state_ != MotionState::FINAL_APPROACH) ||
-      capture_gate_->task_id != active_task_->task_id ||
-      capture_gate_->revision != active_task_->revision ||
-      capture_gate_->segment_index != static_cast<int32_t>(current_segment_))
+    if (!captureGateIsRequired() || !captureGateMatchesCurrentScan() ||
+      !capture_gate_->active)
     {
       return std::nullopt;
     }
@@ -1536,7 +1591,21 @@ private:
         return;
       }
     }
-    if (desired.linear > 0.0 && cross_integral_gain_ > 0.0) {
+    const auto capture_gate_health = captureGateHealth();
+    if (capture_gate_health == CaptureGateHealth::TIMED_OUT) {
+      finishGoal(
+        ExecuteCoverage::Result::TRACKING_FAILED,
+        "Inspection capture gate heartbeat was not received for the active SCAN.");
+      return;
+    }
+    const bool waiting_for_capture_gate =
+      capture_gate_health == CaptureGateHealth::WAITING_FOR_FIRST_GATE;
+    if (waiting_for_capture_gate) {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *control_clock_, 2000,
+        "Waiting for the active SCAN's inspection capture gate; holding motion.");
+    }
+    if (!waiting_for_capture_gate && desired.linear > 0.0 && cross_integral_gain_ > 0.0) {
       const double candidate_integral = std::clamp(
         cross_integral_ + desired.cross * dt, -cross_integral_limit_, cross_integral_limit_);
       const auto candidate = climbot_control::trackLine(start_, end_, pose_, taskCruiseSpeed(),
@@ -1575,7 +1644,11 @@ private:
     } else {
       desired.linear = timeReferenceSpeed(current_time, dt, desired);
     }
-    applyCaptureGate(desired);
+    if (waiting_for_capture_gate) {
+      desired.linear = 0.0;
+    } else {
+      applyCaptureGate(desired);
+    }
     if (oscillation_monitor_->update(desired.cross, desired.along) &&
       !oscillation_warning_emitted_)
     {
@@ -1767,6 +1840,8 @@ private:
   double control_frequency_hz_{50.0};
   double odometry_timeout_s_{0.25};
   double segment_timeout_s_{120.0};
+  double capture_gate_timeout_s_{0.50};
+  double capture_gate_start_timeout_s_{2.0};
   double motion_region_tolerance_{0.02};
   double turn_slip_per_degree_{0.0005};
   double parallel_scan_offset_{0.045};
@@ -1844,6 +1919,8 @@ private:
   rclcpp::Time segment_start_time_;
   std::optional<climbot_interfaces::msg::CoverageTask> active_task_;
   std::optional<climbot_interfaces::msg::InspectionCaptureGate> capture_gate_;
+  std::optional<std::chrono::steady_clock::time_point> capture_gate_received_at_;
+  std::optional<std::chrono::steady_clock::time_point> capture_gate_wait_started_;
   std::shared_ptr<GoalHandle> active_goal_;
   std::unique_ptr<climbot_control::CrossTrackOscillationMonitor> oscillation_monitor_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr command_publisher_;

@@ -205,6 +205,7 @@ private:
     if (!std::isfinite(length) || length <= 1e-6) {
       RCLCPP_ERROR(get_logger(), "Rejected zero or non-finite execution reference.");
       reference_.reset();
+      publishInactiveGate("invalid execution reference");
       return;
     }
     if (!std::isfinite(message->detection_forward_offset) ||
@@ -214,6 +215,7 @@ private:
         get_logger(), *get_clock(), 5000,
         "Task detection_forward_offset does not match the camera mount; automatic capture disabled.");
       reference_.reset();
+      publishInactiveGate("camera mount does not match execution reference");
       return;
     }
     const Key key{message->task_id, message->revision, message->segment_index};
@@ -467,6 +469,7 @@ private:
         "No EKF interpolation bracket arrived for an inspection image; segment disabled.");
       disabled_key_ = key_;
       pending_.reset();
+      publishInactiveGate("inspection segment disabled after EKF interpolation timeout");
     }
   }
 
@@ -490,6 +493,10 @@ private:
   {
     if (!reference_ || !key_) {
       publishInactiveGate("no active inspection SCAN reference");
+      return;
+    }
+    if (disabled_key_ && *disabled_key_ == *key_) {
+      publishInactiveGate("inspection segment disabled");
       return;
     }
     // A service response or its frame may still be outstanding.  References are

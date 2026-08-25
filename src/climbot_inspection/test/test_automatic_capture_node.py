@@ -173,7 +173,14 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         # The reference now bounds base_link. The first exposure is at its
         # start, with the camera centre 0.340 m ahead.
         self._reference(True)
-        time.sleep(0.2)
+        deadline = time.monotonic() + 2.0
+        while self.capture_calls < 1 and time.monotonic() < deadline:
+            # The capture service and client discover one another
+            # asynchronously. Keep the frozen reference current until that
+            # handshake is complete instead of turning a discovery delay into
+            # a false no-trigger assertion.
+            self._reference(True)
+            time.sleep(0.01)
         self.assertEqual(self.capture_calls, 1)
         # The image is at 10.5 s. A future sample completes the EKF bracket.
         self._odom(11, 0.15)
@@ -279,6 +286,34 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self._wait_count(1)
         self.assertEqual(self.metadata[0].segment_index, 9)
         self.assertEqual(self.metadata[0].trigger_index, 0)
+
+    def test_pose_timeout_disables_and_releases_its_gate(self):
+        """An unrecoverable pose bind must not leave a SCAN waiting for 120 s."""
+        time.sleep(0.3)
+        self.image_stamp = Time(sec=40, nanosec=500_000_000)
+        self._odom(40, 0.125)
+        self._reference(True, segment=10)
+        deadline = time.monotonic() + 2.0
+        while self.capture_calls < 1 and time.monotonic() < deadline:
+            self._reference(True, segment=10)
+            time.sleep(0.01)
+        self.assertEqual(self.capture_calls, 1)
+
+        # Do not publish the future odometry sample that would form the EKF
+        # interpolation bracket for the 40.5 s image.  This is a segment
+        # fault, not a reason to keep the tracker stopped behind a stale gate.
+        deadline = time.monotonic() + 2.0
+        while (not self.gates or self.gates[-1].active) and time.monotonic() < deadline:
+            self._reference(True, segment=10)
+            time.sleep(0.01)
+        self.assertTrue(self.gates)
+        self.assertFalse(self.gates[-1].active)
+        self.assertEqual(self.gates[-1].segment_index, 10)
+        calls_after_disable = self.capture_calls
+        self._reference(True, segment=10)
+        time.sleep(0.1)
+        self.assertFalse(self.gates[-1].active)
+        self.assertEqual(self.capture_calls, calls_after_disable)
 
 
 @launch_testing.post_shutdown_test()

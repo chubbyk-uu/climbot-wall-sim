@@ -9,6 +9,12 @@ line_tracker:
     odometry_timeout_s: 0.25
     standalone_mode: true
     segment_timeout_s: 180.0
+    # Inspection-enabled SCANs must keep receiving a matching position-gate
+    # heartbeat.  Its timeout uses steady time, not Gazebo's paused ROS clock.
+    capture_gate_timeout_s: 0.50
+    # A new SCAN gets a one-time DDS/callback startup allowance before its
+    # first matching gate arrives. Once it does, the shorter heartbeat applies.
+    capture_gate_start_timeout_s: 2.0
     motion_region_tolerance_m: 0.02
     turn_slip_per_degree_m: 0.00041
     parallel_scan_offset_m: 0.045
