@@ -4,7 +4,7 @@
 
 """Publish patent-compatible flat-field corrected mono8 images."""
 
-from cv_bridge import CvBridge
+from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 import rclpy
 from rclpy._rclpy_pybind11 import RCLError
@@ -12,21 +12,29 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 
-from climbot_inspection.flat_field import apply_calibration
+from climbot_inspection.flat_field import apply_calibration, validate_gain
 
 
 class FlatFieldNode(Node):
     def __init__(self):
         super().__init__('flat_field_node')
         self.declare_parameter('calibration_file', '')
+        self.declare_parameter('expected_width', 1920)
+        self.declare_parameter('expected_height', 1080)
         self.declare_parameter('input_topic', '/inspection/camera/image_raw')
         self.declare_parameter(
             'output_topic', '/inspection/camera/image_compensated')
         path = str(self.get_parameter('calibration_file').value)
         if not path:
             raise ValueError('calibration_file must not be empty')
+        width = int(self.get_parameter('expected_width').value)
+        height = int(self.get_parameter('expected_height').value)
+        if width <= 0 or height <= 0:
+            raise ValueError('expected_width and expected_height must be positive')
         with np.load(path, allow_pickle=False) as archive:
-            self.gain = archive['gain'].astype(np.float32)
+            gain = archive['gain']
+            validate_gain(gain, (height, width))
+            self.gain = gain.astype(np.float32)
             if int(archive['frame_count']) < 11:
                 raise ValueError('calibration used too few frames')
             if int(archive['unique_hashes']) != int(archive['frame_count']):
@@ -39,8 +47,14 @@ class FlatFieldNode(Node):
             self._on_image, 10)
 
     def _on_image(self, message):
-        image = self.bridge.imgmsg_to_cv2(message, desired_encoding='mono8')
-        corrected = apply_calibration(image, self.gain)
+        try:
+            image = self.bridge.imgmsg_to_cv2(message, desired_encoding='mono8')
+            corrected = apply_calibration(image, self.gain)
+        except (CvBridgeError, TypeError, ValueError) as error:
+            # A malformed upstream frame must not terminate the optional
+            # preview stream or affect canonical raw-image recording.
+            self.get_logger().error('Dropping invalid flat-field input: %s', error)
+            return
         output = self.bridge.cv2_to_imgmsg(corrected, encoding='mono8')
         output.header = message.header
         self.publisher.publish(output)

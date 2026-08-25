@@ -189,6 +189,10 @@ class ArchiveRecorderNode(Node):
             'camera_config_file', str(Path(get_package_share_directory(
                 'climbot_description')) / 'config' / 'inspection_camera.yaml')).value)
         self._flat_field_file = str(self.declare_parameter('flat_field_file', '').value)
+        # Provenance is invariant for the lifetime of this recorder process.
+        # Resolving it per image used to perform a potentially slow upward git
+        # search on the single-threaded recording executor.
+        self._software_git_commit = self._git_commit()
 
         image_topic = str(self.declare_parameter(
             'image_topic', '/inspection/camera/image_raw').value)
@@ -307,7 +311,7 @@ class ArchiveRecorderNode(Node):
             'failures': session.failures,
             'frozen_scan_references': [
                 session.references[index] for index in sorted(session.references)],
-            'software_git_commit': self._git_commit(),
+            'software_git_commit': self._software_git_commit,
             'canonical_image': {
                 'encoding': 'mono8', 'format': 'png', 'distorted': True,
                 'illumination_compensated': False,
@@ -319,7 +323,10 @@ class ArchiveRecorderNode(Node):
 
     def _write_calibration_manifest(self, session: Session) -> None:
         calibration = session.directory / 'calibration'
-        source = Path(self._camera_config_file).expanduser()
+        # Read declared values here because preparation is the freeze point:
+        # a caller may correct an invalid local calibration path before a new
+        # archive is prepared, but never after the session exists.
+        source = Path(str(self.get_parameter('camera_config_file').value)).expanduser()
         if not source.is_file():
             raise ArchiveError(f'camera_config_file does not exist: {source}')
         try:
@@ -332,7 +339,8 @@ class ArchiveRecorderNode(Node):
             calibration / 'camera_extrinsics.yaml',
             yaml.safe_dump({'optical_mount': optical_mount, 'source_sha256': sha256_file(source)},
                            allow_unicode=True, sort_keys=True).encode('utf-8'))
-        flat = Path(self._flat_field_file).expanduser() if self._flat_field_file else None
+        flat_field_file = str(self.get_parameter('flat_field_file').value)
+        flat = Path(flat_field_file).expanduser() if flat_field_file else None
         reference: dict[str, Any] = {'available': False}
         if flat is not None:
             if not flat.is_file():
@@ -347,6 +355,8 @@ class ArchiveRecorderNode(Node):
             response.success = False
             response.message = 'Another inspection archive is already active.'
             return response
+        root: Path | None = None
+        directory: Path | None = None
         try:
             safe_task_id(request.task.task_id)
             snapshot = task_dict(request.task)
@@ -387,6 +397,16 @@ class ArchiveRecorderNode(Node):
         except (ArchiveError, OSError, ValueError) as error:
             response.success = False
             response.message = f'Archive preparation failed: {error}'
+            # Preparation has not published or retained this session yet, so
+            # an incomplete leaf cannot be a valid recoverable archive. Do
+            # not leave a misleading empty run after calibration validation or
+            # initial-manifest persistence fails.
+            if directory is not None and root is not None:
+                try:
+                    if directory.resolve().is_relative_to(root.resolve()):
+                        shutil.rmtree(directory)
+                except OSError as cleanup_error:
+                    response.message += f' (could not remove partial run: {cleanup_error})'
             self.get_logger().error(response.message)
         return response
 

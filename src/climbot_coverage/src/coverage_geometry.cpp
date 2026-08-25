@@ -74,6 +74,9 @@ Point2 intersectInfiniteLines(
 std::pair<double, double> bounds(
   const Polygon & polygon, bool horizontal_sweep)
 {
+  if (polygon.empty()) {
+    throw std::invalid_argument("A polygon must not be empty.");
+  }
   double minimum = horizontal_sweep ? polygon.front().y : polygon.front().x;
   double maximum = minimum;
   for (const auto & point : polygon) {
@@ -260,21 +263,17 @@ bool containsConvexPolygon(const Polygon & container, const Polygon & candidate)
 
 std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   const Polygon & drive_region, const Polygon & motion_region,
-  double detection_width, double detection_length, double maximum_spacing,
-  const std::string & sweep_direction, const std::string & start_corner,
-  double detection_forward_offset, double edge_overlap)
+  double detection_width, double maximum_spacing,
+  const std::string & sweep_direction, const std::string & start_corner)
 {
-  if (detection_width <= 0.0 || detection_length <= 0.0) {
-    throw std::invalid_argument("Detection footprint dimensions must be positive.");
+  if (!std::isfinite(detection_width) || detection_width <= 0.0) {
+    throw std::invalid_argument("Detection width must be positive and finite.");
   }
-  if (maximum_spacing <= 0.0) {
-    throw std::invalid_argument("Track spacing must be positive.");
+  if (!std::isfinite(maximum_spacing) || maximum_spacing <= 0.0) {
+    throw std::invalid_argument("Track spacing must be positive and finite.");
   }
-  if (!std::isfinite(detection_forward_offset) || detection_forward_offset < 0.0) {
-    throw std::invalid_argument("Detection forward offset must be finite and non-negative.");
-  }
-  if (!std::isfinite(edge_overlap) || edge_overlap < 0.0) {
-    throw std::invalid_argument("Edge overlap must be finite and non-negative.");
+  if (drive_region.size() < 3U || motion_region.size() < 3U) {
+    throw std::invalid_argument("Drive and motion regions require at least three points.");
   }
   const bool horizontal = sweep_direction == "horizontal";
   if (!horizontal && sweep_direction != "vertical") {
@@ -289,10 +288,9 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
   // The operator selects the permitted base_link route region.  Keep every
   // route inside it, while using half the effective cross-track footprint as
   // an inward placement distance so the outer camera bands meet the selected
-  // boundary instead of extending far beyond it.  Thus the camera determines
+  // boundary instead of extending far beyond it. Thus the camera determines
   // *where inside* the permitted region the blue lines lie, never a route
-  // outside that region. edge_overlap remains a compatibility field and does
-  // not change physical coverage or move the route.
+  // outside that region.
   const double cross_inset = std::min(0.5 * span, 0.5 * detection_width);
   const double usable_span = std::max(0.0, span - 2.0 * cross_inset);
   const double interval_ratio = usable_span / maximum_spacing;
@@ -331,20 +329,10 @@ std::vector<Point2> generateFootprintAwareBoustrophedonPath(
 
 std::vector<Point2> makeTopEdgeFinishingScan(
   const Polygon & drive_region, const Polygon & motion_region,
-  double detection_width, double detection_length, const Point2 & entry,
-  double detection_forward_offset, double edge_overlap)
+  const Point2 & entry)
 {
-  if (detection_width <= 0.0 || detection_length <= 0.0) {
-    throw std::invalid_argument("Detection footprint dimensions must be positive.");
-  }
-  if (drive_region.size() < 3U) {
-    throw std::invalid_argument("Drive region requires at least three points.");
-  }
-  if (!std::isfinite(detection_forward_offset) || detection_forward_offset < 0.0 ||
-    !std::isfinite(edge_overlap) || edge_overlap < 0.0)
-  {
-    throw std::invalid_argument(
-            "Detection offset and edge overlap must be finite and non-negative.");
+  if (drive_region.size() < 3U || motion_region.size() < 3U) {
+    throw std::invalid_argument("Drive and motion regions require at least three points.");
   }
   const auto [minimum_y, maximum_y] = bounds(drive_region, true);
   (void)minimum_y;

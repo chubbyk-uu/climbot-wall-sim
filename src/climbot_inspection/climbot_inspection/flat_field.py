@@ -95,3 +95,12 @@ def apply_calibration(image, gain):
     if gain.shape != image.shape or not np.all(np.isfinite(gain)):
         raise ValueError('gain must be finite and match the image')
     return np.clip(image.astype(np.float32) * gain, 0, 255).astype(np.uint8)
+
+
+def validate_gain(gain, expected_shape):
+    """Reject an incompatible or non-physical stored flat-field gain."""
+    if gain.shape != tuple(expected_shape):
+        raise ValueError(
+            'calibration gain shape must be %s, got %s' % (tuple(expected_shape), gain.shape))
+    if not np.all(np.isfinite(gain)) or not np.all(gain > 0.0):
+        raise ValueError('calibration gain must be finite and positive')

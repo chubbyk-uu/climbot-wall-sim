@@ -752,11 +752,6 @@ private:
     configureApproachLine(target);
   }
 
-  /// Check that entering the first scan line without a runway still fits the
-  /// post-turn offset budget, and fail here rather than after driving there.
-  /// Only the component normal to the scan line matters: turn slip is along
-  /// gravity, so it shifts a horizontal scan line but runs along a vertical
-  /// one. Returns false and finishes the goal when the budget is exceeded.
   /// Check the offset the first scan line will be left with after the entry
   /// leg's end has been lifted. Only the part of the drop that was not
   /// reserved can still displace the line, and only its component across that

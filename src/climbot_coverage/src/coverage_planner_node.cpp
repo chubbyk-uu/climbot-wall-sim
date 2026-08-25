@@ -605,8 +605,8 @@ private:
                 "Requested robot drive region lies outside the green wall-safe region.");
       }
       auto path = generateFootprintAwareBoustrophedonPath(
-        region.polygon, region.polygon, detection_width_, detection_length_, row_spacing_,
-        sweep_direction_, start_corner_, detection_forward_offset_, detection_edge_overlap_);
+        region.polygon, region.polygon, detection_width_, row_spacing_,
+        sweep_direction_, start_corner_);
       double coverage_ratio = sampledCoverageRatio(
         region.polygon, path, detection_width_, detection_length_, 300,
         detection_forward_offset_);
@@ -668,8 +668,7 @@ private:
       return {};
     }
     const auto finishing = makeTopEdgeFinishingScan(
-      coverage_region, motion, detection_width_, detection_length_, path.back(),
-      detection_forward_offset_, detection_edge_overlap_);
+      coverage_region, motion, path.back());
     if (finishing.empty()) {
       return "Top-edge scan skipped: the finishing line does not fit in motion_region.";
     }

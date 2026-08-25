@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <deque>
@@ -170,13 +171,13 @@ private:
   struct Pending
   {
     Metadata metadata;
-    rclcpp::Time requested;
+    std::chrono::steady_clock::time_point requested;
     std::optional<rclcpp::Time> image_stamp;
   };
 
   void onReference(const Reference::SharedPtr message)
   {
-    latest_reference_time_ = now();
+    latest_reference_time_ = std::chrono::steady_clock::now();
     if (!message->inspection_enabled || message->segment_index < 0) {
       reference_.reset();
       return;
@@ -268,7 +269,9 @@ private:
   {
     if (!reference_ || pending_ || poses_.empty() || !key_ ||
       (disabled_key_ && *disabled_key_ == *key_) ||
-      (now() - latest_reference_time_).seconds() > reference_timeout_ ||
+      !latest_reference_time_ ||
+      std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - *latest_reference_time_).count() > reference_timeout_ ||
       next_trigger_ >= trigger_count_ || !capture_client_->service_is_ready())
     {
       return;
@@ -279,7 +282,7 @@ private:
       return;
     }
     Pending pending;
-    pending.requested = now();
+    pending.requested = std::chrono::steady_clock::now();
     pending.metadata.task_id = key_->task_id;
     pending.metadata.revision = key_->revision;
     pending.metadata.segment_index = key_->segment;
@@ -416,7 +419,8 @@ private:
     if (!pending_) {
       return;
     }
-    const double age = (now() - pending_->requested).seconds();
+    const double age = std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - pending_->requested).count();
     if (!pending_->image_stamp && age > image_wait_timeout_) {
       RCLCPP_ERROR(
         get_logger(),
@@ -448,7 +452,7 @@ private:
   uint32_t trigger_count_{};
   double trigger_interval_{};
   double first_trigger_{};
-  rclcpp::Time latest_reference_time_{0, 0, RCL_ROS_TIME};
+  std::optional<std::chrono::steady_clock::time_point> latest_reference_time_;
   std::deque<nav_msgs::msg::Odometry::SharedPtr> poses_;
   rclcpp::Subscription<Reference>::SharedPtr reference_subscription_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;

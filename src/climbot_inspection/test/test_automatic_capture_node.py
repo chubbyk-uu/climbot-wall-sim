@@ -37,6 +37,9 @@ def generate_test_description():
         package='climbot_inspection',
         executable='automatic_capture_node',
         parameters=[{
+            # Intentionally publish no /clock: the timeout timer is wall time,
+            # so a paused simulator must still retry a missing image.
+            'use_sim_time': True,
             'effective_length_m': 0.25,
             'image_overlap_ratio': 0.20,
             'reference_timeout_s': 2.0,

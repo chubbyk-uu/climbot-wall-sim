@@ -36,7 +36,9 @@ import launch_ros.actions
 import launch_testing.actions
 import launch_testing.asserts
 import pytest
+from rcl_interfaces.srv import SetParameters
 import rclpy
+from rclpy.parameter import Parameter
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
 
@@ -82,6 +84,8 @@ class TestArchiveRecorderNode(unittest.TestCase):
             PrepareInspectionArchive, '/inspection/archive/prepare')
         self.finalize = self.node.create_client(
             FinalizeInspectionArchive, '/inspection/archive/finalize')
+        self.parameters = self.node.create_client(
+            SetParameters, '/archive_recorder_node/set_parameters')
         self.stop = Event()
         self.thread = Thread(target=self._spin)
         self.thread.start()
@@ -137,6 +141,13 @@ class TestArchiveRecorderNode(unittest.TestCase):
             time.sleep(0.01)
         self.assertTrue(future.done(), 'archive service did not answer')
         return future.result()
+
+    def _set_recorder_parameter(self, name, value):
+        self.assertTrue(self.parameters.wait_for_service(timeout_sec=5.0))
+        request = SetParameters.Request()
+        request.parameters = [Parameter(name, value=value).to_parameter_msg()]
+        response = self._call(self.parameters, request)
+        self.assertTrue(response.results[0].successful, response.results[0].reason)
 
     def test_prepares_pairs_and_finalizes_one_raw_frame(self):
         self.assertTrue(self.prepare.wait_for_service(timeout_sec=10.0))
@@ -207,6 +218,21 @@ class TestArchiveRecorderNode(unittest.TestCase):
         self.assertEqual(label['image_encoding'], 'mono8')
         self.assertEqual(pixels.shape, (6, 8))
         self.assertEqual(int(pixels[5, 7]), 47)
+
+    def test_prepare_failure_removes_its_partial_run_directory(self):
+        self.assertTrue(self.prepare.wait_for_service(timeout_sec=10.0))
+        before = set(ARCHIVE_ROOT.rglob('r*'))
+        self._set_recorder_parameter('flat_field_file', '/definitely/not/a/calibration.npz')
+        try:
+            request = PrepareInspectionArchive.Request()
+            request.task = self._task()
+            request.output_root = str(ARCHIVE_ROOT)
+            prepared = self._call(self.prepare, request)
+            self.assertFalse(prepared.success)
+            self.assertIn('flat_field_file does not exist', prepared.message)
+            self.assertEqual(set(ARCHIVE_ROOT.rglob('r*')), before)
+        finally:
+            self._set_recorder_parameter('flat_field_file', '')
 
     def test_finalizes_with_frozen_plan_when_it_differs_from_preflight_estimate(self):
         self.assertTrue(self.prepare.wait_for_service(timeout_sec=10.0))

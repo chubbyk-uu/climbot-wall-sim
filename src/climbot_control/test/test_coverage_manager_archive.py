@@ -33,7 +33,10 @@ import launch_testing.actions
 import launch_testing.asserts
 from nav_msgs.msg import Odometry
 import pytest
+from rcl_interfaces.srv import GetParameters
 import rclpy
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_srvs.srv import Trigger
 
@@ -53,7 +56,8 @@ def generate_test_description():
                 'wheel_acceleration_limit': 0.40,
             }]),
         launch_ros.actions.Node(
-            package='climbot_control', executable='coverage_manager_node'),
+            package='climbot_control', executable='coverage_manager_node',
+            parameters=[{'archive_finalize_timeout_s': 0.30}]),
         launch_testing.actions.ReadyToTest(),
     ])
 
@@ -99,31 +103,40 @@ class TestCoverageManagerArchive(unittest.TestCase):
             InspectionArchiveStatus, '/inspection/archive/status', self.status_qos)
         self.node.create_subscription(
             CoverageStatus, '/coverage/manager_status', self._on_status, self.status_qos)
+        self.recorder_callbacks = ReentrantCallbackGroup()
         self.node.create_service(
-            PrepareInspectionArchive, '/inspection/archive/prepare', self._prepare)
+            PrepareInspectionArchive, '/inspection/archive/prepare', self._prepare,
+            callback_group=self.recorder_callbacks)
         self.node.create_service(
-            FinalizeInspectionArchive, '/inspection/archive/finalize', self._finalize)
+            FinalizeInspectionArchive, '/inspection/archive/finalize', self._finalize,
+            callback_group=self.recorder_callbacks)
         self.start = self.node.create_client(StartCoverage, '/coverage/start_configured')
         self.cancel = self.node.create_client(Trigger, '/coverage/cancel')
+        self.manager_parameters = self.node.create_client(
+            GetParameters, '/coverage_manager/get_parameters')
         self.statuses = []
         self.prepare_ok = True
         self.prepare_release = None
+        self.finalize_release = None
         self.prepare_entered = Event()
+        self.finalize_entered = Event()
         self.prepare_requests = []
         self.finalize_requests = []
         self.stop = Event()
+        self.executor = MultiThreadedExecutor(num_threads=2)
+        self.executor.add_node(self.node)
         self.thread = Thread(target=self._spin)
         self.thread.start()
 
     def tearDown(self):
         self.stop.set()
+        self.executor.shutdown()
         self.thread.join()
         self.node.destroy_node()
         rclpy.shutdown()
 
     def _spin(self):
-        while rclpy.ok() and not self.stop.is_set():
-            rclpy.spin_once(self.node, timeout_sec=0.01)
+        self.executor.spin()
 
     def _on_status(self, message):
         self.statuses.append(message)
@@ -145,6 +158,9 @@ class TestCoverageManagerArchive(unittest.TestCase):
 
     def _finalize(self, request, response):
         self.finalize_requests.append(request)
+        self.finalize_entered.set()
+        if self.finalize_release is not None:
+            self.finalize_release.wait(timeout=5.0)
         response.success = True
         response.message = 'archive finalized'
         active = self.prepare_requests[-1].task
@@ -302,6 +318,38 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self.assertIn('archive', failed.message.lower())
         self.assertEqual(self.finalize_requests[-1].outcome,
                          FinalizeInspectionArchive.Request.FAILED)
+
+    def test_finalize_timeout_releases_manager_and_ignores_late_response(self):
+        """A recorder lost mid-RPC must not leave every operator action disabled."""
+        self.assertTrue(self.manager_parameters.wait_for_service(timeout_sec=5.0))
+        parameters = GetParameters.Request(names=['archive_finalize_timeout_s'])
+        configured = self._call(self.manager_parameters, parameters)
+        self.assertAlmostEqual(configured.values[0].double_value, 0.30)
+        self.finalize_release = Event()
+        self.tasks.publish(task(25))
+        self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 25,
+                   'ready preview')
+        mark = len(self.statuses)
+        self.assertTrue(self._call(self.start, self._start_request()).success)
+        self._wait(lambda item: item.state == CoverageStatus.EXECUTING and item.revision == 25,
+                   'archive-backed execution', since=mark)
+        canceled = self._call(self.cancel, Trigger.Request())
+        self.assertTrue(canceled.success, canceled.message)
+        self.assertTrue(self.finalize_entered.wait(timeout=2.0),
+                        'finalize request did not enter recorder')
+        timed_out = self._wait(
+            lambda item: item.state == CoverageStatus.FINISHED and
+            item.result_code == ExecuteCoverage.Result.ARCHIVE_FAILED and
+            item.archive_state == InspectionArchiveStatus.FAILED and item.can_start,
+            'archive finalization timeout releases manager', since=mark, timeout=4.0)
+        self.assertIn('timed out', timed_out.message)
+        count = len(self.statuses)
+        self.finalize_release.set()
+        time.sleep(0.30)
+        self.assertFalse(any(
+            item.archive_state != InspectionArchiveStatus.FAILED
+            for item in self.statuses[count:]),
+            'late finalize response rewrote the timed-out archive result')
 
 
 @launch_testing.post_shutdown_test()

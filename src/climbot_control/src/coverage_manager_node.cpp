@@ -60,6 +60,7 @@ public:
     command_quiet_s_(declare_parameter("command_quiet_s", 1.0)),
     hold_response_timeout_s_(declare_parameter("hold_response_timeout_s", 1.0)),
     hold_discovery_grace_s_(declare_parameter("hold_discovery_grace_s", 1.0)),
+    archive_finalize_timeout_s_(declare_parameter("archive_finalize_timeout_s", 5.0)),
     // A bare control-node process stays motion-only for compatibility and
     // safety. The complete mission launch explicitly enables inspection.
     inspection_default_enabled_(declare_parameter("inspection_default_enabled", false)),
@@ -82,6 +83,9 @@ public:
     }
     if (!std::isfinite(hold_discovery_grace_s_) || !(hold_discovery_grace_s_ > 0.0)) {
       throw std::invalid_argument("hold_discovery_grace_s must be positive.");
+    }
+    if (!std::isfinite(archive_finalize_timeout_s_) || !(archive_finalize_timeout_s_ > 0.0)) {
+      throw std::invalid_argument("archive_finalize_timeout_s must be positive.");
     }
     if (inspection_output_root_.empty()) {
       throw std::invalid_argument("inspection_output_root must not be empty.");
@@ -351,6 +355,7 @@ private:
   // after all. A hold protects current output but does not terminate the task.
   void superviseExecution()
   {
+    expireArchiveFinalization();
     if (recovery_locked_) {
       engageHold();
       return;
@@ -381,6 +386,35 @@ private:
     }
     executor_missing_since_.reset();
     beginStopping();
+  }
+
+  /// A recorder can disappear after accepting the finalization RPC but before
+  /// replying.  ROS service futures do not fail merely because that server
+  /// vanishes, so without this deadline the manager would remain busy forever
+  /// after motion had already stopped.  The incomplete directory is retained
+  /// for recovery; this only releases the manager and truthfully marks the
+  /// formal archive failed.  The generation retires any late response.
+  void expireArchiveFinalization()
+  {
+    if (!archive_finalize_pending_ || !archive_finalize_since_) {
+      return;
+    }
+    const auto elapsed = std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - *archive_finalize_since_).count();
+    if (elapsed < archive_finalize_timeout_s_) {
+      return;
+    }
+    archive_finalize_pending_ = false;
+    archive_finalize_since_.reset();
+    ++archive_finalize_generation_;
+    active_inspection_enabled_ = false;
+    status_.archive_state = ArchiveStatus::FAILED;
+    status_.archive_message = "Archive finalization timed out after " +
+      std::to_string(archive_finalize_timeout_s_) + " s; partial data was retained.";
+    status_.result_code = ExecuteCoverage::Result::ARCHIVE_FAILED;
+    publishStatus(
+      Status::FINISHED,
+      archive_finalize_message_ + " Archive finalization failed: " + status_.archive_message);
   }
 
   void beginStopping()
@@ -792,6 +826,9 @@ private:
       return;
     }
     archive_finalize_pending_ = true;
+    archive_finalize_since_ = std::chrono::steady_clock::now();
+    const auto generation = ++archive_finalize_generation_;
+    archive_finalize_message_ = message;
     status_.archive_state = ArchiveStatus::FINALIZING;
     status_.archive_message = "Finalizing the archive manifest.";
     publishStatus(Status::FINISHED, message + " Finalizing inspection archive.");
@@ -800,14 +837,19 @@ private:
     request->outcome = archive_outcome;
     request->message = message;
     archive_finalize_client_->async_send_request(
-      request, [this, message](rclcpp::Client<FinalizeArchive>::SharedFuture future) {
+      request, [this, message, generation](rclcpp::Client<FinalizeArchive>::SharedFuture future) {
+        if (generation != archive_finalize_generation_) {
+          return;
+        }
         archive_finalize_pending_ = false;
+        archive_finalize_since_.reset();
         try {
           const auto response = future.get();
           if (!response->success) {
             status_.archive_state = ArchiveStatus::FAILED;
             status_.archive_message = response->message;
             status_.result_code = ExecuteCoverage::Result::ARCHIVE_FAILED;
+            active_inspection_enabled_ = false;
             publishStatus(Status::FINISHED, message + " Archive finalization failed: " +
               response->message);
           } else {
@@ -1083,6 +1125,7 @@ private:
   double command_quiet_s_;
   double hold_response_timeout_s_;
   double hold_discovery_grace_s_;
+  double archive_finalize_timeout_s_;
   bool inspection_default_enabled_;
   std::string inspection_output_root_;
   Status status_;
@@ -1098,6 +1141,7 @@ private:
   std::optional<std::chrono::steady_clock::time_point> hold_request_since_;
   std::optional<std::chrono::steady_clock::time_point> last_hold_status_;
   std::optional<std::chrono::steady_clock::time_point> queued_goal_since_;
+  std::optional<std::chrono::steady_clock::time_point> archive_finalize_since_;
   // No value until the speed watchdog has published: absent and false are
   // different answers, and only the second one is evidence of anything.
   std::optional<bool> hold_active_;
@@ -1116,6 +1160,8 @@ private:
   std::optional<uint64_t> forced_abandoned_generation_;
   uint64_t queued_goal_generation_{0};
   uint64_t archive_start_generation_{0};
+  uint64_t archive_finalize_generation_{0};
+  std::string archive_finalize_message_;
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;
   std::optional<ExecuteCoverage::Goal> queued_goal_;
   std::optional<ExecuteCoverage::Goal> pending_archive_goal_;

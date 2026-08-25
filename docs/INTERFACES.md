@@ -834,12 +834,12 @@ Result：
 ```text
 uint16 SUCCESS=0
 uint16 CANCELED=1
-uint16 INVALID_TASK=2
 uint16 LOCALIZATION_TIMEOUT=3
 uint16 CONTROL_TIMEOUT=4
 uint16 OUT_OF_BOUNDS=5
 uint16 TRACKING_FAILED=6
 uint16 EXECUTOR_LOST=7
+uint16 ARCHIVE_FAILED=8
 
 uint16 result_code
 string message
@@ -1129,6 +1129,15 @@ G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`�
 
 ## G4 任务归档接口
 
+| 名称 | 类型 | 方向与权威语义 |
+| --- | --- | --- |
+| `/inspection/archive/prepare` | `climbot_interfaces/srv/PrepareInspectionArchive` | 管理器 → 记录器。提交冻结 `CoverageTask` 与输出根目录；成功响应给出 `run_id`、绝对目录、名义容量预估。此响应只代表归档准备完成，随后才允许发送运动 Goal。 |
+| `/inspection/archive/finalize` | `climbot_interfaces/srv/FinalizeInspectionArchive` | 管理器 → 记录器。按 `run_id` 封存为 `COMPLETED`／`CANCELED`／`FAILED`；完成时严格核对冻结参考计划与实际归档张数。 |
+| `/inspection/archive/status` | `climbot_interfaces/msg/InspectionArchiveStatus` | 记录器 → 管理器／RViz，Reliable + transient-local。它是本次归档状态、实际预计张数、保存／失败计数和最终目录的权威来源。 |
+| `/simulation/inspection_camera/trigger` | `std_srvs/srv/Trigger` | 仅 Gazebo 内部：`capture_once_node` → 相机传感器。真机不实现该服务。 |
+| `/simulation/inspection_camera/ideal_image`、`ideal_camera_info` | `sensor_msgs/msg/Image`、`CameraInfo` | 仅 Gazebo 内部的无镜头畸变渲染输出。 |
+| `/simulation/inspection_camera/image_raw`、`camera_info` | `sensor_msgs/msg/Image`、`CameraInfo` | 仅 Gazebo 内部的畸变适配器输出；桥接到正式 `/inspection/camera/*` 输入前必须时间戳成对。 |
+
 G4 的 `climbot_inspection` 任务级记录器输入 `image_raw`、`CameraInfo`、
 `InspectionCapture`、`ExecutionReference` 和冻结任务快照，输出到受配置约束的任务目录。操作员选择根目录，
 节点生成并校验任务子目录；不得直接拼接未经校验的任务 ID 形成路径。第一版使用
@@ -1186,6 +1195,11 @@ output_root/
 执行中发生不可恢复的归档错误默认请求受控取消。取消或运动故障只改变 manifest 结果，
 不得删除已经提交的照片。
 
+归档封存 RPC 使用 `archive_finalize_timeout_s`（默认 `5.0 s`）这一稳态时间期限。记录器在
+收到请求后消失、因而永远不回响应时，管理器将归档记为 `FAILED`、保留已经写入的部分目录，
+并重新允许操作员启动下一项任务；迟到响应以代次隔离，不能覆盖这一失败结论。准备阶段在
+创建 run 目录后若标定快照或首份 manifest 写入失败，则删除尚未发布的半成品 run 目录。
+
 RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采集摘要；中间三个页签
 `任务规划`、`巡检采集`、`详情`；底部固定 Start、Cancel / Stop。恢复操作只在管理器进入
 对应异常状态时临时显示，平时不占用任务面板高度。采集页提供
@@ -1210,6 +1224,12 @@ RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采
 `FINAL_APPROACH` 为真；起点进入、对准、转向稳定、动态过渡和小弧线入轨均为假。
 `detection_forward_offset` 来自不可变任务，G2 相机任务必须为 `0.340 m` 并与共享安装
 外参一致。
+
+自动采集的参考失效、等图像和等 EKF 插值括号期限全部用稳态时间测量，即使 Gazebo
+暂停、`use_sim_time` 的 ROS 时钟不前进，`image_wait_timeout_s` 仍会按墙钟重试同一空间
+触发点。可选平场节点在启动时即校验 NPZ gain 与共享相机的 `1920×1080` 分辨率相符、
+有限且严格为正；不兼容标定不等待第一帧才暴露。运行中遇到异常图像只丢弃补偿预览，
+不影响正式 `image_raw` 归档。
 
 `InspectionCapture.header` 必须逐字段等于对应 `image_raw.header`。`camera_pose` 是光学
 中心在 `header.frame_id` 下的 EKF 插值位姿，协方差包含前置杠杆对航向不确定度的传播；

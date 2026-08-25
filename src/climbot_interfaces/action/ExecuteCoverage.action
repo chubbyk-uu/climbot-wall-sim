@@ -9,7 +9,6 @@ bool inspection_enabled
 # Result codes.
 uint16 SUCCESS=0
 uint16 CANCELED=1
-uint16 INVALID_TASK=2
 uint16 LOCALIZATION_TIMEOUT=3
 uint16 CONTROL_TIMEOUT=4
 uint16 OUT_OF_BOUNDS=5

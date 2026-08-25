@@ -1,0 +1,54 @@
+# Copyright 2026 jerry
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+name: ROS 2 Jazzy CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+      - name: Install workspace dependencies
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          rosdep update
+          rosdep install --from-paths src --ignore-src --rosdistro jazzy -r -y
+      - name: Build
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --event-handlers console_direct+
+      - name: Test serially
+        run: |
+          source install/setup.bash
+          # Launch tests use isolated DDS domains, but serial execution also
+          # keeps the CI host from becoming the timing variable under review.
+          CTEST_PARALLEL_LEVEL=1 colcon test --event-handlers console_direct+
+          colcon test-result --verbose
+      - name: Upload failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: colcon-test-logs
+          path: |
+            log/
+            build/**/Testing/Temporary/
+          if-no-files-found: ignore

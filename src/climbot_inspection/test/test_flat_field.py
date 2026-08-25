@@ -14,7 +14,7 @@
 
 """Unit tests for independent-frame flat-field calibration."""
 
-from climbot_inspection.flat_field import apply_calibration, compute_calibration
+from climbot_inspection.flat_field import apply_calibration, compute_calibration, validate_gain
 import numpy as np
 import pytest
 
@@ -63,3 +63,12 @@ def test_saturated_flat_field_is_rejected_before_gain_is_computed():
         frame[:, :8] = 255
     with pytest.raises(ValueError, match='saturated'):
         compute_calibration(frames)
+
+
+def test_stored_gain_is_validated_before_the_first_camera_frame():
+    with pytest.raises(ValueError, match='shape'):
+        validate_gain(np.ones((7, 8), dtype=np.float32), (6, 8))
+    invalid = np.ones((6, 8), dtype=np.float32)
+    invalid[0, 0] = np.inf
+    with pytest.raises(ValueError, match='finite'):
+        validate_gain(invalid, (6, 8))

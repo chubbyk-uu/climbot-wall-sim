@@ -133,7 +133,7 @@ TEST(CoverageGeometry, GeneratesHorizontalStraightAlternatingLines)
   const auto coverage = makeRectangle({-3.0, 0.5}, {3.0, 6.5}).polygon;
   const auto motion = makeRectangle({-3.1, 0.25}, {3.1, 6.75}).polygon;
   const auto path = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.5, 0.1, 0.4, "horizontal", "lower_left");
+    coverage, motion, 0.5, 0.4, "horizontal", "lower_left");
   ASSERT_GE(path.size(), 4U);
   for (std::size_t index = 0; index < path.size(); index += 2) {
     EXPECT_NEAR(path[index].y, path[index + 1].y, 1e-9);
@@ -151,7 +151,7 @@ TEST(CoverageGeometry, GeneratesVerticalStraightAlternatingLines)
     {-3.0, 0.5}, {2.4, 6.5}, {3.0, 0.5}).polygon;
   const auto motion = makeRectangle({-3.5, 0.0}, {3.5, 7.0}).polygon;
   const auto path = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.5, 0.1, 0.4, "vertical", "lower_left");
+    coverage, motion, 0.5, 0.4, "vertical", "lower_left");
   ASSERT_GE(path.size(), 4U);
   for (std::size_t index = 0; index < path.size(); index += 2) {
     EXPECT_NEAR(path[index].x, path[index + 1].x, 1e-9);
@@ -169,7 +169,11 @@ TEST(CoverageGeometry, RejectsInvalidRegionAndSpacing)
   const auto rectangle = makeRectangle({0.0, 0.0}, {2.0, 2.0}).polygon;
   EXPECT_THROW(
     generateFootprintAwareBoustrophedonPath(
-      rectangle, rectangle, 0.5, 0.1, 0.0, "horizontal", "lower_left"),
+      rectangle, rectangle, 0.5, 0.0, "horizontal", "lower_left"),
+    std::invalid_argument);
+  EXPECT_THROW(
+    generateFootprintAwareBoustrophedonPath(
+      {}, rectangle, 0.5, 0.4, "horizontal", "lower_left"),
     std::invalid_argument);
 }
 
@@ -185,7 +189,7 @@ TEST(CoverageGeometry, CoversAtLeastNinetyEightPercentInBothDirections)
   for (const auto & region : regions) {
     for (const auto & direction : {std::string("horizontal"), std::string("vertical")}) {
       const auto path = generateFootprintAwareBoustrophedonPath(
-        region, motion, detection_width, 0.1, row_spacing, direction, "lower_left");
+        region, motion, detection_width, row_spacing, direction, "lower_left");
       EXPECT_GE(sampledCoverageRatio(region, path, detection_width, 0.1), 0.98)
         << "direction=" << direction;
     }
@@ -200,7 +204,7 @@ TEST(CoverageGeometry, FootprintAwarePathCoversRequestedRegionInsideMotionRegion
   const auto motion = makeRectangle({-4.0, 0.55}, {4.0, 7.2}).polygon;
   for (const auto & direction : {std::string("horizontal"), std::string("vertical")}) {
     const auto path = generateFootprintAwareBoustrophedonPath(
-      coverage, motion, detection_width, detection_length, 0.4, direction, "lower_left");
+      coverage, motion, detection_width, 0.4, direction, "lower_left");
     EXPECT_GE(sampledCoverageRatio(coverage, path, detection_width, detection_length), 0.98)
       << "direction=" << direction;
     for (const auto & waypoint : path) {
@@ -209,20 +213,13 @@ TEST(CoverageGeometry, FootprintAwarePathCoversRequestedRegionInsideMotionRegion
   }
 }
 
-TEST(CoverageGeometry, FrontCameraOffsetDoesNotMoveTheRobotPath)
+TEST(CoverageGeometry, CameraProjectionDoesNotMoveTheRobotPath)
 {
   constexpr double camera_offset = 0.30;
   const auto coverage = makeRectangle({1.0, 1.0}, {5.0, 3.0}).polygon;
   const auto motion = makeRectangle({0.0, 0.0}, {6.0, 4.0}).polygon;
-  const auto centred = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.50, 0.28125, 0.40, "horizontal", "lower_left");
   const auto camera = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.50, 0.28125, 0.40, "horizontal", "lower_left", camera_offset);
-  ASSERT_EQ(camera.size(), centred.size());
-  for (std::size_t index = 0; index < camera.size(); ++index) {
-    EXPECT_DOUBLE_EQ(camera[index].x, centred[index].x);
-    EXPECT_DOUBLE_EQ(camera[index].y, centred[index].y);
-  }
+    coverage, motion, 0.50, 0.40, "horizontal", "lower_left");
   EXPECT_GE(sampledCoverageRatio(
       coverage, camera, 0.50, 0.28125, 300, camera_offset), 0.965);
 }
@@ -232,7 +229,7 @@ TEST(CoverageGeometry, RobotEndpointsStayOnTheSelectedDriveBoundary)
   const auto coverage = makeRectangle({1.0, 1.0}, {5.0, 2.0}).polygon;
   const auto motion = makeRectangle({0.0, 0.0}, {6.0, 3.0}).polygon;
   const auto path = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.50, 0.20, 0.40, "horizontal", "lower_left", 0.0, 0.02);
+    coverage, motion, 0.50, 0.40, "horizontal", "lower_left");
   ASSERT_GE(path.size(), 4U);
   EXPECT_NEAR(path.front().x, 1.0, 1e-12);
   EXPECT_NEAR(path.front().y, 1.0 + 0.25, 1e-12);
@@ -244,12 +241,10 @@ TEST(CoverageGeometry, CameraGeometryNeverExpandsTheRobotDrivePath)
 {
   constexpr double camera_offset = 0.340;
   constexpr double detection_length = 0.28125;
-  constexpr double edge_overlap = 0.020;
   const auto motion = makeRectangle({0.0, 0.0}, {10.0, 4.0}).polygon;
   const auto drive = makeRectangle({0.2, 0.5}, {9.8, 3.5}).polygon;
   const auto path = generateFootprintAwareBoustrophedonPath(
-    drive, motion, 0.50, detection_length, 0.40, "horizontal", "lower_left",
-    camera_offset, edge_overlap);
+    drive, motion, 0.50, 0.40, "horizontal", "lower_left");
   for (const auto & waypoint : path) {
     EXPECT_TRUE(insideConvex(drive, waypoint));
     EXPECT_TRUE(insideConvex(motion, waypoint));
@@ -258,19 +253,16 @@ TEST(CoverageGeometry, CameraGeometryNeverExpandsTheRobotDrivePath)
       drive, path, 0.50, detection_length, 300, camera_offset), 0.965);
 }
 
-TEST(CoverageGeometry, CameraCalibrationDoesNotMoveTheBlueBaseLinkRoute)
+TEST(CoverageGeometry, KeepsRouteInsideDriveRegionForBothSweeps)
 {
   const auto drive = makeIsoscelesTrapezoid({0.4, 0.8}, {7.8, 4.1}, {8.8, 0.8}).polygon;
   const auto motion = makeRectangle({0.0, 0.5}, {9.2, 4.5}).polygon;
   for (const auto & direction : {std::string("horizontal"), std::string("vertical")}) {
-    const auto no_camera = generateFootprintAwareBoustrophedonPath(
-      drive, motion, 0.50, 0.01, 0.40, direction, "lower_left");
-    const auto calibrated_camera = generateFootprintAwareBoustrophedonPath(
-      drive, motion, 0.50, 0.28125, 0.40, direction, "lower_left", 0.340, 0.020);
-    ASSERT_EQ(calibrated_camera.size(), no_camera.size());
-    for (std::size_t index = 0; index < no_camera.size(); ++index) {
-      EXPECT_DOUBLE_EQ(calibrated_camera[index].x, no_camera[index].x);
-      EXPECT_DOUBLE_EQ(calibrated_camera[index].y, no_camera[index].y);
+    const auto path = generateFootprintAwareBoustrophedonPath(
+      drive, motion, 0.50, 0.40, direction, "lower_left");
+    ASSERT_FALSE(path.empty());
+    for (const auto & waypoint : path) {
+      EXPECT_TRUE(insideConvex(drive, waypoint));
     }
   }
 }
@@ -283,7 +275,7 @@ TEST(CoverageGeometry, KeepsExactMultipleOfMaximumSpacingAtTheExpectedLineCount)
   const auto coverage = makeRectangle({0.0, 0.0}, {4.0, height}).polygon;
   const auto motion = makeRectangle({-0.10, -0.10}, {4.10, height + 0.10}).polygon;
   const auto path = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, detection_width, 0.10, maximum_spacing,
+    coverage, motion, detection_width, maximum_spacing,
     "horizontal", "lower_left");
   ASSERT_EQ(path.size(), 8U);
   for (std::size_t index = 0; index < path.size(); index += 2U) {
@@ -298,7 +290,7 @@ TEST(CoverageGeometry, RejectsFootprintThatCannotRemainInsideMotionRegion)
   const auto motion = makeRectangle({0.1, 0.1}, {1.9, 1.9}).polygon;
   EXPECT_THROW(
     generateFootprintAwareBoustrophedonPath(
-      coverage, motion, 0.5, 0.1, 0.4, "horizontal", "lower_left"),
+      coverage, motion, 0.5, 0.4, "horizontal", "lower_left"),
     std::invalid_argument);
 }
 
@@ -307,15 +299,15 @@ TEST(CoverageGeometry, RejectsInvalidFootprintPathOptions)
   const auto region = makeRectangle({0.0, 0.0}, {2.0, 2.0}).polygon;
   EXPECT_THROW(
     generateFootprintAwareBoustrophedonPath(
-      region, region, 0.5, 0.1, 0.4, "horizontal", "banana"),
+      region, region, 0.5, 0.4, "horizontal", "banana"),
     std::invalid_argument);
   EXPECT_THROW(
     generateFootprintAwareBoustrophedonPath(
-      region, region, 0.5, 0.1, 0.4, "horizontal", "ab"),
+      region, region, 0.5, 0.4, "horizontal", "ab"),
     std::invalid_argument);
   EXPECT_THROW(
     generateFootprintAwareBoustrophedonPath(
-      region, region, 0.5, 0.1, 0.0, "horizontal", "lower_left"),
+      region, region, 0.5, 0.0, "horizontal", "lower_left"),
     std::invalid_argument);
 }
 
@@ -325,9 +317,9 @@ TEST(CoverageGeometry, IsExactlyDeterministicForIdenticalInput)
     {-3.0, 0.5}, {2.4, 6.5}, {3.0, 0.5}).polygon;
   const auto motion = makeRectangle({-4.0, 0.0}, {4.0, 7.0}).polygon;
   const auto first = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.5, 0.1, 0.4, "horizontal", "upper_right");
+    coverage, motion, 0.5, 0.4, "horizontal", "upper_right");
   const auto second = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.5, 0.1, 0.4, "horizontal", "upper_right");
+    coverage, motion, 0.5, 0.4, "horizontal", "upper_right");
   ASSERT_EQ(first.size(), second.size());
   for (std::size_t index = 0; index < first.size(); ++index) {
     EXPECT_DOUBLE_EQ(first[index].x, second[index].x);
@@ -339,7 +331,7 @@ TEST(TopEdgeFinishingScan, SweepsTheStripAVerticalPassLeavesAtTheTop)
 {
   const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 6.5}).polygon;
   const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
-  const auto line = makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, {3.0, 6.5});
+  const auto line = makeTopEdgeFinishingScan(coverage, motion, {3.0, 6.5});
   ASSERT_EQ(line.size(), 2U);
   EXPECT_NEAR(line.front().y, 6.5, 1e-9);
   EXPECT_NEAR(line.back().y, 6.5, 1e-9);
@@ -353,9 +345,9 @@ TEST(TopEdgeFinishingScan, ClosesTheGapAVerticalSweepLeaves)
   // A deliberately short footprint along travel leaves a strip at the column
   // ends, which is exactly the case 10.7 asks the finishing scan to close.
   auto path = generateFootprintAwareBoustrophedonPath(
-    coverage, motion, 0.5, 0.01, 0.4, "vertical", "lower_left");
+    coverage, motion, 0.5, 0.4, "vertical", "lower_left");
   const double before = sampledCoverageRatio(coverage, path, 0.5, 0.01);
-  const auto line = makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, path.back());
+  const auto line = makeTopEdgeFinishingScan(coverage, motion, path.back());
   ASSERT_EQ(line.size(), 2U);
   path.insert(path.end(), line.begin(), line.end());
   EXPECT_GE(sampledCoverageRatio(coverage, path, 0.5, 0.01), before);
@@ -366,9 +358,9 @@ TEST(TopEdgeFinishingScan, IsEnteredFromTheEndNearerTheLastScan)
   const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 6.5}).polygon;
   const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
   const auto from_right = makeTopEdgeFinishingScan(
-    coverage, motion, 0.5, 0.01, {3.0, 6.5});
+    coverage, motion, {3.0, 6.5});
   const auto from_left = makeTopEdgeFinishingScan(
-    coverage, motion, 0.5, 0.01, {0.0, 6.5});
+    coverage, motion, {0.0, 6.5});
   ASSERT_EQ(from_right.size(), 2U);
   ASSERT_EQ(from_left.size(), 2U);
   EXPECT_GT(from_right.front().x, from_right.back().x);
@@ -380,29 +372,23 @@ TEST(TopEdgeFinishingScan, RefusesALineThatLeavesMotionRegion)
   const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 6.5}).polygon;
   // Too narrow for the line ends, which must sit inside it (10.7).
   const auto motion = makeRectangle({1.0, 1.0}, {2.0, 7.5}).polygon;
-  EXPECT_TRUE(makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, {3.0, 6.5}).empty());
+  EXPECT_TRUE(makeTopEdgeFinishingScan(coverage, motion, {3.0, 6.5}).empty());
 }
 
 TEST(TopEdgeFinishingScan, CentresOnARegionShorterThanTheFootprint)
 {
   const auto coverage = makeRectangle({0.0, 2.0}, {3.0, 2.3}).polygon;
   const auto motion = makeRectangle({-1.0, 1.0}, {4.0, 7.5}).polygon;
-  const auto line = makeTopEdgeFinishingScan(coverage, motion, 0.5, 0.01, {3.0, 2.3});
+  const auto line = makeTopEdgeFinishingScan(coverage, motion, {3.0, 2.3});
   ASSERT_EQ(line.size(), 2U);
   EXPECT_NEAR(line.front().y, 2.3, 1e-9);
 }
 
-TEST(TopEdgeFinishingScan, RejectsInvalidFootprints)
+TEST(TopEdgeFinishingScan, RejectsInvalidRegions)
 {
   const auto region = makeRectangle({0.0, 0.0}, {3.0, 4.0}).polygon;
   EXPECT_THROW(
-    makeTopEdgeFinishingScan(region, region, 0.0, 0.01, {0.0, 0.0}),
-    std::invalid_argument);
-  EXPECT_THROW(
-    makeTopEdgeFinishingScan(region, region, 0.5, -1.0, {0.0, 0.0}),
-    std::invalid_argument);
-  EXPECT_THROW(
-    makeTopEdgeFinishingScan({}, region, 0.5, 0.01, {0.0, 0.0}),
+    makeTopEdgeFinishingScan({}, region, {0.0, 0.0}),
     std::invalid_argument);
 }
 
