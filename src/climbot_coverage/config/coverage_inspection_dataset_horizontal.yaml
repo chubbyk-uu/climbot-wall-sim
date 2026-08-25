@@ -1,0 +1,21 @@
+# First offline-processing dataset: horizontal scan headings alternate east/west.
+# The 6.0 x 4.1 m drive region stays 0.452 m inside the absolute wall safety
+# boundary and yields ten scan lines at the 0.400 m nominal lateral spacing.
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    task_id: inspection-dataset-horizontal-20260825
+    input_mode: parameters
+    region_type: rectangle
+    lower_left: [2.0, 1.5]
+    upper_right: [8.0, 5.6]
+    lower_right: [8.0, 1.5]
+    detection_width: 0.50
+    detection_length: 0.28125
+    detection_forward_offset: 0.340
+    detection_edge_overlap: 0.0
+    overlap_ratio: 0.20
+    sweep_direction: horizontal
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05
