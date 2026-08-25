@@ -27,22 +27,38 @@ if [[ $# -ne 0 ]]; then
   echo "usage: $0 [--log PATH]" >&2
   exit 2
 fi
+if ! command -v clang-tidy >/dev/null 2>&1; then
+  echo "clang-tidy is required for this quality gate but was not found in PATH." >&2
+  exit 2
+fi
 
 : >"${log_file}"
-for package in climbot_control climbot_coverage climbot_rviz_plugins; do
+analyzed=0
+for package in climbot_control climbot_coverage climbot_inspection climbot_rviz_plugins; do
   database="${workspace}/build/${package}/compile_commands.json"
   if [[ ! -f ${database} ]]; then
     echo "Missing ${database}; build with -DCMAKE_EXPORT_COMPILE_COMMANDS=ON first." >&2
     exit 2
   fi
-  while IFS= read -r source; do
+  found=0
+  while IFS= read -r -d '' source; do
+    found=1
+    analyzed=$((analyzed + 1))
     clang-tidy -p "${workspace}/build/${package}" -quiet \
       -checks='clang-analyzer-*' "${source}" >>"${log_file}" 2>&1
-  done < <(rg --files "${workspace}/src/${package}/src" -g '*.cpp' | sort)
+  done < <(find "${workspace}/src/${package}/src" -type f -name '*.cpp' -print0 | sort -z)
+  if [[ ${found} -eq 0 ]]; then
+    echo "No product C++ sources found under ${workspace}/src/${package}/src." >&2
+    exit 2
+  fi
 done
 
-if rg -n 'warning:|error:' "${log_file}"; then
+if grep -nE 'warning:|error:' "${log_file}"; then
   echo "clang-tidy found actionable product-source diagnostics; see ${log_file}." >&2
   exit 1
 fi
-echo "clang-tidy passed; log: ${log_file}"
+if [[ ${analyzed} -eq 0 ]]; then
+  echo "clang-tidy did not analyze any product source." >&2
+  exit 2
+fi
+echo "clang-tidy passed (${analyzed} files); log: ${log_file}"

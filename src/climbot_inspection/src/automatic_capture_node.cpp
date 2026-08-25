@@ -27,6 +27,7 @@
 
 #include "climbot_interfaces/msg/execution_reference.hpp"
 #include "climbot_interfaces/msg/inspection_capture.hpp"
+#include "climbot_interfaces/msg/inspection_capture_gate.hpp"
 #include "climbot_interfaces/srv/capture_once.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -116,6 +117,7 @@ class AutomaticCaptureNode : public rclcpp::Node
 public:
   using Reference = climbot_interfaces::msg::ExecutionReference;
   using Metadata = climbot_interfaces::msg::InspectionCapture;
+  using CaptureGate = climbot_interfaces::msg::InspectionCaptureGate;
   using CaptureOnce = climbot_interfaces::srv::CaptureOnce;
 
   AutomaticCaptureNode()
@@ -133,7 +135,8 @@ public:
     pose_wait_timeout_(finitePositive(*this, "pose_wait_timeout_s", 0.5)),
     cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0)),
     capture_retry_delay_(steadySeconds(
-        finitePositive(*this, "capture_retry_delay_s", 0.30)))
+        finitePositive(*this, "capture_retry_delay_s", 0.30))),
+    capture_gate_lag_(finitePositive(*this, "capture_gate_max_lag_m", 0.015))
   {
     if (overlap_ < 0.0 || overlap_ >= 1.0) {
       throw std::invalid_argument("image_overlap_ratio must be within [0, 1).");
@@ -146,6 +149,8 @@ public:
     const auto service = nonEmpty(*this, "capture_service", "/inspection/capture_once");
     const auto metadata_topic = nonEmpty(
       *this, "metadata_topic", "/inspection/capture_metadata");
+    const auto gate_topic = nonEmpty(
+      *this, "capture_gate_topic", "/inspection/capture_gate");
 
     reference_subscription_ = create_subscription<Reference>(
       reference_topic, rclcpp::QoS(10).reliable(),
@@ -158,6 +163,8 @@ public:
       std::bind(&AutomaticCaptureNode::onImage, this, std::placeholders::_1));
     capture_client_ = create_client<CaptureOnce>(service);
     metadata_publisher_ = create_publisher<Metadata>(metadata_topic, rclcpp::QoS(10).reliable());
+    gate_publisher_ = create_publisher<CaptureGate>(
+      gate_topic, rclcpp::QoS(1).reliable().transient_local());
     timeout_timer_ = create_wall_timer(
       std::chrono::milliseconds(50), std::bind(&AutomaticCaptureNode::checkTimeouts, this));
     RCLCPP_INFO(
@@ -189,6 +196,7 @@ private:
     latest_reference_time_ = std::chrono::steady_clock::now();
     if (!message->inspection_enabled || message->segment_index < 0) {
       reference_.reset();
+      publishInactiveGate("no active inspection SCAN reference");
       return;
     }
     const double dx = message->end.x - message->start.x;
@@ -212,6 +220,9 @@ private:
     if (!key_ || !(key == *key_)) {
       key_ = key;
       next_trigger_ = 0U;
+      // A camera response from a prior SCAN must not delay the first exposure
+      // of this newly frozen reference.
+      retry_not_before_.reset();
       // The reference is the user-bounded base_link route.  The final target
       // intentionally remains one interval before its terminal pose: the
       // tracker may complete inside its endpoint tolerance, and asking the
@@ -233,6 +244,7 @@ private:
       }
     }
     reference_ = *message;
+    publishGateForNextTarget();
     tryTrigger();
   }
 
@@ -301,6 +313,7 @@ private:
     pending.metadata.actual_along_track = progress;
     pending.metadata.reference_start = reference_->start;
     pending.metadata.reference_end = reference_->end;
+    publishGate(target, "waiting for inspection capture");
     pending_ = pending;
     ++next_trigger_;
     auto request = std::make_shared<CaptureOnce::Request>();
@@ -313,6 +326,8 @@ private:
           // A busy or warming camera has not consumed this spatial target.
           // Put the same number back rather than silently creating a hole.
           next_trigger_ = std::min(next_trigger_, pending_->metadata.trigger_index);
+          publishGate(pending_->metadata.target_along_track,
+          "retrying rejected inspection capture");
           pending_.reset();
           retry_not_before_ = std::chrono::steady_clock::now() + capture_retry_delay_;
         }
@@ -421,6 +436,7 @@ private:
     }
     metadata_publisher_->publish(pending_->metadata);
     pending_.reset();
+    publishGateForNextTarget();
     tryTrigger();
   }
 
@@ -439,6 +455,7 @@ private:
         get_logger(),
         "Capture service succeeded but no inspection image arrived; retrying the same target.");
       next_trigger_ = std::min(next_trigger_, pending_->metadata.trigger_index);
+      publishGate(pending_->metadata.target_along_track, "retrying missing inspection image");
       pending_.reset();
       retry_not_before_ = std::chrono::steady_clock::now() + capture_retry_delay_;
       tryTrigger();
@@ -453,12 +470,65 @@ private:
     }
   }
 
+  void publishGate(double target, const std::string & reason)
+  {
+    if (!key_) {
+      return;
+    }
+    CaptureGate gate;
+    gate.header.stamp = now();
+    gate.task_id = key_->task_id;
+    gate.revision = key_->revision;
+    gate.segment_index = key_->segment;
+    gate.active = true;
+    gate.maximum_camera_along_track = target + capture_gate_lag_;
+    gate.reason = reason;
+    gate_publisher_->publish(gate);
+  }
+
+  void publishGateForNextTarget()
+  {
+    if (!reference_ || !key_) {
+      publishInactiveGate("no active inspection SCAN reference");
+      return;
+    }
+    // A service response or its frame may still be outstanding.  References are
+    // published continuously, so never advance this gate merely because
+    // next_trigger_ was incremented when that request was sent.
+    if (pending_) {
+      publishGate(pending_->metadata.target_along_track, "waiting for inspection capture");
+      return;
+    }
+    if (next_trigger_ >= trigger_count_) {
+      publishInactiveGate("all captures for frozen SCAN reference are complete");
+      return;
+    }
+    publishGate(
+      first_trigger_ + trigger_interval_ * static_cast<double>(next_trigger_),
+      "waiting for next inspection capture");
+  }
+
+  void publishInactiveGate(const std::string & reason)
+  {
+    CaptureGate gate;
+    gate.header.stamp = now();
+    if (key_) {
+      gate.task_id = key_->task_id;
+      gate.revision = key_->revision;
+      gate.segment_index = key_->segment;
+    }
+    gate.active = false;
+    gate.reason = reason;
+    gate_publisher_->publish(gate);
+  }
+
   const double footprint_length_;
   const double overlap_;
   const double mount_x_, mount_y_, mount_z_;
   const double mount_roll_, mount_pitch_, mount_yaw_;
   const double reference_timeout_, image_wait_timeout_, pose_wait_timeout_, cache_duration_;
   const std::chrono::steady_clock::duration capture_retry_delay_;
+  const double capture_gate_lag_;
   double spacing_{};
   std::optional<Key> key_, disabled_key_;
   std::optional<Reference> reference_;
@@ -475,6 +545,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
   rclcpp::Client<CaptureOnce>::SharedPtr capture_client_;
   rclcpp::Publisher<Metadata>::SharedPtr metadata_publisher_;
+  rclcpp::Publisher<CaptureGate>::SharedPtr gate_publisher_;
   rclcpp::TimerBase::SharedPtr timeout_timer_;
 };
 

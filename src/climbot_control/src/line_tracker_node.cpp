@@ -32,6 +32,7 @@
 #include "climbot_control/travel_profile.hpp"
 #include "climbot_control/turn_profile.hpp"
 #include "climbot_interfaces/action/execute_coverage.hpp"
+#include "climbot_interfaces/msg/inspection_capture_gate.hpp"
 #include "climbot_interfaces/msg/execution_reference.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -258,6 +259,19 @@ public:
     execution_reference_publisher_ =
       create_publisher<climbot_interfaces::msg::ExecutionReference>(
       "/control/execution_reference", rclcpp::QoS(10).reliable());
+    capture_gate_subscription_ =
+      create_subscription<climbot_interfaces::msg::InspectionCaptureGate>(
+      declare_parameter("capture_gate_topic", std::string("/inspection/capture_gate")),
+      rclcpp::QoS(1).reliable().transient_local(),
+      [this](const climbot_interfaces::msg::InspectionCaptureGate::SharedPtr message) {
+        if (message->active &&
+        (!std::isfinite(message->maximum_camera_along_track) || message->segment_index < 0))
+        {
+          RCLCPP_ERROR(get_logger(), "Rejected non-finite or invalid inspection capture gate.");
+          return;
+        }
+        capture_gate_ = *message;
+      });
     completion_publisher_ = create_publisher<std_msgs::msg::Bool>(
       "/control/segment_complete", rclcpp::QoS(1).reliable().transient_local());
     odometry_subscription_ = create_subscription<nav_msgs::msg::Odometry>(
@@ -1124,6 +1138,7 @@ private:
     previous_command_ = {};
     active_goal_.reset();
     active_task_.reset();
+    capture_gate_.reset();
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
   }
 
@@ -1258,6 +1273,51 @@ private:
       (feedback.state == ExecuteCoverage::Feedback::TRACK_LINE ||
       feedback.state == ExecuteCoverage::Feedback::FINAL_APPROACH);
     execution_reference_publisher_->publish(reference);
+  }
+
+  std::optional<double> captureGateRemaining() const
+  {
+    if (!capture_gate_ || !capture_gate_->active || !active_task_ || !inspection_enabled_ ||
+      !reference_prepared_ || current_segment_ >= active_task_->segment_types.size() ||
+      active_task_->segment_types[current_segment_] !=
+      climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN ||
+      (motion_state_ != MotionState::TRACK_LINE && motion_state_ != MotionState::FINAL_APPROACH) ||
+      capture_gate_->task_id != active_task_->task_id ||
+      capture_gate_->revision != active_task_->revision ||
+      capture_gate_->segment_index != static_cast<int32_t>(current_segment_))
+    {
+      return std::nullopt;
+    }
+    const double dx = end_.x - start_.x;
+    const double dy = end_.y - start_.y;
+    const double length = std::hypot(dx, dy);
+    if (!(length > 1e-9)) {
+      return std::nullopt;
+    }
+    const double offset = active_task_->detection_forward_offset;
+    const double camera_x = pose_.x + std::cos(pose_.yaw) * offset;
+    const double camera_y = pose_.y + std::sin(pose_.yaw) * offset;
+    const double camera_along =
+      ((camera_x - start_.x) * dx + (camera_y - start_.y) * dy) / length;
+    return capture_gate_->maximum_camera_along_track - camera_along;
+  }
+
+  void applyCaptureGate(climbot_control::Command & desired) const
+  {
+    const auto remaining = captureGateRemaining();
+    if (!remaining.has_value()) {
+      return;
+    }
+    if (*remaining <= 0.0) {
+      desired.linear = 0.0;
+      return;
+    }
+    // This cap begins braking before the barrier rather than reacting after
+    // crossing it.  The barrier itself is supplied by the capture node and is
+    // deliberately below the recorder's accepted capture-position lag.
+    const double speed_to_stop = std::sqrt(
+      2.0 * limits_.braking_deceleration * *remaining);
+    desired.linear = std::min(desired.linear, speed_to_stop);
   }
 
   void publishReferencePath()
@@ -1515,6 +1575,7 @@ private:
     } else {
       desired.linear = timeReferenceSpeed(current_time, dt, desired);
     }
+    applyCaptureGate(desired);
     if (oscillation_monitor_->update(desired.cross, desired.along) &&
       !oscillation_warning_emitted_)
     {
@@ -1782,6 +1843,7 @@ private:
   rclcpp::Time task_start_time_;
   rclcpp::Time segment_start_time_;
   std::optional<climbot_interfaces::msg::CoverageTask> active_task_;
+  std::optional<climbot_interfaces::msg::InspectionCaptureGate> capture_gate_;
   std::shared_ptr<GoalHandle> active_goal_;
   std::unique_ptr<climbot_control::CrossTrackOscillationMonitor> oscillation_monitor_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr command_publisher_;
@@ -1790,6 +1852,8 @@ private:
     execution_reference_publisher_;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr completion_publisher_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
+  rclcpp::Subscription<climbot_interfaces::msg::InspectionCaptureGate>::SharedPtr
+    capture_gate_subscription_;
   rclcpp_action::Server<ExecuteCoverage>::SharedPtr action_server_;
   rclcpp::Clock::SharedPtr control_clock_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr

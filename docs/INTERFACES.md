@@ -1088,15 +1088,15 @@ G1 使用标准 ROS 图像接口，命名不带 `gz`，使仿真相机和真机�
 | `/inspection/camera/camera_info` | `sensor_msgs/msg/CameraInfo` | 与原图同时间戳、同 `frame_id`，Transient Local 不用于替代逐帧匹配 |
 | `/inspection/capture_once` | `climbot_interfaces/srv/CaptureOnce` | G1 人工单拍；成功返回前对应图像必须已发布。`reason` 是稳定枚举：`OK`、`WARMING`、`BUSY`、`DRAINING`、`TIMEOUT`，调用者不得解析英文 `message`。 |
 | `/inspection/capture_state` | `std_msgs/msg/UInt8` | 单拍节点的 transient-local 当前状态，编码与 `CaptureOnce.reason` 对应：`OK`=可接受请求、`WARMING`=预热、`BUSY`=当前曝光、`DRAINING`=排空可能迟到帧。 |
-| `/inspection/capture_reset` | `std_srvs/srv/Trigger` | 人工恢复入口；不会立即放行曝光，而是重新开始 `warmup_quiet_s` 的排空期。不能取消一个正在等待的曝光。 |
+| `/inspection/capture_reset` | `std_srvs/srv/Trigger` | 人工恢复入口；`WARMING` 或正在曝光时明确拒绝，其他临时状态重新开始 `warmup_quiet_s` 的排空期。不能取消一个正在等待的曝光。 |
 
 `image_raw.header.frame_id` 和 `camera_info.header.frame_id` 均为
 `inspection_camera_optical_frame`。两条消息必须具有相同时间戳；消费者以时间戳配对，
 不得用“最近一条标定消息”掩盖分辨率或标定版本切换。服务并发请求串行化；已有请求
-未完成时新请求明确拒绝，不合并、不悄悄多拍。超时返回失败，迟到帧不得被记到下一次
-请求。为保证该约束，单拍超时后节点进入故障锁定，后续请求均拒绝，必须重启节点后
-重新预热；不能在没有触发编号的 Bool 接口上猜测迟到帧属于哪一次。G1 不提供自动连拍
-服务。
+未完成时新请求明确拒绝，不合并、不悄悄多拍。超时返回失败后节点进入短暂 `DRAINING`：
+排空已有图像／标定消息，并以触发时刻作为下一帧的因果时间下界，随后自动重新预热。
+因此迟到帧不得被记到下一次请求，但一次可恢复的丢帧也不要求操作员重启节点。G1 不
+提供自动连拍服务。
 
 `CameraInfo` 使用 `plumb_bob`。`D` 的顺序为 `[k1,k2,p1,p2,k3]`，标称
 `K/D/P`、有效区域和 `base_link → optical` 外参见 PROJECT_GUIDE §18.1～18.2。
@@ -1178,6 +1178,8 @@ output_root/
 `actual_along_track_m` 间距不得超过 `detection_length × (1 − overlap)` 加
 `actual_spacing_tolerance_m`，且单帧相对 `target_along_track_m` 的后滞不得超过
 `maximum_target_lag_m`。这些是归档时的运行时质量门，不只是离线 G2 评估指标。
+自动采集器的位置闸门把尚未完成的目标限制在更小的 `capture_gate_max_lag_m` 内；记录器
+的门仍是最终独立裁决，不能以控制器是否停车代替。
 
 `/coverage/manager_status` 为这两个口径分别提供
 `archive_preflight_expected_images` 和 `archive_expected_images`：前者是开始前固定的名义
@@ -1228,6 +1230,7 @@ RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采
 | `/control/execution_reference` | `climbot_interfaces/msg/ExecutionReference` | 执行器当前冻结的有向直线、任务版本、段号、段类型和采集许可；不是规划器的名义预览 |
 | `/odometry/filtered` | `nav_msgs/msg/Odometry` | 触发位置和曝光时间位姿插值的唯一业务定位源 |
 | `/inspection/capture_metadata` | `climbot_interfaces/msg/InspectionCapture` | 一张成功原图的任务、触发点、冻结参考和曝光时刻 EKF 相机位姿 |
+| `/inspection/capture_gate` | `climbot_interfaces/msg/InspectionCaptureGate` | 自动采集器 → 跟踪器，Reliable + transient-local。`active=true` 时，匹配同一任务／版本／SCAN 段的相机中心不得越过 `maximum_camera_along_track`；成功配对、禁用或离开该段后发布 `active=false`。 |
 
 `ExecutionReference.inspection_enabled` 只在正式 `SCAN` 的 `TRACK_LINE`／
 `FINAL_APPROACH` 为真；起点进入、对准、转向稳定、动态过渡和小弧线入轨均为假。
@@ -1236,9 +1239,13 @@ RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采
 
 自动采集的参考失效、等图像和等 EKF 插值括号期限全部用稳态时间测量，即使 Gazebo
 暂停、`use_sim_time` 的 ROS 时钟不前进，`image_wait_timeout_s` 仍会按墙钟重试同一空间
-触发点。可选平场节点在启动时即校验 NPZ gain 与共享相机的 `1920×1080` 分辨率相符、
-有限且严格为正；不兼容标定不等待第一帧才暴露。运行中遇到异常图像只丢弃补偿预览，
-不影响正式 `image_raw` 归档。
+触发点。重试不是让机器人带着未完成曝光继续前进：采集器在目标位置加
+`capture_gate_max_lag_m`（默认 `15 mm`）处发布位置闸门，跟踪器据此限速并可停车；只有
+相机帧已和 EKF 位姿完成绑定后才放行下一目标。该值必须小于记录器
+`maximum_target_lag_m`（默认 `25 mm`），且闸门只接受冻结参考的任务 ID、版本和段号
+都相同的消息。可选平场节点在启动时即校验 NPZ gain 与共享相机的 `1920×1080` 分辨率
+相符、有限且严格为正；不兼容标定不等待第一帧才暴露。运行中遇到异常图像只丢弃补偿
+预览，不影响正式 `image_raw` 归档。
 
 `InspectionCapture.header` 必须逐字段等于对应 `image_raw.header`。`camera_pose` 是光学
 中心在 `header.frame_id` 下的 EKF 插值位姿，协方差包含前置杠杆对航向不确定度的传播；

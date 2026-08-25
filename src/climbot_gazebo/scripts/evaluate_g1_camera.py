@@ -22,7 +22,6 @@ import os
 import time
 
 from ament_index_python.packages import get_package_share_directory
-from climbot_interfaces.srv import CaptureOnce
 from climbot_gazebo.camera_distortion import (
     apply_relative_exposure,
     load_calibration,
@@ -30,6 +29,7 @@ from climbot_gazebo.camera_distortion import (
     matrices,
 )
 from climbot_gazebo.provenance import git_state
+from climbot_interfaces.srv import CaptureOnce
 import cv2
 import numpy as np
 import rclpy

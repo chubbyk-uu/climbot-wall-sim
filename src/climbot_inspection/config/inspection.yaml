@@ -26,6 +26,7 @@ automatic_capture_node:
     image_topic: /inspection/camera/image_raw
     capture_service: /inspection/capture_once
     metadata_topic: /inspection/capture_metadata
+    capture_gate_topic: /inspection/capture_gate
     # Longitudinal photo-trigger policy. It is intentionally independent from
     # the planner's lateral overlap_ratio; both defaults are 20% for G2.
     image_overlap_ratio: 0.20
@@ -37,6 +38,9 @@ automatic_capture_node:
     pose_cache_duration_s: 3.0
     # Retry temporary WARMING/BUSY/DRAINING responses without hammering the service.
     capture_retry_delay_s: 0.30
+    # The tracker brakes before this camera-progress limit while a capture is
+    # pending. Keep it below the recorder's maximum_target_lag_m.
+    capture_gate_max_lag_m: 0.015
 
 archive_recorder_node:
   ros__parameters:

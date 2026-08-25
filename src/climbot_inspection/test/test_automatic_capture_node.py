@@ -18,7 +18,7 @@ import time
 import unittest
 
 from builtin_interfaces.msg import Time
-from climbot_interfaces.msg import ExecutionReference, InspectionCapture
+from climbot_interfaces.msg import ExecutionReference, InspectionCapture, InspectionCaptureGate
 from climbot_interfaces.srv import CaptureOnce
 import launch
 import launch_ros.actions
@@ -68,6 +68,10 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.node.create_subscription(
             InspectionCapture, '/inspection/capture_metadata',
             self._metadata_callback, reliable)
+        self.gates = []
+        self.node.create_subscription(
+            InspectionCaptureGate, '/inspection/capture_gate',
+            self._gate_callback, reliable)
         self.capture_calls = 0
         self.reject_next = False
         self.drop_next_image = False
@@ -115,6 +119,9 @@ class TestAutomaticCaptureNode(unittest.TestCase):
     def _metadata_callback(self, message):
         self.metadata.append(message)
         self.event.set()
+
+    def _gate_callback(self, message):
+        self.gates.append(message)
 
     def _reference(self, enabled, segment=2,
                    state=ExecutionReference.TRACK_LINE if hasattr(
@@ -185,6 +192,16 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertAlmostEqual(first.target_along_track, 0.340, places=9)
         self.assertAlmostEqual(first.camera_pose.pose.position.x, 0.4775, places=6)
         self.assertAlmostEqual(first.wall_heading_rad, 0.0, places=9)
+        deadline = time.monotonic() + 2.0
+        while not self.gates and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(self.gates, 'automatic capture did not publish a position gate')
+        gate = self.gates[-1]
+        self.assertTrue(gate.active)
+        self.assertEqual(gate.segment_index, 2)
+        # The second target is 0.540 m; the default gate grants only 15 mm
+        # beyond it while the next capture remains pending.
+        self.assertAlmostEqual(gate.maximum_camera_along_track, 0.555, places=9)
 
         # Six centres span the full 1.0 m base route: the second target is
         # 0.540 m. Noise that
@@ -213,7 +230,22 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self._odom(16, 0.125)
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 3)
+        # The rejected call has not consumed target 0.  A refreshed execution
+        # reference must keep the barrier at that same target, not move it to
+        # trigger 1 merely because next_trigger_ was tentatively incremented.
+        deadline = time.monotonic() + 1.0
+        while (
+                (not self.gates or self.gates[-1].segment_index != 4) and
+                time.monotonic() < deadline):
+            time.sleep(0.01)
+        self.assertTrue(self.gates)
+        rejected_gate = self.gates[-1]
+        self.assertTrue(rejected_gate.active)
+        self.assertAlmostEqual(rejected_gate.maximum_camera_along_track, 0.355, places=9)
         self._reference(True, segment=4)
+        time.sleep(0.05)
+        self.assertTrue(self.gates[-1].active)
+        self.assertAlmostEqual(self.gates[-1].maximum_camera_along_track, 0.355, places=9)
         deadline = time.monotonic() + 1.0
         while self.capture_calls < 4 and time.monotonic() < deadline:
             time.sleep(0.01)
@@ -235,6 +267,10 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self._reference(True, segment=9)
         deadline = time.monotonic() + 3.0
         while self.capture_calls < 2 and time.monotonic() < deadline:
+            # Discovery is asynchronous.  Refresh the frozen reference while
+            # waiting so a temporarily unavailable service is not mistaken for
+            # a trigger failure just because this test published one sample.
+            self._reference(True, segment=9)
             time.sleep(0.01)
         self.assertGreaterEqual(self.capture_calls, 2)
         # The retry publishes a frame for trigger 0.  Supply the later pose

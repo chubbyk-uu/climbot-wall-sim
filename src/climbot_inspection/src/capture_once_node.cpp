@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <condition_variable>
@@ -133,11 +134,6 @@ public:
     publishState();
     RCLCPP_INFO(
       get_logger(), "Waiting for the camera trigger transport; warm-up frames will be discarded.");
-  }
-
-  void notifyShutdownWaiters()
-  {
-    condition_.notify_all();
   }
 
 private:
@@ -359,8 +355,18 @@ private:
     trigger_stamp_key_ = get_clock()->now().nanoseconds();
     publishState();
     publishTrigger();
-    const bool received = condition_.wait_for(
-      lock, capture_timeout_, [this]() {return capture_ready_ || !rclcpp::ok();});
+    // A shutdown cannot safely rely on a callback which captures this node:
+    // executor teardown may outlive its service worker. Polling in bounded
+    // slices lets the worker observe rclcpp::ok() without a dangling callback
+    // or a full capture_timeout_s shutdown delay.
+    const auto deadline = SteadyClock::now() + capture_timeout_;
+    bool received = capture_ready_;
+    while (!received && rclcpp::ok() && SteadyClock::now() < deadline) {
+      const auto left = deadline - SteadyClock::now();
+      condition_.wait_for(lock, std::min(
+        left, std::chrono::duration_cast<SteadyClock::duration>(std::chrono::milliseconds(100))));
+      received = capture_ready_;
+    }
     if (!received || !capture_ready_) {
       enterDrainingLocked();
       response->success = false;
@@ -393,6 +399,11 @@ private:
     const std_srvs::srv::Trigger::Response::SharedPtr response)
   {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ == State::WARMING) {
+      response->success = false;
+      response->message = "Camera transport is warming up; reset cannot bypass warm-up.";
+      return;
+    }
     if (state_ == State::CAPTURING) {
       response->success = false;
       response->message = "A capture request is pending; it cannot be reset safely.";
@@ -445,9 +456,8 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  std::shared_ptr<CaptureOnceNode> node;
   try {
-    node = std::make_shared<CaptureOnceNode>();
+    auto node = std::make_shared<CaptureOnceNode>();
     rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 4);
     executor.add_node(node);
     executor.spin();
@@ -457,7 +467,6 @@ int main(int argc, char ** argv)
     rclcpp::shutdown();
     return 1;
   }
-  node->notifyShutdownWaiters();
   rclcpp::shutdown();
   return 0;
 }

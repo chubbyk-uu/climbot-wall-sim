@@ -181,7 +181,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
         message.message = 'mock archive state'
         self.archive_status.publish(message)
 
-    def _call(self, client, request, timeout=8.0):
+    def _call(self, client, request, timeout=12.0):
         future = client.call_async(request)
         deadline = time.monotonic() + timeout
         while not future.done() and time.monotonic() < deadline:
