@@ -123,6 +123,7 @@
 | `coverage_{horizontal,vertical,trapezoid_horizontal}_drive_region_clean_20260825_*` | **可走区优先语义回归** | 相机外参不再移动蓝色 `base_link` 路线；三工况实际足迹覆盖 `99.08/99.91/99.20%`，`commit=e598275` 干净树 |
 | `turn_map_g1_camera_2026-08-24_{summary.json,csv}` | **G1 全航向侧滑正式结果** | 48 次为 `0.4307～0.5017 mm/度`，极差 `0.0710 mm/度`，最大转角误差 `0.853°`；`commit=11e49a4` 干净树 |
 | `g2_accept_{horizontal,vertical,trapezoid}_2026-08-25_summary.json` | **当前 G2/G4 正式结果** | `20%` 名义／`15%` 实际重叠和 `+0.340 m` 外参下的三组动态任务；图像、位姿绑定和原始归档均通过，`commit=f52a999` 干净树 |
+| `inspection_dataset_{horizontal,vertical}_2026-08-25_summary.json` | **离线处理／拼接输入数据集** | 带贴图、无网格的 10 条扫描线、270 张原图配对任务；横向与竖向各一组，`commit=e164707` 干净树；PNG 和标签在数据根目录，不进入 Git |
 
 每组 `*` 包含一个 `_trajectory.csv.gz`（逐采样真值、融合位姿、动态参考、状态和
 横轨误差）和一个 `_summary.json`（Action 结果、逐段误差、覆盖率和 `provenance`）。
@@ -1494,6 +1495,23 @@ ros2 run climbot_gazebo measure_turn_band.py --ros-args \
 
 `2026-08-24` 的三份摘要（`25%` 名义／`20%` 实际重叠、`+0.300 m` 外参、每工况 3 条
 SCAN 和 18 张）保留为历史策略证据，不能代替上表的当前机械和重叠策略基线。
+
+## 首批离线处理／拼接输入数据集（2026-08-25）
+
+这两组不是小型 G2 门禁工况，而是供后续 `climbot_image_processing` 和
+`climbot_mosaic` 使用的原始数据。二者均使用带混凝土贴图、`wall_grid_spacing:=0`、
+`+0.340 m` 光心、`20%` 名义重叠和位置触发；原图保持畸变、未做光照补偿。任务配置在
+`src/climbot_coverage/config/coverage_inspection_dataset_{horizontal,vertical}.yaml`。
+
+| 数据集 | 可走区 | 扫描方向／主要航向 | 原图数 | 数据目录 | 质量结果 |
+| --- | --- | --- | ---: | --- | --- |
+| horizontal | `6.0 × 4.1 m` | 左右交替；重力补偿使相机航向带有上偏 | 270 | `~/climbot_data/inspection-dataset-horizontal-20260825/r000001_20260825T101344Z_fa51a36970824cea873ca2aa18e9a575/` | 最大沿轨／横向间距 `228.165/403.854 mm`，最大位姿误差 `4.227 mm`，实际照片覆盖 `96.752%` |
+| vertical | `4.1 × 6.0 m` | 上下交替；包含相反竖向航向 | 270 | `~/climbot_data/inspection-dataset-vertical-20260825/r000001_20260825T102242Z_e9e3d8888f694273ad6c0cb66fc344c6/` | 最大沿轨／横向间距 `226.324/403.166 mm`，最大位姿误差 `4.294 mm`，实际照片覆盖 `97.286%` |
+
+两份 archive manifest 都是 `outcome=completed`、`expected_images=saved_images=270`、
+`failed_images=0`，并各自记录 10 条冻结 SCAN 参考。原始 PNG、逐帧 JSON 标签和标定快照
+总计约 `431 MB`，有意不复制到仓库；同目录内的 manifest 已保存文件哈希，可作为离线程序
+的输入完整性门禁。
 
 ## 当前侧滑基线
 
