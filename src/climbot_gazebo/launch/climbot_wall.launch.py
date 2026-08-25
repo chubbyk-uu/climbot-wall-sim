@@ -30,10 +30,12 @@ from launch.actions import (
     OpaqueFunction,
     RegisterEventHandler,
     SetEnvironmentVariable,
+    TimerAction,
 )
+from launch.conditions import UnlessCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 import xacro
 import yaml
@@ -401,18 +403,31 @@ def launch_setup(context, *args, **kwargs):
         raise ValueError(
             'gpu_backend must be auto, wsl_d3d12, or native, not ' + backend)
 
+    # The simulation server owns physics, sensors and /clock, so it remains a
+    # required process.  Keep the display client separate: under WSLg a Qt
+    # OpenGL-context allocation can fail intermittently, and that must not
+    # terminate a healthy simulation or all of its ROS-side safety nodes.
     actions.append(IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(ros_gz_share, 'launch', 'gz_sim.launch.py')
         ),
         launch_arguments={
-            'gz_args': [
-                PythonExpression(
-                    ["'-s ' if '", LaunchConfiguration('headless'),
-                     "' == 'true' else ''"]),
-                '-r -v 3 ', world],
+            'gz_args': ['-s -r -v 3 ', world],
             'on_exit_shutdown': 'true',
         }.items(),
+    ))
+    actions.append(TimerAction(
+        period=2.0,
+        actions=[IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(ros_gz_share, 'launch', 'gz_sim.launch.py')
+            ),
+            condition=UnlessCondition(LaunchConfiguration('headless')),
+            launch_arguments={
+                'gz_args': '-g -v 3',
+                'on_exit_shutdown': 'false',
+            }.items(),
+        )],
     ))
 
     actions.append(Node(

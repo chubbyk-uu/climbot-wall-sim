@@ -49,6 +49,27 @@ def test_wall_launch_starts_watchdog():
     assert "'/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist'" not in source
 
 
+def test_gui_exit_cannot_terminate_the_required_simulation_server():
+    """An intermittent WSLg GUI context failure must leave physics running."""
+    source = LAUNCH_PATH.read_text()
+    assert "'gz_args': ['-s -r -v 3 ', world]" in source
+    assert "'on_exit_shutdown': 'true'" in source
+    assert "'gz_args': '-g -v 3'" in source
+    assert "'on_exit_shutdown': 'false'" in source
+    assert 'period=2.0' in source
+
+
+def test_simulation_adapters_exit_cleanly_after_launch_sigint():
+    """Do not mask a required-process exit with duplicate rclpy shutdown errors."""
+    for name in (
+            'wall_imu_adapter.py', 'wall_wheel_odom_adapter.py',
+            'total_station_sim.py', 'camera_distortion_adapter.py'):
+        source = (PACKAGE_ROOT / 'scripts' / name).read_text()
+        assert 'except KeyboardInterrupt:' in source
+        assert 'node.destroy_node()' in source
+        assert 'if rclpy.ok():' in source
+
+
 def test_wall_launch_uses_the_current_total_station_delay_default():
     """Keep the documented 10 ms delivery delay from silently drifting."""
     source = LAUNCH_PATH.read_text()

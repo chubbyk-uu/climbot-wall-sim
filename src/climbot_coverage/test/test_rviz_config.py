@@ -74,6 +74,12 @@ def test_saved_window_state_covers_every_panel():
             'climbot_coverage/scripts/make_rviz_window_state.py'.format(name))
 
 
+def test_tool_properties_is_not_loaded_by_default():
+    """Leave vertical dock space to the task workflow, not RViz tool tuning."""
+    names = {panel['Name'] for panel in _config()['Panels']}
+    assert 'Tool Properties' not in names
+
+
 def test_the_wall_grid_display_subscribes_to_what_the_planner_publishes():
     """The grid overlay is the operator's live switch; a typo makes it empty."""
     # An RViz display pointed at a topic nobody publishes shows nothing and

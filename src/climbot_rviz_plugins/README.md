@@ -86,8 +86,8 @@ Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点�
 - dock 的高度分配不归面板管，归 `coverage.rviz` 里的 `QMainWindow State`（Qt 的
   `saveState()` 十六进制，按 dock 的 `objectName` 恢复，RViz 把它设成面板名）。
   没有这一段时 Qt 把左列平分，Tool Properties 只有两行工具设置却和操作面板一样高。
-  默认隐藏 Tool Properties，把左列主要高度留给 Displays 和 Coverage Task；需要调整
-  RViz 工具属性时可从 `Panels` 菜单重新打开。
+  默认不加载 Tool Properties，把左列主要高度留给 Displays 和 Coverage Task；需要调整
+  RViz 工具属性时可从 `Panels` 菜单手动添加。
   改面板名或加面板后要用 `climbot_coverage/scripts/make_rviz_window_state.py`
   重新生成，否则 Qt 静默退回平分。
 - 面板不设显式 `setMinimumWidth`：显式最小宽度会覆盖布局算出来的那个，一旦写小了

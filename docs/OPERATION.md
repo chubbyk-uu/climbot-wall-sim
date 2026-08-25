@@ -26,6 +26,10 @@ WSL2 默认自动使用 Mesa D3D12 GPU 后端。自动检测不符合当前环�
 ros2 launch climbot_gazebo climbot_wall.launch.py gpu_backend:=wsl_d3d12
 ```
 
+Gazebo 的物理／传感器 server 与 GUI 是独立进程：GUI 因 WSLg OpenGL context 创建失败而退出时，
+仿真和 ROS 节点仍继续运行；可在修复显示环境后单独执行 `gz sim -g -v 3` 重新连接。只有
+server 退出才会受控关闭整套 launch。
+
 键盘控制在另一个终端运行：
 
 ```bash

@@ -18,9 +18,7 @@ Regenerate the ``QMainWindow State`` blob in coverage.rviz.
 
 RViz stores the dock layout as ``QMainWindow::saveState()`` hex and restores it
 by matching each dock's ``objectName``, which it sets to the panel name listed
-under ``Panels``. Without the blob Qt splits the left column evenly, and Tool
-Properties -- two rows of tool settings -- ends up as tall as the operator
-panel.
+under ``Panels``. Without the blob Qt splits the left column evenly.
 
 Editing the layout by hand in RViz and saving the config would work too, but
 that rewrites the whole file including every display and comment. This writes
@@ -51,15 +49,12 @@ from PyQt5.QtWidgets import (
 # Top to bottom in the left dock. These must match the ``Name`` fields under
 # ``Panels`` in coverage.rviz: Qt restores a dock by objectName and silently
 # ignores one it cannot find.
-PANELS = ['Displays', 'Tool Properties', 'Coverage Task']
-# Tool Properties is needed only while adjusting an RViz tool. Keep it one
-# click away but do not spend the default task-planning height on it.
-HIDDEN_PANELS = {'Tool Properties'}
+PANELS = ['Displays', 'Coverage Task']
 
-# Of the roughly 764 px the left column gets in an 1200x850 window. Displays
-# needs room for the display tree, Tool Properties holds two rows, and the rest
-# goes to the operator panel so its messages do not have to be scrolled.
-HEIGHTS = [300, 90, 374]
+# Displays needs room for the display tree; the remainder belongs to the
+# operator panel. Tool Properties is intentionally omitted from the default
+# config and can be added from RViz's Panels menu when needed.
+HEIGHTS = [300, 464]
 # Measured, not derived. This window has no menu bar or status bar and RViz's
 # does, so Qt restores a column about 22 px wider than the number saved here.
 # 342 lands on the 364 px the left dock occupies without a saved state, which
@@ -96,8 +91,6 @@ def build(width, heights):
     QApplication.processEvents()
     window.resizeDocks(docks, [width] * len(docks), Qt.Horizontal)
     window.resizeDocks(docks, heights, Qt.Vertical)
-    for dock in docks:
-        dock.setVisible(dock.objectName() not in HIDDEN_PANELS)
     QApplication.processEvents()
     return window, docks
 
