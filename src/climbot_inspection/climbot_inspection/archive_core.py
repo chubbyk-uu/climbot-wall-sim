@@ -71,13 +71,41 @@ def run_directory(root: Path, task_id: str, revision: int, utc_stamp: str, run_i
     return root / task_id / f'r{revision:06d}_{utc_stamp}_{run_id}'
 
 
-def expected_image_count(task, effective_length_m: float, overlap_ratio: float) -> int:
-    """Match automatic_capture_node's per-SCAN trigger-count calculation."""
+def capture_spacing(effective_length_m: float, overlap_ratio: float) -> float:
+    """Return the contractual maximum along-track distance between exposures."""
     if not math.isfinite(effective_length_m) or effective_length_m <= 0.0:
         raise ArchiveError('effective_length_m must be positive and finite.')
     if not math.isfinite(overlap_ratio) or not 0.0 <= overlap_ratio < 1.0:
         raise ArchiveError('overlap_ratio must be finite and within [0, 1).')
-    spacing = effective_length_m * (1.0 - overlap_ratio)
+    return effective_length_m * (1.0 - overlap_ratio)
+
+
+def capture_count_for_length(length_m: float, effective_length_m: float,
+                             overlap_ratio: float) -> int:
+    """
+    Return the one count contract used by capture planning and archiving.
+
+    A formal SCAN must not require a photograph exactly at its terminal pose:
+    line tracking is allowed to declare the end reached inside its arrival
+    tolerance.  Starting at the route entry and dividing the remaining route
+    into ``ceil(length / spacing)`` intervals guarantees every target is
+    reachable before that terminal tolerance while keeping every adjacent
+    target no farther apart than ``spacing``.
+    """
+    spacing = capture_spacing(effective_length_m, overlap_ratio)
+    if not math.isfinite(length_m) or length_m <= 1e-6:
+        raise ArchiveError('SCAN reference length must be finite and positive.')
+    return max(1, math.ceil(length_m / spacing))
+
+
+def expected_image_count(task, effective_length_m: float, overlap_ratio: float) -> int:
+    """
+    Return a nominal preflight storage estimate using the capture contract.
+
+    This is only used to reserve capacity before SCAN references are frozen.
+    The final expected count is accumulated from those frozen references by
+    the archive recorder.
+    """
     if len(task.waypoints) != len(task.segment_types) + 1:
         raise ArchiveError('task waypoint/segment counts are inconsistent.')
     total = 0
@@ -87,10 +115,10 @@ def expected_image_count(task, effective_length_m: float, overlap_ratio: float) 
         start = task.waypoints[index].position
         end = task.waypoints[index + 1].position
         length = math.hypot(end.x - start.x, end.y - start.y)
-        if not math.isfinite(length) or length <= 1e-6:
-            raise ArchiveError(f'SCAN segment {index} has invalid length.')
-        span = max(0.0, length - effective_length_m)
-        total += 1 if span <= 1e-9 else math.ceil(span / spacing) + 1
+        try:
+            total += capture_count_for_length(length, effective_length_m, overlap_ratio)
+        except ArchiveError as error:
+            raise ArchiveError(f'SCAN segment {index} has invalid length.') from error
     return total
 
 

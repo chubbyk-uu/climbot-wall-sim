@@ -17,13 +17,16 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from climbot_inspection.archive_core import ArchiveError
-from climbot_inspection.archive_core import atomic_write_json
-from climbot_inspection.archive_core import estimated_archive_bytes
-from climbot_inspection.archive_core import expected_image_count
-from climbot_inspection.archive_core import resolved_output_root
-from climbot_inspection.archive_core import run_directory
-from climbot_inspection.archive_core import safe_task_id
+from climbot_inspection.archive_core import (
+    ArchiveError,
+    atomic_write_json,
+    capture_count_for_length,
+    estimated_archive_bytes,
+    expected_image_count,
+    resolved_output_root,
+    run_directory,
+    safe_task_id,
+)
 import pytest
 
 
@@ -56,10 +59,20 @@ def test_run_directory_is_unique_per_run_and_stays_under_root(tmp_path):
 
 
 def test_expected_images_matches_per_scan_capture_rule():
+    # The nominal task estimate reserves enough archive space before dynamic
+    # SCAN references exist. It is deliberately not a final capture contract.
     # effective length 0.28125, overlap 25% => 0.2109375 m spacing. The
-    # first 1 m SCAN gets five frames; the final 0.6 m SCAN gets three.
+    # first 1 m SCAN estimates five frames; the final 0.6 m SCAN estimates three.
     assert expected_image_count(task(), 0.28125, 0.25) == 8
     assert estimated_archive_bytes(8, 1920, 1080) > 8 * 1920 * 1080
+
+
+def test_frozen_reference_count_keeps_final_target_inside_arrival_tolerance():
+    # With 0.2 m spacing, a 1 m frozen line has five captures at base-route
+    # progress 0.0, 0.2, ... 0.8.  A sixth capture exactly at 1.0 m is not a
+    # valid contract because the tracker may finish inside its endpoint band.
+    assert capture_count_for_length(1.0, 0.25, 0.20) == 5
+    assert capture_count_for_length(0.01, 0.25, 0.20) == 1
 
 
 def test_atomic_json_rejects_nonfinite_values_without_creating_destination(tmp_path):

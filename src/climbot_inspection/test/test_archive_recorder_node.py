@@ -22,7 +22,12 @@ import time
 import unittest
 
 from builtin_interfaces.msg import Time
-from climbot_interfaces.msg import CoverageTask, InspectionArchiveStatus, InspectionCapture
+from climbot_interfaces.msg import (
+    CoverageTask,
+    ExecutionReference,
+    InspectionArchiveStatus,
+    InspectionCapture,
+)
 from climbot_interfaces.srv import FinalizeInspectionArchive, PrepareInspectionArchive
 import cv2
 from geometry_msgs.msg import Pose
@@ -67,6 +72,8 @@ class TestArchiveRecorderNode(unittest.TestCase):
         self.infos = self.node.create_publisher(CameraInfo, '/inspection/camera/camera_info', qos)
         self.metadata = self.node.create_publisher(
             InspectionCapture, '/inspection/capture_metadata', qos)
+        self.references = self.node.create_publisher(
+            ExecutionReference, '/control/execution_reference', qos)
         self.status = []
         self.status_event = Event()
         self.node.create_subscription(
@@ -107,10 +114,21 @@ class TestArchiveRecorderNode(unittest.TestCase):
         first.position.x = 0.0
         first.orientation.w = 1.0
         second = Pose()
-        second.position.x = 0.25
+        second.position.x = 0.10
         second.orientation.w = 1.0
         task.waypoints = [first, second]
         return task
+
+    def _reference(self, length=0.10):
+        reference = ExecutionReference()
+        reference.task_id = 'g4-node-test'
+        reference.revision = 3
+        reference.segment_index = 0
+        reference.segment_type = CoverageTask.SEGMENT_SCAN
+        reference.start.x = 0.0
+        reference.end.x = length
+        reference.inspection_enabled = True
+        self.references.publish(reference)
 
     def _call(self, client, request, timeout=5.0):
         future = client.call_async(request)
@@ -134,6 +152,7 @@ class TestArchiveRecorderNode(unittest.TestCase):
         # Give all three subscriptions time to discover before the one-shot
         # test frame is published.
         time.sleep(0.30)
+        self._reference()
         stamp = Time(sec=10, nanosec=25)
         image = Image()
         image.header.stamp = stamp
@@ -188,6 +207,108 @@ class TestArchiveRecorderNode(unittest.TestCase):
         self.assertEqual(label['image_encoding'], 'mono8')
         self.assertEqual(pixels.shape, (6, 8))
         self.assertEqual(int(pixels[5, 7]), 47)
+
+    def test_finalizes_with_frozen_plan_when_it_differs_from_preflight_estimate(self):
+        self.assertTrue(self.prepare.wait_for_service(timeout_sec=10.0))
+        request = PrepareInspectionArchive.Request()
+        request.task = self._task()
+        request.output_root = str(ARCHIVE_ROOT)
+        prepared = self._call(self.prepare, request)
+        self.assertTrue(prepared.success, prepared.message)
+        self.assertEqual(prepared.expected_images, 1)
+
+        time.sleep(0.30)
+        # The nominal 0.10 m task needs one frame, but this frozen reference
+        # is 0.25 m and contractually needs two.  The recorder must follow the
+        # frozen reference, not nominal waypoints.
+        self._reference(length=0.25)
+        deadline = time.monotonic() + 3.0
+        while (not self.status or self.status[-1].expected_images != 2) and \
+                time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertTrue(self.status, 'frozen reference was not observed')
+        self.assertEqual(self.status[-1].expected_images, 2)
+        for trigger_index in range(2):
+            stamp = Time(sec=20 + trigger_index, nanosec=0)
+            image = Image()
+            image.header.stamp = stamp
+            image.header.frame_id = 'inspection_camera_optical_frame'
+            image.width = 8
+            image.height = 6
+            image.encoding = 'mono8'
+            image.step = 8
+            image.data = list(range(48))
+            info = CameraInfo()
+            info.header = image.header
+            info.width = image.width
+            info.height = image.height
+            info.distortion_model = 'plumb_bob'
+            info.k[0] = 10.0
+            info.k[4] = 10.0
+            info.k[8] = 1.0
+            capture = InspectionCapture()
+            capture.header = image.header
+            capture.task_id = 'g4-node-test'
+            capture.revision = 3
+            capture.segment_index = 0
+            capture.trigger_index = trigger_index
+            capture.camera_pose.pose.orientation.w = 1.0
+            capture.reference_end.x = 0.25
+            self.images.publish(image)
+            self.infos.publish(info)
+            self.metadata.publish(capture)
+
+        deadline = time.monotonic() + 5.0
+        while (not self.status or self.status[-1].saved_images != 2) and \
+                time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertTrue(self.status, 'archive status was never published')
+        self.assertEqual(self.status[-1].saved_images, 2)
+        self.assertEqual(self.status[-1].failed_images, 0)
+
+        finish = FinalizeInspectionArchive.Request()
+        finish.run_id = prepared.run_id
+        finish.outcome = FinalizeInspectionArchive.Request.COMPLETED
+        finish.message = 'dynamic count test complete'
+        finalized = self._call(self.finalize, finish)
+        self.assertTrue(finalized.success, finalized.message)
+        self.assertIn('2/2', finalized.message)
+
+        manifest = json.loads(
+            (Path(prepared.task_directory) / 'manifest.json').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['outcome'], 'completed')
+        self.assertEqual(manifest['saved_images'], 2)
+        self.assertEqual(manifest['expected_images'], 2)
+        self.assertEqual(manifest['preflight_expected_images'], 1)
+        self.assertEqual(manifest['failed_images'], 0)
+        self.assertEqual(manifest['frozen_scan_references'][0]['planned_images'], 2)
+
+    def test_fails_completed_archive_when_frozen_plan_count_is_not_met(self):
+        self.assertTrue(self.prepare.wait_for_service(timeout_sec=10.0))
+        request = PrepareInspectionArchive.Request()
+        request.task = self._task()
+        request.output_root = str(ARCHIVE_ROOT)
+        prepared = self._call(self.prepare, request)
+        self.assertTrue(prepared.success, prepared.message)
+        time.sleep(0.30)
+        self._reference(length=0.25)
+        deadline = time.monotonic() + 3.0
+        while (not self.status or self.status[-1].expected_images != 2) and \
+                time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertTrue(self.status)
+        self.assertEqual(self.status[-1].expected_images, 2)
+
+        finish = FinalizeInspectionArchive.Request()
+        finish.run_id = prepared.run_id
+        finish.outcome = FinalizeInspectionArchive.Request.COMPLETED
+        finalized = self._call(self.finalize, finish)
+        self.assertFalse(finalized.success)
+        self.assertIn('0/2', finalized.message)
+        manifest = json.loads(
+            (Path(prepared.task_directory) / 'manifest.json').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['outcome'], 'failed')
+        self.assertEqual(manifest['failed_images'], 2)
 
 
 @launch_testing.post_shutdown_test()

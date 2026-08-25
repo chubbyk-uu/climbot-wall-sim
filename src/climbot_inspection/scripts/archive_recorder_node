@@ -37,12 +37,18 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
 import yaml
 
-from climbot_interfaces.msg import InspectionArchiveStatus, InspectionCapture
+from climbot_interfaces.msg import (
+    CoverageTask,
+    ExecutionReference,
+    InspectionArchiveStatus,
+    InspectionCapture,
+)
 from climbot_interfaces.srv import FinalizeInspectionArchive, PrepareInspectionArchive
 from climbot_inspection.archive_core import (
     ArchiveError,
     atomic_write_bytes,
     atomic_write_json,
+    capture_count_for_length,
     estimated_archive_bytes,
     expected_image_count,
     new_run_id,
@@ -148,6 +154,7 @@ class Session:
     directory: Path
     run_id: str
     expected_images: int
+    preflight_expected_images: int
     estimated_bytes: int
     started_utc: str
     saved_images: int = 0
@@ -156,6 +163,7 @@ class Session:
     message: str = "Archive prepared; waiting for the first SCAN exposure."
     keys: set[tuple[str, int, int, int]] = field(default_factory=set)
     failures: list[str] = field(default_factory=list)
+    references: dict[int, dict[str, Any]] = field(default_factory=dict)
     camera_snapshot: dict[str, Any] | None = None
 
 
@@ -187,6 +195,8 @@ class ArchiveRecorderNode(Node):
             'camera_info_topic', '/inspection/camera/camera_info').value)
         metadata_topic = str(self.declare_parameter(
             'metadata_topic', '/inspection/capture_metadata').value)
+        reference_topic = str(self.declare_parameter(
+            'execution_reference_topic', '/control/execution_reference').value)
         status_topic = str(self.declare_parameter(
             'status_topic', '/inspection/archive/status').value)
         self._images: dict[int, tuple[float, Image]] = {}
@@ -200,6 +210,7 @@ class ArchiveRecorderNode(Node):
         self.create_subscription(Image, image_topic, self._on_image, 10)
         self.create_subscription(CameraInfo, info_topic, self._on_info, 10)
         self.create_subscription(InspectionCapture, metadata_topic, self._on_metadata, 10)
+        self.create_subscription(ExecutionReference, reference_topic, self._on_reference, 10)
         self.create_service(PrepareInspectionArchive, '/inspection/archive/prepare', self._prepare)
         self.create_service(FinalizeInspectionArchive, '/inspection/archive/finalize', self._finalize)
         self.create_timer(0.2, self._expire_pending)
@@ -281,10 +292,13 @@ class ArchiveRecorderNode(Node):
             'finished_utc': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ') if outcome else None,
             'outcome': outcome or 'recording',
             'expected_images': session.expected_images,
+            'preflight_expected_images': session.preflight_expected_images,
             'saved_images': session.saved_images,
             'failed_images': session.failed_images,
             'estimated_bytes': session.estimated_bytes,
             'failures': session.failures,
+            'frozen_scan_references': [
+                session.references[index] for index in sorted(session.references)],
             'software_git_commit': self._git_commit(),
             'canonical_image': {
                 'encoding': 'mono8', 'format': 'png', 'distorted': True,
@@ -344,7 +358,8 @@ class ArchiveRecorderNode(Node):
             directory.mkdir(parents=True, exist_ok=False)
             session = Session(
                 task=request.task, task_snapshot=snapshot, root=root, directory=directory,
-                run_id=run_id, expected_images=expected, estimated_bytes=estimate,
+                run_id=run_id, expected_images=0, preflight_expected_images=expected,
+                estimated_bytes=estimate,
                 started_utc=started.strftime('%Y-%m-%dT%H:%M:%SZ'))
             self._write_calibration_manifest(session)
             self._write_manifest(session)
@@ -358,7 +373,9 @@ class ArchiveRecorderNode(Node):
             response.task_directory = str(directory)
             response.expected_images = expected
             response.estimated_bytes = estimate
-            response.message = session.message
+            response.message = (
+                f'{session.message} Capacity preflight reserves for {expected} nominal images; '
+                'the final expected count follows frozen SCAN references.')
         except (ArchiveError, OSError, ValueError) as error:
             response.success = False
             response.message = f'Archive preparation failed: {error}'
@@ -382,11 +399,22 @@ class ArchiveRecorderNode(Node):
             return response
         name, state = outcomes[request.outcome]
         self._expire_pending(force=True)
-        if name == 'completed' and session.saved_images != session.expected_images:
-            session.failed_images += abs(session.expected_images - session.saved_images)
-            session.failures.append(
-                f'completed motion reported {session.saved_images}/{session.expected_images} archived images.')
-            name, state = 'failed', InspectionArchiveStatus.FAILED
+        if name == 'completed':
+            required_segments = {
+                index for index, segment_type in enumerate(session.task.segment_types)
+                if segment_type == CoverageTask.SEGMENT_SCAN}
+            observed_segments = set(session.references)
+            if observed_segments != required_segments:
+                self._record_failure(
+                    'completed motion did not publish frozen references for every SCAN segment: '
+                    f'observed {sorted(observed_segments)}, required {sorted(required_segments)}.')
+                name, state = 'failed', InspectionArchiveStatus.FAILED
+            elif session.saved_images != session.expected_images:
+                self._record_failure(
+                    'committed image count does not match the frozen-reference capture plan: '
+                    f'{session.saved_images}/{session.expected_images}.',
+                    abs(session.saved_images - session.expected_images))
+                name, state = 'failed', InspectionArchiveStatus.FAILED
         if request.message:
             session.failures.append(request.message)
         session.state = InspectionArchiveStatus.FINALIZING
@@ -395,7 +423,9 @@ class ArchiveRecorderNode(Node):
         try:
             self._write_manifest(session, name)
             session.state = state
-            session.message = f'Archive {name}: {session.saved_images}/{session.expected_images} images committed.'
+            session.message = (
+                f'Archive {name}: {session.saved_images}/{session.expected_images} images committed.'
+                f' (capacity preflight: {session.preflight_expected_images})')
             self._publish()
             response.success = state != InspectionArchiveStatus.FAILED or request.outcome == \
                 FinalizeInspectionArchive.Request.FAILED
@@ -428,6 +458,51 @@ class ArchiveRecorderNode(Node):
             return
         self._metadata[stamp_key(message.header)] = (time.monotonic(), message)
         self._match(stamp_key(message.header))
+
+    def _on_reference(self, message: ExecutionReference) -> None:
+        """Accumulate the exact SCAN capture plan from frozen executor references."""
+        session = self._session
+        if session is None or session.state not in {
+                InspectionArchiveStatus.READY, InspectionArchiveStatus.RECORDING}:
+            return
+        if not message.inspection_enabled or message.task_id != session.task.task_id or \
+                message.revision != session.task.revision:
+            return
+        if message.segment_type != CoverageTask.SEGMENT_SCAN or message.segment_index < 0:
+            self._record_failure('inspection-enabled reference is not a valid SCAN segment.')
+            return
+        try:
+            start = point_dict(message.start)
+            end = point_dict(message.end)
+            length = math.hypot(end['x'] - start['x'], end['y'] - start['y'])
+            count = capture_count_for_length(length, self._effective_length, self._overlap)
+        except ArchiveError as error:
+            self._record_failure(f'Invalid frozen SCAN reference: {error}')
+            return
+        reference = {
+            'segment_index': int(message.segment_index),
+            'start': start,
+            'end': end,
+            'length_m': length,
+            'planned_images': count,
+        }
+        existing = session.references.get(int(message.segment_index))
+        if existing is not None:
+            if existing != reference:
+                self._record_failure(
+                    f'Frozen SCAN reference changed for segment {message.segment_index}.')
+            return
+        session.references[int(message.segment_index)] = reference
+        session.expected_images += count
+        session.message = (
+            f'Recording: frozen capture plan is {session.expected_images} images across '
+            f'{len(session.references)} SCAN segments; {session.saved_images} committed.')
+        try:
+            self._write_manifest(session)
+        except (ArchiveError, OSError, ValueError) as error:
+            self._record_failure(f'Could not persist frozen SCAN reference: {error}')
+            return
+        self._publish()
 
     def _image_array(self, image: Image) -> numpy.ndarray:
         if image.encoding != 'mono8':
@@ -547,11 +622,11 @@ class ArchiveRecorderNode(Node):
                 f'triple; received: {present}.')
             break
 
-    def _record_failure(self, reason: str) -> None:
+    def _record_failure(self, reason: str, failed_images: int = 1) -> None:
         session = self._session
         if session is None:
             return
-        session.failed_images += 1
+        session.failed_images += failed_images
         session.failures.append(reason)
         session.state = InspectionArchiveStatus.FAILED
         session.message = f'Archive failed: {reason}'

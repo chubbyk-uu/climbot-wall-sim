@@ -201,13 +201,15 @@ private:
     if (!key_ || !(key == *key_)) {
       key_ = key;
       next_trigger_ = 0U;
-      // The reference is now the user-bounded base_link route, not an
-      // artificially extended camera-centre sweep.  Photograph at both robot
-      // endpoints and distribute the remaining exposures over the whole base
-      // segment.  The front offset is applied only to camera progress.
+      // The reference is the user-bounded base_link route.  The final target
+      // intentionally remains one interval before its terminal pose: the
+      // tracker may complete inside its endpoint tolerance, and asking the
+      // camera for a frame exactly at that pose used to lose one frame per
+      // SCAN.  This count/interval rule is mirrored by archive_core.py.
       first_trigger_ = message->detection_forward_offset;
-      trigger_count_ = static_cast<uint32_t>(std::ceil(length / spacing_)) + 1U;
-      trigger_interval_ = length / static_cast<double>(trigger_count_ - 1U);
+      trigger_count_ = std::max(
+        1U, static_cast<uint32_t>(std::ceil(length / spacing_)));
+      trigger_interval_ = length / static_cast<double>(trigger_count_);
     } else if (reference_) {
       const double shift = std::hypot(
         message->start.x - reference_->start.x, message->start.y - reference_->start.y) +

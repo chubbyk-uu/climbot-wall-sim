@@ -204,9 +204,10 @@ class G2InspectionEvaluator(Node):
                 values[0].reference_end.x - values[0].reference_start.x,
                 values[0].reference_end.y - values[0].reference_start.y)
             nominal_spacing = self.task.detection_length * (1.0 - nominal_overlap)
-            capture_span = max(0.0, reference_length - self.task.detection_length)
-            expected_count = (1 if capture_span <= 1e-9 else
-                              math.ceil(capture_span / nominal_spacing) + 1)
+            # Must match automatic_capture_node and the recorder's frozen
+            # reference contract. The last target stays one interval before
+            # the endpoint, so endpoint arrival tolerance cannot lose a frame.
+            expected_count = max(1, math.ceil(reference_length / nominal_spacing))
             counts_ok &= len(values) == expected_count
             target_gaps = [
                 second.target_along_track - first.target_along_track
