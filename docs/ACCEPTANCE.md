@@ -57,7 +57,7 @@
 | G-03 | 相邻扫描线间距满足配置误差 | 通过 | 正式基线最坏 `5.17 mm ≤ 20 mm`；规划几何单测 |
 | G-04 | 相邻扫描方向交替 | 通过 | `test_coverage_geometry.cpp`、`test_coverage_planner_node.py` |
 | G-05 | 无圆弧拐角或跨路点捷径 | 通过 | 规划 Path 全为直线段；`test_coverage_schedule_pose.py`；动态小弧线仅是偏差过大时的执行入轨，不改名义路径 |
-| G-06 | 黄色相机覆盖由真实外参/足迹推导并报告；默认尽量覆盖，不为追求规则边界让蓝线越界；改变相机外参不得移动蓝线 | 待本次回归 | `test_coverage_geometry.cpp`、`test_coverage_planner_rviz.py`；横/竖矩形和短顶梯形回归摘要 |
+| G-06 | 黄色相机覆盖由真实外参/足迹推导并报告；默认尽量覆盖，不为追求规则边界让蓝线越界；改变相机外参不得移动蓝线 | **通过**：横向矩形／竖向矩形／横向梯形的实际足迹覆盖 `99.08/99.91/99.20%` | `test_coverage_geometry.cpp`、`test_coverage_planner_rviz.py`；`results/coverage_{horizontal,vertical,trapezoid_horizontal}_drive_region_clean_20260825_summary.json` |
 | G-07 | 斜向换道与可选顶部收边仍由直线组成，且蓝线不离开橙色可走区 | 通过 | `test_coverage_top_edge_scan.py`、`test_coverage_geometry.cpp` |
 | G-08 | 同输入生成完全一致路径 | 通过 | 规划器确定性单测与节点级回归 |
 

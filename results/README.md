@@ -120,6 +120,7 @@
 | `localization_g1_camera_2026-08-24_summary.json` | **G1 动态投影中心正式结果** | 四方向最大 EKF 相机中心误差 `2.119 mm < 5 mm`；`commit=2e16505` 干净树 |
 | `normal_loads_g1_camera_2026-08-24_{summary.json,csv}` | **G1 三轮载荷正式结果** | 34 工况、102 条接触记录无失载，最坏后球轮 `75.610 N > 60 N`；`commit=e83cf35` 干净树 |
 | `coverage_{horizontal,vertical}_g1camera_2026-08-24_*` | **G1 带载覆盖回归** | 横／竖任务覆盖率 `99.565%/99.933%`，最大落点误差 `3.123/9.370 mm`；`commit=e83cf35` 干净树 |
+| `coverage_{horizontal,vertical,trapezoid_horizontal}_drive_region_clean_20260825_*` | **可走区优先语义回归** | 相机外参不再移动蓝色 `base_link` 路线；三工况实际足迹覆盖 `99.08/99.91/99.20%`，`commit=e598275` 干净树 |
 | `turn_map_g1_camera_2026-08-24_{summary.json,csv}` | **G1 全航向侧滑正式结果** | 48 次为 `0.4307～0.5017 mm/度`，极差 `0.0710 mm/度`，最大转角误差 `0.853°`；`commit=11e49a4` 干净树 |
 
 每组 `*` 包含一个 `_trajectory.csv.gz`（逐采样真值、融合位姿、动态参考、状态和
