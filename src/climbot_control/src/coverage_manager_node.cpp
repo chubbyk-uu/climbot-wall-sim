@@ -272,6 +272,7 @@ private:
     status_.archive_state = ArchiveStatus::IDLE;
     status_.archive_run_id.clear();
     status_.archive_directory.clear();
+    status_.archive_preflight_expected_images = 0U;
     status_.archive_expected_images = 0U;
     status_.archive_saved_images = 0U;
     status_.archive_failed_images = 0U;
@@ -639,6 +640,7 @@ private:
         status_.archive_state = ArchiveStatus::READY;
         status_.archive_run_id = prepared->run_id;
         status_.archive_directory = prepared->task_directory;
+        status_.archive_preflight_expected_images = prepared->expected_images;
         status_.archive_expected_images = prepared->expected_images;
         status_.archive_estimated_bytes = prepared->estimated_bytes;
         status_.archive_message = prepared->message;

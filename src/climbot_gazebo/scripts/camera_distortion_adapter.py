@@ -18,6 +18,7 @@
 import time
 
 from climbot_gazebo.camera_distortion import (
+    apply_relative_exposure,
     load_calibration,
     make_distortion_maps,
     maps_fit_source,
@@ -27,6 +28,8 @@ import cv2
 from cv_bridge import CvBridge
 import numpy as np
 import rclpy
+from rclpy._rclpy_pybind11 import RCLError
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
@@ -39,6 +42,7 @@ class CameraDistortionAdapter(Node):
         super().__init__('camera_distortion_adapter')
         self.declare_parameter('camera_config', '')
         self.declare_parameter('render_focal_scale', 0.83)
+        self.declare_parameter('exposure_scale', 1.0)
         self.declare_parameter('output_noise_stddev', 0.004)
         self.declare_parameter('output_noise_seed', 73)
         path = str(self.get_parameter('camera_config').value)
@@ -62,6 +66,11 @@ class CameraDistortionAdapter(Node):
                 self._map_x, self._map_y, self._width, self._height):
             raise ValueError(
                 'render_focal_scale does not cover the distorted output')
+        self._exposure_scale = float(
+            self.get_parameter('exposure_scale').value)
+        # Validate at startup, before an inspection task can receive a frame.
+        apply_relative_exposure(np.zeros((1, 1), dtype=np.uint8),
+                                self._exposure_scale)
         self._bridge = CvBridge()
         self._reported_first_frame = False
         # A triggered 1920x1080 frame is task data, not a disposable video
@@ -80,8 +89,9 @@ class CameraDistortionAdapter(Node):
             Image, '/simulation/inspection_camera/ideal_image',
             self._image_callback, self._qos)
         self.get_logger().info(
-            'Ready: %dx%d Brown distortion, render focal scale %.3f' % (
-                self._width, self._height, scale))
+            'Ready: %dx%d Brown distortion, render focal scale %.3f, '
+            'relative exposure %.3f' % (
+                self._width, self._height, scale, self._exposure_scale))
 
     def _camera_info(self, header):
         matrix, distortion = matrices(self._camera)
@@ -116,6 +126,7 @@ class CameraDistortionAdapter(Node):
                 'Rejecting ideal image that is not a three-channel RGB frame')
             return
         grayscale = cv2.cvtColor(distorted, cv2.COLOR_RGB2GRAY)
+        grayscale = apply_relative_exposure(grayscale, self._exposure_scale)
         # Gazebo can return byte-identical cached renders for repeated triggers
         # even when SDF camera noise is configured. Model the industrial
         # sensor's read noise at the final mono8 stage so every exposure has
@@ -141,13 +152,19 @@ def main():
     node = CameraDistortionAdapter()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except RCLError:
+        if rclpy.ok():
+            raise
     finally:
         try:
             node.destroy_node()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, ExternalShutdownException):
             pass
+        except RCLError:
+            if rclpy.ok():
+                raise
         if rclpy.ok():
             rclpy.shutdown()
 

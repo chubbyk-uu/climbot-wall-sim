@@ -27,6 +27,7 @@ install(
     scripts/evaluate_g1_camera.py
     scripts/evaluate_g2_inspection.py
     scripts/evaluate_slip_compensation.py
+    scripts/gz_sim_supervisor.py
     scripts/measure_normal_loads.py
     scripts/measure_turn_band.py
     scripts/measure_turn_slip.py

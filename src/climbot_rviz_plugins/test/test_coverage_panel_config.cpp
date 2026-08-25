@@ -187,6 +187,7 @@ TEST(CoveragePanelConfig, freezesCaptureSettingsWhileArchivePreparationOrRunIsAc
   status.inspection_enabled = true;
   status.archive_state =
     climbot_interfaces::msg::InspectionArchiveStatus::PREPARING;
+  status.archive_preflight_expected_images = 132U;
   status.archive_expected_images = 30U;
   status.archive_saved_images = 2U;
   status.archive_directory = "/srv/recorder/climbot_data/task/r1_run";
@@ -201,7 +202,9 @@ TEST(CoveragePanelConfig, freezesCaptureSettingsWhileArchivePreparationOrRunIsAc
   EXPECT_FALSE(enabled->isEnabled());
   EXPECT_FALSE(root->isEnabled());
   EXPECT_TRUE(panel.findChild<QLabel *>("inspection_summary_value")->text().contains("Preparing"));
-  EXPECT_TRUE(panel.findChild<QLabel *>("archive_count_value")->text().contains("30"));
+  const auto archive_count = panel.findChild<QLabel *>("archive_count_value")->text();
+  EXPECT_TRUE(archive_count.contains("132"));
+  EXPECT_TRUE(archive_count.contains("30"));
   EXPECT_TRUE(panel.findChild<QLabel *>("archive_directory_value")->text().contains("task"));
 }
 

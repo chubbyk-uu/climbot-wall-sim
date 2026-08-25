@@ -55,7 +55,8 @@ def _world_defaults():
         element.attrib['name']: float(element.attrib['default'])
         for element in root.findall(f'{{{XACRO_NAMESPACE}}}arg')
         if element.attrib['name'] not in {
-            'inspection_target', 'inspection_flat_field_target'}
+            'inspection_target', 'inspection_flat_field_target',
+            'moonlight_cast_shadows'}
     }
 
 
@@ -113,6 +114,34 @@ def test_camera_noise_is_large_enough_for_multi_frame_statistics():
     assert standard_deviation * 255.0 >= 0.75
     assert standard_deviation * 255.0 <= 2.0
     assert isinstance(simulation['inspection_camera']['noise_seed'], int)
+
+
+def test_moonlight_is_one_explicit_shadow_casting_scene_light():
+    """Moonlight remains calibrated scene input, not GUI UI or duplicate lamps."""
+    _, simulation = _documents()
+    fill = simulation['lighting']['moonlight']
+    defaults = _world_defaults()
+    assert defaults['moonlight_intensity'] == pytest.approx(
+        float(fill['intensity']))
+    for axis, value in zip('xyz', fill['direction_xyz']):
+        assert defaults[f'moonlight_direction_{axis}'] == pytest.approx(
+            float(value))
+    for channel, value in zip('rgb', fill['diffuse_rgb']):
+        assert defaults[f'moonlight_diffuse_{channel}'] == pytest.approx(
+            float(value))
+    world = (PACKAGE_ROOT / 'worlds' / 'climbot_wall.sdf.xacro').read_text()
+    assert '<light type="directional" name="moonlight">' in world
+    assert '<cast_shadows>$(arg moonlight_cast_shadows)</cast_shadows>' in world
+    assert 'name="night_environment"' not in world
+    assert 'name="operator_fill"' not in world
+
+
+def test_ground_is_below_the_wall_contact_plane():
+    """The observation ground must not introduce a second wall contact."""
+    world = (PACKAGE_ROOT / 'worlds' / 'climbot_wall.sdf.xacro').read_text()
+    assert '<model name="ground">' in world
+    assert '<pose>0 0 -0.02 0 0 0</pose>' in world
+    assert '<plane><normal>0 0 1</normal><size>30 30</size></plane>' in world
 
 
 def test_simulated_wall_body_carries_the_described_surface():

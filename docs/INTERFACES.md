@@ -42,6 +42,7 @@
 | `tracking_mode` | `time` | 直线段控制律：`time` 或 `distance` |
 | `wall_grid_spacing` | `1.0` | **只管 Gazebo 墙面上**画的参考网格线，间距（m），`0` 不画。默认值取自 `climbot_description/config/wall.yaml`。RViz 叠加层不受它控制——那一套在 Displays 里勾掉 |
 | `wall_texture` | 空 | 透传给 `climbot_wall.launch.py`，见下 |
+| `flat_field_file` | 空 | 可选平场 `.npz`；仅发布补偿预览并作为归档标定引用，绝不改写 `images/raw/` |
 
 launch 参数只给这三项定初值。`region_type` 和 `sweep_direction` 运行中改用
 `/coverage/configure` 或面板上的下拉框，见下面的"运行时构型"；规划器的其余参数
@@ -1148,6 +1149,11 @@ output_root/
 精确位姿，最后一个点保留在终点前一个间隔内，以适配控制器的终点容差。只有图片和标签
 均经临时文件写入、校验并原子改名后才增加成功计数；任务结束时必须验证主键、文件名和
 时间戳一一对应。
+
+`/coverage/manager_status` 为这两个口径分别提供
+`archive_preflight_expected_images` 和 `archive_expected_images`：前者是开始前固定的名义
+全任务容量预估，后者是目前已冻结 SCAN 参考的累计实际计划。RViz 必须同时标示两者，
+不得把尚未冻结全部扫描线时的后者显示成任务总预计数。
 
 ### G4 任务启动与 RViz 接口
 

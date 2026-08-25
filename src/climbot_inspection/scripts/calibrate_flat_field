@@ -26,9 +26,11 @@ class Calibrator(Node):
         self.declare_parameter('image_topic', '/inspection/camera/image_raw')
         self.declare_parameter('output_file', '/tmp/climbot_flat_field.npz')
         # The patent uses 128 as an example. The simulated concrete is much
-        # less reflective than the calibration board, so 180 leaves the wall
-        # near 85--90 DN without clipping highlights.
-        self.declare_parameter('target_mean_dn', 180.0)
+        # less reflective than the calibration board; 172.75 reproduces the
+        # established 86.21 DN compensated-wall baseline after the stronger
+        # LED / shorter-exposure update, without clipping highlights.
+        self.declare_parameter('target_mean_dn', 172.75)
+        self.declare_parameter('max_saturated_fraction', 0.0001)
         self.declare_parameter('frame_timeout_s', 8.0)
         self.declare_parameter('readiness_timeout_s', 30.0)
         self.declare_parameter('minimum_capture_interval_s', 0.1)
@@ -108,7 +110,10 @@ class Calibrator(Node):
             if number + 1 < self.count:
                 time.sleep(interval)
         target_mean = float(self.get_parameter('target_mean_dn').value)
-        calibration = compute_calibration(self.frames, target_mean)
+        calibration = compute_calibration(
+            self.frames, target_mean,
+            max_saturated_fraction=float(
+                self.get_parameter('max_saturated_fraction').value))
         output = Path(str(self.get_parameter('output_file').value)).expanduser()
         output.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(
@@ -118,11 +123,14 @@ class Calibrator(Node):
             unique_hashes=np.int32(calibration.unique_hashes),
             temporal_noise_dn=np.float32(calibration.temporal_noise_dn),
             trimmed_mean_dn=np.float32(calibration.trimmed_mean_dn),
+            saturated_fraction=np.float32(calibration.saturated_fraction),
             target_mean_dn=np.float32(target_mean))
         self.get_logger().info(
             f'CALIBRATION_OK frames={self.count} unique_stamps={len(self.stamps)} '
             f'unique_hashes={calibration.unique_hashes} '
-            f'noise_dn={calibration.temporal_noise_dn:.3f} file={output}')
+            f'noise_dn={calibration.temporal_noise_dn:.3f} '
+            f'saturated_fraction={calibration.saturated_fraction:.6f} '
+            f'file={output}')
 
 
 def main():

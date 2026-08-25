@@ -20,21 +20,21 @@ import shutil
 import tempfile
 from xml.dom import minidom
 
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from climbot_description.wall_frame import reference_grid_spacing
 from climbot_gazebo.wall_texture import load_manifest, texture_visuals
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    IncludeLaunchDescription,
+    ExecuteProcess,
     OpaqueFunction,
     RegisterEventHandler,
     SetEnvironmentVariable,
+    Shutdown,
     TimerAction,
 )
 from launch.conditions import UnlessCondition
 from launch.event_handlers import OnShutdown
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 import xacro
@@ -133,14 +133,22 @@ def render_world(gazebo_share, description_share, grid_spacing,
         'ambient_r': repr(float(simulation['lighting']['ambient_rgb'][0])),
         'ambient_g': repr(float(simulation['lighting']['ambient_rgb'][1])),
         'ambient_b': repr(float(simulation['lighting']['ambient_rgb'][2])),
-        'environment_intensity': repr(float(
-            simulation['lighting']['environment_intensity'])),
-        'environment_direction_x': repr(float(
-            simulation['lighting']['environment_direction_xyz'][0])),
-        'environment_direction_y': repr(float(
-            simulation['lighting']['environment_direction_xyz'][1])),
-        'environment_direction_z': repr(float(
-            simulation['lighting']['environment_direction_xyz'][2])),
+        'moonlight_intensity': repr(float(
+            simulation['lighting']['moonlight']['intensity'])),
+        'moonlight_direction_x': repr(float(
+            simulation['lighting']['moonlight']['direction_xyz'][0])),
+        'moonlight_direction_y': repr(float(
+            simulation['lighting']['moonlight']['direction_xyz'][1])),
+        'moonlight_direction_z': repr(float(
+            simulation['lighting']['moonlight']['direction_xyz'][2])),
+        'moonlight_diffuse_r': repr(float(
+            simulation['lighting']['moonlight']['diffuse_rgb'][0])),
+        'moonlight_diffuse_g': repr(float(
+            simulation['lighting']['moonlight']['diffuse_rgb'][1])),
+        'moonlight_diffuse_b': repr(float(
+            simulation['lighting']['moonlight']['diffuse_rgb'][2])),
+        'moonlight_cast_shadows': str(bool(
+            simulation['lighting']['moonlight']['cast_shadows'])).lower(),
     }
     source = os.path.join(gazebo_share, 'worlds', 'climbot_wall.sdf.xacro')
     document = xacro.process_file(source, mappings=mappings)
@@ -357,7 +365,6 @@ def launch_setup(context, *args, **kwargs):
     package_share = get_package_share_directory('climbot_gazebo')
     control_share = get_package_share_directory('climbot_control')
     description_share = get_package_share_directory('climbot_description')
-    ros_gz_share = get_package_share_directory('ros_gz_sim')
     world = render_world(
         package_share, description_share,
         LaunchConfiguration('wall_grid_spacing').perform(context),
@@ -372,6 +379,11 @@ def launch_setup(context, *args, **kwargs):
     control_config = os.path.join(control_share, 'config', 'control.yaml')
     ekf_config = os.path.join(package_share, 'config', 'ekf_wall.yaml')
     existing_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+    existing_system_plugin_path = os.environ.get('GZ_SIM_SYSTEM_PLUGIN_PATH', '')
+    library_path = os.environ.get('LD_LIBRARY_PATH', '')
+    gazebo_supervisor = os.path.join(
+        get_package_prefix('climbot_gazebo'), 'lib', 'climbot_gazebo',
+        'gz_sim_supervisor.py')
 
     with open(wall_config) as handle:
         wall = yaml.safe_load(handle)['wall']
@@ -382,6 +394,14 @@ def launch_setup(context, *args, **kwargs):
         SetEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
             value=model_path + os.pathsep + existing_resource_path,
+        ),
+        SetEnvironmentVariable(
+            # Match ros_gz_sim's standard launcher environment. The
+            # supervisor must invoke the actual Gazebo process directly so it
+            # can terminate its whole process group without leaving Ruby's
+            # gz child behind.
+            name='GZ_SIM_SYSTEM_PLUGIN_PATH',
+            value=os.pathsep.join((existing_system_plugin_path, library_path)),
         ),
         RegisterEventHandler(OnShutdown(on_shutdown=[
             OpaqueFunction(
@@ -404,29 +424,18 @@ def launch_setup(context, *args, **kwargs):
             'gpu_backend must be auto, wsl_d3d12, or native, not ' + backend)
 
     # The simulation server owns physics, sensors and /clock, so it remains a
-    # required process.  Keep the display client separate: under WSLg a Qt
-    # OpenGL-context allocation can fail intermittently, and that must not
-    # terminate a healthy simulation or all of its ROS-side safety nodes.
-    actions.append(IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(ros_gz_share, 'launch', 'gz_sim.launch.py')
-        ),
-        launch_arguments={
-            'gz_args': ['-s -r -v 3 ', world],
-            'on_exit_shutdown': 'true',
-        }.items(),
-    ))
+    # required process. Keep both Gazebo clients under a small supervisor:
+    # GZ 8 can segfault when a terminal sends SIGINT into Ogre, while sending
+    # TERM to the clients' isolated process groups exits cleanly and prevents
+    # Ruby's `gz` launcher from leaving its actual child behind.
+    actions.append(ExecuteProcess(
+        cmd=[gazebo_supervisor, 'server', '--world', world],
+        name='gazebo_server', output='screen', on_exit=Shutdown()))
     actions.append(TimerAction(
         period=2.0,
-        actions=[IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(ros_gz_share, 'launch', 'gz_sim.launch.py')
-            ),
+        actions=[ExecuteProcess(
+            cmd=[gazebo_supervisor, 'gui'], name='gazebo_gui', output='screen',
             condition=UnlessCondition(LaunchConfiguration('headless')),
-            launch_arguments={
-                'gz_args': '-g -v 3',
-                'on_exit_shutdown': 'false',
-            }.items(),
         )],
     ))
 
@@ -474,6 +483,8 @@ def launch_setup(context, *args, **kwargs):
             'render_focal_scale': float(
                 simulation['inspection_camera'][
                     'render_overscan_focal_scale']),
+            'exposure_scale': float(
+                simulation['inspection_camera']['exposure_scale']),
             'output_noise_stddev': float(
                 simulation['inspection_camera']['noise_stddev']),
             'output_noise_seed': int(

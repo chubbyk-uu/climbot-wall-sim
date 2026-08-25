@@ -18,6 +18,8 @@
 from climbot_gazebo.parameter_checks import require_finite
 from nav_msgs.msg import Odometry
 import rclpy
+from rclpy._rclpy_pybind11 import RCLError
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 
@@ -78,13 +80,19 @@ def main():
     node = WallWheelOdomAdapter()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except RCLError:
+        if rclpy.ok():
+            raise
     finally:
         try:
             node.destroy_node()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, ExternalShutdownException):
             pass
+        except RCLError:
+            if rclpy.ok():
+                raise
         if rclpy.ok():
             rclpy.shutdown()
 

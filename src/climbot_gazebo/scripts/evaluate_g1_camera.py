@@ -23,6 +23,7 @@ import time
 
 from ament_index_python.packages import get_package_share_directory
 from climbot_gazebo.camera_distortion import (
+    apply_relative_exposure,
     load_calibration,
     make_distortion_maps,
     matrices,
@@ -360,7 +361,8 @@ def target_obstruction_metrics(raw_array, matrix, distortion, camera):
     }
 
 
-def compare_frame(evaluator, camera, render_scale, check_target=False):
+def compare_frame(evaluator, camera, render_scale, exposure_scale,
+                  check_target=False):
     """Validate the single public pair and recompute the Brown pixel mapping."""
     common = set(evaluator.public_images) & set(evaluator.public_infos)
     if len(common) != 1:
@@ -386,8 +388,10 @@ def compare_frame(evaluator, camera, render_scale, check_target=False):
     expected_rgb = cv2.remap(
         ideal_array, map_x, map_y, interpolation=cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_REPLICATE)
-    expected_raw = cv2.cvtColor(expected_rgb, cv2.COLOR_RGB2GRAY)
-    ideal_gray = cv2.cvtColor(ideal_array, cv2.COLOR_RGB2GRAY)
+    expected_raw = apply_relative_exposure(
+        cv2.cvtColor(expected_rgb, cv2.COLOR_RGB2GRAY), exposure_scale)
+    ideal_gray = apply_relative_exposure(
+        cv2.cvtColor(ideal_array, cv2.COLOR_RGB2GRAY), exposure_scale)
     delta = raw_array.astype(np.float64) - expected_raw.astype(np.float64)
     ideal_delta = raw_array.astype(np.float64) - ideal_gray.astype(np.float64)
     result = {
@@ -507,6 +511,7 @@ def main():
         evaluator.spin_for(1.0)
         frame = compare_frame(
             evaluator, camera, simulation['render_overscan_focal_scale'],
+            simulation['exposure_scale'],
             check_target=args.check_target)
         if args.image_output:
             key = next(iter(evaluator.public_images))

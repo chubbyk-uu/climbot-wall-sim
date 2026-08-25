@@ -52,11 +52,19 @@ def test_wall_launch_starts_watchdog():
 def test_gui_exit_cannot_terminate_the_required_simulation_server():
     """An intermittent WSLg GUI context failure must leave physics running."""
     source = LAUNCH_PATH.read_text()
-    assert "'gz_args': ['-s -r -v 3 ', world]" in source
-    assert "'on_exit_shutdown': 'true'" in source
-    assert "'gz_args': '-g -v 3'" in source
-    assert "'on_exit_shutdown': 'false'" in source
+    assert 'gz_sim_supervisor.py' in source
+    assert "cmd=[gazebo_supervisor, 'server', '--world', world]" in source
+    assert "name='gazebo_server', output='screen', on_exit=Shutdown()" in source
+    assert "cmd=[gazebo_supervisor, 'gui'], name='gazebo_gui', output='screen'" in source
     assert 'period=2.0' in source
+
+
+def test_gazebo_supervisor_forwards_shutdown_to_its_whole_process_group():
+    """Keep GZ's Ruby launcher from orphaning its real server or GUI child."""
+    source = (PACKAGE_ROOT / 'scripts' / 'gz_sim_supervisor.py').read_text()
+    assert 'start_new_session=True' in source
+    assert 'os.killpg(self._child.pid, signal.SIGTERM)' in source
+    assert 'return 0 if self._stopping else self._child.returncode' in source
 
 
 def test_simulation_adapters_exit_cleanly_after_launch_sigint():
@@ -65,7 +73,9 @@ def test_simulation_adapters_exit_cleanly_after_launch_sigint():
             'wall_imu_adapter.py', 'wall_wheel_odom_adapter.py',
             'total_station_sim.py', 'camera_distortion_adapter.py'):
         source = (PACKAGE_ROOT / 'scripts' / name).read_text()
-        assert 'except KeyboardInterrupt:' in source
+        assert 'ExternalShutdownException' in source
+        assert 'except (KeyboardInterrupt, ExternalShutdownException):' in source
+        assert 'except RCLError:' in source
         assert 'node.destroy_node()' in source
         assert 'if rclpy.ok():' in source
 

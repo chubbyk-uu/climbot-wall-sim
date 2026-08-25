@@ -7,6 +7,8 @@
 from cv_bridge import CvBridge
 import numpy as np
 import rclpy
+from rclpy._rclpy_pybind11 import RCLError
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 
@@ -46,12 +48,26 @@ class FlatFieldNode(Node):
 
 def main():
     rclpy.init()
+    node = None
     try:
         node = FlatFieldNode()
         rclpy.spin(node)
-        node.destroy_node()
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    except RCLError:
+        if rclpy.ok():
+            raise
     finally:
-        rclpy.shutdown()
+        if node is not None:
+            try:
+                node.destroy_node()
+            except (KeyboardInterrupt, ExternalShutdownException):
+                pass
+            except RCLError:
+                if rclpy.ok():
+                    raise
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

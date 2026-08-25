@@ -21,6 +21,8 @@ import random
 from climbot_description.geometry import quaternion_from_rpy, quaternion_multiply
 from climbot_gazebo.parameter_checks import require_finite
 import rclpy
+from rclpy._rclpy_pybind11 import RCLError
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
 
@@ -83,13 +85,22 @@ def main():
     node = WallImuAdapter()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except RCLError:
+        # Jazzy can tear down the default context between spin iterations when
+        # every process in the foreground group receives Ctrl+C.  That is a
+        # normal launch shutdown, not an IMU-adapter fault.
+        if rclpy.ok():
+            raise
     finally:
         try:
             node.destroy_node()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, ExternalShutdownException):
             pass
+        except RCLError:
+            if rclpy.ok():
+                raise
         if rclpy.ok():
             rclpy.shutdown()
 

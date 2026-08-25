@@ -153,7 +153,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self._publish_archive(state, active, request.run_id)
         return response
 
-    def _publish_archive(self, state, coverage_task, run_id):
+    def _publish_archive(self, state, coverage_task, run_id, expected_images=2):
         message = InspectionArchiveStatus()
         message.state = state
         message.inspection_enabled = True
@@ -161,7 +161,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
         message.revision = coverage_task.revision
         message.run_id = run_id
         message.task_directory = f'/tmp/archive-{coverage_task.revision}'
-        message.expected_images = 2
+        message.expected_images = expected_images
         message.message = 'mock archive state'
         self.archive_status.publish(message)
 
@@ -218,6 +218,16 @@ class TestCoverageManagerArchive(unittest.TestCase):
             'goal execution after archive preparation', since=mark)
         self.assertTrue(executing.inspection_enabled)
         self.assertEqual(executing.archive_directory, '/tmp/archive-21')
+        self.assertEqual(executing.archive_preflight_expected_images, 2)
+        self._publish_archive(
+            InspectionArchiveStatus.RECORDING, self.prepare_requests[-1].task,
+            'run-21', expected_images=1)
+        frozen = self._wait(
+            lambda item: item.archive_state == InspectionArchiveStatus.RECORDING and
+            item.archive_preflight_expected_images == 2 and
+            item.archive_expected_images == 1,
+            'frozen capture plan distinct from the nominal preflight total', since=mark)
+        self.assertEqual(frozen.archive_saved_images, 0)
 
         canceled = self._call(self.cancel, Trigger.Request())
         self.assertTrue(canceled.success)

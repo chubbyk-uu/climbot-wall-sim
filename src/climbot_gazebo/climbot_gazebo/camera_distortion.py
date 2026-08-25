@@ -89,3 +89,13 @@ def maps_fit_source(map_x, map_y, width, height, tolerance_px=0.5):
         float(np.max(map_x)) <= width - 1 + tolerance_px and
         float(np.min(map_y)) >= -tolerance_px and
         float(np.max(map_y)) <= height - 1 + tolerance_px)
+
+
+def apply_relative_exposure(image, scale):
+    """Apply a finite, no-gain relative integration time to a rendered frame."""
+    scale = float(scale)
+    if (not math.isfinite(scale)) or not 0.0 < scale <= 1.0:
+        raise ValueError('exposure_scale must be finite and in (0, 1]')
+    if image.dtype != np.uint8:
+        raise ValueError('exposure source must use uint8 samples')
+    return np.clip(image.astype(np.float32) * scale, 0.0, 255.0).astype(np.uint8)

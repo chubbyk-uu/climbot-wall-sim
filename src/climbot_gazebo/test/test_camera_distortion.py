@@ -18,6 +18,7 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from climbot_gazebo.camera_distortion import (
+    apply_relative_exposure,
     load_calibration,
     make_distortion_maps,
     maps_fit_source,
@@ -85,3 +86,20 @@ def test_full_distorted_view_clears_wall_side_of_chassis():
 def test_bad_render_focal_scale_is_rejected(scale):
     with pytest.raises(ValueError):
         make_distortion_maps(shared_camera(), scale)
+
+
+def test_relative_exposure_scales_raw_samples_without_using_gain():
+    image = np.asarray([[0, 100, 255]], dtype=np.uint8)
+    assert apply_relative_exposure(image, 0.65).tolist() == [[0, 65, 165]]
+    for scale in (0.0, -0.1, 1.01, float('nan')):
+        with pytest.raises(ValueError):
+            apply_relative_exposure(image, scale)
+
+
+def test_simulated_exposure_is_a_shortening_and_led_dominates_fill():
+    simulation = yaml.safe_load(
+        (PACKAGE_ROOT / 'config' / 'simulation.yaml').read_text())['simulation']
+    lighting = simulation['lighting']
+    assert 0.0 < float(simulation['inspection_camera']['exposure_scale']) <= 1.0
+    assert float(lighting['inspection_led']['intensity']) > float(
+        lighting['moonlight']['intensity'])

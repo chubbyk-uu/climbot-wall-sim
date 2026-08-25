@@ -72,6 +72,11 @@ bool inspection_enabled
 uint8 archive_state
 string archive_run_id
 string archive_directory
+# Nominal whole-task estimate made before motion starts. It reserves archive
+# capacity and stays constant during the task; it is not the frozen plan.
+uint32 archive_preflight_expected_images
+# Cumulative count from SCAN references frozen so far. This starts at zero and
+# grows line by line; only after the final SCAN is it the task's final count.
 uint32 archive_expected_images
 uint32 archive_saved_images
 uint32 archive_failed_images

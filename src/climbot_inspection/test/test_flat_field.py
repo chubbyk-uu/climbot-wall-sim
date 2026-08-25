@@ -36,6 +36,7 @@ def test_thirty_noisy_frames_flatten_the_led_field():
     corrected = apply_calibration(frames[0], calibration.gain)
     assert calibration.unique_hashes == 30
     assert calibration.temporal_noise_dn > 0.5
+    assert calibration.saturated_fraction == 0.0
     # A single corrected exposure retains sensor noise; only the illumination
     # gradient (about 70 DN here) is expected to disappear.
     assert float(np.std(corrected.astype(float))) < 3.5
@@ -53,4 +54,12 @@ def test_noise_free_sequence_is_rejected_even_if_hashes_differ_slightly():
     for index, frame in enumerate(frames):
         frame.flat[index] = 101
     with pytest.raises(ValueError, match='temporal noise'):
+        compute_calibration(frames)
+
+
+def test_saturated_flat_field_is_rejected_before_gain_is_computed():
+    frames = _frames()
+    for frame in frames:
+        frame[:, :8] = 255
+    with pytest.raises(ValueError, match='saturated'):
         compute_calibration(frames)

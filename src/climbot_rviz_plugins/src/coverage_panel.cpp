@@ -402,7 +402,7 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   root_buttons->addWidget(default_archive_root_button_);
   root_buttons->addStretch(1);
   inspection_body->addLayout(root_buttons);
-  inspection_body->addWidget(makeCaption(tr("Expected / saved / failed")));
+  inspection_body->addWidget(makeCaption(tr("Nominal / frozen / saved / failed")));
   inspection_body->addWidget(archive_count_label_);
   inspection_body->addWidget(makeCaption(tr("Task archive directory")));
   inspection_body->addWidget(archive_directory_label_);
@@ -868,14 +868,16 @@ void CoveragePanel::renderStatus(const Status & status)
   const QString archive_state = archiveStateText(status.archive_state);
   inspection_summary_label_->setText(
     status.inspection_enabled ?
-    tr("%1 · %2 / %3 saved")
+    tr("%1 · %2 saved · %3 frozen / %4 nominal")
     .arg(archive_state)
     .arg(status.archive_saved_images)
-    .arg(status.archive_expected_images) :
+    .arg(status.archive_expected_images)
+    .arg(status.archive_preflight_expected_images) :
     tr("Off"));
   archive_count_label_->setText(
     status.inspection_enabled ?
-    tr("%1 / %2 / %3")
+    tr("%1 / %2 / %3 / %4")
+    .arg(status.archive_preflight_expected_images)
     .arg(status.archive_expected_images)
     .arg(status.archive_saved_images)
     .arg(status.archive_failed_images) : tr("-"));

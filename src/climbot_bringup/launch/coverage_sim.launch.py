@@ -60,7 +60,10 @@ def generate_launch_description():
             os.path.join(
                 inspection_share, 'launch', 'inspection.launch.py')),
         condition=IfCondition(LaunchConfiguration('inspection')),
-        launch_arguments={'use_sim_time': 'true'}.items(),
+        launch_arguments={
+            'use_sim_time': 'true',
+            'flat_field_file': LaunchConfiguration('flat_field_file'),
+        }.items(),
     )
 
     default_config = os.path.join(
@@ -87,6 +90,11 @@ def generate_launch_description():
             'inspection',
             default_value='true',
             description='Start G1 manual and G2 position-triggered inspection.',
+        ),
+        DeclareLaunchArgument(
+            'flat_field_file',
+            default_value='',
+            description='Optional flat-field NPZ reference; raw images remain unchanged.',
         ),
         # The grid painted on the wall face in Gazebo, which is the one that
         # ends up in photographs. Set it to 0 for a run that photographs the

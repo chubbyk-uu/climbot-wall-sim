@@ -1,17 +1,25 @@
 # Gazebo-only contact, rendering, sensor, and initialization parameters.
 simulation:
   lighting:
-    # Phase G3 starts with the real robot's night / weak-ambient operating
-    # condition. A single bracket-mounted LED is deliberately non-uniform;
+    # Phase G3/G4 models a night-time, weak-moonlight operating condition.
+    # A single bracket-mounted LED is deliberately non-uniform;
     # its centre-bright field will later be flat-fielded by the patented
-    # calibration method. The weak world term prevents zero-valued shadows.
+    # calibration method. Ambient prevents completely black unlit surfaces.
     ambient_rgb: [0.025, 0.025, 0.025]
-    environment_intensity: 0.035
-    environment_direction_xyz: [-1.0, 0.2, -0.4]
+    # One physical, cool moonlight. It is intentionally weaker than the LED
+    # but casts shadows like real directional moonlight. Regenerate flat-field
+    # calibration whenever it changes.
+    moonlight:
+      intensity: 0.30
+      direction_xyz: [-1.0, 0.2, -0.4]
+      diffuse_rgb: [0.85, 0.88, 0.95]
+      cast_shadows: true
     inspection_led:
       centre_xyz_m: [0.380, 0.000, 0.290]
       direction_xyz: [0.0, 0.0, -1.0]
-      intensity: 1.2
+      # Stronger than the 0.30 operator fill, as on the real bracket.  The
+      # camera's 0.65 relative exposure below preserves raw highlight headroom.
+      intensity: 2.0
       range_m: 2.0
       attenuation_constant: 0.20
       attenuation_linear: 0.35
@@ -104,13 +112,19 @@ simulation:
     # source image, then the simulation-only adapter maps it into the shared
     # calibrated K/D without black borders at the distorted corners.
     render_overscan_focal_scale: 0.83
+    # Relative integration time applied to the raw sensor signal after the
+    # renderer and before read noise. Gazebo SDF has no physical exposure
+    # control, so this is the explicit simulation equivalent of a shorter
+    # real-camera exposure. One is the legacy exposure; values above one are
+    # intentionally rejected to avoid using gain as a substitute for light.
+    exposure_scale: 0.65
     near_clip_m: 0.05
     far_clip_m: 20.0
     noise_mean: 0.0
-    # Additive per-frame Gaussian sensor noise in normalized intensity. 0.004
-    # is about 1.02 DN in mono8: visible to a 30-frame flat-field statistic,
-    # but small enough not to bury concrete texture.
-    noise_stddev: 0.004
+    # Additive per-frame Gaussian sensor noise in normalized intensity. 0.003
+    # is about 0.77 DN in mono8: visible to a 30-frame flat-field statistic,
+    # yet leaves margin for the 1 DN Brown-map reconstruction check.
+    noise_stddev: 0.003
     noise_seed: 73
     visualize: false
 

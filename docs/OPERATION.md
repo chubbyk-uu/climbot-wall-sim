@@ -28,7 +28,16 @@ ros2 launch climbot_gazebo climbot_wall.launch.py gpu_backend:=wsl_d3d12
 
 Gazebo 的物理／传感器 server 与 GUI 是独立进程：GUI 因 WSLg OpenGL context 创建失败而退出时，
 仿真和 ROS 节点仍继续运行；可在修复显示环境后单独执行 `gz sim -g -v 3` 重新连接。只有
-server 退出才会受控关闭整套 launch。
+server 退出才会受控关闭整套 launch。标准 launch 还会以独立进程组监督两个 Gazebo 客户端；
+Ctrl+C 先由监督器接收，再以 `SIGTERM` 结束整个客户端组，避免 GZ 8/Ogre 直接处理 `SIGINT`
+时崩溃，或 Ruby 启动器退出后遗留真正的 `gz sim` 子进程。
+
+本仿真默认是**夜间、弱月光环境**：一束 `lighting.moonlight`（强度 `0.30`）提供真实、
+可投影阴影的月光；机器人支架 LED 是更强的相机主照明。两者均是实际场景光，相机也会看到，
+因此 G3/G4 图像验收应记录其数值，修改后须重新生成平场标定，不能把它误认为纯 GUI 显示设置。
+相机视锥已验证不含机器人、支架或灯具；仍须通过带贴图实拍确认平整墙面的正常原图不出现可见
+阴影。世界还带有位于墙脚下方 20 mm 的静态中性灰地面，供操作者观察空间关系；它不会改变墙面
+上的轮子接触。
 
 键盘控制在另一个终端运行：
 
@@ -82,6 +91,10 @@ ros2 service call /inspection/capture_once std_srvs/srv/Trigger '{}'
 `s = detection_length × (1 − overlap)` 生成 `ceil(L / s)` 个位置触发点；最后一点
 保留在终点前一个间隔内，避免控制器在终点容差内完成而漏掉理论端点帧。记录器使用同一
 冻结参考和同一公式核对归档数，名义规划航点数量只用于任务开始前的磁盘容量预留。
+因此 Capture 页会同时显示：**Nominal**（开始前的全任务容量预估，任务期间不变）和
+**Frozen**（已实际冻结的 SCAN 参考累计拍摄计划，第一条扫描线后从零开始逐条增长）。
+例如 `22 frozen / 132 nominal` 不是任务缩短为 22 张，而是 132 张任务中目前只有首条线的
+22 张已按实际执行参考确定；全部扫描线冻结后 Frozen 才是最终必须与已保存数严格相等的数。
 巡检与普通覆盖任务均使用 `0.20 m/s` 巡航。全站仪默认仍为 12 Hz、1 mm 噪声和 10 ms
 固定传输延迟；由此产生的曝光位姿误差保存到标签并由离线拼接处理，不通过在线限速掩盖。
 
@@ -112,10 +125,19 @@ ros2 run climbot_inspection calibrate_flat_field --ros-args \
 `noise_dn`。正常纹理墙重启后，通过
 `inspection.launch.py flat_field_file:=/tmp/climbot_flat_field.npz` 发布
 `/inspection/camera/image_compensated`；原图仍保留。曝光、LED、相机或镜头参数改变后
-必须重新标定。
+必须重新标定。`simulation.inspection_camera.exposure_scale` 是 Gazebo 没有原生曝光控制时的
+相对积分时间（仅允许不大于 1 的短曝光）；标定会拒绝饱和像素比例超过 `0.01%` 的原始灰板帧。
 
-仿真默认纯灰板目标均值为 `180 DN`；这是针对当前较暗混凝土贴图的显示增益，仍保留
-高亮余量。可用 `-p target_mean_dn:=...` 调整，范围为 `1～254 DN`。
+完整任务可直接传入持久化标定文件；它只发布补偿预览并写入归档的标定引用，`images/raw/`
+仍是未经畸变或光照补偿的原始帧：
+
+```bash
+ros2 launch climbot_bringup coverage_mission.launch.py \
+  flat_field_file:=/home/jerry/climbot_data/calibration/flat_field_sim_moonlight_led2_exp065_20260825.npz
+```
+
+仿真默认纯灰板目标均值为 `172.75 DN`；它在当前 LED／短曝光组合下复现混凝土补偿图约
+`86 DN` 的既有亮度，并保留高亮余量。可用 `-p target_mean_dn:=...` 调整，范围为 `1～254 DN`。
 
 ### 点选机器人任务可走区
 
@@ -177,7 +199,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 | 页签／行 | 内容 |
 | --- | --- |
 | **Plan** | Region、Sweep、Algorithm、点选状态、Replan 与 Clear points |
-| **Capture** | 本次任务的原图归档开关、记录器端根目录、预计／已保存／失败数量、最终目录和归档状态 |
+| **Capture** | 本次任务的原图归档开关、记录器端根目录、名义总预计／已冻结实际计划／已保存／失败数量、最终目录和归档状态 |
 | **Details** | Task、Schedule、Manager、Planner 与 Last request |
 
 | 按钮 | 作用 |

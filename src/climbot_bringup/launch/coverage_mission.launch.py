@@ -81,6 +81,7 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': 'true',
             'inspection_output_root': LaunchConfiguration('inspection_output_root'),
+            'flat_field_file': LaunchConfiguration('flat_field_file'),
         }.items(),
     )
 
@@ -133,6 +134,11 @@ def generate_launch_description():
             'inspection_output_root',
             default_value='~/climbot_data',
             description='Default G4 root on the archive recorder host.',
+        ),
+        DeclareLaunchArgument(
+            'flat_field_file',
+            default_value='',
+            description='Optional flat-field NPZ reference; raw archive images remain unchanged.',
         ),
         # The grid painted on the wall face in Gazebo, which is the one that
         # ends up in photographs. Set it to 0 for a run that photographs the

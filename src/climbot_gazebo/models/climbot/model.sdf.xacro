@@ -70,7 +70,7 @@
   <xacro:arg name="camera_near_clip" default="0.05"/>
   <xacro:arg name="camera_far_clip" default="20.0"/>
   <xacro:arg name="camera_noise_mean" default="0.0"/>
-  <xacro:arg name="camera_noise_stddev" default="0.004"/>
+  <xacro:arg name="camera_noise_stddev" default="0.003"/>
   <xacro:arg name="camera_visualize" default="false"/>
   <xacro:arg name="inspection_led_x" default="0.380"/>
   <xacro:arg name="inspection_led_y" default="0.000"/>

@@ -30,6 +30,7 @@ class Calibration:
     unique_hashes: int
     temporal_noise_dn: float
     trimmed_mean_dn: float
+    saturated_fraction: float
 
 
 def image_hash(image):
@@ -37,7 +38,8 @@ def image_hash(image):
     return hashlib.sha256(np.ascontiguousarray(image).tobytes()).hexdigest()
 
 
-def compute_calibration(images, target_mean_dn=128.0, blur_sigma_px=2.0):
+def compute_calibration(images, target_mean_dn=128.0, blur_sigma_px=2.0,
+                        max_saturated_fraction=0.0001):
     """Compute multiplicative flat-field gain from at least 11 mono8 images."""
     if len(images) < 11:
         raise ValueError('flat-field calibration requires at least 11 images')
@@ -46,10 +48,18 @@ def compute_calibration(images, target_mean_dn=128.0, blur_sigma_px=2.0):
         raise ValueError('images must be equally sized mono8 arrays')
     if not np.isfinite(target_mean_dn) or not 1.0 <= target_mean_dn <= 254.0:
         raise ValueError('target_mean_dn must be finite and in [1, 254]')
+    if (not np.isfinite(max_saturated_fraction) or
+            not 0.0 <= max_saturated_fraction < 1.0):
+        raise ValueError('max_saturated_fraction must be finite and in [0, 1)')
     hashes = {image_hash(frame) for frame in frames}
     if len(hashes) != len(frames):
         raise ValueError('duplicate calibration frame detected')
     source = frames.astype(np.float32)
+    saturated_fraction = float(np.mean(frames >= 254))
+    if saturated_fraction > max_saturated_fraction:
+        raise ValueError(
+            'flat-field source is saturated: %.6f exceeds %.6f' % (
+                saturated_fraction, max_saturated_fraction))
     temporal_noise = float(np.mean(np.std(source, axis=0, ddof=1)))
     if temporal_noise < 0.10:
         raise ValueError('calibration frames lack measurable temporal noise')
@@ -74,7 +84,8 @@ def compute_calibration(images, target_mean_dn=128.0, blur_sigma_px=2.0):
         mean_image=mean_image.astype(np.float32),
         unique_hashes=len(hashes),
         temporal_noise_dn=temporal_noise,
-        trimmed_mean_dn=trimmed_mean)
+        trimmed_mean_dn=trimmed_mean,
+        saturated_fraction=saturated_fraction)
 
 
 def apply_calibration(image, gain):

@@ -31,6 +31,7 @@ from ament_index_python.packages import get_package_share_directory
 import cv2
 import numpy
 import rclpy
+from rclpy._rclpy_pybind11 import RCLError
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
@@ -647,12 +648,27 @@ def main() -> int:
         return 0
     except (KeyboardInterrupt, ExternalShutdownException):
         return 0
+    except RCLError as error:
+        # A foreground Ctrl+C reaches the launch process and this node at the
+        # same instant.  Jazzy may then invalidate the default context between
+        # two wait-set allocations.  Do not report that expected race as an
+        # archive failure, while preserving genuine live-context RCL errors.
+        if not rclpy.ok():
+            return 0
+        rclpy.logging.get_logger('archive_recorder_node').fatal(f'Node failed: {error}')
+        return 1
     except Exception as error:  # noqa: BLE001 - node startup must fail loudly.
         rclpy.logging.get_logger('archive_recorder_node').fatal(f'Node failed: {error}')
         return 1
     finally:
         if node is not None:
-            node.destroy_node()
+            try:
+                node.destroy_node()
+            except (KeyboardInterrupt, ExternalShutdownException):
+                pass
+            except RCLError:
+                if rclpy.ok():
+                    raise
         if rclpy.ok():
             rclpy.shutdown()
 

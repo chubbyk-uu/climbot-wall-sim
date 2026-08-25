@@ -99,6 +99,7 @@ void fill(climbot_rviz_plugins::CoveragePanel & panel)
   status.can_cancel = true;
   status.inspection_enabled = true;
   status.archive_state = climbot_interfaces::msg::InspectionArchiveStatus::RECORDING;
+  status.archive_preflight_expected_images = 132U;
   status.archive_expected_images = 120U;
   status.archive_saved_images = 47U;
   status.archive_failed_images = 0U;
