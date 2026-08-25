@@ -65,6 +65,19 @@ bool can_cancel
 bool can_force_abandon
 bool can_rearm
 
+# Task-level inspection/archive state, owned by the archive recorder and
+# mirrored by the manager so the RViz task panel has one authoritative task
+# status stream. inspection_enabled is frozen before the Action Goal is sent.
+bool inspection_enabled
+uint8 archive_state
+string archive_run_id
+string archive_directory
+uint32 archive_expected_images
+uint32 archive_saved_images
+uint32 archive_failed_images
+uint64 archive_estimated_bytes
+string archive_message
+
 # The same line the manager logs. Publishing it here keeps one wording for the
 # log, the panel and ros2 topic echo.
 string message

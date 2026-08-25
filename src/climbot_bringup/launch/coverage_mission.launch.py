@@ -69,6 +69,8 @@ def generate_launch_description():
             'use_sim_time': 'true',
             'control_config_file': LaunchConfiguration('control_config_file'),
             'tracking_mode': LaunchConfiguration('tracking_mode'),
+            'inspection_default_enabled': LaunchConfiguration('inspection'),
+            'inspection_output_root': LaunchConfiguration('inspection_output_root'),
         }.items(),
     )
     inspection = IncludeLaunchDescription(
@@ -76,7 +78,10 @@ def generate_launch_description():
             os.path.join(
                 inspection_share, 'launch', 'inspection.launch.py')),
         condition=IfCondition(LaunchConfiguration('inspection')),
-        launch_arguments={'use_sim_time': 'true'}.items(),
+        launch_arguments={
+            'use_sim_time': 'true',
+            'inspection_output_root': LaunchConfiguration('inspection_output_root'),
+        }.items(),
     )
 
     # This launch runs the RViz click workflow by default, where the shape is
@@ -123,6 +128,11 @@ def generate_launch_description():
             'inspection',
             default_value='true',
             description='Start G1 manual and G2 position-triggered inspection.',
+        ),
+        DeclareLaunchArgument(
+            'inspection_output_root',
+            default_value='~/climbot_data',
+            description='Default G4 root on the archive recorder host.',
         ),
         # The grid painted on the wall face in Gazebo, which is the one that
         # ends up in photographs. Set it to 0 for a run that photographs the

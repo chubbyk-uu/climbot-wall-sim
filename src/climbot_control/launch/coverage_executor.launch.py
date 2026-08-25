@@ -41,6 +41,8 @@ def generate_launch_description():
         # explicit pass below makes that collision impossible.
         DeclareLaunchArgument('control_config_file', default_value=default_config),
         DeclareLaunchArgument('tracking_mode', default_value='time'),
+        DeclareLaunchArgument('inspection_default_enabled', default_value='true'),
+        DeclareLaunchArgument('inspection_output_root', default_value='~/climbot_data'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(tracker_launch),
             launch_arguments={
@@ -56,6 +58,8 @@ def generate_launch_description():
             name='coverage_manager',
             parameters=[{
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
+                'inspection_default_enabled': LaunchConfiguration('inspection_default_enabled'),
+                'inspection_output_root': LaunchConfiguration('inspection_output_root'),
             }],
             output='screen',
         ),

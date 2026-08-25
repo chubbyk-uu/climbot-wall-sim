@@ -580,6 +580,7 @@ private:
   {
     active_goal_ = goal;
     active_task_ = goal->get_goal()->task;
+    inspection_enabled_ = goal->get_goal()->inspection_enabled;
     completed_segments_ = 0U;
     current_segment_ = 0U;
     task_start_time_ = controlNow();
@@ -1268,7 +1269,7 @@ private:
     reference.end.y = end_.y;
     reference.detection_forward_offset = active_task_->detection_forward_offset;
     reference.inspection_enabled =
-      !approaching_start_ && !arc_entry_active_ && reference_prepared_ &&
+      inspection_enabled_ && !approaching_start_ && !arc_entry_active_ && reference_prepared_ &&
       feedback.segment_type == climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN &&
       (feedback.state == ExecuteCoverage::Feedback::TRACK_LINE ||
       feedback.state == ExecuteCoverage::Feedback::FINAL_APPROACH);
@@ -1758,6 +1759,9 @@ private:
   double wheel_acceleration_limit_{0.40};
   std::string frame_id_{"odom"};
   bool standalone_mode_{true};
+  // Goal-scoped rather than a mutable parameter: an archive decision made at
+  // Start cannot be changed halfway through a scan by another UI client.
+  bool inspection_enabled_{false};
   bool reference_prepared_{true};
   bool arc_entry_active_{false};
   bool approaching_start_{false};

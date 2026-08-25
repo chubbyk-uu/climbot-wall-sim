@@ -22,8 +22,12 @@
 #include "climbot_control/control_clock.hpp"
 #include "climbot_control/coverage_execution.hpp"
 #include "climbot_interfaces/action/execute_coverage.hpp"
+#include "climbot_interfaces/msg/inspection_archive_status.hpp"
 #include "climbot_interfaces/msg/coverage_status.hpp"
 #include "climbot_interfaces/msg/coverage_task.hpp"
+#include "climbot_interfaces/srv/finalize_inspection_archive.hpp"
+#include "climbot_interfaces/srv/prepare_inspection_archive.hpp"
+#include "climbot_interfaces/srv/start_coverage.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -39,6 +43,10 @@ public:
   using ExecuteCoverage = climbot_interfaces::action::ExecuteCoverage;
   using GoalHandle = rclcpp_action::ClientGoalHandle<ExecuteCoverage>;
   using Status = climbot_interfaces::msg::CoverageStatus;
+  using ArchiveStatus = climbot_interfaces::msg::InspectionArchiveStatus;
+  using PrepareArchive = climbot_interfaces::srv::PrepareInspectionArchive;
+  using FinalizeArchive = climbot_interfaces::srv::FinalizeInspectionArchive;
+  using StartCoverage = climbot_interfaces::srv::StartCoverage;
 
   CoverageManagerNode()
   : Node("coverage_manager"), frame_id_(declare_parameter("frame_id", "odom")),
@@ -50,7 +58,12 @@ public:
     // watchdog's own command timeout, so an executor that is still commanding
     // between two of these checks cannot read as quiet.
     command_quiet_s_(declare_parameter("command_quiet_s", 1.0)),
-    hold_response_timeout_s_(declare_parameter("hold_response_timeout_s", 1.0))
+    hold_response_timeout_s_(declare_parameter("hold_response_timeout_s", 1.0)),
+    hold_discovery_grace_s_(declare_parameter("hold_discovery_grace_s", 1.0)),
+    // A bare control-node process stays motion-only for compatibility and
+    // safety. The complete mission launch explicitly enables inspection.
+    inspection_default_enabled_(declare_parameter("inspection_default_enabled", false)),
+    inspection_output_root_(declare_parameter("inspection_output_root", "~/climbot_data"))
   {
     if (!std::isfinite(start_response_timeout_s_) || !(start_response_timeout_s_ > 0.0)) {
       throw std::invalid_argument("start_response_timeout_s must be positive.");
@@ -66,6 +79,12 @@ public:
     }
     if (!std::isfinite(hold_response_timeout_s_) || !(hold_response_timeout_s_ > 0.0)) {
       throw std::invalid_argument("hold_response_timeout_s must be positive.");
+    }
+    if (!std::isfinite(hold_discovery_grace_s_) || !(hold_discovery_grace_s_ > 0.0)) {
+      throw std::invalid_argument("hold_discovery_grace_s must be positive.");
+    }
+    if (inspection_output_root_.empty()) {
+      throw std::invalid_argument("inspection_output_root must not be empty.");
     }
     // The feedback throttle and the start-response deadline are elapsed times,
     // and off sim time the node clock is the settable system clock. A backward
@@ -126,6 +145,11 @@ public:
           "Ready: " + task->task_id + " revision " + std::to_string(task->revision));
       });
     action_client_ = rclcpp_action::create_client<ExecuteCoverage>(this, "/coverage/execute");
+    archive_prepare_client_ = create_client<PrepareArchive>("/inspection/archive/prepare");
+    archive_finalize_client_ = create_client<FinalizeArchive>("/inspection/archive/finalize");
+    archive_status_subscription_ = create_subscription<ArchiveStatus>(
+      "/inspection/archive/status", rclcpp::QoS(1).reliable().transient_local(),
+      [this](const ArchiveStatus::SharedPtr archive) {onArchiveStatus(*archive);});
     // What the robot is being told to do, watched directly rather than inferred
     // from whether the Action server answers. Those are different questions,
     // and losing the second one while the first keeps happening is the whole
@@ -145,12 +169,18 @@ public:
       "/control/hold_active", rclcpp::QoS(1).reliable().transient_local(),
       [this](const std_msgs::msg::Bool::SharedPtr message) {
         hold_active_ = message->data;
+        last_hold_status_ = std::chrono::steady_clock::now();
         // The watchdog's own state is stronger than a service response. It also
         // retires a request whose response was lost after the watchdog had
         // already applied it, so a later retry cannot race the state backwards.
         if (hold_request_value_ && *hold_request_value_ == message->data) {
+          // A latched false sample can belong to the previous run. It proves
+          // only that the watchdog was released at some point, not that this
+          // Start's explicit release request reached it. The service response
+          // below carries that causal confirmation; accepting this sample here
+          // could dispatch a Goal while an old hold was still in force.
           if (!message->data) {
-            hold_release_confirmed_ = true;
+            return;
           }
           ++hold_generation_;
           hold_request_value_.reset();
@@ -161,6 +191,10 @@ public:
       "/coverage/start",
       [this](const std_srvs::srv::Trigger::Request::SharedPtr,
       const std_srvs::srv::Trigger::Response::SharedPtr response) {start(response);});
+    configured_start_service_ = create_service<StartCoverage>(
+      "/coverage/start_configured",
+      [this](const StartCoverage::Request::SharedPtr request,
+      const StartCoverage::Response::SharedPtr response) {startConfigured(*request, response);});
     cancel_service_ = create_service<std_srvs::srv::Trigger>(
       "/coverage/cancel",
       [this](const std_srvs::srv::Trigger::Request::SharedPtr,
@@ -187,7 +221,8 @@ private:
   bool busy() const
   {
     return active_goal_ != nullptr || start_pending_since_.has_value() ||
-           stopping_since_.has_value() || queued_goal_.has_value() || recovery_locked_;
+           stopping_since_.has_value() || queued_goal_.has_value() || recovery_locked_ ||
+           archive_prepare_pending_ || archive_finalize_pending_;
   }
 
   /// Publish what this manager would accept right now, using the same
@@ -228,6 +263,58 @@ private:
     refreshPermissions();
     status_publisher_->publish(status_);
     last_publish_ = current;
+  }
+
+  void resetArchiveStatus(bool enabled)
+  {
+    status_.inspection_enabled = enabled;
+    status_.archive_state = ArchiveStatus::IDLE;
+    status_.archive_run_id.clear();
+    status_.archive_directory.clear();
+    status_.archive_expected_images = 0U;
+    status_.archive_saved_images = 0U;
+    status_.archive_failed_images = 0U;
+    status_.archive_estimated_bytes = 0U;
+    status_.archive_message =
+      enabled ? "Archive preparation has not started." : "Inspection disabled.";
+  }
+
+  void onArchiveStatus(const ArchiveStatus & archive)
+  {
+    if (!status_.inspection_enabled || archive.task_id != status_.task_id ||
+      archive.revision != status_.revision ||
+      (!status_.archive_run_id.empty() && !archive.run_id.empty() &&
+      archive.run_id != status_.archive_run_id))
+    {
+      return;
+    }
+    status_.archive_state = archive.state;
+    if (!archive.run_id.empty()) {
+      status_.archive_run_id = archive.run_id;
+    }
+    if (!archive.task_directory.empty()) {
+      status_.archive_directory = archive.task_directory;
+    }
+    status_.archive_expected_images = archive.expected_images;
+    status_.archive_saved_images = archive.saved_images;
+    status_.archive_failed_images = archive.failed_images;
+    status_.archive_estimated_bytes = archive.estimated_bytes;
+    status_.archive_message = archive.message;
+    if (archive.state == ArchiveStatus::FAILED &&
+      (active_goal_ || start_pending_since_ || queued_goal_))
+    {
+      archive_failure_stop_ = true;
+      stopping_since_ = std::chrono::steady_clock::now();
+      engageHold();
+      if (active_goal_) {
+        action_client_->async_cancel_goal(active_goal_);
+      }
+      publishStatus(
+        Status::STOPPING,
+        "Inspection archive failed; holding and stopping the coverage task before release.");
+      return;
+    }
+    publishProgress();
   }
 
   /// An accepted goal is only ever finished by its result callback, which a
@@ -326,6 +413,13 @@ private:
       std::chrono::steady_clock::now() - last_evidence).count() >= command_quiet_s_;
   }
 
+  bool holdStatusIsRecent() const
+  {
+    return last_hold_status_ && std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - *last_hold_status_).count() <
+           hold_discovery_grace_s_;
+  }
+
   void finishStopping(const std::string & evidence)
   {
     stopping_since_.reset();
@@ -335,12 +429,12 @@ private:
     ++goal_generation_;
     active_goal_.reset();
     unresolved_goal_response_ = false;
-    status_.result_code = ExecuteCoverage::Result::EXECUTOR_LOST;
-    status_.current_segment = -1;
-    status_.executor_state = ExecuteCoverage::Feedback::STOPPED;
-    publishStatus(
-      Status::FINISHED,
-      "Released " + status_.task_id + " after losing the executor: " + evidence + ".");
+    const auto result_code = archive_failure_stop_ ?
+      ExecuteCoverage::Result::ARCHIVE_FAILED : ExecuteCoverage::Result::EXECUTOR_LOST;
+    finalizeRun(
+      result_code,
+      "Released " + status_.task_id + " after losing the executor: " + evidence + ".",
+      FinalizeArchive::Request::FAILED);
   }
 
   /// Ask the speed watchdog to force /cmd_vel to zero, whatever is publishing.
@@ -436,33 +530,35 @@ private:
       "and waiting for the request's real outcome.");
   }
 
-  void start(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
+  bool requestStart(
+    bool inspection_enabled, const std::string & output_root, std::string & response_message)
   {
     expireStalePending();
     if (!cached_task_) {
-      response->success = false;
-      response->message = "No valid coverage task is available.";
-      return;
+      response_message = "No valid coverage task is available.";
+      return false;
     }
     if (busy()) {
-      response->success = false;
-      response->message = "A coverage task is already starting or executing.";
-      return;
+      response_message = "A coverage task is already starting or executing.";
+      return false;
     }
     if (!action_client_->action_server_is_ready()) {
-      response->success = false;
-      response->message = "Coverage executor Action server is unavailable.";
-      return;
+      response_message = "Coverage executor Action server is unavailable.";
+      return false;
+    }
+    if (inspection_enabled && !archive_prepare_client_->service_is_ready()) {
+      response_message = "Inspection archive recorder is unavailable.";
+      return false;
     }
     ExecuteCoverage::Goal goal;
     goal.task = *cached_task_;
+    goal.inspection_enabled = inspection_enabled;
     const auto task_id = goal.task.task_id;
     const auto revision = goal.task.revision;
-    const auto generation = ++goal_generation_;
 
     // The identity always describes whatever the current state is about. A
     // preview cached during the previous run only becomes the reported task
-    // here, when it is the one actually being sent.
+    // here, when it is the one actually being started.
     status_.task_id = task_id;
     status_.revision = revision;
     status_.total_segments = static_cast<uint32_t>(goal.task.segment_types.size());
@@ -472,16 +568,109 @@ private:
     status_.schedule_lag_s = 0.0;
     status_.estimated_remaining_s = 0.0;
     status_.executor_state = ExecuteCoverage::Feedback::WAITING;
+    resetArchiveStatus(inspection_enabled);
+    archive_failure_stop_ = false;
+    if (!inspection_enabled) {
+      beginActionStart(goal);
+      response_message = "Motion-only start accepted for " + task_id + " revision " +
+        std::to_string(revision) + ".";
+      return true;
+    }
 
+    const auto generation = ++archive_start_generation_;
+    archive_prepare_pending_ = true;
+    pending_archive_goal_ = goal;
+    status_.archive_state = ArchiveStatus::PREPARING;
+    status_.archive_message = "Preparing task archive on the recorder host.";
+    publishStatus(
+      Status::STARTING,
+      "Preparing the inspection archive before starting " + task_id + " revision " +
+      std::to_string(revision) + ".");
+    auto request = std::make_shared<PrepareArchive::Request>();
+    request->task = goal.task;
+    request->output_root = output_root;
+    archive_prepare_client_->async_send_request(
+      request, [this, generation](rclcpp::Client<PrepareArchive>::SharedFuture future) {
+        std::shared_ptr<PrepareArchive::Response> prepared;
+        try {
+          prepared = future.get();
+        } catch (const std::exception & error) {
+          if (generation == archive_start_generation_) {
+            archive_prepare_pending_ = false;
+            pending_archive_goal_.reset();
+            status_.archive_state = ArchiveStatus::FAILED;
+            status_.archive_message = "Archive preparation transport failed: " +
+            std::string(error.what());
+            publishStatus(Status::READY, status_.archive_message);
+          }
+          return;
+        }
+        if (generation != archive_start_generation_) {
+          if (prepared->success) {
+            finalizeDetachedArchive(
+              prepared->run_id, FinalizeArchive::Request::CANCELED,
+              "Start was canceled while archive preparation was in flight.");
+          }
+          return;
+        }
+        archive_prepare_pending_ = false;
+        auto goal_to_start = pending_archive_goal_;
+        pending_archive_goal_.reset();
+        if (!prepared->success || !goal_to_start) {
+          status_.archive_state = ArchiveStatus::FAILED;
+          status_.archive_message = prepared->success ?
+          "Archive preparation lost its pending task." : prepared->message;
+          publishStatus(Status::READY, "Archive preparation failed: " + status_.archive_message);
+          return;
+        }
+        status_.archive_state = ArchiveStatus::READY;
+        status_.archive_run_id = prepared->run_id;
+        status_.archive_directory = prepared->task_directory;
+        status_.archive_expected_images = prepared->expected_images;
+        status_.archive_estimated_bytes = prepared->estimated_bytes;
+        status_.archive_message = prepared->message;
+        beginActionStart(*goal_to_start);
+      });
+    response_message = "Archive preparation accepted for " + task_id + " revision " +
+      std::to_string(revision) + "; motion remains held until it succeeds.";
+    return true;
+  }
+
+  void start(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
+  {
+    response->success = requestStart(
+      inspection_default_enabled_, inspection_output_root_, response->message);
+  }
+
+  void startConfigured(
+    const StartCoverage::Request & request,
+    const std::shared_ptr<StartCoverage::Response> & response)
+  {
+    const auto root = request.output_root.empty() ? inspection_output_root_ : request.output_root;
+    response->success = requestStart(request.inspection_enabled, root, response->message);
+    // Archive preparation is intentionally asynchronous: the manager must not
+    // block a ROS service callback waiting for another service on the same
+    // executor. The resolved run id and directory are published in status as
+    // soon as preparation succeeds.
+    response->run_id = status_.archive_run_id;
+    response->task_directory = status_.archive_directory;
+  }
+
+  void beginActionStart(const ExecuteCoverage::Goal & goal)
+  {
+    const auto task_id = goal.task.task_id;
+    const auto revision = goal.task.revision;
+    const auto generation = ++goal_generation_;
+    active_inspection_enabled_ = goal.inspection_enabled;
     // Whatever is held has to be confirmed released before the Action request
     // exists. Sending both asynchronously made EXECUTING mean only that the
     // controller had a goal, not that the actuator path could move, and a late
     // engage response could win after the new task started.
-    // When the watchdog exists, every start performs an explicit release and
-    // waits for its acknowledgement. Inferring release from the latest latched
-    // sample races an older false sample against a newer engage request under
-    // load; a goal can otherwise reach the executor while hold is still true.
-    if (hold_client_->service_is_ready()) {
+    // A newly observed watchdog state may arrive before DDS discovers its
+    // service. Give that discovery a bounded grace interval; an older latched
+    // false from a watchdog which has since gone away must not block a legacy
+    // controller forever.
+    if (hold_client_->service_is_ready() || holdStatusIsRecent()) {
       queued_goal_ = goal;
       queued_goal_generation_ = generation;
       hold_release_confirmed_ = false;
@@ -491,18 +680,80 @@ private:
         "Releasing the speed hold before starting " + task_id + " revision " +
         std::to_string(revision) + ".");
     } else {
-      // STARTING must already be busy in the status message. dispatchGoal()
-      // refreshes this timestamp immediately before the asynchronous send, but
-      // setting it here closes the one-message permission gap.
       start_pending_since_ = std::chrono::steady_clock::now();
       publishStatus(
         Status::STARTING,
         "Start requested for " + task_id + " revision " + std::to_string(revision));
       dispatchGoal(goal, generation);
     }
-    response->success = true;
-    response->message = "Start request accepted for " + task_id + " revision " +
-      std::to_string(revision);
+  }
+
+  void finalizeDetachedArchive(
+    const std::string & run_id, uint8_t outcome, const std::string & message)
+  {
+    if (run_id.empty() || !archive_finalize_client_->service_is_ready()) {
+      return;
+    }
+    auto request = std::make_shared<FinalizeArchive::Request>();
+    request->run_id = run_id;
+    request->outcome = outcome;
+    request->message = message;
+    archive_finalize_client_->async_send_request(request);
+  }
+
+  void finalizeRun(uint16_t result_code, const std::string & message, uint8_t archive_outcome)
+  {
+    status_.result_code = result_code;
+    status_.current_segment = -1;
+    status_.executor_state = ExecuteCoverage::Feedback::STOPPED;
+    if (!active_inspection_enabled_) {
+      publishStatus(Status::FINISHED, message);
+      return;
+    }
+    if (status_.archive_run_id.empty() || !archive_finalize_client_->service_is_ready()) {
+      active_inspection_enabled_ = false;
+      status_.archive_state = ArchiveStatus::FAILED;
+      status_.archive_message = status_.archive_run_id.empty() ?
+        "Archive run id was lost before finalization." :
+        "Archive recorder is unavailable for finalization.";
+      status_.result_code = ExecuteCoverage::Result::ARCHIVE_FAILED;
+      publishStatus(Status::FINISHED, message + " Archive finalization failed: " +
+        status_.archive_message);
+      return;
+    }
+    archive_finalize_pending_ = true;
+    status_.archive_state = ArchiveStatus::FINALIZING;
+    status_.archive_message = "Finalizing the archive manifest.";
+    publishStatus(Status::FINISHED, message + " Finalizing inspection archive.");
+    auto request = std::make_shared<FinalizeArchive::Request>();
+    request->run_id = status_.archive_run_id;
+    request->outcome = archive_outcome;
+    request->message = message;
+    archive_finalize_client_->async_send_request(
+      request, [this, message](rclcpp::Client<FinalizeArchive>::SharedFuture future) {
+        archive_finalize_pending_ = false;
+        try {
+          const auto response = future.get();
+          if (!response->success) {
+            status_.archive_state = ArchiveStatus::FAILED;
+            status_.archive_message = response->message;
+            status_.result_code = ExecuteCoverage::Result::ARCHIVE_FAILED;
+            publishStatus(Status::FINISHED, message + " Archive finalization failed: " +
+              response->message);
+          } else {
+            status_.archive_message = response->message;
+            active_inspection_enabled_ = false;
+            publishStatus(Status::FINISHED, message + " " + response->message);
+          }
+        } catch (const std::exception & error) {
+          status_.archive_state = ArchiveStatus::FAILED;
+          status_.archive_message = "Archive finalization transport failed: " +
+          std::string(error.what());
+          status_.result_code = ExecuteCoverage::Result::ARCHIVE_FAILED;
+          active_inspection_enabled_ = false;
+          publishStatus(Status::FINISHED, message + " " + status_.archive_message);
+        }
+      });
   }
 
   void continueQueuedStart()
@@ -511,6 +762,20 @@ private:
       return;
     }
     if (!hold_release_confirmed_) {
+      // Once a release request exists, only its causal service answer can
+      // permit motion. Before any request can be sent, a short discovery grace
+      // avoids racing a freshly observed watchdog; after it expires this is a
+      // deployment with no active watchdog and the old direct path remains
+      // available.
+      if (!hold_client_->service_is_ready() &&
+        (!hold_request_value_ || *hold_request_value_ != false) && !holdStatusIsRecent())
+      {
+        auto goal = *queued_goal_;
+        const auto generation = queued_goal_generation_;
+        queued_goal_.reset();
+        dispatchGoal(goal, generation);
+        return;
+      }
       maintainHoldRequest(false);
       return;
     }
@@ -633,12 +898,17 @@ private:
         stopping_since_.reset();
         unresolved_goal_response_ = false;
         active_goal_.reset();
-        status_.result_code = result.result->result_code;
+        const auto archive_outcome = archive_failure_stop_ ? FinalizeArchive::Request::FAILED :
+          (result.result->result_code == ExecuteCoverage::Result::SUCCESS ?
+          FinalizeArchive::Request::COMPLETED :
+          (result.result->result_code == ExecuteCoverage::Result::CANCELED ?
+          FinalizeArchive::Request::CANCELED : FinalizeArchive::Request::FAILED));
+        const auto result_code = archive_failure_stop_ ?
+          ExecuteCoverage::Result::ARCHIVE_FAILED : result.result->result_code;
         status_.progress = result.result->result_code == ExecuteCoverage::Result::SUCCESS ?
           1.0F : status_.progress;
-        status_.current_segment = -1;
-        status_.executor_state = ExecuteCoverage::Feedback::STOPPED;
-        publishStatus(Status::FINISHED, "Execution finished: " + result.result->message);
+        finalizeRun(
+          result_code, "Execution finished: " + result.result->message, archive_outcome);
       };
     start_pending_since_ = std::chrono::steady_clock::now();
     action_client_->async_send_goal(goal, options);
@@ -647,6 +917,22 @@ private:
   void cancel(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
   {
     expireStalePending();
+    if (archive_prepare_pending_) {
+      // No movement Goal exists yet, so retiring this request is safe. Its
+      // eventual archive response is finalized as canceled by its generation
+      // guard rather than being allowed to become an orphaned recording dir.
+      ++archive_start_generation_;
+      archive_prepare_pending_ = false;
+      pending_archive_goal_.reset();
+      status_.archive_state = ArchiveStatus::CANCELED;
+      status_.archive_message = "Archive preparation canceled before motion started.";
+      publishStatus(
+        cached_task_ ? Status::READY : Status::IDLE,
+        "Start canceled while archive preparation was in progress; robot never moved.");
+      response->success = true;
+      response->message = "Archive preparation canceled before motion started.";
+      return;
+    }
     if (stopping_since_) {
       if (active_goal_) {
         action_client_->async_cancel_goal(active_goal_);
@@ -722,6 +1008,9 @@ private:
   double executor_timeout_s_;
   double command_quiet_s_;
   double hold_response_timeout_s_;
+  double hold_discovery_grace_s_;
+  bool inspection_default_enabled_;
+  std::string inspection_output_root_;
   Status status_;
   // Durations here are measured on control_clock_, so this carries that
   // clock's type and is set in the constructor. Message stamps stay on
@@ -733,6 +1022,7 @@ private:
   std::optional<std::chrono::steady_clock::time_point> stopping_since_;
   std::optional<std::chrono::steady_clock::time_point> last_motion_command_;
   std::optional<std::chrono::steady_clock::time_point> hold_request_since_;
+  std::optional<std::chrono::steady_clock::time_point> last_hold_status_;
   // No value until the speed watchdog has published: absent and false are
   // different answers, and only the second one is evidence of anything.
   std::optional<bool> hold_active_;
@@ -740,21 +1030,31 @@ private:
   bool hold_release_confirmed_{false};
   bool unresolved_goal_response_{false};
   bool recovery_locked_{false};
+  bool active_inspection_enabled_{false};
+  bool archive_prepare_pending_{false};
+  bool archive_finalize_pending_{false};
+  bool archive_failure_stop_{false};
   uint64_t hold_generation_{0};
   // Identifies callbacks from one Action request. A timed-out request keeps its
   // generation until its true outcome or a supervised stop retires it.
   uint64_t goal_generation_{0};
   std::optional<uint64_t> forced_abandoned_generation_;
   uint64_t queued_goal_generation_{0};
+  uint64_t archive_start_generation_{0};
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;
   std::optional<ExecuteCoverage::Goal> queued_goal_;
+  std::optional<ExecuteCoverage::Goal> pending_archive_goal_;
   GoalHandle::SharedPtr active_goal_;
   rclcpp::Subscription<climbot_interfaces::msg::CoverageTask>::SharedPtr task_subscription_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr command_subscription_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr hold_subscription_;
+  rclcpp::Subscription<ArchiveStatus>::SharedPtr archive_status_subscription_;
   rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr hold_client_;
+  rclcpp::Client<PrepareArchive>::SharedPtr archive_prepare_client_;
+  rclcpp::Client<FinalizeArchive>::SharedPtr archive_finalize_client_;
   rclcpp_action::Client<ExecuteCoverage>::SharedPtr action_client_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;
+  rclcpp::Service<StartCoverage>::SharedPtr configured_start_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr cancel_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr force_abandon_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr rearm_service_;

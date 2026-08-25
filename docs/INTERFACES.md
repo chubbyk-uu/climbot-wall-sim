@@ -1146,12 +1146,16 @@ output_root/
 ### G4 计划中的任务启动与 RViz 接口
 
 现有 `/coverage/start` 不携带任务选项。G4 第一版计划在 `climbot_interfaces` 增加一个
-由管理器提供的带选项启动服务，至少携带 `inspection_enabled` 和 `output_root`；响应
-返回是否接受、`run_id`、记录器解析出的绝对任务目录和错误说明。RViz 面板只调用这个
-管理器接口，管理器内部完成“准备归档 → 成功后发送执行 Goal”的顺序，不允许 UI 自己
-拼接两次服务调用。旧 `/coverage/start` 保留给命令行和兼容测试，使用管理器参数中的
-`inspection_default_enabled` 与 `inspection_output_root`，建议默认分别为 `true` 和
-`~/climbot_data`。具体消息／服务名称在实现接口文件时确定，语义不得分裂。
+由管理器提供的带选项启动服务 `/coverage/start_configured`
+（`climbot_interfaces/srv/StartCoverage`），请求至少携带 `inspection_enabled` 和
+`output_root`。响应只确认“管理器已经接受这次准备请求”：归档准备是异步的，不能在 ROS
+服务回调中阻塞等待另一个服务；成功后的 `run_id`、记录器解析出的绝对任务目录和错误
+说明以 `/coverage/manager_status` 为权威。RViz 面板只调用这个管理器接口，管理器内部
+完成“准备归档 → 成功后发送执行 Goal”的顺序，不允许 UI 自己拼接两次服务调用。旧
+`/coverage/start` 保留给命令行和兼容测试，使用管理器参数中的
+`inspection_default_enabled` 与 `inspection_output_root`：裸 `coverage_manager_node`
+默认 motion-only，完整 `coverage_mission.launch.py` 显式传入 `inspection:=true` 和默认
+根目录 `~/climbot_data`。具体字段可扩展，但这套异步与权威状态语义不得改变。
 
 管理器状态将聚合记录器的权威状态，供面板显示：是否启用、`PREPARING`／`READY`／
 `RECORDING`／`FINALIZING`／`COMPLETED`／`CANCELED`／`FAILED`、预计／成功／失败照片数、

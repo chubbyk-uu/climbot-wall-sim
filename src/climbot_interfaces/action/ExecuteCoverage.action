@@ -20,6 +20,9 @@ uint16 TRACKING_FAILED=6
 # an operator diagnosing the controller instead of the connection. Only the
 # manager ever publishes it; an executor never returns it.
 uint16 EXECUTOR_LOST=7
+# The robot motion may have completed or stopped safely, but a formal raw-data
+# archive failed or is incomplete. Only the manager reports this code.
+uint16 ARCHIVE_FAILED=8
 
 uint16 result_code
 string message
