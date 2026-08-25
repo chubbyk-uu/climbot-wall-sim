@@ -11,6 +11,8 @@ __pycache__/
 # Local design source documents are not published in this repository.
 *.doc
 *.docx
+docs/*.pdf
+docs/REVIEW_*.md
 
 # Windows alternate data streams occasionally appear as ordinary WSL files.
 *:Zone.Identifier
