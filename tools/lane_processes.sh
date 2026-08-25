@@ -53,7 +53,7 @@ lane_groups_alive() {
   local file=$1 pgid
   while read -r pgid; do
     [ -n "$pgid" ] || continue
-    kill -0 "-$pgid" 2>/dev/null && return 0
+    kill -0 -- "-$pgid" 2>/dev/null && return 0
   done < "$file"
   return 1
 }
@@ -63,7 +63,7 @@ lane_teardown() {
   local file=$RUN_DIR/lane${lane}.pgids
   if [ -s "$file" ]; then
     while read -r pgid; do
-      [ -n "$pgid" ] && kill -TERM "-$pgid" 2>/dev/null
+      [ -n "$pgid" ] && kill -TERM -- "-$pgid" 2>/dev/null
     done < "$file"
     local deadline=$((SECONDS + LANE_TERM_GRACE_S))
     while [ $SECONDS -lt $deadline ] && lane_groups_alive "$file"; do
@@ -71,9 +71,9 @@ lane_teardown() {
     done
     while read -r pgid; do
       [ -n "$pgid" ] || continue
-      if kill -0 "-$pgid" 2>/dev/null; then
+      if kill -0 -- "-$pgid" 2>/dev/null; then
         echo "[lane$lane] process group $pgid ignored TERM; killed" >> "$RUN_DIR/teardown"
-        kill -KILL "-$pgid" 2>/dev/null
+        kill -KILL -- "-$pgid" 2>/dev/null
       fi
     done < "$file"
     : > "$file"

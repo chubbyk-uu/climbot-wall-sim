@@ -95,13 +95,16 @@ start_group() {
 teardown_case() {
   local pgid deadline
   for pgid in "${PGIDS[@]+${PGIDS[@]}}"; do
-    kill -TERM "-$pgid" 2>/dev/null || true
+    # `--` is essential: without it Bash can parse a negative process-group
+    # id as another option, silently leaving a completed lane's executor and
+    # recorder alive for the next case.
+    kill -TERM -- "-$pgid" 2>/dev/null || true
   done
   deadline=$((SECONDS + TERM_GRACE_S))
   while [ "$SECONDS" -lt "$deadline" ]; do
     local alive=0
     for pgid in "${PGIDS[@]+${PGIDS[@]}}"; do
-      if kill -0 "-$pgid" 2>/dev/null; then
+      if kill -0 -- "-$pgid" 2>/dev/null; then
         alive=1
         break
       fi
@@ -110,7 +113,7 @@ teardown_case() {
     sleep 1
   done
   for pgid in "${PGIDS[@]+${PGIDS[@]}}"; do
-    kill -0 "-$pgid" 2>/dev/null && kill -KILL "-$pgid" 2>/dev/null || true
+    kill -0 -- "-$pgid" 2>/dev/null && kill -KILL -- "-$pgid" 2>/dev/null || true
   done
   PGIDS=()
   ros2 daemon stop >/dev/null 2>&1 || true
