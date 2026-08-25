@@ -25,11 +25,14 @@
 #include <chrono>
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QString>
 
+#include "climbot_interfaces/msg/inspection_archive_status.hpp"
 #include "climbot_rviz_plugins/coverage_panel.hpp"
 
 namespace
@@ -173,6 +176,33 @@ TEST(CoveragePanelConfig, releasesThePlanningControlsWhenTheTaskStops)
   panel.renderConfig(makeConfig("rectangle", "horizontal", 2, 2, true));
   EXPECT_TRUE(panel.findChild<QPushButton *>("replan_button")->isEnabled());
   EXPECT_TRUE(panel.findChild<QPushButton *>("clear_button")->isEnabled());
+}
+
+TEST(CoveragePanelConfig, freezesCaptureSettingsWhileArchivePreparationOrRunIsActive)
+{
+  application();
+  climbot_rviz_plugins::CoveragePanel panel;
+  climbot_rviz_plugins::CoveragePanel::Status status;
+  status.state = climbot_rviz_plugins::CoveragePanel::Status::STARTING;
+  status.inspection_enabled = true;
+  status.archive_state =
+    climbot_interfaces::msg::InspectionArchiveStatus::PREPARING;
+  status.archive_expected_images = 30U;
+  status.archive_saved_images = 2U;
+  status.archive_directory = "/srv/recorder/climbot_data/task/r1_run";
+  status.archive_message = "Archive root preflight succeeded.";
+  status.can_cancel = true;
+  panel.renderStatus(status);
+
+  auto * enabled = panel.findChild<QCheckBox *>("inspection_enabled_box");
+  auto * root = panel.findChild<QLineEdit *>("archive_root_edit");
+  ASSERT_NE(enabled, nullptr);
+  ASSERT_NE(root, nullptr);
+  EXPECT_FALSE(enabled->isEnabled());
+  EXPECT_FALSE(root->isEnabled());
+  EXPECT_TRUE(panel.findChild<QLabel *>("inspection_summary_value")->text().contains("Preparing"));
+  EXPECT_TRUE(panel.findChild<QLabel *>("archive_count_value")->text().contains("30"));
+  EXPECT_TRUE(panel.findChild<QLabel *>("archive_directory_value")->text().contains("task"));
 }
 
 TEST(CoveragePanelConfig, recoveryLockKeepsMotionAndPlanningControlsClosed)

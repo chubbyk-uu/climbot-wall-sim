@@ -1114,9 +1114,9 @@ G1 中唯一允许使用 Gazebo 真值的是独立验收程序。`capture_once`�
 `image_compensated` 是可选预览接口，不属于正式归档输入。正式数据记录器只能消费
 `image_raw`；未提供 `flat_field_file` 时补偿节点不启动。
 
-## 计划中的 G4 任务归档接口
+## G4 任务归档接口
 
-G4 在 `climbot_inspection` 中增加任务级记录器，输入 `image_raw`、`CameraInfo`、
+G4 的 `climbot_inspection` 任务级记录器输入 `image_raw`、`CameraInfo`、
 `InspectionCapture` 和冻结任务快照，输出到受配置约束的任务目录。操作员选择根目录，
 节点生成并校验任务子目录；不得直接拼接未经校验的任务 ID 形成路径。第一版使用
 `<output_root>/<safe-task-id>/r<revision>_<UTC-time>_<run-id>/`，同一 revision 重跑也必须
@@ -1143,9 +1143,9 @@ output_root/
 保存任务区域、规划、软件提交、计数和失败清单。只有图片和标签均经临时文件写入、校验
 并原子改名后才增加成功计数；任务结束时必须验证主键、文件名和时间戳一一对应。
 
-### G4 计划中的任务启动与 RViz 接口
+### G4 任务启动与 RViz 接口
 
-现有 `/coverage/start` 不携带任务选项。G4 第一版计划在 `climbot_interfaces` 增加一个
+现有 `/coverage/start` 不携带任务选项。G4 第一版已在 `climbot_interfaces` 增加一个
 由管理器提供的带选项启动服务 `/coverage/start_configured`
 （`climbot_interfaces/srv/StartCoverage`），请求至少携带 `inspection_enabled` 和
 `output_root`。响应只确认“管理器已经接受这次准备请求”：归档准备是异步的，不能在 ROS

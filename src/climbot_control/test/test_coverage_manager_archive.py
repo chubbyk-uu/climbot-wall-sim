@@ -107,6 +107,8 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self.cancel = self.node.create_client(Trigger, '/coverage/cancel')
         self.statuses = []
         self.prepare_ok = True
+        self.prepare_release = None
+        self.prepare_entered = Event()
         self.prepare_requests = []
         self.finalize_requests = []
         self.stop = Event()
@@ -128,6 +130,9 @@ class TestCoverageManagerArchive(unittest.TestCase):
 
     def _prepare(self, request, response):
         self.prepare_requests.append(request)
+        self.prepare_entered.set()
+        if self.prepare_release is not None:
+            self.prepare_release.wait(timeout=5.0)
         response.success = self.prepare_ok
         response.message = 'prepared' if self.prepare_ok else 'disk preflight failed'
         if self.prepare_ok:
@@ -237,6 +242,35 @@ class TestCoverageManagerArchive(unittest.TestCase):
             item.archive_state == InspectionArchiveStatus.FAILED,
             'preflight failure', since=mark)
         self.assertIn('disk preflight failed', failed.message)
+        self.assertFalse(any(item.state == CoverageStatus.EXECUTING
+                             for item in self.statuses[mark:]))
+
+    def test_preflight_is_cancellable_before_motion_is_dispatched(self):
+        self.prepare_release = Event()
+        self.tasks.publish(task(24))
+        self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 24,
+                   'ready preview')
+        mark = len(self.statuses)
+        request = self._start_request()
+        future = self.start.call_async(request)
+        preparing = self._wait(
+            lambda item: item.state == CoverageStatus.STARTING and
+            item.archive_state == InspectionArchiveStatus.PREPARING,
+            'cancellable archive preparation', since=mark)
+        self.assertTrue(preparing.can_cancel)
+        self.assertTrue(self.prepare_entered.wait(timeout=2.0))
+
+        canceled = self._call(self.cancel, Trigger.Request())
+        self.assertTrue(canceled.success, canceled.message)
+        self.prepare_release.set()
+        self._wait(
+            lambda item: item.state == CoverageStatus.READY and item.revision == 24 and
+            item.archive_state == InspectionArchiveStatus.CANCELED,
+            'preflight cancellation', since=mark)
+        deadline = time.monotonic() + 3.0
+        while not future.done() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(future.done(), 'start request did not complete after cancellation')
         self.assertFalse(any(item.state == CoverageStatus.EXECUTING
                              for item in self.statuses[mark:]))
 

@@ -234,7 +234,8 @@ private:
     // The stop entry survives losing the executor. It used to be withdrawn at
     // the same moment contact was lost, which is the one moment an operator
     // watching the robot still move has nothing else to reach for.
-    status_.can_cancel = active_goal_ != nullptr || stopping_since_.has_value();
+    status_.can_cancel = active_goal_ != nullptr || stopping_since_.has_value() ||
+      archive_prepare_pending_;
     status_.can_force_abandon = stopping_since_.has_value() && unresolved_goal_response_;
     status_.can_rearm = recovery_locked_;
   }
@@ -285,6 +286,18 @@ private:
       archive.revision != status_.revision ||
       (!status_.archive_run_id.empty() && !archive.run_id.empty() &&
       archive.run_id != status_.archive_run_id))
+    {
+      return;
+    }
+    // A canceled prepare may still finish on the recorder, which then emits
+    // READY before the detached-finalize request reaches it. There is no
+    // motion Goal and no owned run id in that state, so accepting the late
+    // update would repaint a canceled, safely idle task as a ready archive.
+    // The generation guard below sends that run a CANCELED finalize; its
+    // intermediate status is not an operator-visible state of this task.
+    if (status_.archive_state == ArchiveStatus::CANCELED &&
+      !archive_prepare_pending_ && !active_inspection_enabled_ &&
+      !archive_finalize_pending_)
     {
       return;
     }

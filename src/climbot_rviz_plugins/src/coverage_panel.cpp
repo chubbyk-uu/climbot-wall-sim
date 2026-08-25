@@ -23,13 +23,17 @@
 
 #include <QFont>
 #include <QFontMetrics>
+#include <QFileDialog>
 #include <QFrame>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QSignalBlocker>
 #include <QScrollArea>
 #include <QSizePolicy>
+#include <QTabWidget>
 #include <QVBoxLayout>
 
+#include "climbot_interfaces/msg/inspection_archive_status.hpp"
 #include "rviz_common/display_context.hpp"
 
 namespace climbot_rviz_plugins
@@ -66,6 +70,31 @@ QString stateName(uint8_t state)
   }
 }
 
+QString archiveStateText(uint8_t state)
+{
+  using Archive = climbot_interfaces::msg::InspectionArchiveStatus;
+  switch (state) {
+    case Archive::IDLE:
+      return QObject::tr("Off");
+    case Archive::PREPARING:
+      return QObject::tr("Preparing");
+    case Archive::READY:
+      return QObject::tr("Ready");
+    case Archive::RECORDING:
+      return QObject::tr("Recording");
+    case Archive::FINALIZING:
+      return QObject::tr("Finalizing");
+    case Archive::COMPLETED:
+      return QObject::tr("Completed");
+    case Archive::CANCELED:
+      return QObject::tr("Canceled");
+    case Archive::FAILED:
+      return QObject::tr("Failed");
+    default:
+      return QObject::tr("Unknown");
+  }
+}
+
 /// A label that wraps instead of widening the dock it lives in.
 ///
 /// The default policy makes a label demand its whole string on one line, and a
@@ -91,6 +120,8 @@ QLabel * makeCaption(const QString & text)
   QFont font = caption->font();
   font.setBold(true);
   caption->setFont(font);
+  caption->setWordWrap(true);
+  caption->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum);
   return caption;
 }
 
@@ -239,6 +270,10 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   message_label_ = makeValue("manager_value");
   planner_label_ = makeValue("planner_value");
   response_label_ = makeValue("response_value");
+  inspection_summary_label_ = makeValue("inspection_summary_value");
+  archive_count_label_ = makeValue("archive_count_value");
+  archive_directory_label_ = makeValue("archive_directory_value");
+  archive_error_label_ = makeValue("archive_error_value");
 
   schedule_label_ = makeValue("schedule_value");
 
@@ -271,6 +306,18 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   algorithm_box_->addItem(tr("Timed trajectory"), QStringLiteral("time"));
   algorithm_box_->addItem(tr("Position only"), QStringLiteral("distance"));
   selection_label_ = makeValue("selection_value");
+  inspection_enabled_box_ = new QCheckBox(tr("Capture raw images"));
+  inspection_enabled_box_->setObjectName("inspection_enabled_box");
+  inspection_enabled_box_->setChecked(true);
+  archive_root_edit_ = new QLineEdit(QStringLiteral("~/climbot_data"));
+  archive_root_edit_->setObjectName("archive_root_edit");
+  archive_root_edit_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+  archive_root_edit_->setToolTip(tr(
+    "Path interpreted by the archive recorder host; it may differ from this RViz host."));
+  browse_archive_root_button_ = new QPushButton(tr("Browse..."));
+  browse_archive_root_button_->setObjectName("browse_archive_root_button");
+  default_archive_root_button_ = new QPushButton(tr("Default"));
+  default_archive_root_button_->setObjectName("default_archive_root_button");
 
   replan_button_ = new QPushButton(tr("Replan"));
   clear_button_ = new QPushButton(tr("Clear points"));
@@ -292,29 +339,32 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   // is not a control an operator should have to act on. So the buttons are
   // what sets the floor on how narrow this dock may go.
 
-  // Short values keep their name beside them. The name column is sized from
-  // its own text so it never grows with the value.
-  auto * fields = new QGridLayout();
-  fields->addWidget(new QLabel(tr("Region")), 0, 0);
-  fields->addWidget(region_box_, 0, 1);
-  fields->addWidget(new QLabel(tr("Sweep")), 1, 0);
-  fields->addWidget(sweep_box_, 1, 1);
-  fields->addWidget(new QLabel(tr("Algorithm")), 2, 0);
-  fields->addWidget(algorithm_box_, 2, 1);
-  fields->addWidget(new QLabel(tr("Points")), 3, 0);
-  fields->addWidget(selection_label_, 3, 1);
-  fields->addWidget(new QLabel(tr("State")), 4, 0);
-  fields->addWidget(state_label_, 4, 1);
-  fields->addWidget(new QLabel(tr("Segment")), 5, 0);
-  fields->addWidget(segment_label_, 5, 1);
-  fields->addWidget(new QLabel(tr("Progress")), 6, 0);
-  fields->addWidget(progress_bar_, 6, 1);
-  // Beneath the bar rather than inside it: the bar says how much of the work
-  // is done, this row says whether it is on time. Folding the two together
-  // would let a stuck robot show a bar that keeps filling.
-  fields->addWidget(new QLabel(tr("Schedule")), 7, 0);
-  fields->addWidget(schedule_label_, 7, 1);
-  fields->setColumnStretch(1, 1);
+  // The compact status summary stays above every tab. An operator changing
+  // inspection settings must still see whether the robot is stopping, and an
+  // operator viewing planning must still see a recorder failure.
+  auto * overview = new QGridLayout();
+  overview->addWidget(new QLabel(tr("State")), 0, 0);
+  overview->addWidget(state_label_, 0, 1);
+  overview->addWidget(new QLabel(tr("Segment")), 1, 0);
+  overview->addWidget(segment_label_, 1, 1);
+  overview->addWidget(new QLabel(tr("Progress")), 2, 0);
+  overview->addWidget(progress_bar_, 2, 1);
+  overview->addWidget(new QLabel(tr("Inspection")), 3, 0);
+  overview->addWidget(inspection_summary_label_, 3, 1);
+  overview->setColumnStretch(1, 1);
+
+  // Planning controls live on their own page, not beside long task and error
+  // messages. This keeps the dock usable at its existing width.
+  auto * planning_fields = new QGridLayout();
+  planning_fields->addWidget(new QLabel(tr("Region")), 0, 0);
+  planning_fields->addWidget(region_box_, 0, 1);
+  planning_fields->addWidget(new QLabel(tr("Sweep")), 1, 0);
+  planning_fields->addWidget(sweep_box_, 1, 1);
+  planning_fields->addWidget(new QLabel(tr("Algorithm")), 2, 0);
+  planning_fields->addWidget(algorithm_box_, 2, 1);
+  planning_fields->addWidget(new QLabel(tr("Points")), 3, 0);
+  planning_fields->addWidget(selection_label_, 3, 1);
+  planning_fields->setColumnStretch(1, 1);
   // A combo box will happily grow to its widest item and drag the dock with
   // it; it may elide instead, like the labels around it.
   for (auto * box : {region_box_, sweep_box_, algorithm_box_}) {
@@ -331,51 +381,85 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   {
     widest_state = std::max(widest_state, metrics.horizontalAdvance(name));
   }
-  fields->setColumnMinimumWidth(1, widest_state);
+  overview->setColumnMinimumWidth(1, widest_state);
 
-  auto * buttons = new QGridLayout();
-  buttons->addWidget(replan_button_, 0, 0);
-  buttons->addWidget(clear_button_, 0, 1);
-  buttons->addWidget(start_button_, 1, 0);
-  buttons->addWidget(cancel_button_, 1, 1);
-  buttons->addWidget(force_abandon_button_, 2, 0, 1, 2);
-  buttons->addWidget(rearm_button_, 3, 0, 1, 2);
+  auto * planning_body = new QVBoxLayout();
+  planning_body->addLayout(planning_fields);
+  auto * planning_buttons = new QGridLayout();
+  planning_buttons->addWidget(replan_button_, 0, 0);
+  planning_buttons->addWidget(clear_button_, 0, 1);
+  planning_body->addLayout(planning_buttons);
+  planning_body->addStretch(1);
+  auto * planning_page = new QWidget();
+  planning_page->setLayout(planning_body);
 
-  // Task ids and manager sentences are longer than any dock is wide, so they
-  // get the full width with the name above rather than a column beside them.
-  auto * body = new QVBoxLayout();
-  body->addLayout(fields);
-  body->addWidget(makeCaption(tr("Task")));
-  body->addWidget(task_label_);
-  body->addWidget(makeCaption(tr("Manager")));
-  body->addWidget(message_label_);
-  // The manager cannot tell a cleared selection from a failed plan: both
-  // arrive as an empty task. Only the planner knows which, so show it.
-  body->addWidget(makeCaption(tr("Planner")));
-  body->addWidget(planner_label_);
-  body->addWidget(makeCaption(tr("Last request")));
-  body->addWidget(response_label_);
-  body->addStretch(1);
+  auto * inspection_body = new QVBoxLayout();
+  inspection_body->addWidget(inspection_enabled_box_);
+  inspection_body->addWidget(makeCaption(tr("Data root (recorder host)")));
+  inspection_body->addWidget(archive_root_edit_);
+  auto * root_buttons = new QHBoxLayout();
+  root_buttons->addWidget(browse_archive_root_button_);
+  root_buttons->addWidget(default_archive_root_button_);
+  root_buttons->addStretch(1);
+  inspection_body->addLayout(root_buttons);
+  inspection_body->addWidget(makeCaption(tr("Expected / saved / failed")));
+  inspection_body->addWidget(archive_count_label_);
+  inspection_body->addWidget(makeCaption(tr("Task archive directory")));
+  inspection_body->addWidget(archive_directory_label_);
+  inspection_body->addWidget(makeCaption(tr("Archive status")));
+  inspection_body->addWidget(archive_error_label_);
+  inspection_body->addStretch(1);
+  auto * inspection_page = new QWidget();
+  inspection_page->setLayout(inspection_body);
 
-  auto * content = new QWidget();
-  content->setLayout(body);
+  // Long messages are useful for diagnosis but should not consume height in
+  // the routine plan/capture workflow.
+  auto * detail_body = new QVBoxLayout();
+  detail_body->addWidget(makeCaption(tr("Task")));
+  detail_body->addWidget(task_label_);
+  detail_body->addWidget(makeCaption(tr("Schedule")));
+  detail_body->addWidget(schedule_label_);
+  detail_body->addWidget(makeCaption(tr("Manager")));
+  detail_body->addWidget(message_label_);
+  detail_body->addWidget(makeCaption(tr("Planner")));
+  detail_body->addWidget(planner_label_);
+  detail_body->addWidget(makeCaption(tr("Last request")));
+  detail_body->addWidget(response_label_);
+  detail_body->addStretch(1);
+  auto * detail_page = new QWidget();
+  detail_page->setLayout(detail_body);
 
-  // A dock can be short as easily as it can be narrow, and three sentences
-  // stacked up outgrow it. Scrolling keeps the text reachable; without this
-  // the bottom rows are simply cut away.
-  auto * scroll = new QScrollArea();
-  scroll->setObjectName("content_scroll");
-  scroll->setWidget(content);
-  scroll->setWidgetResizable(true);
-  scroll->setFrameShape(QFrame::NoFrame);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  auto make_scroll_page = [](QWidget * page, const QString & name) {
+      page->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+      page->setMinimumWidth(0);
+      auto * scroll = new QScrollArea();
+      scroll->setObjectName(name);
+      scroll->setWidget(page);
+      scroll->setWidgetResizable(true);
+      scroll->setFrameShape(QFrame::NoFrame);
+      scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      return scroll;
+    };
+  auto * tabs = new QTabWidget();
+  tabs->setObjectName("task_tabs");
+  tabs->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Expanding);
+  tabs->addTab(make_scroll_page(planning_page, "content_scroll"), tr("Plan"));
+  tabs->addTab(make_scroll_page(inspection_page, "inspection_scroll"), tr("Capture"));
+  tabs->addTab(make_scroll_page(detail_page, "detail_scroll"), tr("Details"));
+
+  auto * safety_buttons = new QGridLayout();
+  safety_buttons->addWidget(start_button_, 0, 0);
+  safety_buttons->addWidget(cancel_button_, 0, 1);
+  safety_buttons->addWidget(force_abandon_button_, 1, 0, 1, 2);
+  safety_buttons->addWidget(rearm_button_, 2, 0, 1, 2);
 
   auto * layout = new QVBoxLayout();
-  layout->addWidget(scroll, 1);
+  layout->addLayout(overview);
+  layout->addWidget(tabs, 1);
   layout->addWidget(makeSeparator());
-  // The buttons stay outside the scroll area: an operator reaching for Cancel
-  // must not have to scroll to find it.
-  layout->addLayout(buttons);
+  // These controls stay outside every page scroll: an operator reaching for
+  // Cancel must not have to switch tabs or scroll to find it.
+  layout->addLayout(safety_buttons);
   setLayout(layout);
   // No explicit minimum width. An explicit one overrides the layout's own, so
   // naming a number below what the rows actually need lets a dock shrink the
@@ -401,6 +485,16 @@ CoveragePanel::CoveragePanel(QWidget * parent)
     force_abandon_button_, &QPushButton::clicked,
     this, &CoveragePanel::onForceAbandon);
   connect(rearm_button_, &QPushButton::clicked, this, &CoveragePanel::onRearm);
+  connect(browse_archive_root_button_, &QPushButton::clicked, this, [this]() {
+      const QString selected = QFileDialog::getExistingDirectory(
+        this, tr("Choose archive root on this computer"), archive_root_edit_->text());
+      if (!selected.isEmpty()) {
+        archive_root_edit_->setText(selected);
+      }
+    });
+  connect(default_archive_root_button_, &QPushButton::clicked, this, [this]() {
+      archive_root_edit_->setText(QStringLiteral("~/climbot_data"));
+    });
 
   renderDisconnected();
 }
@@ -439,7 +533,7 @@ void CoveragePanel::onInitialize()
     });
   replan_client_ = node_->create_client<Trigger>("/coverage/replan");
   clear_client_ = node_->create_client<Trigger>("/coverage/clear_points");
-  start_client_ = node_->create_client<Trigger>("/coverage/start");
+  start_client_ = node_->create_client<StartCoverage>("/coverage/start_configured");
   cancel_client_ = node_->create_client<Trigger>("/coverage/cancel");
   force_abandon_client_ = node_->create_client<Trigger>("/coverage/force_abandon");
   rearm_client_ = node_->create_client<Trigger>("/coverage/rearm");
@@ -651,7 +745,31 @@ void CoveragePanel::onClearPoints()
 
 void CoveragePanel::onStart()
 {
-  call(start_client_, tr("Start"));
+  callConfiguredStart();
+}
+
+void CoveragePanel::callConfiguredStart()
+{
+  if (!start_client_ || !start_client_->service_is_ready()) {
+    note(tr("Start: service unavailable."));
+    return;
+  }
+  auto request = std::make_shared<StartCoverage::Request>();
+  request->inspection_enabled = inspection_enabled_box_->isChecked();
+  request->output_root = archive_root_edit_->text().trimmed().toStdString();
+  note(request->inspection_enabled ?
+    tr("Start: archive preparation requested.") :
+    tr("Start: task requested without image archive."));
+  start_client_->async_send_request(
+    request,
+    [state = state_](rclcpp::Client<StartCoverage>::SharedFuture future) {
+      const auto response = future.get();
+      const std::lock_guard<std::mutex> lock(state->mutex);
+      const QString detail = QString::fromStdString(response->message);
+      state->response = response->success ?
+      QObject::tr("Start: accepted. %1").arg(detail) :
+      QObject::tr("Start: refused. %1").arg(detail);
+    });
 }
 
 void CoveragePanel::onCancel()
@@ -691,6 +809,10 @@ void CoveragePanel::renderDisconnected()
   segment_label_->setText("-");
   progress_bar_->setValue(0);
   schedule_label_->setText("-");
+  inspection_summary_label_->setText(tr("Not connected"));
+  archive_count_label_->setText("-");
+  archive_directory_label_->setText("-");
+  archive_error_label_->setText("-");
   message_label_->setText(
     tr("No status received from the coverage manager yet."));
   // Replan and clear only change the preview, never the running task, so they
@@ -703,6 +825,10 @@ void CoveragePanel::renderDisconnected()
   cancel_button_->setEnabled(false);
   force_abandon_button_->setEnabled(false);
   rearm_button_->setEnabled(false);
+  inspection_enabled_box_->setEnabled(true);
+  archive_root_edit_->setEnabled(true);
+  browse_archive_root_button_->setEnabled(true);
+  default_archive_root_button_->setEnabled(true);
   force_confirmation_armed_ = false;
   force_abandon_button_->setText(tr("Force abandon"));
 }
@@ -728,6 +854,24 @@ void CoveragePanel::renderStatus(const Status & status)
   }
 
   progress_bar_->setValue(static_cast<int>(status.progress * 100.0F + 0.5F));
+  const QString archive_state = archiveStateText(status.archive_state);
+  inspection_summary_label_->setText(
+    status.inspection_enabled ?
+    tr("%1 · %2 / %3 saved")
+    .arg(archive_state)
+    .arg(status.archive_saved_images)
+    .arg(status.archive_expected_images) :
+    tr("Off"));
+  archive_count_label_->setText(
+    status.inspection_enabled ?
+    tr("%1 / %2 / %3")
+    .arg(status.archive_expected_images)
+    .arg(status.archive_saved_images)
+    .arg(status.archive_failed_images) : tr("-"));
+  archive_directory_label_->setText(status.archive_directory.empty() ?
+    tr("-") : wrappableText(QString::fromStdString(status.archive_directory)));
+  archive_error_label_->setText(status.archive_message.empty() ?
+    tr("-") : wrappableText(QString::fromStdString(status.archive_message)));
   schedule_label_->setText(scheduleText(status, rendered_tracking_mode_));
   schedule_label_->setToolTip(
     rendered_tracking_mode_ == QLatin1String("distance") ?
@@ -762,9 +906,16 @@ void CoveragePanel::renderStatus(const Status & status)
   // operator sees: the preview is the trajectory drawn over the robot, and
   // changing the shape now withdraws it mid-drive, which reads as the mission
   // having been altered or lost.
-  task_running_ = status.can_cancel || status.can_force_abandon || status.can_rearm;
+  task_running_ = status.state == Status::STARTING ||
+    status.state == Status::EXECUTING || status.state == Status::STOPPING ||
+    status.state == Status::RECOVERY_LOCKED ||
+    status.archive_state == climbot_interfaces::msg::InspectionArchiveStatus::FINALIZING;
   replan_button_->setEnabled(!task_running_);
   clear_button_->setEnabled(!task_running_);
+  inspection_enabled_box_->setEnabled(!task_running_);
+  archive_root_edit_->setEnabled(!task_running_);
+  browse_archive_root_button_->setEnabled(!task_running_);
+  default_archive_root_button_->setEnabled(!task_running_);
   if (task_running_) {
     region_box_->setEnabled(false);
     sweep_box_->setEnabled(false);

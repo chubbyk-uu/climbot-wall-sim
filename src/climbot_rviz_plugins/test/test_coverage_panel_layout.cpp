@@ -41,8 +41,10 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QString>
+#include <QTabWidget>
 #include <QWidget>
 
+#include "climbot_interfaces/msg/inspection_archive_status.hpp"
 #include "climbot_rviz_plugins/coverage_panel.hpp"
 
 namespace
@@ -95,6 +97,15 @@ void fill(climbot_rviz_plugins::CoveragePanel & panel)
   status.total_segments = 24;
   status.progress = 0.47F;
   status.can_cancel = true;
+  status.inspection_enabled = true;
+  status.archive_state = climbot_interfaces::msg::InspectionArchiveStatus::RECORDING;
+  status.archive_expected_images = 120U;
+  status.archive_saved_images = 47U;
+  status.archive_failed_images = 0U;
+  status.archive_directory =
+    "/srv/recorder/climbot_data/coverage_20260817_143512_rectangle/r7_run_001";
+  status.archive_message =
+    "Recording raw distorted mono8 images and immutable pose labels.";
   status.message = kManagerMessage;
   panel.renderStatus(status);
 
@@ -155,12 +166,11 @@ protected:
 namespace
 {
 
-void expectNothingIsCut(QWidget & panel, int width)
+void expectNothingIsCut(
+  QWidget & panel, int width, const std::vector<QString> & labels,
+  const std::vector<QString> & buttons = {})
 {
-  for (const auto & name : std::vector<QString>{
-      "state_value", "task_value", "segment_value",
-      "manager_value", "planner_value", "response_value"})
-  {
+  for (const auto & name : labels) {
     auto * widget = child(panel, name);
     ASSERT_NE(widget, nullptr);
     EXPECT_LE(shortfall(*widget), 0)
@@ -181,11 +191,24 @@ void expectNothingIsCut(QWidget & panel, int width)
 
   // A button cannot wrap or scroll, so a label that does not fit is simply
   // cut, and "Cancel / Sto" is not a control anyone should have to act on.
-  for (auto * button : panel.findChildren<QPushButton *>()) {
+  for (const auto & name : buttons) {
+    auto * button = qobject_cast<QPushButton *>(child(panel, name));
+    ASSERT_NE(button, nullptr);
     EXPECT_GE(button->width(), button->sizeHint().width())
       << button->text().toStdString() << " is cut at a dock width of "
       << width << " px";
   }
+}
+
+void selectTab(QWidget & panel, int index)
+{
+  auto * tabs = panel.findChild<QTabWidget *>("task_tabs");
+  ASSERT_NE(tabs, nullptr);
+  tabs->setCurrentIndex(index);
+  panel.layout()->invalidate();
+  panel.layout()->setGeometry(panel.rect());
+  QApplication::processEvents();
+  QApplication::processEvents();
 }
 
 void dumpIfRequested(QWidget & panel, const QString & label)
@@ -212,12 +235,28 @@ TEST_P(CoveragePanelLayout, showsEveryMessageInFullAtOperatorDockWidths)
   ASSERT_EQ(panel.width(), width)
     << "the panel refused a dock " << width << " px wide";
 
-  expectNothingIsCut(panel, width);
-  dumpIfRequested(panel, QString::number(width));
+  expectNothingIsCut(
+    panel, width,
+    {"state_value", "segment_value", "inspection_summary_value"},
+    {"start_button", "cancel_button", "force_abandon_button", "rearm_button"});
+  dumpIfRequested(panel, QString("%1_plan").arg(width));
+  selectTab(panel, 1);
+  layOut(panel, width, 640);
+  expectNothingIsCut(
+    panel, width,
+    {"archive_count_value", "archive_directory_value", "archive_error_value"},
+    {"browse_archive_root_button", "default_archive_root_button"});
+  dumpIfRequested(panel, QString("%1_capture").arg(width));
+  selectTab(panel, 2);
+  layOut(panel, width, 640);
+  expectNothingIsCut(
+    panel, width,
+    {"task_value", "schedule_value", "manager_value", "planner_value", "response_value"});
+  dumpIfRequested(panel, QString("%1_details").arg(width));
 }
 
-// What the operator sees before anything is running. The disconnected notice
-// is a whole sentence sitting in the narrow value column beside "State".
+// What the operator sees before anything is running. The compact overview
+// remains readable even though diagnostic text is deliberately on Details.
 TEST(CoveragePanelSizing, showsTheStartupNoticeInFull)
 {
   application();
@@ -225,7 +264,10 @@ TEST(CoveragePanelSizing, showsTheStartupNoticeInFull)
   panel.renderDisconnected();
   layOut(panel, 240, 640);
   ASSERT_EQ(panel.width(), 240);
-  expectNothingIsCut(panel, 240);
+  expectNothingIsCut(
+    panel, 240,
+    {"state_value", "segment_value", "inspection_summary_value"},
+    {"start_button", "cancel_button", "force_abandon_button", "rearm_button"});
   dumpIfRequested(panel, "startup");
 }
 
@@ -264,7 +306,12 @@ TEST(CoveragePanelSizing, keepsTheButtonsReachableWhenTheDockIsTooShort)
   // A dock shorter than the messages must scroll them, not swallow the
   // controls: Cancel has to stay one click away while the robot is moving.
   layOut(panel, 300, 200);
-  auto * scroll = panel.findChild<QScrollArea *>("content_scroll");
+  auto * tabs = panel.findChild<QTabWidget *>("task_tabs");
+  ASSERT_NE(tabs, nullptr);
+  tabs->setCurrentIndex(2);
+  QApplication::processEvents();
+  panel.layout()->activate();
+  auto * scroll = panel.findChild<QScrollArea *>("detail_scroll");
   ASSERT_NE(scroll, nullptr);
   EXPECT_TRUE(scroll->verticalScrollBar()->maximum() > 0)
     << "the messages were cut off instead of made scrollable";

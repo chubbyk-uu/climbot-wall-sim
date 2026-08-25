@@ -33,6 +33,7 @@ import numpy
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
 import yaml
 
@@ -192,7 +193,10 @@ class ArchiveRecorderNode(Node):
         self._infos: dict[int, tuple[float, CameraInfo]] = {}
         self._metadata: dict[int, tuple[float, InspectionCapture]] = {}
         self._session: Session | None = None
-        self._status_pub = self.create_publisher(InspectionArchiveStatus, status_topic, 1)
+        status_qos = QoSProfile(
+            depth=1, reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self._status_pub = self.create_publisher(InspectionArchiveStatus, status_topic, status_qos)
         self.create_subscription(Image, image_topic, self._on_image, 10)
         self.create_subscription(CameraInfo, info_topic, self._on_info, 10)
         self.create_subscription(InspectionCapture, metadata_topic, self._on_metadata, 10)

@@ -21,7 +21,9 @@
 #include <string>
 
 #include <QComboBox>
+#include <QCheckBox>
 #include <QLabel>
+#include <QLineEdit>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QTimer>
@@ -30,6 +32,7 @@
 #include "climbot_interfaces/msg/coverage_config.hpp"
 #include "climbot_interfaces/msg/coverage_status.hpp"
 #include "climbot_interfaces/srv/configure_coverage.hpp"
+#include "climbot_interfaces/srv/start_coverage.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rviz_common/panel.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -126,6 +129,7 @@ private Q_SLOTS:
 private:
   using Trigger = std_srvs::srv::Trigger;
   using Configure = climbot_interfaces::srv::ConfigureCoverage;
+  using StartCoverage = climbot_interfaces::srv::StartCoverage;
 
   /// Everything the executor thread writes and the Qt thread reads, in one
   /// object held by shared_ptr and captured by value in every callback.
@@ -141,6 +145,7 @@ private:
   struct SharedState;
 
   void call(const rclcpp::Client<Trigger>::SharedPtr & client, const QString & label);
+  void callConfiguredStart();
   void readTrackingMode();
   void note(const QString & text);
   /// Release a request whose answer never came. A service that passes
@@ -157,10 +162,18 @@ private:
   QLabel * message_label_{nullptr};
   QLabel * planner_label_{nullptr};
   QLabel * response_label_{nullptr};
+  QLabel * inspection_summary_label_{nullptr};
+  QLabel * archive_count_label_{nullptr};
+  QLabel * archive_directory_label_{nullptr};
+  QLabel * archive_error_label_{nullptr};
   QComboBox * region_box_{nullptr};
   QComboBox * sweep_box_{nullptr};
   QComboBox * algorithm_box_{nullptr};
   QLabel * selection_label_{nullptr};
+  QCheckBox * inspection_enabled_box_{nullptr};
+  QLineEdit * archive_root_edit_{nullptr};
+  QPushButton * browse_archive_root_button_{nullptr};
+  QPushButton * default_archive_root_button_{nullptr};
   QPushButton * replan_button_{nullptr};
   QPushButton * clear_button_{nullptr};
   QPushButton * start_button_{nullptr};
@@ -185,7 +198,7 @@ private:
   rclcpp::Client<Configure>::SharedPtr configure_client_;
   rclcpp::Client<Trigger>::SharedPtr replan_client_;
   rclcpp::Client<Trigger>::SharedPtr clear_client_;
-  rclcpp::Client<Trigger>::SharedPtr start_client_;
+  rclcpp::Client<StartCoverage>::SharedPtr start_client_;
   rclcpp::Client<Trigger>::SharedPtr cancel_client_;
   rclcpp::Client<Trigger>::SharedPtr force_abandon_client_;
   rclcpp::Client<Trigger>::SharedPtr rearm_client_;
