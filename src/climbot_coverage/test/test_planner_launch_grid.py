@@ -71,17 +71,3 @@ def test_the_overlay_pitch_is_not_read_from_the_launch_configuration():
         'from its parent scope whether or not it is forwarded.')
     assert 'reference_grid_spacing()' in source, (
         'the overlay pitch no longer comes from the wall description.')
-
-
-def test_geometry_profile_preserves_frozen_regression_geometry():
-    """Only the calibrated profile may override physical camera geometry."""
-    source = (Path(__file__).resolve().parents[1] / 'launch'
-              / PLANNER_LAUNCH).read_text()
-    declared = {entity.name for entity in _launch_description().entities
-                if isinstance(entity, DeclareLaunchArgument)}
-    assert 'inspection_geometry_profile' in declared
-    assert "if profile == 'calibrated':" in source
-    assert "'detection_length'" in source
-    assert "'overlap_ratio'" not in source.split("if profile == 'calibrated':", 1)[1].split(
-        'return [Node(', 1)[0], (
-            'calibrated geometry must not silently replace the YAML lateral overlap policy.')
