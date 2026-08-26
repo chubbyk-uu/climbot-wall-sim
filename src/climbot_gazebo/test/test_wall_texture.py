@@ -136,6 +136,21 @@ def test_bake_copies_real_neighbours_into_each_render_block(monkeypatch):
             (bake_wall_texture.BLOCK_ALIGNMENT * 2 ** 5)) == 0
 
 
+@pytest.mark.skipif(os.name != 'posix', reason='parallel encoder uses POSIX fork')
+def test_parallel_block_encoder_keeps_row_major_metadata():
+    """Workers may finish out of order, but the manifest order must not change."""
+    image = np.arange(16 * 16 * 3, dtype=np.uint8).reshape(16, 16, 3)
+    with tempfile.TemporaryDirectory() as directory:
+        rows, columns, blocks = bake_wall_texture.write_blocks(
+            image, directory, 'albedo', block=8, gutter=0,
+            log=lambda _: None, jobs=2)
+        assert (rows, columns) == (2, 2)
+        assert [(block['row'], block['column']) for block in blocks] == [
+            (0, 0), (0, 1), (1, 0), (1, 1)]
+        assert all(os.path.getsize(os.path.join(directory, block['file'])) > 128
+                   for block in blocks)
+
+
 def test_minimum_cut_feather_has_no_binary_render_edge():
     """The selected cut stays put but its rendered transition becomes soft."""
     mask = np.zeros((32, 32), dtype=bool)

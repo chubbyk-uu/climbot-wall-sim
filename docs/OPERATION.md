@@ -501,10 +501,11 @@ ros2 run climbot_gazebo evaluate_localization.py --ros-args -p use_sim_time:=tru
 # 一次性：下载并校验源素材，只解出颜色图（约 540 MB）
 tools/fetch_wall_texture.sh
 
-# 烘焙整面墙：20000 × 16000 纹素，BC1 DDS，mip 链写在文件里
+# 烘焙整面墙：40000 × 32000 纹素（0.25 mm/texel），BC1 DDS，mip 链写在文件里。
+# 四个编码 worker 保持相同像素与清单顺序；内存紧张时改为 --jobs 1。
 python3 tools/bake_wall_texture.py \
     --source-dir "${TMPDIR:-/tmp}/climbot_wall_texture/maps" \
-    --output-dir textures/wall --source-size-m 2.5
+    --output-dir textures/wall --source-size-m 2.5 --jobs 4
 
 # 用它启动
 ros2 launch climbot_bringup coverage_mission.launch.py \

@@ -46,9 +46,11 @@ repository carries.
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import hashlib
 import json
 import math
+from multiprocessing import get_context
 import os
 import subprocess
 import sys
@@ -67,6 +69,11 @@ Image.MAX_IMAGE_PIXELS = None
 BC1_BYTES_PER_TEXEL = 0.5
 MIP_OVERHEAD = 1.33
 RENDERING_PROCESSES = 2
+
+# Set immediately before POSIX workers fork.  The 1.28 Gpixel canvas remains
+# read-only during DDS encoding, so Linux copy-on-write shares it rather than
+# serialising several gigabytes through a multiprocessing pipe.
+_BLOCK_SOURCE = None
 
 #: BC1 addresses whole 4x4 blocks, so every stored edge has to be a multiple of
 #: four. Padding at write time would work but would shift the last block's
@@ -124,6 +131,27 @@ def load_source(path, side):
     if image.size != (side, side):
         image = image.resize((side, side), Image.LANCZOS)
     return np.asarray(image)
+
+
+def _encode_block(task):
+    """Encode one independent visual block from the fork-shared baked canvas."""
+    if _BLOCK_SOURCE is None:
+        raise RuntimeError('DDS block encoder has no inherited source image')
+    (directory, name, row, column, x0, y0, x1, y1,
+     sample_x0, sample_y0, sample_x1, sample_y1) = task
+    filename = '%s_r%02d_c%02d.dds' % (name, row, column)
+    stored = write_dds_bc1(
+        os.path.join(directory, filename),
+        np.ascontiguousarray(_BLOCK_SOURCE[sample_y0:sample_y1,
+                                          sample_x0:sample_x1]))
+    return {
+        'file': filename, 'row': row, 'column': column,
+        'x_px': x0, 'y_px': y0,
+        'width_px': x1 - x0, 'height_px': y1 - y0,
+        'sample_x_px': sample_x0, 'sample_y_px': sample_y0,
+        'sample_width_px': sample_x1 - sample_x0,
+        'sample_height_px': sample_y1 - sample_y0,
+        'bytes': stored}
 
 
 def minimum_cut(error):
@@ -272,7 +300,7 @@ def apply_layout(source, placements, canvas_shape, patch, overlap, feather,
     return canvas[:height, :width]
 
 
-def write_blocks(image, directory, name, block, gutter, log):
+def write_blocks(image, directory, name, block, gutter, log, jobs=1):
     """Cut the baked map into BC1 blocks with shared-neighbour gutters.
 
     Each visual still owns one exact, non-overlapping ``block`` of the wall,
@@ -283,10 +311,12 @@ def write_blocks(image, directory, name, block, gutter, log):
     texture edges, which is what makes a mathematically gap-free grid show a
     hairline seam in the renderer.
     """
+    if jobs < 1:
+        raise ValueError('DDS encoder jobs must be positive')
     height, width = image.shape[:2]
     rows = math.ceil(height / block)
     columns = math.ceil(width / block)
-    written = []
+    tasks = []
     for row in range(rows):
         for column in range(columns):
             y0, x0 = row * block, column * block
@@ -294,20 +324,32 @@ def write_blocks(image, directory, name, block, gutter, log):
             sample_y0, sample_x0 = max(0, y0 - gutter), max(0, x0 - gutter)
             sample_y1 = min(height, y1 + gutter)
             sample_x1 = min(width, x1 + gutter)
-            filename = '%s_r%02d_c%02d.dds' % (name, row, column)
-            stored = write_dds_bc1(
-                os.path.join(directory, filename),
-                np.ascontiguousarray(
-                    image[sample_y0:sample_y1, sample_x0:sample_x1]))
-            written.append({
-                'file': filename, 'row': row, 'column': column,
-                'x_px': x0, 'y_px': y0,
-                'width_px': x1 - x0, 'height_px': y1 - y0,
-                'sample_x_px': sample_x0, 'sample_y_px': sample_y0,
-                'sample_width_px': sample_x1 - sample_x0,
-                'sample_height_px': sample_y1 - sample_y0,
-                'bytes': stored})
-        log('  wrote block row %d/%d' % (row + 1, rows))
+            tasks.append((
+                directory, name, row, column, x0, y0, x1, y1,
+                sample_x0, sample_y0, sample_x1, sample_y1))
+
+    global _BLOCK_SOURCE
+    _BLOCK_SOURCE = image
+    try:
+        if jobs == 1:
+            results = map(_encode_block, tasks)
+        else:
+            if os.name != 'posix':
+                raise RuntimeError('parallel DDS encoding requires POSIX fork support')
+            # Spawn would pickle the complete wall canvas to each worker.  The
+            # map is deterministic, and fork shares the read-only canvas by
+            # copy-on-write, so parallelism changes speed only, never pixels
+            # or the manifest's row-major order.
+            with ProcessPoolExecutor(
+                    max_workers=jobs, mp_context=get_context('fork')) as executor:
+                results = list(executor.map(_encode_block, tasks))
+        written = []
+        for index, entry in enumerate(results):
+            written.append(entry)
+            if index % columns == columns - 1:
+                log('  wrote block row %d/%d' % (entry['row'] + 1, rows))
+    finally:
+        _BLOCK_SOURCE = None
     return rows, columns, written
 
 
@@ -365,10 +407,9 @@ def main():
                         default=(0.0, 0.0),
                         help='lower-left corner of that patch in the wall work '
                              'frame, whose origin is the wall corner')
-    parser.add_argument('--scale-mm-per-px', type=float, default=0.50,
-                        help='not the camera scale of 0.2604: 0.50 measured as '
-                             'the optimum for stitching, with 11x the RANSAC '
-                             'inliers of camera-native and 1.6x those of 0.75')
+    parser.add_argument('--scale-mm-per-px', type=float, default=0.25,
+                        help='wall texture sampling; 0.25 matches the camera '\
+                        'raw pixel scale closely and is the project default')
     parser.add_argument('--block-px', type=int, default=2048)
     parser.add_argument('--gutter-px', type=int,
                         default=DEFAULT_RENDER_GUTTER_PX,
@@ -384,9 +425,12 @@ def main():
     parser.add_argument('--candidates', type=int, default=96)
     parser.add_argument('--tolerance', type=float, default=0.10)
     parser.add_argument('--seed', type=int, default=20260820)
+    parser.add_argument('--jobs', type=int, default=4,
+                        help='POSIX worker count for independent BC1 block '\
+                        'encoding; use 1 on memory-constrained machines')
     parser.add_argument('--video-memory-budget-gb', type=float, default=3.0,
                         help='refuse to bake past this estimated video memory')
-    parser.add_argument('--host-memory-budget-gb', type=float, default=8.0,
+    parser.add_argument('--host-memory-budget-gb', type=float, default=12.0,
                         help='refuse to bake past this estimated peak RAM')
     parser.add_argument('--quiet', action='store_true')
     arguments = parser.parse_args()
@@ -402,6 +446,8 @@ def main():
                      % BLOCK_ALIGNMENT)
     if arguments.gutter_px * 2 >= arguments.block_px:
         parser.error('--gutter-px must be smaller than half --block-px')
+    if arguments.jobs < 1:
+        parser.error('--jobs must be positive')
     scale = arguments.scale_mm_per_px / 1000.0
     # Sized up to whole BC1 blocks rather than padded at write time, so every
     # stored texel still stands for the metre it was baked at. The region grows
@@ -435,6 +481,7 @@ def main():
     host = host_memory_gb(width, height, side)
     log('estimated video memory %.2f GB (server and GUI together)' % video)
     log('estimated peak host memory %.2f GB' % host)
+    log('encoding DDS blocks with %d worker(s)' % arguments.jobs)
     if video > arguments.video_memory_budget_gb:
         parser.error(
             'this bake needs about %.2f GB of video memory, over the %.2f GB '
@@ -468,7 +515,7 @@ def main():
     del source
     rows, columns, files = write_blocks(
         baked, arguments.output_dir, 'albedo', arguments.block_px,
-        arguments.gutter_px, log)
+        arguments.gutter_px, log, arguments.jobs)
     del baked
     log('wrote albedo: %d x %d blocks, %.0f MiB'
         % (rows, columns, sum(entry['bytes'] for entry in files) / (1 << 20)))
@@ -509,6 +556,7 @@ def main():
         'width_px': width, 'height_px': height,
         'block_px': arguments.block_px,
         'gutter_px': arguments.gutter_px,
+        'encoder_jobs': arguments.jobs,
         'format': 'BC1 DDS with baked mip chain',
         'estimated_video_memory_gb': round(video, 3),
         'quilt': {
