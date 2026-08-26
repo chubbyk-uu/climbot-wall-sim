@@ -1178,8 +1178,8 @@ output_root/
 `actual_along_track_m` 间距不得超过 `detection_length × (1 − overlap)` 加
 `actual_spacing_tolerance_m`，且单帧相对 `target_along_track_m` 的后滞不得超过
 `maximum_target_lag_m`。这些是归档时的运行时质量门，不只是离线 G2 评估指标。
-自动采集器的位置闸门把尚未完成的目标限制在更小的 `capture_gate_max_lag_m` 内；记录器
-的门仍是最终独立裁决，不能以控制器是否停车代替。
+自动采集器只用 heartbeat 监督采集链路存活；记录器的位置与间距门仍是最终独立裁决，
+不能以控制器是否收到 heartbeat 代替。
 
 `/coverage/manager_status` 为这两个口径分别提供
 `archive_preflight_expected_images` 和 `archive_expected_images`：前者是开始前固定的名义
@@ -1230,38 +1230,35 @@ RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采
 | `/control/execution_reference` | `climbot_interfaces/msg/ExecutionReference` | 执行器当前冻结的有向直线、任务版本、段号、段类型和采集许可；不是规划器的名义预览 |
 | `/odometry/filtered` | `nav_msgs/msg/Odometry` | 触发位置和曝光时间位姿插值的唯一业务定位源 |
 | `/inspection/capture_metadata` | `climbot_interfaces/msg/InspectionCapture` | 一张成功原图的任务、触发点、冻结参考和曝光时刻 EKF 相机位姿 |
-| `/inspection/capture_gate` | `climbot_interfaces/msg/InspectionCaptureGate` | 自动采集器 → 跟踪器，Reliable + transient-local。启用采集的 `SCAN` 必须持续收到同一任务／版本／段的 gate；`active=true` 时相机中心不得越过 `maximum_camera_along_track`，成功配对、禁用或离开该段后发布 `active=false`。释放消息一律携带当前参考的任务／版本／段号，不得回退到上一段的身份。`reason` 是给操作员看的自由文本，调用方不得据其内容分支。 |
+| `/inspection/capture_gate` | `climbot_interfaces/msg/InspectionCaptureGate` | 自动采集器 → 跟踪器，Reliable + transient-local 的采集健康 heartbeat。启用采集的 `SCAN` 必须持续收到同一任务／版本／段的 `active=false` 消息；当前 v1 拒绝 `active=true` 的位置栅栏，正常拍照不得调制扫描速度。`maximum_camera_along_track` 是兼容保留字段，不参与 v1 控制。`reason` 是给操作员看的自由文本，调用方不得据其内容分支。 |
 
 `ExecutionReference.inspection_enabled` 只在正式 `SCAN` 的 `TRACK_LINE`／
 `FINAL_APPROACH` 为真；起点进入、对准、转向稳定、动态过渡和小弧线入轨均为假。
 `detection_forward_offset` 来自不可变任务，G2 相机任务必须为 `0.340 m` 并与共享安装
 外参一致。
 
-自动采集的参考失效、等图像和等 EKF 插值括号期限全部用稳态时间测量，即使 Gazebo
-暂停、`use_sim_time` 的 ROS 时钟不前进，`image_wait_timeout_s` 仍会按墙钟重试同一空间
-触发点。重试不是让机器人带着未完成曝光继续前进：采集器在目标位置加
-`capture_gate_max_lag_m`（默认 `15 mm`）处发布位置闸门，跟踪器据此限速并可停车；只有
-相机帧已和 EKF 位姿完成绑定后才放行下一目标。该值必须小于记录器
-`maximum_target_lag_m`（默认 `25 mm`），且闸门只接受冻结参考的任务 ID、版本和段号
-都相同的消息。可选平场节点在启动时即校验 NPZ gain 与共享相机的 `1920×1080` 分辨率
-相符、有限且严格为正；不兼容标定不等待第一帧才暴露。运行中遇到异常图像只丢弃补偿
-预览，不影响正式 `image_raw` 归档。
+自动采集的参考失效、等图像和等 EKF 插值括号期限全部用稳态时间测量。正常情况下，触发、
+图像和 EKF 位姿绑定均异步进行，Gazebo 暂停、`use_sim_time` 的 ROS 时钟不前进也不会改变
+扫描速度。服务拒绝、图像期限到期或 EKF 插值失败是明确的采集故障：采集器停止发布当前段
+heartbeat，跟踪器在其期限内受控中止该段，绝不在机器人已越过目标后静默补拍。归档器仍以
+实际标签独立检查相邻间距和目标后滞（默认后滞上限 `25 mm`）。可选平场节点在启动时即校验
+NPZ gain 与共享相机的 `1920×1080` 分辨率相符、有限且严格为正；不兼容标定不等待第一帧
+才暴露。运行中遇到异常图像只丢弃补偿预览，不影响正式 `image_raw` 归档。
 
-gate 是存活监督而不只是位置上限：跟踪器从进入启用采集的 `SCAN` 起，使用本机稳态时钟
+gate 是存活监督，不是位置上限：跟踪器从进入启用采集的 `SCAN` 起，使用本机稳态时钟
 在一次性的 `capture_gate_start_timeout_s`（默认 `2.0 s`）建立窗口内等待第一条匹配 gate，
 收到后要求每条消息在 `capture_gate_timeout_s`（默认 `0.50 s`）内刷新。首次或后续心跳超时
 均发布零速度并以 `TRACKING_FAILED` 中止 Action，不能把过期 gate 当作 inactive 后继续运动。
 中止与等待消息都会附上最后一条 gate 的 `reason` 与其段号（匹配与否都附），因为一条来自
-别的段的 gate 本身就是诊断。`active=false` 的含义是“无需等待，继续行驶”，因此当采集器
-判定本段根本无法拍摄——例如任务的 `detection_forward_offset` 与相机安装不符——它不发布
-任何 gate（`active` 与否都不发），让心跳超时按上述路径快速停段，而不是放行机器人开完
+别的段的 gate 本身就是诊断。`active=false` 是健康 heartbeat；当采集器判定本段根本无法
+拍摄——例如任务的 `detection_forward_offset` 与相机安装不符——它不发布任何 gate，让心跳
+超时按上述路径快速停段，而不是放行机器人开完
 一条注定没有曝光的扫描线、到归档收尾时才发现为空。
 进入、对准、转场等 `inspection_enabled=false` 的参考也不发布 gate：它们不是采集心跳，
 尤其不能给即将进入的同段 SCAN 留下一条 `active=false` 的伪放行。
 `header.stamp` 只用于消息可追溯性，不能用于时效判断，因为
-`use_sim_time` 暂停时它不会前进。完整 inspection launch 同时强制
-`capture_gate_max_lag_m < maximum_target_lag_m`、采集器与记录器的纵向重叠一致；v1 gate
-接口明确要求 `camera_mount_y_m == 0`，非零横向安装须先扩展接口。
+`use_sim_time` 暂停时它不会前进。完整 inspection launch 同时强制采集器与记录器的纵向
+重叠一致；位置触发和曝光位姿均使用完整相机外参，支持非零横向安装偏移。
 
 `InspectionCapture.header` 必须逐字段等于对应 `image_raw.header`。`camera_pose` 是光学
 中心在 `header.frame_id` 下的 EKF 插值位姿，协方差包含前置杠杆对航向不确定度的传播；

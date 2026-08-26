@@ -133,10 +133,7 @@ public:
     reference_timeout_(finitePositive(*this, "reference_timeout_s", 0.5)),
     image_wait_timeout_(finitePositive(*this, "image_wait_timeout_s", 1.0)),
     pose_wait_timeout_(finitePositive(*this, "pose_wait_timeout_s", 0.5)),
-    cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0)),
-    capture_retry_delay_(steadySeconds(
-        finitePositive(*this, "capture_retry_delay_s", 0.30))),
-    capture_gate_lag_(finitePositive(*this, "capture_gate_max_lag_m", 0.015))
+    cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0))
   {
     if (overlap_ < 0.0 || overlap_ >= 1.0) {
       throw std::invalid_argument("image_overlap_ratio must be within [0, 1).");
@@ -197,8 +194,9 @@ private:
     if (!message->inspection_enabled || message->segment_index < 0) {
       reference_.reset();
       // A transition/entry reference is not an inspection heartbeat. Publishing
-      // an inactive gate with the forthcoming SCAN's identity here would make
-      // the tracker treat it as a fresh release for capture_gate_timeout_s.
+      // a healthy heartbeat with the forthcoming SCAN's identity here would
+      // make the tracker treat that segment as capture-capable for
+      // capture_gate_timeout_s.
       // If the following enabled reference is rejected (for example because
       // its optical offset is wrong), the robot could therefore drive before
       // the missing-heartbeat safeguard took effect.
@@ -210,9 +208,6 @@ private:
     if (!std::isfinite(length) || length <= 1e-6) {
       RCLCPP_ERROR(get_logger(), "Rejected zero or non-finite execution reference.");
       reference_.reset();
-      publishInactiveGate(
-        Key{message->task_id, message->revision, message->segment_index},
-        "invalid execution reference");
       return;
     }
     if (!std::isfinite(message->detection_forward_offset) ||
@@ -222,22 +217,17 @@ private:
         get_logger(), *get_clock(), 5000,
         "Task detection_forward_offset does not match the camera mount; automatic capture disabled.");
       reference_.reset();
-      // Deliberately no gate at all, active or inactive. An inactive gate means
-      // "nothing to wait for, drive on", and this SCAN is the opposite: the
-      // mismatch is a configuration fault that cannot resolve while the task
-      // runs, so every exposure on this line would be missed. Withholding the
-      // heartbeat is what states that: the tracker's gate supervision then
-      // stops the SCAN in capture_gate_start_timeout_s instead of driving the
-      // whole line and discovering the empty archive at finalization.
+      // Deliberately no heartbeat. The mismatch is a configuration fault that
+      // cannot resolve while the task runs, so every exposure on this line
+      // would be missed. Withholding the heartbeat makes the tracker's
+      // supervision stop the SCAN in capture_gate_start_timeout_s instead of
+      // driving the whole line and discovering the empty archive at finalization.
       return;
     }
     const Key key{message->task_id, message->revision, message->segment_index};
     if (!key_ || !(key == *key_)) {
       key_ = key;
       next_trigger_ = 0U;
-      // A camera response from a prior SCAN must not delay the first exposure
-      // of this newly frozen reference.
-      retry_not_before_.reset();
       // The reference is the user-bounded base_link route.  The final target
       // intentionally remains one interval before its terminal pose: the
       // tracker may complete inside its endpoint tolerance, and asking the
@@ -256,10 +246,12 @@ private:
           get_logger(),
           "Frozen SCAN reference changed after inspection was enabled; disabling segment.");
         disabled_key_ = key;
+        reference_.reset();
+        return;
       }
     }
     reference_ = *message;
-    publishGateForNextTarget();
+    publishCaptureHeartbeat();
     tryTrigger();
   }
 
@@ -308,8 +300,7 @@ private:
       !latest_reference_time_ ||
       std::chrono::duration<double>(
         std::chrono::steady_clock::now() - *latest_reference_time_).count() > reference_timeout_ ||
-      next_trigger_ >= trigger_count_ || !capture_client_->service_is_ready() ||
-      (retry_not_before_ && std::chrono::steady_clock::now() < *retry_not_before_))
+      next_trigger_ >= trigger_count_ || !capture_client_->service_is_ready())
     {
       return;
     }
@@ -328,7 +319,6 @@ private:
     pending.metadata.actual_along_track = progress;
     pending.metadata.reference_start = reference_->start;
     pending.metadata.reference_end = reference_->end;
-    publishGate(target, "waiting for inspection capture");
     pending_ = pending;
     ++next_trigger_;
     auto request = std::make_shared<CaptureOnce::Request>();
@@ -338,13 +328,19 @@ private:
         if (!response->success && pending_ && !pending_->image_stamp) {
           RCLCPP_WARN(get_logger(), "Automatic capture rejected (reason %u): %s",
           response->reason, response->message.c_str());
-          // A busy or warming camera has not consumed this spatial target.
-          // Put the same number back rather than silently creating a hole.
-          next_trigger_ = std::min(next_trigger_, pending_->metadata.trigger_index);
-          publishGate(pending_->metadata.target_along_track,
-          "retrying rejected inspection capture");
+          // A normal exposure never controls travel speed. Once a trigger is
+          // rejected, however, the robot may already be past its target, so a
+          // blind retry would create an unbounded coverage gap. Withhold the
+          // heartbeat and let the tracker fail the active SCAN instead.
+          const Key request_key{
+            pending_->metadata.task_id,
+            pending_->metadata.revision,
+            pending_->metadata.segment_index};
           pending_.reset();
-          retry_not_before_ = std::chrono::steady_clock::now() + capture_retry_delay_;
+          if (key_ && request_key == *key_) {
+            disabled_key_ = request_key;
+            reference_.reset();
+          }
         }
       });
   }
@@ -451,7 +447,7 @@ private:
     }
     metadata_publisher_->publish(pending_->metadata);
     pending_.reset();
-    publishGateForNextTarget();
+    publishCaptureHeartbeat();
     tryTrigger();
   }
 
@@ -468,73 +464,47 @@ private:
     if (!pending_->image_stamp && age > image_wait_timeout_) {
       RCLCPP_ERROR(
         get_logger(),
-        "Capture service succeeded but no inspection image arrived; retrying the same target.");
-      next_trigger_ = std::min(next_trigger_, pending_->metadata.trigger_index);
-      publishGate(pending_->metadata.target_along_track, "retrying missing inspection image");
+        "Capture service succeeded but no inspection image arrived; disabling segment.");
+      disableCurrentSegment();
       pending_.reset();
-      retry_not_before_ = std::chrono::steady_clock::now() + capture_retry_delay_;
-      tryTrigger();
       return;
     }
     if (pending_->image_stamp && age > pose_wait_timeout_) {
       RCLCPP_ERROR(
         get_logger(),
         "No EKF interpolation bracket arrived for an inspection image; segment disabled.");
-      disabled_key_ = key_;
+      disableCurrentSegment();
       pending_.reset();
-      publishInactiveGate(key_, "inspection segment disabled after EKF interpolation timeout");
     }
   }
 
-  void publishGate(double target, const std::string & reason)
+  void disableCurrentSegment()
   {
-    if (!key_) {
-      return;
+    if (key_) {
+      disabled_key_ = *key_;
     }
-    CaptureGate gate;
-    gate.header.stamp = now();
-    gate.task_id = key_->task_id;
-    gate.revision = key_->revision;
-    gate.segment_index = key_->segment;
-    gate.active = true;
-    gate.maximum_camera_along_track = target + capture_gate_lag_;
-    gate.reason = reason;
-    gate_publisher_->publish(gate);
+    reference_.reset();
   }
 
-  void publishGateForNextTarget()
+  void publishCaptureHeartbeat()
   {
-    if (!reference_ || !key_) {
-      publishInactiveGate(key_, "no active inspection SCAN reference");
+    if (!reference_ || !key_ || (disabled_key_ && *disabled_key_ == *key_)) {
       return;
     }
-    if (disabled_key_ && *disabled_key_ == *key_) {
-      publishInactiveGate(key_, "inspection segment disabled");
-      return;
-    }
-    // A service response or its frame may still be outstanding.  References are
-    // published continuously, so never advance this gate merely because
-    // next_trigger_ was incremented when that request was sent.
+    // This is a health heartbeat, not a per-exposure motion barrier. Normal
+    // captures stay asynchronous so a regular scan remains at cruise speed.
+    // A concrete capture fault instead stops this heartbeat and is handled by
+    // the tracker's existing missing-heartbeat safety stop.
     if (pending_) {
-      publishGate(pending_->metadata.target_along_track, "waiting for inspection capture");
-      return;
-    }
-    if (next_trigger_ >= trigger_count_) {
+      publishInactiveGate(key_, "inspection capture in flight");
+    } else if (next_trigger_ >= trigger_count_) {
       publishInactiveGate(key_, "all captures for frozen SCAN reference are complete");
-      return;
+    } else {
+      publishInactiveGate(key_, "inspection capture ready");
     }
-    publishGate(
-      first_trigger_ + trigger_interval_ * static_cast<double>(next_trigger_),
-      "waiting for next inspection capture");
   }
 
-  /// Release the barrier for one identified SCAN.
-  ///
-  /// The identity is a parameter rather than key_ because the early returns in
-  /// onReference() run before key_ has been updated for the message in hand:
-  /// publishing under key_ there announces the release of whichever SCAN ran
-  /// previously, and the tracker - which matches task/revision/segment before
-  /// honouring a gate - then keeps holding the one it is actually driving.
+  /// Publish the heartbeat for one identified SCAN.
   void publishInactiveGate(const std::optional<Key> & identity, const std::string & reason)
   {
     CaptureGate gate;
@@ -554,8 +524,6 @@ private:
   const double mount_x_, mount_y_, mount_z_;
   const double mount_roll_, mount_pitch_, mount_yaw_;
   const double reference_timeout_, image_wait_timeout_, pose_wait_timeout_, cache_duration_;
-  const std::chrono::steady_clock::duration capture_retry_delay_;
-  const double capture_gate_lag_;
   double spacing_{};
   std::optional<Key> key_, disabled_key_;
   std::optional<Reference> reference_;
@@ -565,7 +533,6 @@ private:
   double trigger_interval_{};
   double first_trigger_{};
   std::optional<std::chrono::steady_clock::time_point> latest_reference_time_;
-  std::optional<std::chrono::steady_clock::time_point> retry_not_before_;
   std::deque<nav_msgs::msg::Odometry::SharedPtr> poses_;
   rclcpp::Subscription<Reference>::SharedPtr reference_subscription_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;

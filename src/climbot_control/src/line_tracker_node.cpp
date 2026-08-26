@@ -274,10 +274,10 @@ public:
       declare_parameter("capture_gate_topic", std::string("/inspection/capture_gate")),
       rclcpp::QoS(1).reliable().transient_local(),
       [this](const climbot_interfaces::msg::InspectionCaptureGate::SharedPtr message) {
-        if (message->active &&
-        (!std::isfinite(message->maximum_camera_along_track) || message->segment_index < 0))
-        {
-          RCLCPP_ERROR(get_logger(), "Rejected non-finite or invalid inspection capture gate.");
+        if (message->active || message->segment_index < 0) {
+          RCLCPP_ERROR(
+            get_logger(),
+            "Rejected active or invalid inspection capture heartbeat.");
           return;
         }
         capture_gate_ = *message;
@@ -1371,45 +1371,6 @@ private:
     return suffix.str();
   }
 
-  std::optional<double> captureGateRemaining() const
-  {
-    if (!captureGateIsRequired() || !captureGateMatchesCurrentScan() ||
-      !capture_gate_->active)
-    {
-      return std::nullopt;
-    }
-    const double dx = end_.x - start_.x;
-    const double dy = end_.y - start_.y;
-    const double length = std::hypot(dx, dy);
-    if (!(length > 1e-9)) {
-      return std::nullopt;
-    }
-    const double offset = active_task_->detection_forward_offset;
-    const double camera_x = pose_.x + std::cos(pose_.yaw) * offset;
-    const double camera_y = pose_.y + std::sin(pose_.yaw) * offset;
-    const double camera_along =
-      ((camera_x - start_.x) * dx + (camera_y - start_.y) * dy) / length;
-    return capture_gate_->maximum_camera_along_track - camera_along;
-  }
-
-  void applyCaptureGate(climbot_control::Command & desired) const
-  {
-    const auto remaining = captureGateRemaining();
-    if (!remaining.has_value()) {
-      return;
-    }
-    if (*remaining <= 0.0) {
-      desired.linear = 0.0;
-      return;
-    }
-    // This cap begins braking before the barrier rather than reacting after
-    // crossing it.  The barrier itself is supplied by the capture node and is
-    // deliberately below the recorder's accepted capture-position lag.
-    const double speed_to_stop = std::sqrt(
-      2.0 * limits_.braking_deceleration * *remaining);
-    desired.linear = std::min(desired.linear, speed_to_stop);
-  }
-
   void publishReferencePath()
   {
     nav_msgs::msg::Path path;
@@ -1681,16 +1642,10 @@ private:
     } else {
       desired.linear = timeReferenceSpeed(current_time, dt, desired);
     }
-    const double ungated_linear = desired.linear;
     if (waiting_for_capture_gate) {
       desired.linear = 0.0;
-    } else {
-      applyCaptureGate(desired);
     }
-    // The gate only ever lowers the speed, so an unchanged command means it did
-    // not hold the robot back this cycle and the lag really was the linear
-    // channel's to answer for.
-    if (!distance_drives_linear && desired.linear >= ungated_linear - 1e-12) {
+    if (!distance_drives_linear && !waiting_for_capture_gate) {
       commitTimeAlongIntegral();
     }
     if (oscillation_monitor_->update(desired.cross, desired.along) &&

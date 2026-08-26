@@ -182,48 +182,47 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             time.sleep(0.01)
         return predicate()
 
-    def _active_gate(self, segment):
+    def _heartbeat(self, segment):
         return any(
-            gate.segment_index == segment and gate.active for gate in self.gates)
+            gate.segment_index == segment and not gate.active for gate in self.gates)
 
     def test_camera_mount_mismatch_withholds_the_gate_heartbeat(self):
-        """A SCAN this node cannot serve must not be released to drive on."""
+        """A SCAN this node cannot serve must not receive a healthy heartbeat."""
         self._odom(10, 0.125)
         # Establish that gates do flow for a well-formed SCAN, so the absence
         # asserted below is evidence about the mismatch and not about
         # discovery having failed to complete.
         self.assertTrue(self._pump_until(
-            lambda: self._active_gate(11),
+            lambda: self._heartbeat(11),
             lambda: self._reference(True, segment=11)))
 
-        # An inactive gate would tell the tracker "nothing to wait for"; the
-        # mismatch is a configuration fault that cannot resolve mid-task, so
-        # the heartbeat is withheld and the tracker's gate supervision stops
-        # the SCAN instead of driving a line no exposure will ever cover.
+        # The mismatch is a configuration fault that cannot resolve mid-task,
+        # so the heartbeat is withheld and the tracker's supervision stops the
+        # SCAN instead of driving a line no exposure will cover.
         self.gates.clear()
         calls = self.capture_calls
         deadline = time.monotonic() + 1.0
         while time.monotonic() < deadline:
             self._reference(True, segment=12, forward_offset=0.200)
             time.sleep(0.01)
-        # No gate at all, not merely no gate labelled 12: one labelled with the
-        # previous SCAN is the identity bug this pairs with, and it would
-        # release whichever line the tracker is actually driving.
+        # No heartbeat at all, not merely none labelled 12: one labelled with
+        # the previous SCAN is an identity bug and can hide a failed capture
+        # process from the tracker.
         self.assertEqual(
             [(gate.segment_index, gate.active, gate.reason) for gate in self.gates], [],
             'a mismatched camera mount must publish no gate at all')
         self.assertEqual(self.capture_calls, calls)
 
-    def test_noninspection_reference_does_not_release_the_next_scan(self):
+    def test_noninspection_reference_does_not_heartbeat_the_next_scan(self):
         """An entry/transition reference is not a capture gate heartbeat."""
         self._odom(10, 0.125)
         self.assertTrue(self._pump_until(
-            lambda: self._active_gate(13),
+            lambda: self._heartbeat(13),
             lambda: self._reference(True, segment=13)))
 
         # A transition/alignment reference for the NEXT segment must not
-        # publish an inactive gate for it. Otherwise an immediately following
-        # unserviceable SCAN gets a false fresh heartbeat and can move briefly.
+        # publish a heartbeat for it. Otherwise an immediately following
+        # unserviceable SCAN gets a false fresh health report and can move.
         self.gates.clear()
         deadline = time.monotonic() + 0.30
         while time.monotonic() < deadline:
@@ -274,13 +273,10 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         deadline = time.monotonic() + 2.0
         while not self.gates and time.monotonic() < deadline:
             time.sleep(0.01)
-        self.assertTrue(self.gates, 'automatic capture did not publish a position gate')
+        self.assertTrue(self.gates, 'automatic capture did not publish a health heartbeat')
         gate = self.gates[-1]
-        self.assertTrue(gate.active)
+        self.assertFalse(gate.active)
         self.assertEqual(gate.segment_index, 2)
-        # The second target is 0.540 m; the default gate grants only 15 mm
-        # beyond it while the next capture remains pending.
-        self.assertAlmostEqual(gate.maximum_camera_along_track, 0.555, places=9)
 
         # Six centres span the full 1.0 m base route: the second target is
         # 0.540 m. Noise that
@@ -301,41 +297,28 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(self.metadata[1].trigger_index, 1)
         self.assertAlmostEqual(self.metadata[1].target_along_track, 0.54, places=9)
 
-        # A temporary service rejection retries the same spatial target and
-        # keeps trigger numbering contiguous instead of silently losing it.
+        # A rejected trigger is a capture fault. The robot may already have
+        # passed the target, so it must stop through missing-heartbeat
+        # supervision rather than silently retrying at a later position.
+        self.gates.clear()
         self.reject_next = True
         self.image_stamp = Time(sec=16, nanosec=500_000_000)
         self._reference(True, segment=4)
         self._odom(16, 0.125)
         time.sleep(0.2)
         self.assertEqual(self.capture_calls, 3)
-        # The rejected call has not consumed target 0.  A refreshed execution
-        # reference must keep the barrier at that same target, not move it to
-        # trigger 1 merely because next_trigger_ was tentatively incremented.
-        deadline = time.monotonic() + 1.0
-        while (
-                (not self.gates or self.gates[-1].segment_index != 4) and
-                time.monotonic() < deadline):
+        # Drain the heartbeat published before the asynchronous rejection was
+        # observed; the assertion below is about behavior after the fault.
+        self.gates.clear()
+        deadline = time.monotonic() + 0.30
+        while time.monotonic() < deadline:
+            self._reference(True, segment=4)
             time.sleep(0.01)
-        self.assertTrue(self.gates)
-        rejected_gate = self.gates[-1]
-        self.assertTrue(rejected_gate.active)
-        self.assertAlmostEqual(rejected_gate.maximum_camera_along_track, 0.355, places=9)
-        self._reference(True, segment=4)
-        time.sleep(0.05)
-        self.assertTrue(self.gates[-1].active)
-        self.assertAlmostEqual(self.gates[-1].maximum_camera_along_track, 0.355, places=9)
-        deadline = time.monotonic() + 1.0
-        while self.capture_calls < 4 and time.monotonic() < deadline:
-            time.sleep(0.01)
-        self.assertEqual(self.capture_calls, 4)
-        self._odom(17, 0.15)
-        self._wait_count(3)
-        self.assertEqual(self.metadata[2].segment_index, 4)
-        self.assertEqual(self.metadata[2].trigger_index, 0)
+        self.assertEqual(self.gates, [])
+        self.assertEqual(self.capture_calls, 3)
 
-    def test_z_missing_image_retries_the_same_spatial_target(self):
-        """A successful trigger without an image cannot wedge the whole task."""
+    def test_z_missing_image_disables_the_segment(self):
+        """A successful trigger without an image must stop the active SCAN."""
         # Unlike the longer existing test this one starts immediately after
         # setup, so allow endpoint discovery to settle before publishing the
         # one transient reference it relies on.
@@ -344,23 +327,27 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.image_stamp = Time(sec=30, nanosec=500_000_000)
         self._odom(30, 0.125)
         self._reference(True, segment=9)
-        deadline = time.monotonic() + 3.0
-        while self.capture_calls < 2 and time.monotonic() < deadline:
+        deadline = time.monotonic() + 2.0
+        while self.capture_calls < 1 and time.monotonic() < deadline:
             # Discovery is asynchronous.  Refresh the frozen reference while
             # waiting so a temporarily unavailable service is not mistaken for
             # a trigger failure just because this test published one sample.
             self._reference(True, segment=9)
             time.sleep(0.01)
-        self.assertGreaterEqual(self.capture_calls, 2)
-        # The retry publishes a frame for trigger 0.  Supply the later pose
-        # required to bind that image to an interpolated EKF pose.
-        self._odom(31, 0.15)
-        self._wait_count(1)
-        self.assertEqual(self.metadata[0].segment_index, 9)
-        self.assertEqual(self.metadata[0].trigger_index, 0)
+        self.assertEqual(self.capture_calls, 1)
+        # The image timeout is wall-clock based. Let it disable the segment,
+        # then discard heartbeat samples emitted while it was still pending.
+        time.sleep(0.35)
+        self.gates.clear()
+        deadline = time.monotonic() + 1.0
+        while time.monotonic() < deadline:
+            self._reference(True, segment=9)
+            time.sleep(0.01)
+        self.assertEqual(self.gates, [])
+        self.assertEqual(self.metadata, [])
 
-    def test_pose_timeout_disables_and_releases_its_gate(self):
-        """An unrecoverable pose bind must not leave a SCAN waiting for 120 s."""
+    def test_pose_timeout_disables_and_withholds_its_heartbeat(self):
+        """An unrecoverable pose bind must fail the SCAN promptly."""
         time.sleep(0.3)
         self.image_stamp = Time(sec=40, nanosec=500_000_000)
         self._odom(40, 0.125)
@@ -372,19 +359,21 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(self.capture_calls, 1)
 
         # Do not publish the future odometry sample that would form the EKF
-        # interpolation bracket for the 40.5 s image.  This is a segment
-        # fault, not a reason to keep the tracker stopped behind a stale gate.
+        # interpolation bracket for the 40.5 s image. This is a segment fault:
+        # withhold the heartbeat so the tracker performs its safety stop.
+        # The test node uses a one-second pose timeout. Wait until it disables
+        # the segment, then discard the healthy heartbeat from its pending
+        # interval before checking that no new heartbeat is emitted.
+        time.sleep(1.10)
+        self.gates.clear()
         deadline = time.monotonic() + 2.0
-        while (not self.gates or self.gates[-1].active) and time.monotonic() < deadline:
+        while time.monotonic() < deadline:
             self._reference(True, segment=10)
             time.sleep(0.01)
-        self.assertTrue(self.gates)
-        self.assertFalse(self.gates[-1].active)
-        self.assertEqual(self.gates[-1].segment_index, 10)
+        self.assertEqual(self.gates, [])
         calls_after_disable = self.capture_calls
         self._reference(True, segment=10)
         time.sleep(0.1)
-        self.assertFalse(self.gates[-1].active)
         self.assertEqual(self.capture_calls, calls_after_disable)
 
 

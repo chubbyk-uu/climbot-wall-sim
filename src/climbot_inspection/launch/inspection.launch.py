@@ -35,7 +35,7 @@ def _parameters(config, node_name):
             f'Inspection config must define {node_name}.ros__parameters.') from error
 
 
-def _validate_inspection_contract(context, mount_y):
+def _validate_inspection_contract(context):
     """Reject cross-node capture settings that cannot produce an accepted archive."""
     config_path = LaunchConfiguration('config_file').perform(context)
     with open(config_path, encoding='utf-8') as handle:
@@ -43,30 +43,18 @@ def _validate_inspection_contract(context, mount_y):
     automatic = _parameters(config, 'automatic_capture_node')
     recorder = _parameters(config, 'archive_recorder_node')
     try:
-        gate_lag = float(automatic['capture_gate_max_lag_m'])
-        maximum_lag = float(recorder['maximum_target_lag_m'])
         automatic_overlap = float(automatic['image_overlap_ratio'])
         recorder_overlap = float(recorder['image_overlap_ratio'])
     except (KeyError, TypeError, ValueError) as error:
         raise RuntimeError(
             'Inspection capture/recorder geometry parameters must be finite numbers.') from error
     if not all(math.isfinite(value) for value in
-               (gate_lag, maximum_lag, automatic_overlap, recorder_overlap)):
+               (automatic_overlap, recorder_overlap)):
         raise RuntimeError('Inspection capture/recorder geometry parameters must be finite.')
-    if not 0.0 < gate_lag < maximum_lag:
-        raise RuntimeError(
-            'capture_gate_max_lag_m must be positive and smaller than '
-            'archive_recorder_node.maximum_target_lag_m.')
     if not 0.0 <= automatic_overlap < 1.0 or automatic_overlap != recorder_overlap:
         raise RuntimeError(
             'automatic_capture_node and archive_recorder_node must share one '
             'image_overlap_ratio within [0, 1).')
-    # InspectionCaptureGate v1 carries an along-track barrier only. Both ends
-    # therefore intentionally use the same axial-only camera model.
-    if not math.isfinite(mount_y) or abs(mount_y) > 1e-9:
-        raise RuntimeError(
-            'InspectionCaptureGate v1 requires camera_mount_y_m == 0; extend '
-            'the gate interface before using a laterally offset camera.')
     return []
 
 
@@ -93,9 +81,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('config_file', default_value=default_config),
-        OpaqueFunction(
-            function=_validate_inspection_contract,
-            args=[float(mount['center_xyz_m'][1])]),
+        OpaqueFunction(function=_validate_inspection_contract),
         DeclareLaunchArgument('flat_field_file', default_value=''),
         DeclareLaunchArgument('archive_recorder', default_value='true'),
         DeclareLaunchArgument('inspection_output_root', default_value='~/climbot_data'),

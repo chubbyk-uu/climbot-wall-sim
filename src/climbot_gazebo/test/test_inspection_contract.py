@@ -50,12 +50,3 @@ def test_archive_spacing_guard_fits_within_the_g2_measured_overlap_limit():
     assert float(automatic['image_overlap_ratio']) == pytest.approx(
         float(recorder['image_overlap_ratio']))
     assert archive_limit <= evaluator_limit
-
-
-def test_capture_gate_lag_is_stricter_than_the_archive_lag_limit():
-    """The control barrier must never permit a capture the recorder rejects."""
-    parameters = _config('climbot_inspection', 'inspection.yaml')
-    automatic = parameters['automatic_capture_node']['ros__parameters']
-    recorder = parameters['archive_recorder_node']['ros__parameters']
-    assert 0.0 < float(automatic['capture_gate_max_lag_m']) < float(
-        recorder['maximum_target_lag_m'])

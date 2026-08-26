@@ -36,11 +36,6 @@ automatic_capture_node:
     image_wait_timeout_s: 1.0
     pose_wait_timeout_s: 0.5
     pose_cache_duration_s: 3.0
-    # Retry temporary WARMING/BUSY/DRAINING responses without hammering the service.
-    capture_retry_delay_s: 0.30
-    # The tracker brakes before this camera-progress limit while a capture is
-    # pending. Keep it below the recorder's maximum_target_lag_m.
-    capture_gate_max_lag_m: 0.015
 
 archive_recorder_node:
   ros__parameters:
