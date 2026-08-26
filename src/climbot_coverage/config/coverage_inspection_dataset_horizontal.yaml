@@ -5,7 +5,7 @@
 coverage_planner:
   ros__parameters:
     frame_id: odom
-    task_id: inspection-dataset-horizontal-025mm-20260826
+    task_id: inspection-dataset-horizontal-camera-zfix-025mm-20260826
     input_mode: parameters
     region_type: rectangle
     lower_left: [2.0, 1.5]
