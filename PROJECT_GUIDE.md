@@ -1401,3 +1401,7 @@ Huber/Cauchy 等鲁棒损失最小化加权先验残差和重投影／配准残�
 平场、可选去噪和去畸变，最后原子发布输出目录。平场 NPZ 与暗场图由用户显式传入；若归档
 含平场哈希引用则必须相符。输出保留原标签字段，增加处理后图像 SHA-256，写入零畸变的
 `rectified_camera_info.yaml` 与不含本机绝对路径的处理 manifest。原始归档及其文件绝不修改。
+预处理可按帧有界多进程并行：去畸变 remap 在主进程只计算一次，worker 使用只读共享上下文，
+每个 worker 的 OpenCV 内部线程固定为一；实际 worker 数受 `--jobs` 和
+`--memory-budget-gb` 共同限制，并写入 processing manifest。不同并发数必须保持帧顺序、
+哈希和处理语义一致。

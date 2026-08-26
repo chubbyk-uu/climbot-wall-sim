@@ -23,14 +23,17 @@ never modified, copied over, or used as an output parent.
 
 from __future__ import annotations
 
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from dataclasses import dataclass
 import hashlib
 import json
 import math
+from multiprocessing import get_context
 import os
 from pathlib import Path, PurePosixPath
 import shutil
 import tempfile
+import time
 from typing import Any
 import uuid
 
@@ -51,6 +54,10 @@ class ProcessingOptions:
     dark_frame_file: Path | None = None
     denoise: str = 'none'
     allow_incomplete: bool = False
+    # ``None`` represents the CLI spelling ``auto``.  The resolved count is
+    # recorded in the output manifest, so it is never ambiguous after a run.
+    jobs: int | None = None
+    memory_budget_gb: float = 4.0
 
 
 @dataclass(frozen=True)
@@ -61,6 +68,16 @@ class SourceFrame:
     image_name: str
     image_path: Path
     label: dict[str, Any]
+
+
+# The estimate deliberately includes temporary float correction, remap output,
+# PNG encoding buffers and a margin for OpenCV allocator behaviour.  It is a
+# scheduling limit rather than a claim that every image always occupies this
+# amount of resident memory.
+_WORKER_MEMORY_ESTIMATE_BYTES = 256 * 1024 * 1024
+_PARENT_MEMORY_RESERVE_BYTES = 512 * 1024 * 1024
+_AUTO_JOB_CAP = 8
+_WORKER_CONTEXT: dict[str, Any] | None = None
 
 
 def _sha256_file(path: Path) -> str:
@@ -277,8 +294,9 @@ def _load_dark_frame(path: Path | None, expected_shape: tuple[int, int]) -> tupl
 
 
 def _processed_image(raw: np.ndarray, dark: np.ndarray | None, gain: np.ndarray | None,
-                     denoise: str, matrix: np.ndarray, distortion: np.ndarray,
-                     new_matrix: np.ndarray) -> np.ndarray:
+                     denoise: str, remap_x: np.ndarray,
+                     remap_y: np.ndarray) -> np.ndarray:
+    """Correct one frame using remaps created once for the whole archive."""
     corrected = raw.astype(np.float32)
     if dark is not None:
         corrected = np.maximum(corrected - dark, 0.0)
@@ -289,7 +307,138 @@ def _processed_image(raw: np.ndarray, dark: np.ndarray | None, gain: np.ndarray 
         corrected = cv2.medianBlur(corrected, 3)
     elif denoise != 'none':
         raise ProcessingError(f'unsupported denoise mode {denoise!r}.')
-    return cv2.undistort(corrected, matrix, distortion, None, new_matrix)
+    return cv2.remap(
+        corrected, remap_x, remap_y, interpolation=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT)
+
+
+def _undistort_maps(matrix: np.ndarray, distortion: np.ndarray,
+                    new_matrix: np.ndarray, width: int,
+                    height: int) -> tuple[np.ndarray, np.ndarray]:
+    """Build the immutable remaps shared by all archive worker processes."""
+    remap_x, remap_y = cv2.initUndistortRectifyMap(
+        matrix, distortion, None, new_matrix, (width, height), cv2.CV_32FC1)
+    if (remap_x.shape != (height, width) or remap_y.shape != (height, width) or
+            not np.all(np.isfinite(remap_x)) or not np.all(np.isfinite(remap_y))):
+        raise ProcessingError('OpenCV produced invalid undistortion remaps.')
+    return remap_x, remap_y
+
+
+def _init_worker(context: dict[str, Any]) -> None:
+    """Install one read-only processing context in a child process."""
+    global _WORKER_CONTEXT
+    # Parallel OpenCV workers must not each create their own CPU-sized thread
+    # pool.  Process-level parallelism is controlled by ``jobs`` instead.
+    cv2.setNumThreads(1)
+    _WORKER_CONTEXT = context
+
+
+def _process_one_frame(frame: SourceFrame, temporary: Path,
+                       context: dict[str, Any]) -> dict[str, Any]:
+    """Process and atomically persist one already-verified source frame."""
+    raw = cv2.imread(str(frame.image_path), cv2.IMREAD_UNCHANGED)
+    if raw is None:
+        raise ProcessingError(f'OpenCV could not read verified raw image {frame.image_name}.')
+    if (raw.dtype != np.uint8 or raw.ndim != 2 or
+            raw.shape != context['shape']):
+        raise ProcessingError(
+            f'verified raw image changed shape or type before processing: {frame.image_name}.')
+    processed = _processed_image(
+        raw, context['dark'], context['gain'], context['denoise'],
+        context['remap_x'], context['remap_y'])
+    encoded_ok, encoded = cv2.imencode('.png', processed)
+    if not encoded_ok:
+        raise ProcessingError(f'OpenCV could not encode {frame.image_name}.')
+    image_name = Path(frame.image_name).name
+    processed_relative = f'images/{image_name}'
+    image_path = temporary / 'images' / image_name
+    _atomic_write(image_path, bytes(encoded))
+    processed_sha = _sha256_file(image_path)
+    label = dict(frame.label)
+    label['processing_schema_version'] = 1
+    label['source_label_file'] = f'metadata/{frame.label_name}'
+    label['processed_image_file'] = processed_relative
+    label['processed_image_sha256'] = processed_sha
+    label['processing'] = {
+        'dark_subtraction': context['dark'] is not None,
+        'flat_field': context['gain'] is not None,
+        'denoise': context['denoise'],
+        'undistorted': True,
+    }
+    _write_json(temporary / 'metadata' / frame.label_name, label)
+    return {
+        'source_label_file': f'metadata/{frame.label_name}',
+        'source_image_file': frame.image_name,
+        'source_image_sha256': frame.label['image_sha256'],
+        'processed_image_file': processed_relative,
+        'processed_image_sha256': processed_sha,
+    }
+
+
+def _process_one_frame_in_worker(frame: SourceFrame, temporary: str) -> dict[str, Any]:
+    """Worker entry point; context is installed once through the initializer."""
+    if _WORKER_CONTEXT is None:
+        raise RuntimeError('image-processing worker was not initialized.')
+    return _process_one_frame(frame, Path(temporary), _WORKER_CONTEXT)
+
+
+def _resolve_jobs(requested: int | None, memory_budget_gb: float) -> int:
+    """Resolve a bounded process count before any temporary output exists."""
+    if (not math.isfinite(memory_budget_gb) or memory_budget_gb <= 0.0):
+        raise ProcessingError('memory_budget_gb must be a finite positive number.')
+    if requested is not None and requested <= 0:
+        raise ProcessingError('jobs must be a positive integer or auto.')
+    budget_bytes = int(memory_budget_gb * 1024 ** 3)
+    capacity = max(0, (budget_bytes - _PARENT_MEMORY_RESERVE_BYTES) //
+                   _WORKER_MEMORY_ESTIMATE_BYTES)
+    if capacity < 1:
+        raise ProcessingError(
+            'memory_budget_gb is too small for one worker after the parent reserve.')
+    cpu_count = os.cpu_count() or 1
+    if requested is not None:
+        if requested > capacity:
+            raise ProcessingError(
+                f'jobs={requested} exceeds memory budget capacity {capacity}; '
+                'increase memory_budget_gb or reduce jobs.')
+        return requested
+    return min(cpu_count, _AUTO_JOB_CAP, capacity)
+
+
+def _parallel_outputs(frames: list[SourceFrame], temporary: Path,
+                      context: dict[str, Any], jobs: int) -> list[dict[str, Any]]:
+    """Run frame work with bounded submission and stable output ordering."""
+    if jobs == 1:
+        return [_process_one_frame(frame, temporary, context) for frame in frames]
+
+    # On Linux/WSL, fork makes the large, immutable gain and remap arrays
+    # copy-on-write shared.  Other POSIX platforms still work; their selected
+    # context may make private copies and is covered by the memory budget.
+    multiprocessing_context = get_context('fork') if os.name == 'posix' else None
+    results: list[dict[str, Any] | None] = [None] * len(frames)
+    in_flight: dict[Any, int] = {}
+    next_index = 0
+    # Limit queued tasks as well as workers.  Images remain on disk until the
+    # worker reads them, so this bounds only small task objects and results.
+    window = jobs * 2
+    with ProcessPoolExecutor(
+            max_workers=jobs, mp_context=multiprocessing_context,
+            initializer=_init_worker, initargs=(context,)) as executor:
+        while next_index < len(frames) or in_flight:
+            while next_index < len(frames) and len(in_flight) < window:
+                future = executor.submit(
+                    _process_one_frame_in_worker, frames[next_index], str(temporary))
+                in_flight[future] = next_index
+                next_index += 1
+            done, _ = wait(in_flight, return_when=FIRST_COMPLETED)
+            for future in done:
+                index = in_flight.pop(future)
+                results[index] = future.result()
+    # ``future.result`` either filled every stable slot or propagated a worker
+    # exception.  This assertion guards against a future refactor publishing a
+    # partial archive after a scheduling mistake.
+    if any(item is None for item in results):
+        raise RuntimeError('parallel processing ended with missing frame results.')
+    return [item for item in results if item is not None]
 
 
 def _output_root(input_root: Path, output_root: Path) -> tuple[Path, Path]:
@@ -359,6 +508,11 @@ def process_archive(input_run: Path | str, output_dir: Path | str,
     options = options or ProcessingOptions()
     if options.denoise not in {'none', 'median3'}:
         raise ProcessingError("denoise must be either 'none' or 'median3'.")
+    jobs = _resolve_jobs(options.jobs, options.memory_budget_gb)
+    # Keep the sequential and process-pool paths semantically identical.  It
+    # also prevents the one-worker path from quietly using a machine-sized
+    # OpenCV thread pool and invalidating a jobs=1 versus jobs=N benchmark.
+    cv2.setNumThreads(1)
     root = Path(input_run).expanduser()
     if not root.is_absolute():
         raise ProcessingError('input archive directory must be absolute.')
@@ -381,42 +535,21 @@ def process_archive(input_run: Path | str, output_dir: Path | str,
         (height, width))
     new_matrix, roi = cv2.getOptimalNewCameraMatrix(
         matrix, distortion, (width, height), 0.0, (width, height))
+    remap_x, remap_y = _undistort_maps(
+        matrix, distortion, new_matrix, width, height)
     source_manifest_sha = _sha256_file(root / 'manifest.json')
+    context = {
+        'shape': (height, width),
+        'dark': dark,
+        'gain': gain,
+        'denoise': options.denoise,
+        'remap_x': remap_x,
+        'remap_y': remap_y,
+    }
+    started = time.monotonic()
     try:
         temporary.mkdir(parents=False, exist_ok=False)
-        outputs: list[dict[str, Any]] = []
-        for frame in frames:
-            raw = cv2.imread(str(frame.image_path), cv2.IMREAD_UNCHANGED)
-            assert raw is not None  # Verified before the temporary output exists.
-            processed = _processed_image(
-                raw, dark, gain, options.denoise, matrix, distortion, new_matrix)
-            encoded_ok, encoded = cv2.imencode('.png', processed)
-            if not encoded_ok:
-                raise ProcessingError(f'OpenCV could not encode {frame.image_name}.')
-            image_name = Path(frame.image_name).name
-            processed_relative = f'images/{image_name}'
-            image_path = temporary / 'images' / image_name
-            _atomic_write(image_path, bytes(encoded))
-            processed_sha = _sha256_file(image_path)
-            label = dict(frame.label)
-            label['processing_schema_version'] = 1
-            label['source_label_file'] = f'metadata/{frame.label_name}'
-            label['processed_image_file'] = processed_relative
-            label['processed_image_sha256'] = processed_sha
-            label['processing'] = {
-                'dark_subtraction': dark_metadata['enabled'],
-                'flat_field': gain_metadata['enabled'],
-                'denoise': options.denoise,
-                'undistorted': True,
-            }
-            _write_json(temporary / 'metadata' / frame.label_name, label)
-            outputs.append({
-                'source_label_file': f'metadata/{frame.label_name}',
-                'source_image_file': frame.image_name,
-                'source_image_sha256': frame.label['image_sha256'],
-                'processed_image_file': processed_relative,
-                'processed_image_sha256': processed_sha,
-            })
+        outputs = _parallel_outputs(frames, temporary, context, jobs)
         rectified_camera = _rectified_camera_info(camera_info, new_matrix)
         _atomic_write(
             temporary / 'calibration' / 'rectified_camera_info.yaml',
@@ -442,6 +575,12 @@ def process_archive(input_run: Path | str, output_dir: Path | str,
                     'rectified_k': [float(value) for value in new_matrix.reshape(-1)],
                     'roi_xywh': [int(value) for value in roi],
                 },
+            },
+            'execution': {
+                'jobs': jobs,
+                'memory_budget_gb': options.memory_budget_gb,
+                'frame_processing_elapsed_s': time.monotonic() - started,
+                'undistortion_remaps': 'precomputed_cv32fc1',
             },
             'frames': outputs,
         }

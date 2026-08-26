@@ -1232,7 +1232,8 @@ ros2 run climbot_image_processing process_inspection_archive \
   --input-run <绝对的、completed G4-run> \
   --output-dir <绝对的、不存在的独立目录> \
   [--flat-field-file <gain.npz>] [--dark-frame <dark.png>] \
-  [--denoise none|median3]
+  [--denoise none|median3] [--jobs auto|N] \
+  [--memory-budget-gb <有限正数>]
 ```
 
 输入 run 必须通过 `manifest.json`、所有 PNG SHA-256、每张标签、`camera_info.yaml` 和原始
@@ -1256,7 +1257,11 @@ processed-run/
 manifest SHA-256、输出帧链、平场／暗场哈希和 rectified `K`，但不记录机器本地绝对输入路径。
 处理顺序固定为原始像素坐标的暗场减法、平场 gain、可选去噪、`plumb_bob` 去畸变；输出
 `rectified_camera_info.yaml` 的 `D` 全为零，且 `K/P` 都更新为 rectified 内参；冻结外参快照
-原样复制，供后续 `climbot_mosaic` 使用。
+原样复制，供后续 `climbot_mosaic` 使用。预处理通过每图多进程并行；OpenCV 去畸变 remap
+在主进程只计算一次，Linux/WSL 子进程以只读 fork 写时复制继承。`--jobs=auto` 在 CPU、
+显式内存预算和 8 worker 上限之间选择；每个 worker 仅使用一个 OpenCV 内部线程。manifest 的
+`execution` 记录实际 worker 数、内存预算、帧处理耗时和预计算 remap 类型；帧和 manifest
+始终按稳定帧序发布，不能因并发数不同改变结果。
 
 ## `climbot_inspection` G2 自动采集接口
 

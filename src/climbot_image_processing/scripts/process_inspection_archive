@@ -27,6 +27,19 @@ from climbot_image_processing.processing import (
 )
 
 
+def jobs_argument(value: str) -> int | None:
+    """Parse the explicit `auto` spelling without accepting silent nonsense."""
+    if value == 'auto':
+        return None
+    try:
+        jobs = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError('jobs must be auto or a positive integer.') from error
+    if jobs <= 0:
+        raise argparse.ArgumentTypeError('jobs must be auto or a positive integer.')
+    return jobs
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description='Verify and preprocess one immutable Climbot G4 archive.')
@@ -40,6 +53,10 @@ def main() -> int:
                         help='Optional mono8 dark-frame image in raw camera coordinates.')
     parser.add_argument('--denoise', choices=('none', 'median3'), default='none',
                         help='Optional denoising after dark/flat correction and before undistortion.')
+    parser.add_argument('--jobs', type=jobs_argument, default=None, metavar='auto|N',
+                        help='Frame-processing worker count; auto uses a bounded CPU/memory choice.')
+    parser.add_argument('--memory-budget-gb', type=float, default=4.0,
+                        help='Finite positive memory budget used to bound worker count (default: 4.0).')
     parser.add_argument('--allow-incomplete', action='store_true',
                         help='Permit canceled/failed source archives for explicit forensic processing.')
     arguments = parser.parse_args()
@@ -50,13 +67,17 @@ def main() -> int:
                 flat_field_file=arguments.flat_field_file,
                 dark_frame_file=arguments.dark_frame,
                 denoise=arguments.denoise,
-                allow_incomplete=arguments.allow_incomplete))
+                allow_incomplete=arguments.allow_incomplete,
+                jobs=arguments.jobs,
+                memory_budget_gb=arguments.memory_budget_gb))
     except ProcessingError as error:
         print(f'processing failed: {error}', file=sys.stderr)
         return 2
     print(json.dumps({
         'status': 'completed', 'image_count': report['image_count'],
         'source_run_id': report['source_archive']['run_id'],
+        'jobs': report['execution']['jobs'],
+        'frame_processing_elapsed_s': report['execution']['frame_processing_elapsed_s'],
         'output_dir': str(arguments.output_dir.expanduser().resolve(strict=False)),
     }, ensure_ascii=False, sort_keys=True))
     return 0

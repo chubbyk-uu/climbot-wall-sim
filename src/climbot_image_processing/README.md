@@ -19,7 +19,8 @@ ros2 run climbot_image_processing process_inspection_archive \
   --output-dir /home/jerry/climbot_processed/example_run \
   --flat-field-file /home/jerry/climbot_calibration/flat_field.npz \
   --dark-frame /home/jerry/climbot_calibration/dark.png \
-  --denoise median3
+  --denoise median3 \
+  --jobs auto --memory-budget-gb 4.0
 ```
 
 `--output-dir` must be an absolute, nonexistent directory outside the source
@@ -29,3 +30,10 @@ contains source/output SHA-256 links and processing parameters but deliberately
 does not store machine-local absolute input paths. By default only archives
 sealed as `completed` are accepted; `--allow-incomplete` is solely for an
 explicit forensic run.
+
+`--jobs` is `auto` or a positive process count. `auto` chooses no more than
+eight workers after applying `--memory-budget-gb` (default `4.0`). The camera
+remap is built once and installed read-only in each worker; each worker limits
+OpenCV to one internal thread so process parallelism does not oversubscribe the
+machine. The resolved worker count and frame-processing duration are recorded
+in `processing_manifest.json` under `execution`.
