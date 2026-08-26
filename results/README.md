@@ -122,7 +122,8 @@
 | `coverage_{horizontal,vertical}_g1camera_2026-08-24_*` | **G1 带载覆盖回归** | 横／竖任务覆盖率 `99.565%/99.933%`，最大落点误差 `3.123/9.370 mm`；`commit=e83cf35` 干净树 |
 | `coverage_{horizontal,vertical,trapezoid_horizontal}_drive_region_clean_20260825_*` | **可走区优先语义回归** | 相机外参不再移动蓝色 `base_link` 路线；三工况实际足迹覆盖 `99.08/99.91/99.20%`，`commit=e598275` 干净树 |
 | `turn_map_g1_camera_2026-08-24_{summary.json,csv}` | **G1 全航向侧滑正式结果** | 48 次为 `0.4307～0.5017 mm/度`，极差 `0.0710 mm/度`，最大转角误差 `0.853°`；`commit=11e49a4` 干净树 |
-| `g2_accept_{horizontal,vertical,trapezoid}_2026-08-25_summary.json` | **当前 G2/G4 正式结果** | `20%` 名义／`15%` 实际重叠和 `+0.340 m` 外参下的三组动态任务；图像、位姿绑定和原始归档均通过，`commit=f52a999` 干净树 |
+| `g2_accept_{horizontal,vertical,trapezoid}_2026-08-25_summary.json` | 历史对照 | 逐张位置闸门版本；已由 2026-08-26 的异步匀速采图结果取代 |
+| `g2_accept_{horizontal,vertical,trapezoid}_2026-08-26_summary.json` | **当前 G2/G4 正式结果** | `20%` 名义／`15%` 实际重叠和 `+0.340 m` 外参下的异步匀速三组动态任务；图像、位姿绑定和原始归档均通过，`commit=6f2e6f6` 干净树 |
 | `inspection_dataset_{horizontal,vertical}_2026-08-25_summary.json` | **离线处理／拼接输入数据集** | 带贴图、无网格的 10 条扫描线、270 张原图配对任务；横向与竖向各一组，`commit=e164707` 干净树；PNG 和标签在数据根目录，不进入 Git |
 
 每组 `*` 包含一个 `_trajectory.csv.gz`（逐采样真值、融合位姿、动态参考、状态和
@@ -1475,16 +1476,16 @@ ros2 run climbot_gazebo measure_turn_band.py --ros-args \
 
 ## Phase G2 位置触发正式验收
 
-当前正式证据为 `g2_accept_horizontal_2026-08-25_summary.json`、
-`g2_accept_vertical_2026-08-25_summary.json` 和
-`g2_accept_trapezoid_2026-08-25_summary.json`，均产自 `commit=f52a999` 干净树。
+当前正式证据为 `g2_accept_horizontal_2026-08-26_summary.json`、
+`g2_accept_vertical_2026-08-26_summary.json` 和
+`g2_accept_trapezoid_2026-08-26_summary.json`，均产自 `commit=6f2e6f6` 干净树。
 三工况只在冻结的正式 SCAN 段触发，图像与元数据逐帧同时间戳，并同时完成 G4 原图归档。
 
 | 工况 | 前后最大间距 | 左右最大间距 | 离散照片覆盖率 | 最大位置误差 | 最大航向误差 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 横向矩形（2 SCAN / 10 张） | 203.594 mm | 415.252 mm | 81.167% | 3.139 mm | 0.127° |
-| 竖向矩形（2 SCAN / 12 张） | 203.366 mm | 397.598 mm | 84.333% | 3.368 mm | 0.106° |
-| 短顶边梯形（2 SCAN / 9 张） | 210.070 mm | 414.788 mm | 78.900% | 2.721 mm | 0.198° |
+| 横向矩形（2 SCAN / 10 张） | 203.413 mm | 414.508 mm | 81.100% | 3.179 mm | 0.150° |
+| 竖向矩形（2 SCAN / 12 张） | 202.022 mm | 399.609 mm | 84.528% | 3.343 mm | 0.118° |
+| 短顶边梯形（2 SCAN / 9 张） | 207.005 mm | 415.140 mm | 78.666% | 2.725 mm | 0.176° |
 
 有效照片足迹为 `0.500 × 0.28125 m`。横向扫描带和纵向拍照重叠是两个独立参数，当前
 名义值均为 `20%`；实际验收下限为 `15%`，对应相邻中心间距不超过 `0.2390625 m` 和
