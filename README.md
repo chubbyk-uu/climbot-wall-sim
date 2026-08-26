@@ -60,7 +60,7 @@ climbot_sim/
     ├── climbot_rviz_plugins/    RViz 操作面板
     ├── climbot_control/         C++ 轨迹跟踪和速度安全
     ├── climbot_inspection/      C++ 单拍、沿轨位置触发与曝光位姿关联
-    ├── climbot_image_processing/  计划：离线光照／畸变校正
+    ├── climbot_image_processing/  离线归档校验、光照／畸变校正
     ├── climbot_mosaic/          计划：重叠匹配、全局位姿优化与拼接
     └── climbot_bringup/         整系统组合 launch
 ```

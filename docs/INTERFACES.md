@@ -1223,6 +1223,41 @@ RViz 仍使用一个 `Coverage Task` dock，布局为：顶部公共状态和采
 图优化或束调整。优化目标是加权残差而不是直接压低协方差；输出必须附残差、内点率、
 连通性和后验不确定度。
 
+### 离线预处理目录接口（`climbot_image_processing`）
+
+第一版不是 ROS topic 或 service，而是一个离线、单向的目录接口：
+
+```bash
+ros2 run climbot_image_processing process_inspection_archive \
+  --input-run <绝对的、completed G4-run> \
+  --output-dir <绝对的、不存在的独立目录> \
+  [--flat-field-file <gain.npz>] [--dark-frame <dark.png>] \
+  [--denoise none|median3]
+```
+
+输入 run 必须通过 `manifest.json`、所有 PNG SHA-256、每张标签、`camera_info.yaml` 和原始
+`mono8` 尺寸的一致性验证。默认拒绝 canceled／failed／计数不一致的 run；仅取证用途可显式
+传 `--allow-incomplete`。输出目录不得存在、不得在输入 run 内；所有处理完成后才原子发布，
+所以失败不会留下表面完整的处理结果。输入目录只读，不会被重写或移动。
+
+输出目录契约为：
+
+```text
+processed-run/
+├── processing_manifest.json
+├── calibration/camera_extrinsics.yaml
+├── calibration/rectified_camera_info.yaml
+├── images/000000.png
+└── metadata/000000.json
+```
+
+每个输出标签保留 G4 原始标签，并添加 `source_label_file`、处理后图像相对路径与 SHA-256、
+以及暗场／平场／去噪／去畸变操作记录。`processing_manifest.json` 记录源 run ID、源
+manifest SHA-256、输出帧链、平场／暗场哈希和 rectified `K`，但不记录机器本地绝对输入路径。
+处理顺序固定为原始像素坐标的暗场减法、平场 gain、可选去噪、`plumb_bob` 去畸变；输出
+`rectified_camera_info.yaml` 的 `D` 全为零，且 `K/P` 都更新为 rectified 内参；冻结外参快照
+原样复制，供后续 `climbot_mosaic` 使用。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |
