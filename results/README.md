@@ -125,6 +125,7 @@
 | `g2_accept_{horizontal,vertical,trapezoid}_2026-08-25_summary.json` | 历史对照 | 逐张位置闸门版本；已由 2026-08-26 的异步匀速采图结果取代 |
 | `g2_accept_{horizontal,vertical,trapezoid}_2026-08-26_summary.json` | **当前 G2/G4 正式结果** | `20%` 名义／`15%` 实际重叠和 `+0.340 m` 外参下的异步匀速三组动态任务；图像、位姿绑定和原始归档均通过，`commit=6f2e6f6` 干净树 |
 | `inspection_dataset_{horizontal,vertical}_2026-08-25_summary.json` | **离线处理／拼接输入数据集** | 带贴图、无网格的 10 条扫描线、270 张原图配对任务；横向与竖向各一组，`commit=e164707` 干净树；PNG 和标签在数据根目录，不进入 Git |
+| `mosaic_p2_baseline_2026-08-26_summary.json` | **P2.7 相对质量基线（门限未冻结）** | `0.25 mm/px` 下横向 270、竖向 270 和联合 540 帧三组干净树结果；输出哈希全部复核，优化后重叠灰度离散均值改善 `32.61%～39.09%`，P95 改善 `39.25%～41.67%`；尚缺 Gazebo 绝对真值与 100% 全分辨率检查，不能冒充最终验收 |
 
 每组 `*` 包含一个 `_trajectory.csv.gz`（逐采样真值、融合位姿、动态参考、状态和
 横轨误差）和一个 `_summary.json`（Action 结果、逐段误差、覆盖率和 `provenance`）。

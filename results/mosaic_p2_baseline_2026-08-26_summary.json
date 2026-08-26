@@ -1,0 +1,84 @@
+{
+  "cases": {
+    "horizontal": {
+      "elapsed_s": 43.91511383200009,
+      "frame_count": 270,
+      "grid_height_px": 17191,
+      "grid_width_px": 26683,
+      "manifest_sha256": "c506a9910c78d3fe707d74d9bf592b5b6224cee0584ba45c8afe139b10156e7d",
+      "mean_improvement_percent": 39.094795,
+      "optimized_weighted_gray_std_mean": 1.5270059474667261,
+      "optimized_weighted_gray_std_p95": 3.4871794871794872,
+      "output_id": "mosaic-horizontal-camera-zfix-bounded-final-025mm-20260826",
+      "p95_improvement_percent": 41.666667,
+      "peak_process_tree_pss_bytes": 788312064,
+      "pose_only_weighted_gray_std_mean": 2.5071846370276303,
+      "pose_only_weighted_gray_std_p95": 5.978021978021978,
+      "task_ids": [
+        "inspection-dataset-horizontal-camera-zfix-025mm-20260826"
+      ]
+    },
+    "joint": {
+      "elapsed_s": 94.17563296700018,
+      "frame_count": 540,
+      "grid_height_px": 26378,
+      "grid_width_px": 26684,
+      "manifest_sha256": "1c04e53a35a3275e4f66d3bf1852feababe97c3fa028f994e9adfe112e676fb9",
+      "mean_improvement_percent": 32.611446,
+      "optimized_weighted_gray_std_mean": 2.133549991830837,
+      "optimized_weighted_gray_std_p95": 4.0476190476190474,
+      "output_id": "mosaic-horizontal-vertical-camera-zfix-traceable-final-025mm-20260826",
+      "p95_improvement_percent": 39.252336,
+      "peak_process_tree_pss_bytes": 2206892032,
+      "pose_only_weighted_gray_std_mean": 3.166042092405847,
+      "pose_only_weighted_gray_std_p95": 6.663003663003663,
+      "task_ids": [
+        "inspection-dataset-horizontal-camera-zfix-025mm-20260826",
+        "inspection-dataset-vertical-camera-zfix-025mm-20260826"
+      ]
+    },
+    "vertical": {
+      "elapsed_s": 40.71056086900012,
+      "frame_count": 270,
+      "grid_height_px": 26378,
+      "grid_width_px": 16990,
+      "manifest_sha256": "2ddb7059222c771fd284fe06cc8682a954ccd7ac86a030a8d0843333747f37d2",
+      "mean_improvement_percent": 33.658102,
+      "optimized_weighted_gray_std_mean": 1.7835253801325555,
+      "optimized_weighted_gray_std_p95": 3.7985347985347984,
+      "output_id": "mosaic-vertical-camera-zfix-bounded-final-025mm-20260826",
+      "p95_improvement_percent": 40.196078,
+      "peak_process_tree_pss_bytes": 788931584,
+      "pose_only_weighted_gray_std_mean": 2.688384626381252,
+      "pose_only_weighted_gray_std_p95": 6.351648351648351,
+      "task_ids": [
+        "inspection-dataset-vertical-camera-zfix-025mm-20260826"
+      ]
+    }
+  },
+  "configuration": {
+    "jobs": 8,
+    "memory_budget_gb": 4.0,
+    "resolution_mm_per_pixel": 0.25,
+    "tile_size_px": 512,
+    "uncertainty_nodata": 65535,
+    "uncertainty_scale_m_per_count": 0.00001
+  },
+  "evidence": {
+    "all_declared_output_sizes_and_sha256_verified": true,
+    "manual_preview_has_no_internal_holes_or_tile_seams": true,
+    "optimized_and_pose_only_share_render_contract": true,
+    "relative_quality_improved_in_all_cases": true
+  },
+  "limitations": [
+    "The metric measures overlap consistency, not absolute error against Gazebo wall truth.",
+    "Manual review used the full-wall comparison previews, not a 100 percent full-resolution defect inspection.",
+    "These simulation datasets informed implementation; they are not a blind real-wall validation set."
+  ],
+  "provenance": {
+    "commit": "bf42310646afc7415d4784cba01038fa5ce4ced5",
+    "source_modified": false
+  },
+  "schema_version": 1,
+  "status": "baseline_collected"
+}
