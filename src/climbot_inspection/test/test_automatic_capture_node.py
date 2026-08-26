@@ -105,12 +105,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         if self.drop_next_image:
             self.drop_next_image = False
         else:
-            image = Image()
-            image.header.stamp = self.image_stamp
-            image.header.frame_id = 'inspection_camera_optical_frame'
-            image.width = 8
-            image.height = 6
-            self.images.publish(image)
+            self._publish_image()
         response.success = True
         response.reason = CaptureOnce.Response.OK
         response.message = 'captured'
@@ -139,6 +134,15 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         message.detection_forward_offset = forward_offset
         message.inspection_enabled = enabled
         self.references.publish(message)
+
+    def _publish_image(self):
+        """Publish the configured test frame, including after DDS discovery."""
+        image = Image()
+        image.header.stamp = self.image_stamp
+        image.header.frame_id = 'inspection_camera_optical_frame'
+        image.width = 8
+        image.height = 6
+        self.images.publish(image)
 
     def _odom(self, seconds, base_x):
         message = Odometry()
@@ -210,24 +214,22 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             'a mismatched camera mount must publish no gate at all')
         self.assertEqual(self.capture_calls, calls)
 
-    def test_disabled_reference_releases_its_own_segment(self):
-        """An early return must release the SCAN in hand, not the previous one."""
+    def test_noninspection_reference_does_not_release_the_next_scan(self):
+        """An entry/transition reference is not a capture gate heartbeat."""
         self._odom(10, 0.125)
         self.assertTrue(self._pump_until(
             lambda: self._active_gate(13),
             lambda: self._reference(True, segment=13)))
 
-        # A transition/alignment reference for the NEXT segment. The release
-        # has to carry segment 14, which is the one the tracker is driving;
-        # announcing 13 would leave the tracker holding the line it is on.
+        # A transition/alignment reference for the NEXT segment must not
+        # publish an inactive gate for it. Otherwise an immediately following
+        # unserviceable SCAN gets a false fresh heartbeat and can move briefly.
         self.gates.clear()
-        self.assertTrue(self._pump_until(
-            lambda: any(gate.segment_index == 14 for gate in self.gates),
-            lambda: self._reference(False, segment=14)))
-        released = [gate for gate in self.gates if gate.segment_index == 14][-1]
-        self.assertFalse(released.active)
-        self.assertEqual(released.task_id, 'g2-test')
-        self.assertEqual(released.revision, 7)
+        deadline = time.monotonic() + 0.30
+        while time.monotonic() < deadline:
+            self._reference(False, segment=14)
+            time.sleep(0.01)
+        self.assertEqual(self.gates, [])
 
     def test_scan_only_monotonic_trigger_and_pose_binding(self):
         # Discovery and a pose do not permit a transition/alignment capture.
@@ -249,13 +251,16 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             self._reference(True)
             time.sleep(0.01)
         self.assertEqual(self.capture_calls, 1)
-        # The image is at 10.5 s. A future sample completes the EKF bracket.
-        self._odom(11, 0.15)
-        # The subscriptions use sensor-data QoS. Repeat the same timestamp so
-        # the test verifies interpolation rather than relying on one best-
-        # effort delivery during DDS discovery.
-        time.sleep(0.05)
-        self._odom(11, 0.15)
+        # The image is at 10.5 s. Keep replaying the same frame and its future
+        # EKF bracket until the asynchronous service response has installed the
+        # pending request; otherwise the first image can legitimately arrive
+        # before there is anything to pair it with.
+        deadline = time.monotonic() + 2.0
+        while not self.metadata and time.monotonic() < deadline:
+            self._odom(10, 0.125)
+            self._publish_image()
+            self._odom(11, 0.15)
+            time.sleep(0.01)
         self._wait_count(1)
         first = self.metadata[0]
         self.assertEqual(first.header.stamp, self.image_stamp)

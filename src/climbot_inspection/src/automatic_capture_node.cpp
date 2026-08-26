@@ -196,9 +196,12 @@ private:
     latest_reference_time_ = std::chrono::steady_clock::now();
     if (!message->inspection_enabled || message->segment_index < 0) {
       reference_.reset();
-      publishInactiveGate(
-        Key{message->task_id, message->revision, message->segment_index},
-        "no active inspection SCAN reference");
+      // A transition/entry reference is not an inspection heartbeat. Publishing
+      // an inactive gate with the forthcoming SCAN's identity here would make
+      // the tracker treat it as a fresh release for capture_gate_timeout_s.
+      // If the following enabled reference is rejected (for example because
+      // its optical offset is wrong), the robot could therefore drive before
+      // the missing-heartbeat safeguard took effect.
       return;
     }
     const double dx = message->end.x - message->start.x;

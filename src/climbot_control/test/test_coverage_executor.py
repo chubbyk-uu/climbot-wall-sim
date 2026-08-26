@@ -24,6 +24,7 @@ import unittest
 from action_msgs.msg import GoalStatus
 from climbot_interfaces.action import ExecuteCoverage
 from climbot_interfaces.msg import CoverageTask
+from climbot_interfaces.msg import InspectionCaptureGate
 from geometry_msgs.msg import Point32
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import Twist
@@ -35,6 +36,9 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.qos import DurabilityPolicy
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
 from rosgraph_msgs.msg import Clock
 
 
@@ -71,6 +75,14 @@ def generate_test_description():
             'segment_timeout_s': 15.0,
             'capture_gate_timeout_s': 0.15,
             'capture_gate_start_timeout_s': 0.15,
+            # The gate-windup regression below needs a non-zero integral, but
+            # removes the ordinary P/feed-forward catch-up paths so the
+            # released command measures this integral alone.
+            'time_along_gain': 0.0,
+            'time_along_integral_gain': 1.0,
+            'time_speed_lag_s': 0.0,
+            'time_axis_stretch_enabled': True,
+            'time_axis_stretch_lag_m': 0.001,
             'alignment_settle_duration_s': 0.05,
             'goal_settle_duration_s': 0.05,
             'final_approach_distance_m': 0.08,
@@ -139,6 +151,10 @@ class TestCoverageExecutor(unittest.TestCase):
         self.publisher = self.node.create_publisher(
             Odometry, '/odometry/filtered', 10)
         self.clock_publisher = self.node.create_publisher(Clock, '/clock', 10)
+        self.gate_publisher = self.node.create_publisher(
+            InspectionCaptureGate, '/inspection/capture_gate',
+            QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE,
+                       durability=DurabilityPolicy.TRANSIENT_LOCAL))
         self.node.create_subscription(
             Twist, '/control/cmd_vel', self._command_callback, 10)
         self.client = ActionClient(
@@ -215,6 +231,17 @@ class TestCoverageExecutor(unittest.TestCase):
         message.twist.twist.linear.y = linear * math.sin(yaw)
         message.twist.twist.angular.z = angular
         self.publisher.publish(message)
+
+    def _publish_capture_gate(self, maximum_camera_along_track):
+        """Keep a valid gate heartbeat for the first SCAN in _task()."""
+        gate = InspectionCaptureGate()
+        gate.task_id = 'node-test'
+        gate.revision = 1
+        gate.segment_index = 0
+        gate.active = True
+        gate.maximum_camera_along_track = maximum_camera_along_track
+        gate.reason = 'coverage-executor test gate'
+        self.gate_publisher.publish(gate)
 
     def test_executes_three_segments_without_cutting_the_turn(self):
         """The Action advances segments and turns only after linear stop."""
@@ -321,6 +348,73 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertIn('capture gate heartbeat', result.result.message)
         linear, angular, _ = self._current_command()
         self.assertEqual((linear, angular), (0.0, 0.0))
+
+    def test_capture_gate_hold_does_not_wind_up_time_integral(self):
+        """Releasing an exposure barrier must not add stored forward speed."""
+        self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
+        task = _task()
+        task.waypoints = [_pose(0.0, 0.0, 0.0), _pose(2.0, 0.0, 0.0)]
+        task.segment_types = [CoverageTask.SEGMENT_SCAN]
+        task.detection_forward_offset = 0.0
+        task.motion_region.points.clear()
+        task.coverage_region.points.clear()
+        for x, y in [(-0.5, -0.5), (2.5, -0.5), (2.5, 0.5), (-0.5, 0.5)]:
+            point = Point32()
+            point.x = x
+            point.y = y
+            task.motion_region.points.append(point)
+            task.coverage_region.points.append(point)
+        for _ in range(5):
+            self._publish_odometry(0.0, 0.0, 0.0)
+            self._advance(0.02)
+        goal = ExecuteCoverage.Goal()
+        goal.task = task
+        goal.inspection_enabled = True
+        send_future = self.client.send_goal_async(goal)
+        for _ in self._pending(send_future, 12.0):
+            self._publish_capture_gate(10.0)
+            self._publish_odometry(0.0, 0.0, 0.0)
+            self._advance()
+        handle = send_future.result()
+        self.assertTrue(handle.accepted)
+
+        # Reach cruise while the plant follows the unconstrained gate.
+        x = 0.0
+        for _ in range(180):
+            linear, angular, _ = self._current_command()
+            x += linear * SIM_STEP_S
+            self._publish_capture_gate(10.0)
+            self._publish_odometry(x, 0.0, 0.0, linear, angular)
+            self._advance()
+        self.assertGreater(x, 0.10)
+
+        # Hold at the camera's current along-track position. Time-axis stretch
+        # freezes the schedule, so a post-release surplus can only be a stored
+        # time-along integral.
+        for _ in range(100):
+            self._publish_capture_gate(x)
+            self._publish_odometry(x, 0.0, 0.0)
+            self._advance()
+        linear, _, _ = self._current_command()
+        self.assertLessEqual(abs(linear), 1e-6)
+
+        released_peak = 0.0
+        for _ in range(140):
+            linear, angular, _ = self._current_command()
+            x += linear * SIM_STEP_S
+            self._publish_capture_gate(10.0)
+            self._publish_odometry(x, 0.0, 0.0, linear, angular)
+            self._advance()
+            released_peak = max(released_peak, self._current_command()[0])
+        self.assertGreater(released_peak, 0.17)
+        self.assertLessEqual(released_peak, 0.205)
+
+        cancel_future = handle.cancel_goal_async()
+        for _ in self._pending(cancel_future, 5.0):
+            self._publish_capture_gate(10.0)
+            self._publish_odometry(x, 0.0, 0.0)
+            self._advance()
+        self.assertTrue(cancel_future.done())
 
     def test_approaches_first_waypoint_before_counting_scan_segments(self):
         """A distant start enters the first scan only after turn-slip recovery."""

@@ -1256,6 +1256,8 @@ gate 是存活监督而不只是位置上限：跟踪器从进入启用采集的
 判定本段根本无法拍摄——例如任务的 `detection_forward_offset` 与相机安装不符——它不发布
 任何 gate（`active` 与否都不发），让心跳超时按上述路径快速停段，而不是放行机器人开完
 一条注定没有曝光的扫描线、到归档收尾时才发现为空。
+进入、对准、转场等 `inspection_enabled=false` 的参考也不发布 gate：它们不是采集心跳，
+尤其不能给即将进入的同段 SCAN 留下一条 `active=false` 的伪放行。
 `header.stamp` 只用于消息可追溯性，不能用于时效判断，因为
 `use_sim_time` 暂停时它不会前进。完整 inspection launch 同时强制
 `capture_gate_max_lag_m < maximum_target_lag_m`、采集器与记录器的纵向重叠一致；v1 gate
