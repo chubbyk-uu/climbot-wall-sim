@@ -1311,6 +1311,37 @@ ros2 run climbot_mosaic build_overlap_candidates \
 参数是显式算法实验项，不是验收门限。原子输出的 `overlap_candidates.json` 包含输入摘要、
 稳定排序的全局帧键对、交集多边形、面积和相对较小足迹的重叠率，不包含机器绝对输入路径。
 
+## `climbot_mosaic` P2.4b 局部视觉约束
+
+```bash
+ros2 run climbot_mosaic build_local_matches \
+  --input-run <绝对 processed-run 路径> [--input-run <更多 run> ...] \
+  --output-dir <绝对且不存在的输出目录> \
+  --work-dir <绝对缓存目录> [--jobs auto|N] [--use-clahe]
+```
+
+命令重新执行同一预检、投影和候选构造，在预测重叠内做 SIFT、双向 ratio test、RANSAC
+与固定尺度 SE(2) 拟合。每条候选都写成 `accepted` 或带明确原因的 `rejected`；特征缓存由
+处理图 SHA-256 和算法参数寻址，损坏缓存必须失败，不能静默重算。并发只影响耗时，不得
+改变帧、候选、随机种子或输出排序。
+
+## `climbot_mosaic` P2.5 全局位姿图
+
+```bash
+ros2 run climbot_mosaic build_pose_graph \
+  --input-run <绝对 processed-run 路径> [--input-run <更多 run> ...] \
+  --local-matches <local_matches.json> \
+  --output-dir <绝对且不存在的输出目录> \
+  [--edge-recheck-floor-m 0.005]
+```
+
+每帧变量仅为相对曝光 EKF 位姿的 `δx/δy/δyaw`，绝对先验使用归档 `6×6` 协方差的
+`x/y/yaw` 子矩阵；视觉边要求同一重叠中心经两张图的修正后在墙面坐标重合。求解顺序为
+线性一致初值、`soft_l1` 鲁棒第一轮、按实际残差复核边、`soft_l1` 最终轮，使用解析稀疏
+Jacobian。输出 `initial_poses.json`、`optimized_poses.json` 和 `pose_graph.json`，后者记录
+优化前后米制残差、修正量、连通分量、保留边及后验标准差近似。孤立照片仍由 EKF 先验
+定义位姿，但必须在连通分量和后续不确定度中显式暴露。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |

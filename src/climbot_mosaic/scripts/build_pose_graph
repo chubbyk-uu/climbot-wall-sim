@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+# Copyright 2026 jerry
+# Licensed under the Apache License, Version 2.0
+
+"""Build and atomically publish the P2.5 robust wall-image pose graph."""
+
+import argparse
+import json
+import math
+from pathlib import Path
+import tempfile
+from uuid import uuid4
+
+from climbot_mosaic.mosaic_inputs import input_summary, MosaicInputError, validate_processed_runs
+from climbot_mosaic.pose_graph import (
+    optimize_pose_graph,
+    PoseGraphError,
+    read_local_matches,
+)
+from climbot_mosaic.projection import ProjectionError, project_inputs
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description='Build a robust, prior-anchored SE(2) pose graph.')
+    parser.add_argument('--input-run', action='append', required=True, type=Path)
+    parser.add_argument('--local-matches', required=True, type=Path)
+    parser.add_argument('--output-dir', required=True, type=Path)
+    parser.add_argument('--edge-recheck-floor-m', type=float, default=0.005)
+    arguments = parser.parse_args()
+    try:
+        inputs = validate_processed_runs(arguments.input_run)
+        output = arguments.output_dir
+        if not output.is_absolute() or output.exists() or not output.parent.is_dir():
+            raise PoseGraphError('output directory must be absolute, new and have an existing parent.')
+        projections = project_inputs(inputs)
+        edges = read_local_matches(arguments.local_matches, inputs, projections)
+        result = optimize_pose_graph(inputs, edges, arguments.edge_recheck_floor_m)
+        temporary = Path(tempfile.mkdtemp(
+            prefix=f'.{output.name}.tmp-{uuid4().hex}-', dir=output.parent))
+        initial = []
+        optimized = []
+        for index, frame in enumerate(inputs.frames):
+            pose = frame.label['camera_pose']['pose']
+            key = {'source_run_id': frame.key.source_run_id, 'frame_index': frame.key.frame_index}
+            initial.append({**key, 'x_m': pose['position']['x'], 'y_m': pose['position']['y'],
+                            'wall_heading_rad': frame.label['wall_heading_rad']})
+            delta = result.corrections[index]
+            optimized.append({
+                **key,
+                'x_m': float(pose['position']['x'] + delta[0]),
+                'y_m': float(pose['position']['y'] + delta[1]),
+                'wall_heading_rad': float(math.atan2(
+                    math.sin(frame.label['wall_heading_rad'] + delta[2]),
+                    math.cos(frame.label['wall_heading_rad'] + delta[2]))),
+                'correction': {'dx_m': float(delta[0]), 'dy_m': float(delta[1]),
+                               'dyaw_rad': float(delta[2])},
+                'posterior_std': {'x_m': float(result.posterior_std[index, 0]),
+                                  'y_m': float(result.posterior_std[index, 1]),
+                                  'yaw_rad': float(result.posterior_std[index, 2])},
+            })
+        documents = {
+            'initial_poses.json': {'pose_format_version': 1, 'poses': initial},
+            'optimized_poses.json': {'pose_format_version': 1, 'poses': optimized},
+            'pose_graph.json': {
+                'pose_graph_format_version': 1,
+                'input_summary': input_summary(inputs),
+                'local_match_format_version': 1,
+                'retained_edge_indices': list(result.retained_edges),
+                'report': result.report,
+            },
+        }
+        for name, document in documents.items():
+            (temporary / name).write_text(json.dumps(
+                document, allow_nan=False, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
+                encoding='utf-8')
+        temporary.replace(output)
+    except (MosaicInputError, ProjectionError, PoseGraphError, OSError) as error:
+        print(f'pose graph failed: {error}')
+        return 2
+    print(json.dumps({'status': 'valid', 'output_dir': str(output), **result.report},
+                     allow_nan=False, sort_keys=True))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

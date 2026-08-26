@@ -19,7 +19,6 @@ For the first planar-wall implementation all input runs must share one
 rectified camera model and mount snapshot. The JSON result is a stable,
 machine-readable preflight summary; it does not write output directories.
 
-Later stages add wall-plane projection, spatial overlap candidates, feature
 The next delivered P2.3 command is the initial, image-free geometric baseline:
 
 ```bash
@@ -47,7 +46,22 @@ The sweep-line index is followed by exact convex-footprint clipping. Positive
 area candidates remain available to visual matching; touching footprints are
 excluded and no unmeasured acceptance threshold is hidden in the default.
 
-Later stages add spatial overlap candidates, feature matching, robust global
-optimization and tiled BigTIFF fusion. See
+P2.4b and P2.5 turn those candidates into cached metric constraints and a
+prior-anchored global correction graph:
+
+```bash
+ros2 run climbot_mosaic build_local_matches \
+  --input-run <processed-run> [--input-run <processed-run> ...] \
+  --output-dir <new-match-directory> --work-dir <cache-directory> --jobs auto
+
+ros2 run climbot_mosaic build_pose_graph \
+  --input-run <processed-run> [--input-run <processed-run> ...] \
+  --local-matches <new-match-directory>/local_matches.json \
+  --output-dir <new-pose-graph-directory>
+```
+
+The pose graph writes both immutable EKF initial poses and optimized poses;
+disconnected visual components remain visible in its quality report. The next
+stage adds tiled BigTIFF fusion. See
 [`docs/MOSAIC_PLAN.md`](../../docs/MOSAIC_PLAN.md) for the staged design and
 baseline-first acceptance policy.
