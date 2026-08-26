@@ -102,7 +102,10 @@ ros2 run climbot_mosaic build_wall_mosaic \
 mosaic-run/
 ├── mosaic_manifest.json
 ├── mosaic_preview.jpg
-├── mosaic_full.tif
+├── mosaic_pose_only.tif
+├── mosaic_optimized.tif
+├── mosaic_comparison.jpg
+├── mosaic_difference.tif
 ├── coverage_count.tif
 ├── uncertainty.tif
 ├── poses/
@@ -120,6 +123,9 @@ mosaic-run/
 `mosaic_manifest.json` 至少记录输入 manifest 哈希、相机标定哈希、帧数、算法参数、特征与
 匹配配置、优化配置、墙面范围、米制分辨率、输出文件 SHA-256、软件提交、各阶段耗时和峰值
 内存。质量报告必须包含连通分量、被拒匹配、优化前后残差和低可信区域，不能只输出一张图。
+`mosaic_pose_only.tif` 与 `mosaic_optimized.tif` 必须使用完全相同的输入帧、墙面范围、米制
+分辨率、像素融合和灰度输出规则，唯一变量是照片位姿是否经过全局优化；并排预览和差分图
+用于直观看接缝、重影与局部错位是否改善，质量报告同时给出两者的同口径指标。
 
 ## 4. 坐标与几何模型
 
@@ -328,7 +334,8 @@ work-dir/
 ### P2.6：并行分块融合与压缩输出
 
 - 实现内存预算、tile 查询、并行融合和单写入器；
-- 输出无损母版、预览、覆盖次数和不确定度；
+- 分别输出只用 EKF 曝光位姿的无损母版和全局优化后的无损母版，并输出同范围并排预览、
+  差分图、覆盖次数和不确定度；除位姿外两条渲染链的输入及融合参数必须完全相同；
 - 记录输出大小、耗时、峰值内存和缓存命中率。
 
 ### P2.7：三组正式实测与门限冻结
@@ -365,6 +372,7 @@ work-dir/
 | P2-C07 | 内存受显式预算约束，不得建立整幅多层浮点画布 |
 | P2-C08 | 不同并发数不得改变候选图、接受边、帧去留和优化问题定义 |
 | P2-C09 | 仿真真值只允许验收器读取，拼接算法不得用真实贴图或 Gazebo 真值优化自身 |
+| P2-C10 | pose-only 与 optimized 母版必须同输入、同范围、同分辨率、同融合，仅位姿不同 |
 
 ### 10.2 首次实现必须统计但暂不设门限的指标
 

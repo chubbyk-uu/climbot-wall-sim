@@ -1354,6 +1354,11 @@ gate 是存活监督，不是位置上限：跟踪器从进入启用采集的 `S
 消费者以 `(task_id, revision, segment_index, trigger_index)` 作为业务主键，以图像时间戳
 核对数据配对，不按消息到达顺序猜测。
 
+当前接口是明确的平面墙 `x/y/yaw` 契约：相机法向坐标等于冻结安装外参
+`camera_mount_z_m`，不得再叠加 EKF 中 Gazebo canonical link 的非零 `z`；相应相机协方差
+也不传播 base `z`。以后实机若要估计吸附间隙、墙面起伏、roll/pitch，必须升级成显式完整
+SE(3) base→camera 变换和标定协方差，不能在这个二维接口中暗中混入另一种 `z` 语义。
+
 仿真内部接口不属于真机公共 API：Gazebo 在
 `/simulation/inspection_camera/trigger` 收到触发后发布较宽视场的
 `ideal_image/ideal_camera_info`，仿真畸变适配器再输出

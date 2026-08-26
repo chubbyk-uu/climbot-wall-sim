@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+# Copyright 2026 jerry
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Build cached SIFT features and robust local constraints for spatial candidates."""
+
+import argparse
+from dataclasses import asdict
+import json
+from pathlib import Path
+import sys
+import tempfile
+from uuid import uuid4
+
+from climbot_mosaic.candidates import CandidateError, build_overlap_candidates
+from climbot_mosaic.match_pipeline import (
+    extract_all_features,
+    MatchPipelineError,
+    match_all_candidates,
+)
+from climbot_mosaic.matching import MatchConfig, MatchingError
+from climbot_mosaic.mosaic_inputs import MosaicInputError, input_summary, validate_processed_runs
+from climbot_mosaic.projection import ProjectionError, project_inputs
+
+
+def _jobs(value: str) -> int | None:
+    if value == 'auto':
+        return None
+    try:
+        result = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError('jobs must be auto or a positive integer.') from error
+    if result <= 0:
+        raise argparse.ArgumentTypeError('jobs must be auto or a positive integer.')
+    return result
+
+
+def main() -> int:
+    """Run the complete P2.4 local visual-constraint stage."""
+    parser = argparse.ArgumentParser(description='Build robust local wall-image constraints.')
+    parser.add_argument('--input-run', action='append', required=True, type=Path)
+    parser.add_argument('--output-dir', required=True, type=Path)
+    parser.add_argument('--work-dir', required=True, type=Path)
+    parser.add_argument('--jobs', type=_jobs, default=None)
+    parser.add_argument('--use-clahe', action='store_true')
+    parser.add_argument('--ratio-test', type=float, default=0.75)
+    parser.add_argument('--ransac-threshold-m', type=float, default=0.005)
+    parser.add_argument('--minimum-mutual-matches', type=int, default=4)
+    arguments = parser.parse_args()
+    try:
+        inputs = validate_processed_runs(arguments.input_run)
+        output = arguments.output_dir
+        if not output.is_absolute() or output.exists() or not output.parent.is_dir():
+            raise MatchPipelineError(
+                'output directory must be absolute, new and have an existing parent.')
+        projections = project_inputs(inputs)
+        candidates = build_overlap_candidates(projections)
+        features, feature_summary = extract_all_features(
+            inputs, arguments.work_dir, arguments.jobs, arguments.use_clahe)
+        config = MatchConfig(
+            ratio_test=arguments.ratio_test,
+            ransac_threshold_m=arguments.ransac_threshold_m,
+            minimum_mutual_matches=arguments.minimum_mutual_matches)
+        matches, match_summary = match_all_candidates(
+            candidates, inputs, projections, features, config)
+        document = {
+            'local_match_format_version': 1,
+            'input_summary': input_summary(inputs),
+            'feature_summary': feature_summary,
+            'match_summary': match_summary,
+            'matches': [asdict(match) for match in matches],
+        }
+        temporary = Path(tempfile.mkdtemp(
+            prefix=f'.{output.name}.tmp-{uuid4().hex}-', dir=output.parent))
+        (temporary / 'local_matches.json').write_text(json.dumps(
+            document, allow_nan=False, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
+            encoding='utf-8')
+        temporary.replace(output)
+    except (MosaicInputError, ProjectionError, CandidateError, MatchingError,
+            MatchPipelineError, OSError) as error:
+        print(f'local matching failed: {error}', file=sys.stderr)
+        return 2
+    print(json.dumps({'status': 'valid', 'output_dir': str(output),
+                      'feature_summary': feature_summary, 'match_summary': match_summary},
+                     allow_nan=False, sort_keys=True))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
