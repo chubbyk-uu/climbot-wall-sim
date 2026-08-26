@@ -1263,6 +1263,21 @@ manifest SHA-256、输出帧链、平场／暗场哈希和 rectified `K`，但�
 `execution` 记录实际 worker 数、内存预算、帧处理耗时和预计算 remap 类型；帧和 manifest
 始终按稳定帧序发布，不能因并发数不同改变结果。
 
+## `climbot_mosaic` 离线输入预检
+
+```bash
+ros2 run climbot_mosaic validate_mosaic_inputs \
+  --input-run <绝对 processed-run 路径> \
+  [--input-run <第二个绝对 processed-run 路径> ...]
+```
+
+该命令是墙面拼接的首道只读门禁：输入必须是已经完成的 processed-run；它逐张校验处理图
+SHA-256、标签—manifest 对应关系、`mono8` 尺寸、去畸变后的零 `D`、冻结 optical mount、有限的
+曝光相机位姿和 `6×6` 协方差。第一版平面墙还要求所有输入 run 的相机内参和安装快照完全一致，
+并以 `(source_run_id, decimal_frame_index)` 作为跨任务唯一帧键。任何一项失败均退出码 `2`，不写
+任何目录；成功时只输出严格 JSON 摘要，包含 run 数、帧数、源 run ID、处理 manifest SHA-256、任务
+ID 和相机签名，但不泄露机器本地绝对路径。P2.3 及后的投影、匹配和融合只接收这个预检的结果。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |
