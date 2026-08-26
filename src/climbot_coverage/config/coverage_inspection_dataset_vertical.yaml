@@ -1,10 +1,11 @@
-# First offline-processing dataset: vertical scan headings alternate up/down.
+# High-resolution offline-processing dataset: vertical scan headings alternate
+# up/down.  It must be acquired with textures/wall_025/wall_texture.json.
 # The 4.1 x 6.0 m drive region keeps the same ten-line, roughly 270-frame
 # scale as the horizontal set while exercising a different heading pattern.
 coverage_planner:
   ros__parameters:
     frame_id: odom
-    task_id: inspection-dataset-vertical-20260825
+    task_id: inspection-dataset-vertical-025mm-20260826
     input_mode: parameters
     region_type: rectangle
     lower_left: [3.0, 1.0]
