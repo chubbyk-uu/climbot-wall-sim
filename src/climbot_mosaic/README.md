@@ -61,7 +61,20 @@ ros2 run climbot_mosaic build_pose_graph \
 ```
 
 The pose graph writes both immutable EKF initial poses and optimized poses;
-disconnected visual components remain visible in its quality report. The next
-stage adds tiled BigTIFF fusion. See
+disconnected visual components remain visible in its quality report. P2.6 then
+renders both pose variants on exactly the same metric grid:
+
+```bash
+ros2 run climbot_mosaic build_wall_mosaic \
+  --input-run <processed-run> [--input-run <processed-run> ...] \
+  --pose-graph-dir <pose-graph-directory> \
+  --output-dir <new-mosaic-directory> --work-dir <cache-directory> \
+  --resolution-mm-per-pixel 0.25 --jobs auto --memory-budget-gb 4
+```
+
+The bounded-memory tiled renderer writes lossless BigTIFF pose-only, optimized,
+difference, coverage, and quantized uncertainty products plus comparable JPEG
+previews. Its strict manifest records hashes, shared grid, overlap disagreement,
+per-pass timing and cache statistics, and sampled process-tree PSS. See
 [`docs/MOSAIC_PLAN.md`](../../docs/MOSAIC_PLAN.md) for the staged design and
 baseline-first acceptance policy.

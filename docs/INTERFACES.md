@@ -1342,6 +1342,34 @@ Jacobian。输出 `initial_poses.json`、`optimized_poses.json` 和 `pose_graph.
 优化前后米制残差、修正量、连通分量、保留边及后验标准差近似。孤立照片仍由 EKF 先验
 定义位姿，但必须在连通分量和后续不确定度中显式暴露。
 
+## `climbot_mosaic` P2.6 墙面融合
+
+```bash
+ros2 run climbot_mosaic build_wall_mosaic \
+  --input-run <绝对 processed-run 路径> [--input-run <更多 run> ...] \
+  --pose-graph-dir <绝对 P2.5 输出目录> \
+  --output-dir <绝对且不存在的输出目录> \
+  --work-dir <绝对临时缓存目录> \
+  [--resolution-mm-per-pixel 0.25] [--jobs auto|N] [--memory-budget-gb 4]
+```
+
+命令重新执行严格输入校验，并要求 P2.5 的 `input_summary`、初始位姿和全部帧键与输入逐项
+一致。位姿直投与优化拼接使用同一墙面范围、分辨率、照片、灰度插值、线性边缘羽化和 tile
+顺序，唯一变量是 P2.5 位姿修正。正式目录原子生成：`mosaic_pose_only.tif`、
+`mosaic_optimized.tif`、`mosaic_difference.tif`、`coverage_count.tif`、`uncertainty.tif`、
+优化预览、三联对比预览和严格 JSON manifest。
+
+融合以 512×512 tile 并行计算，由主进程单写入 BigTIFF；覆盖次数和不确定度先按 tile 顺序
+写入工作目录，再流式压缩，内存不随完整画布像素数线性增长。manifest 的 `fusion` 记录
+worker 数、预算、总／逐 pass 耗时、缓存命中和 1 s 采样的 Linux 进程树 PSS 峰值；
+`outputs` 记录每个正式文件的字节数与 SHA-256。`uncertainty.tif` 是 `uint16`：比例为
+`0.00001 m/count`（`0.01 mm/count`），`65535` 表示无覆盖，最大有限值为 `65534`；读取方
+必须按 manifest 的 `uncertainty_encoding` 解码，不能把整数直接解释为米。
+
+当前质量指标是至少两张图覆盖区域内的羽化权重灰度标准差均值与 P95。它只用于同输入、
+同网格的 pose-only／optimized 相对比较，不等价于 Gazebo 真值误差，也不能在 P2.7 前当作
+冻结验收线。`work-dir` 只有可删除的中间缓存；完成证据仅是原子发布的输出目录。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |

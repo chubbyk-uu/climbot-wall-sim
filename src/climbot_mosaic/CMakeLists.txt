@@ -7,6 +7,7 @@ find_package(ament_cmake_python REQUIRED)
 ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
+  scripts/build_wall_mosaic
   scripts/build_pose_graph
   scripts/build_local_matches
   scripts/build_overlap_candidates
@@ -25,6 +26,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_matching test/test_matching.py)
   ament_add_pytest_test(test_projection test/test_projection.py)
   ament_add_pytest_test(test_pose_graph test/test_pose_graph.py)
+  ament_add_pytest_test(test_fusion test/test_fusion.py)
 endif()
 
 ament_package()

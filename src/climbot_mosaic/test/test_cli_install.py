@@ -25,6 +25,7 @@ def test_installed_program_sources_are_executable():
         'build_local_matches',
         'build_overlap_candidates',
         'build_pose_graph',
+        'build_wall_mosaic',
         'validate_mosaic_inputs',
     }
     assert {path.name for path in scripts.iterdir()} == expected

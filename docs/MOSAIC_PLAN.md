@@ -4,9 +4,9 @@
 
 本文是 `climbot_image_processing` 后续优化和新包 `climbot_mosaic` 的专项设计、
 实施与验收计划。它落实 [PROJECT_GUIDE.md](../PROJECT_GUIDE.md) §18.7 已确定的离线数据
-边界，但不把尚未实测的拼接性能数字提前写成正式门限。当前状态是 **P2.1 并行预处理和 P2.2
-拼接输入预检已完成，拼接性能基线尚未建立**；后续只有完成横向开发集、竖向独立验证集和联合数据集实测后，
-才能冻结最终数值验收线。
+边界，但不把尚未实测的拼接性能数字提前写成正式门限。当前状态是 **P2.1～P2.6 已完成，
+540 张联合拼接工程基线已经建立，P2.7 的横向开发／竖向独立验证与门限冻结仍待完成**；
+只有完成三组同口径实测后，才能冻结最终数值验收线。
 
 ## 1. 目标与范围
 
@@ -80,16 +80,17 @@ processed-run。
 
 ### 3.2 拼接命令
 
-计划新增：
+已实现：
 
 ```bash
 ros2 run climbot_mosaic build_wall_mosaic \
   --input-run <绝对的 processed-run> \
   [--input-run <第二个 processed-run>] \
+  --pose-graph-dir <绝对的 P2.5 输出目录> \
   --output-dir <绝对的、不存在的 mosaic-run> \
+  --work-dir <绝对的可复用缓存目录> \
   --resolution-mm-per-pixel 0.25 \
-  [--jobs auto] [--memory-budget-gb <GiB>] \
-  [--work-dir <可复用缓存目录>]
+  [--jobs auto|N] [--memory-budget-gb <GiB>]
 ```
 
 多个 processed-run 中可能存在相同的 `000000.png`，内部帧标识必须使用
@@ -107,18 +108,12 @@ mosaic-run/
 ├── mosaic_comparison.jpg
 ├── mosaic_difference.tif
 ├── coverage_count.tif
-├── uncertainty.tif
-├── poses/
-│   ├── initial_poses.json
-│   └── optimized_poses.json
-├── graph/
-│   ├── candidate_edges.json
-│   ├── accepted_edges.json
-│   └── rejected_edges.json
-└── diagnostics/
-    ├── quality_report.json
-    └── selected_match_previews/
+└── uncertainty.tif
 ```
+
+位姿、约束边、连通分量和优化残差保留在命令显式引用的 P2.5 `pose-graph-dir`，不复制进
+大图目录；`mosaic_manifest.json` 记录同一输入摘要、渲染参数、质量指标、输出 SHA-256、
+逐 pass 耗时／图像缓存统计和 1 s 采样的进程树 PSS 峰值。
 
 `mosaic_manifest.json` 至少记录输入 manifest 哈希、相机标定哈希、帧数、算法参数、特征与
 匹配配置、优化配置、墙面范围、米制分辨率、输出文件 SHA-256、软件提交、各阶段耗时和峰值
@@ -341,10 +336,18 @@ work-dir/
 
 ### P2.6：并行分块融合与压缩输出
 
-- 实现内存预算、tile 查询、并行融合和单写入器；
-- 分别输出只用 EKF 曝光位姿的无损母版和全局优化后的无损母版，并输出同范围并排预览、
-  差分图、覆盖次数和不确定度；除位姿外两条渲染链的输入及融合参数必须完全相同；
-- 记录输出大小、耗时、峰值内存和缓存命中率。
+**已完成（2026-08-26）**：
+
+- 实现 512×512 tile 查询、最多 8 个有界 worker、单写入器、LRU 图像缓存和原子输出；
+  覆盖次数／不确定度以 tile 顺序写入磁盘临时缓存后流式压缩，正式 `0.25 mm/px`、
+  540 帧联合运行进程树 PSS 峰值 `2.37 GB`，满足 `4 GB` 配置预算；
+- 同一 `26684×26378` 网格输出只用 EKF 位姿与全局优化位姿两张无损 BigTIFF、绝对差分、
+  覆盖次数、优化位姿不确定度和并排预览；两条母版除位姿外采用相同输入和线性边缘羽化；
+- 联合运行耗时 `95.35 s`。重叠区灰度加权标准差均值由 `3.166` 降至 `2.134`，P95 由
+  `6.663` 降至 `4.048`，改善分别约 `32.6%` 和 `39.2%`；这组结果是工程基线，尚不是
+  P2.7 冻结门限；
+- 不确定度以 `uint16`、`0.01 mm/count`、`65535=nodata` 保存，文件约 `9.22 MB`，避免
+  float32 全画布产生约 `1.65 GB` 制品；量化前后有效范围覆盖且核心母版像素不变。
 
 ### P2.7：三组正式实测与门限冻结
 
