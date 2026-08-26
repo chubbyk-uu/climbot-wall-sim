@@ -158,7 +158,10 @@ class G2InspectionEvaluator(Node):
                 self.camera_offset[1] * math.sin(heading),
                 base[1] + self.camera_offset[0] * math.sin(heading) +
                 self.camera_offset[1] * math.cos(heading),
-                base[2] + self.camera_offset[2],
+                # G2's public camera pose is planar x/y/yaw plus the frozen
+                # wall standoff.  Gazebo canonical-link z is not another
+                # camera offset (see automatic_capture_node.cpp).
+                self.camera_offset[2],
             )
             estimated = metadata.camera_pose.pose.position
             components = (

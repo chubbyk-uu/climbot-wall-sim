@@ -144,12 +144,15 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         image.height = 6
         self.images.publish(image)
 
-    def _odom(self, seconds, base_x):
+    def _odom(self, seconds, base_x, base_z=0.052):
         message = Odometry()
         message.header.stamp = Time(sec=seconds)
         message.header.frame_id = 'odom'
         message.child_frame_id = 'base_link'
         message.pose.pose.position.x = base_x
+        # Gazebo's canonical-link normal coordinate is deliberately non-zero.
+        # The planar camera contract must not add it to the fixed standoff.
+        message.pose.pose.position.z = base_z
         message.pose.pose.orientation.w = 1.0
         message.pose.covariance[0] = 0.0001
         message.pose.covariance[7] = 0.0001
@@ -269,6 +272,8 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(first.trigger_index, 0)
         self.assertAlmostEqual(first.target_along_track, 0.340, places=9)
         self.assertAlmostEqual(first.camera_pose.pose.position.x, 0.4775, places=6)
+        self.assertAlmostEqual(first.camera_pose.pose.position.z, 0.275, places=6)
+        self.assertAlmostEqual(first.camera_pose.covariance[14], 0.0, places=12)
         self.assertAlmostEqual(first.wall_heading_rad, 0.0, places=9)
         deadline = time.monotonic() + 2.0
         while not self.gates and time.monotonic() < deadline:

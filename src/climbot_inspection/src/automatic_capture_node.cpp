@@ -405,7 +405,12 @@ private:
       std::cos(heading) * mount_x_ - std::sin(heading) * mount_y_;
     output.pose.position.y = base.position.y +
       std::sin(heading) * mount_x_ + std::cos(heading) * mount_y_;
-    output.pose.position.z = base.position.z + mount_z_;
+    // This controller's wall pose is planar: x/y/yaw describe base_link on
+    // the work plane.  The EKF's z can contain the Gazebo canonical-link
+    // height, which is not an extra camera standoff and must not be added to
+    // the frozen optical mount.  A future full-SE(3) real-robot pipeline needs
+    // an explicit base-frame transform rather than changing this 2-D contract.
+    output.pose.position.z = mount_z_;
     output.pose.orientation = multiply(
       base.orientation,
       rpyQuaternion(mount_roll_, mount_pitch_, mount_yaw_));
@@ -424,6 +429,8 @@ private:
     for (std::size_t i = 0U; i < 6U; ++i) {
       jacobian[i * 6U + i] = 1.0;
     }
+    // Camera wall distance is the frozen planar mount, independent of EKF z.
+    jacobian[2U * 6U + 2U] = 0.0;
     jacobian[0U * 6U + 5U] =
       -std::sin(heading) * mount_x_ - std::cos(heading) * mount_y_;
     jacobian[1U * 6U + 5U] =
