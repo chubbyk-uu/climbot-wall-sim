@@ -34,6 +34,19 @@ four image-corner rays with the `wall, z=0` plane. The new output contains a
 strict JSON record of every image-to-wall homography and an outline-only
 footprint preview; it neither resamples source pixels nor reads Gazebo truth.
 
+P2.4a builds the broad-recall spatial candidate graph without an all-pairs
+image comparison:
+
+```bash
+ros2 run climbot_mosaic build_overlap_candidates \
+  --input-run <processed-run> [--input-run <processed-run> ...] \
+  --output-dir <new-candidate-directory>
+```
+
+The sweep-line index is followed by exact convex-footprint clipping. Positive
+area candidates remain available to visual matching; touching footprints are
+excluded and no unmeasured acceptance threshold is hidden in the default.
+
 Later stages add spatial overlap candidates, feature matching, robust global
 optimization and tiled BigTIFF fusion. See
 [`docs/MOSAIC_PLAN.md`](../../docs/MOSAIC_PLAN.md) for the staged design and

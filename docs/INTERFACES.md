@@ -1296,6 +1296,21 @@ ros2 run climbot_mosaic build_initial_projection \
 相机—平面距离及总体范围；`initial_footprints_preview.png` 只画足迹轮廓，绝不重采样或融合源图。
 相机不朝向墙面、射线平行、交点在相机背后、零面积或任何非有限值均为失败，退出码 `2`。
 
+## `climbot_mosaic` P2.4a 空间重叠候选
+
+```bash
+ros2 run climbot_mosaic build_overlap_candidates \
+  --input-run <绝对 processed-run 路径> \
+  [--input-run <第二个绝对 processed-run 路径> ...] \
+  --output-dir <绝对且不存在的输出目录> \
+  [--min-overlap-area-m2 0.0]
+```
+
+命令复用 P2.2 预检和 P2.3 投影，在 `wall` 平面中先以 sweep-line 包围盒筛选，再对凸四边形
+做精确裁剪。默认 `0.0` 只排除相切或分离足迹，保留所有正面积候选给后续特征证据裁决；可选
+参数是显式算法实验项，不是验收门限。原子输出的 `overlap_candidates.json` 包含输入摘要、
+稳定排序的全局帧键对、交集多边形、面积和相对较小足迹的重叠率，不包含机器绝对输入路径。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |
