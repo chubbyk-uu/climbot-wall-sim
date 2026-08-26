@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+# Copyright 2026 jerry
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Build deterministic P2.3 camera-to-wall projection evidence."""
+
+import argparse
+import json
+from pathlib import Path
+import sys
+
+from climbot_mosaic.mosaic_inputs import MosaicInputError, validate_processed_runs
+from climbot_mosaic.projection import ProjectionError, write_initial_projection
+
+
+def main() -> int:
+    """Validate archives and atomically write their initial wall projection."""
+    parser = argparse.ArgumentParser(
+        description='Build initial planar-wall projection evidence from processed archives.')
+    parser.add_argument('--input-run', action='append', required=True, type=Path,
+                        help='Absolute processed-run directory; repeat for a joint projection.')
+    parser.add_argument('--output-dir', required=True, type=Path,
+                        help='Absolute, currently nonexistent projection output directory.')
+    parser.add_argument('--wall-plane-z-m', type=float, default=0.0,
+                        help='Wall plane Z coordinate in the archived wall frame (default: 0).')
+    parser.add_argument('--preview-max-side-px', type=int, default=1600,
+                        help='Maximum long side of outline preview, at least 64 (default: 1600).')
+    arguments = parser.parse_args()
+    try:
+        manifest = write_initial_projection(
+            arguments.output_dir,
+            validate_processed_runs(arguments.input_run),
+            arguments.wall_plane_z_m,
+            arguments.preview_max_side_px)
+    except (MosaicInputError, ProjectionError) as error:
+        print(f'initial projection failed: {error}', file=sys.stderr)
+        return 2
+    print(json.dumps({
+        'status': 'valid',
+        'frame_count': manifest['input_summary']['frame_count'],
+        'output_dir': str(arguments.output_dir),
+        'footprint_extent_xy_m': manifest['footprint_extent_xy_m'],
+    }, allow_nan=False, ensure_ascii=False, sort_keys=True))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

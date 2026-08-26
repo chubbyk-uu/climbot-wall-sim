@@ -61,7 +61,7 @@ climbot_sim/
     ├── climbot_control/         C++ 轨迹跟踪和速度安全
     ├── climbot_inspection/      C++ 单拍、沿轨位置触发与曝光位姿关联
     ├── climbot_image_processing/  离线归档校验、光照／畸变校正
-    ├── climbot_mosaic/          离线拼接输入预检；后续重叠匹配、位姿优化与融合
+    ├── climbot_mosaic/          输入预检与初始米制投影；后续匹配、优化与融合
     └── climbot_bringup/         整系统组合 launch
 ```
 

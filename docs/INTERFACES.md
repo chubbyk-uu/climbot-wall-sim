@@ -1278,6 +1278,24 @@ SHA-256、标签—manifest 对应关系、`mono8` 尺寸、去畸变后的零 `
 任何目录；成功时只输出严格 JSON 摘要，包含 run 数、帧数、源 run ID、处理 manifest SHA-256、任务
 ID 和相机签名，但不泄露机器本地绝对路径。P2.3 及后的投影、匹配和融合只接收这个预检的结果。
 
+## `climbot_mosaic` P2.3 初始平面投影
+
+```bash
+ros2 run climbot_mosaic build_initial_projection \
+  --input-run <绝对 processed-run 路径> \
+  [--input-run <第二个绝对 processed-run 路径> ...] \
+  --output-dir <绝对且不存在的输出目录> \
+  [--wall-plane-z-m 0.0] [--preview-max-side-px 1600]
+```
+
+该离线命令复用上述预检，再将每张 rectified 图的 ROS 光学射线（`+Z` 向前、`+X` 向右、`+Y`
+向下）用归档的光学中心 EKF 位姿与单位四元数变换到 `wall`，和显式的平面 `z=0` 求交。输出目录
+必须不存在且不能位于任一输入 run 内；全部写入临时兄弟目录，只有 JSON 和 PNG 预览均成功后才
+原子命名为正式目录。`initial_projection.json` 是 host-path-free 的严格 JSON，记录输入预检摘要、
+平面、所有图的 `3×3` image→wall 单应矩阵、按像素角点顺序排列的米制足迹、光学中心落点、
+相机—平面距离及总体范围；`initial_footprints_preview.png` 只画足迹轮廓，绝不重采样或融合源图。
+相机不朝向墙面、射线平行、交点在相机背后、零面积或任何非有限值均为失败，退出码 `2`。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |
