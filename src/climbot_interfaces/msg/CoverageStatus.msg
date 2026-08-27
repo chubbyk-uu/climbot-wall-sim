@@ -18,6 +18,11 @@ uint8 STOPPING=6    # contact with the executor was lost mid-run and the manager
 uint8 RECOVERY_LOCKED=7  # supervision of an unknown Goal was explicitly
                          # abandoned; the speed hold remains engaged and no new
                          # task may start until the operator explicitly rearms
+uint8 PAUSING=8     # the executor is decelerating the active task to zero
+uint8 PAUSED=9      # the task is held at a standstill; task identity, segment
+                    # progress and the inspection archive run all stay open,
+                    # and every task deadline is frozen rather than extended
+uint8 RESUMING=10   # resume requested; waiting for the executor to confirm
 
 std_msgs/Header header
 
@@ -62,6 +67,8 @@ uint16 result_code
 # executor's Action server is not running, and the refusal explains itself.
 bool can_start
 bool can_cancel
+bool can_pause
+bool can_resume
 bool can_force_abandon
 bool can_rearm
 

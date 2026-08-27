@@ -62,6 +62,15 @@ def generate_test_description():
     ])
 
 
+# Which task the mock recorder refuses to prepare for. Keyed on the revision
+# rather than on a flag, because the manager outlives every test in this file
+# while each test builds a new node: under load its archive client can still be
+# routed to the previous test's service, and a flag then answers for a task it
+# was never set for. That is how the cancellable-preflight test below came to
+# fail carrying the failure test's own 'disk preflight failed'.
+FAILING_PREFLIGHT_REVISION = 22
+
+
 def pose(x, y, yaw):
     result = Pose()
     result.position.x = x
@@ -112,10 +121,11 @@ class TestCoverageManagerArchive(unittest.TestCase):
             callback_group=self.recorder_callbacks)
         self.start = self.node.create_client(StartCoverage, '/coverage/start_configured')
         self.cancel = self.node.create_client(Trigger, '/coverage/cancel')
+        self.pause = self.node.create_client(Trigger, '/coverage/pause')
+        self.resume = self.node.create_client(Trigger, '/coverage/resume')
         self.manager_parameters = self.node.create_client(
             GetParameters, '/coverage_manager/get_parameters')
         self.statuses = []
-        self.prepare_ok = True
         self.prepare_release = None
         self.finalize_release = None
         self.prepare_entered = Event()
@@ -127,6 +137,13 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self.executor.add_node(self.node)
         self.thread = Thread(target=self._spin)
         self.thread.start()
+        # Every test builds a new node, so every test has to rediscover these.
+        # A call_async() on a client that has not matched yet is simply never
+        # delivered, and the test then fails waiting for a status the manager
+        # was never asked to produce - which is what made the cancellable
+        # preflight test fail once other launch tests ran before it.
+        for client in (self.start, self.cancel, self.pause, self.resume):
+            self.assertTrue(client.wait_for_service(timeout_sec=15.0))
 
     def tearDown(self):
         self.stop.set()
@@ -146,9 +163,10 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self.prepare_entered.set()
         if self.prepare_release is not None:
             self.prepare_release.wait(timeout=5.0)
-        response.success = self.prepare_ok
-        response.message = 'prepared' if self.prepare_ok else 'disk preflight failed'
-        if self.prepare_ok:
+        prepare_ok = request.task.revision != FAILING_PREFLIGHT_REVISION
+        response.success = prepare_ok
+        response.message = 'prepared' if prepare_ok else 'disk preflight failed'
+        if prepare_ok:
             response.run_id = f'run-{request.task.revision}'
             response.task_directory = f'/tmp/archive-{request.task.revision}'
             response.expected_images = 2
@@ -213,6 +231,67 @@ class TestCoverageManagerArchive(unittest.TestCase):
         request.output_root = '/tmp/g4-root'
         return request
 
+    def test_a_pause_holds_the_archive_open_on_the_same_run(self):
+        """A pause is not an ending: nothing is finalized and nothing reopens."""
+        self.assertTrue(self.start.wait_for_service(timeout_sec=10.0))
+        self.assertTrue(self.pause.wait_for_service(timeout_sec=10.0))
+        self.assertTrue(self.resume.wait_for_service(timeout_sec=10.0))
+        self.tasks.publish(task(27))
+        self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 27,
+                   'ready preview')
+        mark = len(self.statuses)
+        self.assertTrue(self._call(self.start, self._start_request()).success)
+        self._wait(
+            lambda item: item.state == CoverageStatus.EXECUTING and
+            item.archive_run_id == 'run-27',
+            'goal execution after archive preparation', since=mark)
+        self._publish_archive(
+            InspectionArchiveStatus.RECORDING, self.prepare_requests[-1].task, 'run-27')
+        self._wait(
+            lambda item: item.archive_state == InspectionArchiveStatus.RECORDING,
+            'the archive to be recording', since=mark)
+        prepared = len(self.prepare_requests)
+
+        self.assertTrue(self._call(self.pause, Trigger.Request()).success)
+        paused = self._wait(
+            lambda item: item.state == CoverageStatus.PAUSED, 'the task to pause',
+            since=mark)
+        self.assertEqual(paused.archive_run_id, 'run-27')
+        self.assertEqual(paused.archive_state, InspectionArchiveStatus.RECORDING)
+        self.assertTrue(paused.inspection_enabled)
+
+        # Held long enough that a finalization on the way would have landed.
+        deadline = time.monotonic() + 1.5
+        while time.monotonic() < deadline:
+            self._odom()
+            time.sleep(0.01)
+        self.assertEqual(
+            self.finalize_requests, [],
+            'a pause finalized the inspection archive')
+        self.assertEqual(
+            len(self.prepare_requests), prepared,
+            'a pause opened a second archive run')
+
+        self.assertTrue(self._call(self.resume, Trigger.Request()).success)
+        resumed = self._wait(
+            lambda item: item.state == CoverageStatus.EXECUTING, 'the task to resume',
+            since=mark)
+        self.assertEqual(resumed.archive_run_id, 'run-27')
+        self.assertEqual(len(self.prepare_requests), prepared)
+        self.assertEqual(self.finalize_requests, [])
+
+        # The run that opened before the pause is the run that closes after it.
+        self.assertTrue(self._call(self.cancel, Trigger.Request()).success)
+        finished = self._wait(
+            lambda item: item.state == CoverageStatus.FINISHED and
+            item.archive_state == InspectionArchiveStatus.CANCELED,
+            'the canceled archive task', since=mark)
+        self.assertEqual(finished.archive_run_id, 'run-27')
+        self.assertEqual(len(self.finalize_requests), 1)
+        self.assertEqual(self.finalize_requests[0].run_id, 'run-27')
+        self.assertEqual(self.finalize_requests[0].outcome,
+                         FinalizeInspectionArchive.Request.CANCELED)
+
     def test_archive_preflight_completes_before_goal_execution(self):
         self.assertTrue(self.start.wait_for_service(timeout_sec=10.0))
         self.assertTrue(self.cancel.wait_for_service(timeout_sec=10.0))
@@ -257,14 +336,15 @@ class TestCoverageManagerArchive(unittest.TestCase):
                          FinalizeInspectionArchive.Request.CANCELED)
 
     def test_preflight_failure_never_dispatches_motion_goal(self):
-        self.prepare_ok = False
-        self.tasks.publish(task(22))
-        self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 22,
-                   'ready preview')
+        self.tasks.publish(task(FAILING_PREFLIGHT_REVISION))
+        self._wait(
+            lambda item: item.state == CoverageStatus.READY and
+            item.revision == FAILING_PREFLIGHT_REVISION, 'ready preview')
         mark = len(self.statuses)
         self.assertTrue(self._call(self.start, self._start_request()).success)
         failed = self._wait(
-            lambda item: item.state == CoverageStatus.READY and item.revision == 22 and
+            lambda item: item.state == CoverageStatus.READY and
+            item.revision == FAILING_PREFLIGHT_REVISION and
             item.archive_state == InspectionArchiveStatus.FAILED,
             'preflight failure', since=mark)
         self.assertIn('disk preflight failed', failed.message)

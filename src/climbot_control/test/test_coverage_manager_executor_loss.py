@@ -48,6 +48,7 @@ import launch_testing.markers
 import pytest
 import rclpy
 from rclpy.action import ActionServer
+from rclpy.executors import SingleThreadedExecutor
 from std_msgs.msg import Bool
 from std_srvs.srv import SetBool, Trigger
 
@@ -133,7 +134,14 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
         # executor, so the case where it has none is testable too.
         self.hold_publisher = None
         self.hold_service = None
+        self.hold_node = None
+        self.hold_thread = None
         self.hold_requests = []
+        # Sampled inside the service handler, at the instant each request is
+        # answered: whether the Action goal had already reached the executor by
+        # then. Measuring that ordering on the test's own clock only measures
+        # whether the test thread happened to be scheduled in time.
+        self.accepted_at_hold_answer = []
 
         # A stand-in executor that accepts the goal and never finishes it, which
         # is what a crashed controller looks like to the manager.
@@ -174,7 +182,14 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
 
     def _offer_the_speed_hold(self, first_response_delay_s=0.0,
                               delayed_value=True, delay_all_matching=False):
-        self.hold_publisher = self.node.create_publisher(
+        # On a node and a thread of its own. The real speed watchdog is a
+        # separate process, so a slow answer from it delays nothing but itself;
+        # served from this test's own spin thread, the same delay also stopped
+        # the stub executor from accepting goals and stopped manager statuses
+        # from being delivered - which turned a test about ordering into a test
+        # about which callback the one thread reached first.
+        self.hold_node = rclpy.create_node('stub_speed_hold')
+        self.hold_publisher = self.hold_node.create_publisher(
             Bool, '/control/hold_active',
             rclpy.qos.QoSProfile(
                 depth=1,
@@ -197,10 +212,15 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
                     self._hold_response_delayed = True
                     time.sleep(first_response_delay_s)
             self.hold_publisher.publish(Bool(data=request.data))
+            self.accepted_at_hold_answer.append(
+                (request.data, self.accepted.is_set()))
             response.success = True
             return response
 
-        self.hold_service = self.node.create_service(SetBool, '/control/hold', serve)
+        self.hold_service = self.hold_node.create_service(
+            SetBool, '/control/hold', serve)
+        self.hold_thread = Thread(target=self._spin_hold)
+        self.hold_thread.start()
 
     def _keep_driving(self):
         """Publish motion on /control/cmd_vel, as a live executor would."""
@@ -222,7 +242,11 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
             time.sleep(0.1)
         self.stop_spin.set()
         self.spin_thread.join()
+        if self.hold_thread is not None:
+            self.hold_thread.join()
         self._destroy_executor()
+        if self.hold_node is not None:
+            self.hold_node.destroy_node()
         self.node.destroy_node()
         rclpy.shutdown()
 
@@ -237,6 +261,21 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
             rclpy.spin_once(self.node, timeout_sec=0.01)
             if self.executor_node is not None:
                 rclpy.spin_once(self.executor_node, timeout_sec=0.01)
+
+    def _spin_hold(self):
+        # An executor of its own, not rclpy.spin_once(): that helper drives the
+        # process-wide default executor, so a second thread calling it raises
+        # 'Executor is already spinning' and this thread dies silently - after
+        # which the watchdog stub is in the graph but answers nothing, and the
+        # manager times out on a request that was never really refused.
+        executor = SingleThreadedExecutor()
+        executor.add_node(self.hold_node)
+        try:
+            while rclpy.ok() and not self.stop_spin.is_set():
+                executor.spin_once(timeout_sec=0.01)
+        finally:
+            executor.remove_node(self.hold_node)
+            executor.shutdown()
 
     def _call(self, client):
         future = client.call_async(Trigger.Request())
@@ -432,11 +471,19 @@ class TestCoverageManagerExecutorLoss(unittest.TestCase):
         self._wait_until(
             lambda s: s.state == CoverageStatus.STARTING,
             'the manager to wait for hold release')
-        time.sleep(0.3)
-        self.assertFalse(
-            self.accepted.is_set(),
-            'The Action goal reached the executor before hold release was confirmed.')
         self.assertTrue(self.accepted.wait(5.0), 'The goal was not sent after hold release.')
+
+        # The claim is about the order of two events, so it is read at the one
+        # of them that can see the other: the moment the watchdog answered the
+        # release. A wall-clock window after STARTING measures the test's own
+        # scheduling instead, and reported a violation whenever this thread was
+        # simply late to look.
+        releases = [
+            accepted for value, accepted in self.accepted_at_hold_answer if not value]
+        self.assertTrue(releases, 'the manager never asked for the hold to be released')
+        self.assertFalse(
+            releases[0],
+            'The Action goal reached the executor before hold release was confirmed.')
         # This stand-in normally keeps a goal forever so executor-loss can be
         # tested. This case is only about startup ordering; finish its goal so
         # the manager shared by the next unittest method does not inherit it.

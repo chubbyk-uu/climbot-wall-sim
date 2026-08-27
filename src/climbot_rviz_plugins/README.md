@@ -44,13 +44,19 @@ Algorithm 走参数接口而不是 `/coverage/configure`，因为后者是规划
 | Replan | `/coverage/replan` |
 | Clear points | `/coverage/clear_points` |
 | Start | `/coverage/start` |
-| Cancel / Stop | `/coverage/cancel` |
+| Pause | `/coverage/pause` |
+| Resume | `/coverage/resume` |
+| Stop | `/coverage/cancel` |
 | Force abandon（5 秒内二次点击） | `/coverage/force_abandon` |
 | Rearm after verification | `/coverage/rearm` |
 
-四个任务操作按钮的可用性直接取自 `CoverageStatus` 的 `can_start`、`can_cancel`、
-`can_force_abandon`、`can_rearm`——由管理器按自己服务的前置条件计算，面板不做推断。面板自行从
-`state` 推断正是“取消后无法重新开始”那个 bug 的成因。
+六个任务操作按钮的可用性直接取自 `CoverageStatus` 的 `can_start`、`can_pause`、`can_resume`、
+`can_cancel`、`can_force_abandon`、`can_rearm`——由管理器按自己服务的前置条件计算，面板不做
+推断。面板自行从 `state` 推断正是“取消后无法重新开始”那个 bug 的成因。
+
+Start、Pause、Resume、Stop 四个常规控制常驻可见，不随详情一起滚走：暂停按钮找不到的时候，
+操作员会去按 Stop。Stop 的语义没有因为 Pause 的加入而改变，它始终是取消本次任务；暂停中的
+任务仍然是任务，Replan 与 Clear points 在 `PAUSING`/`PAUSED`/`RESUMING` 期间同样保持禁用。
 
 Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点击只显示“这不证明任务
 停止”的风险说明，5 秒内第二次点击才调用服务；管理器随后进入 `RECOVERY_LOCKED` 并
@@ -101,7 +107,7 @@ G4 已把巡检控件从现有正文中拆出，且没有新增另一个 dock。
 - 中部三个可滚动页签：`任务规划` 放现有规划配置和 Replan／Clear points，`巡检采集`
   放任务级采集开关、根目录、浏览／恢复默认、预计数量／空间、归档计数／目录／错误，
   `详情` 放 Manager／Planner／Last request 等长文本；
-- 底部固定安全区：Start、Cancel / Stop，不随页签隐藏；Force abandon 或 Rearm 仅在
+- 底部固定安全区：Start、Pause、Resume、Stop，不随页签隐藏；Force abandon 或 Rearm 仅在
   对应异常恢复状态临时出现。
 
 默认宽度和渲染窗口占用保持不变。路径编辑在窄面板中独占一行，浏览按钮另起一行；

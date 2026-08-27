@@ -75,6 +75,7 @@ public:
     command_quiet_s_(declare_parameter("command_quiet_s", 1.0)),
     hold_response_timeout_s_(declare_parameter("hold_response_timeout_s", 1.0)),
     hold_discovery_grace_s_(declare_parameter("hold_discovery_grace_s", 1.0)),
+    pause_response_timeout_s_(declare_parameter("pause_response_timeout_s", 2.0)),
     archive_finalize_timeout_s_(declare_parameter("archive_finalize_timeout_s", 5.0)),
     // A bare control-node process stays motion-only for compatibility and
     // safety. The complete mission launch explicitly enables inspection.
@@ -99,6 +100,9 @@ public:
     }
     if (!std::isfinite(hold_discovery_grace_s_) || !(hold_discovery_grace_s_ > 0.0)) {
       throw std::invalid_argument("hold_discovery_grace_s must be positive.");
+    }
+    if (!std::isfinite(pause_response_timeout_s_) || !(pause_response_timeout_s_ > 0.0)) {
+      throw std::invalid_argument("pause_response_timeout_s must be positive.");
     }
     if (!std::isfinite(archive_finalize_timeout_s_) || !(archive_finalize_timeout_s_ > 0.0)) {
       throw std::invalid_argument("archive_finalize_timeout_s must be positive.");
@@ -166,6 +170,8 @@ public:
           "Ready: " + task->task_id + " revision " + std::to_string(task->revision));
       });
     action_client_ = rclcpp_action::create_client<ExecuteCoverage>(this, "/coverage/execute");
+    executor_pause_client_ = create_client<std_srvs::srv::SetBool>(
+      "/coverage/executor_pause");
     archive_prepare_client_ = create_client<PrepareArchive>("/inspection/archive/prepare");
     archive_finalize_client_ = create_client<FinalizeArchive>("/inspection/archive/finalize");
     archive_status_subscription_ = create_subscription<ArchiveStatus>(
@@ -220,6 +226,18 @@ public:
       "/coverage/cancel",
       [this](const std_srvs::srv::Trigger::Request::SharedPtr,
       const std_srvs::srv::Trigger::Response::SharedPtr response) {cancel(response);});
+    pause_service_ = create_service<std_srvs::srv::Trigger>(
+      "/coverage/pause",
+      [this](const std_srvs::srv::Trigger::Request::SharedPtr,
+      const std_srvs::srv::Trigger::Response::SharedPtr response) {
+        requestPauseState(true, response);
+      });
+    resume_service_ = create_service<std_srvs::srv::Trigger>(
+      "/coverage/resume",
+      [this](const std_srvs::srv::Trigger::Request::SharedPtr,
+      const std_srvs::srv::Trigger::Response::SharedPtr response) {
+        requestPauseState(false, response);
+      });
     force_abandon_service_ = create_service<std_srvs::srv::Trigger>(
       "/coverage/force_abandon",
       [this](const std_srvs::srv::Trigger::Request::SharedPtr,
@@ -257,6 +275,10 @@ private:
     // watching the robot still move has nothing else to reach for.
     status_.can_cancel = active_goal_ != nullptr || stopping_since_.has_value() ||
       queued_goal_.has_value() || archive_prepare_pending_;
+    status_.can_pause = active_goal_ != nullptr && status_.state == Status::EXECUTING &&
+      !pause_request_pending_;
+    status_.can_resume = active_goal_ != nullptr && status_.state == Status::PAUSED &&
+      !pause_request_pending_;
     status_.can_force_abandon = stopping_since_.has_value() && unresolved_goal_response_;
     status_.can_rearm = recovery_locked_;
   }
@@ -373,6 +395,7 @@ private:
   void superviseExecution()
   {
     expireArchiveFinalization();
+    expirePauseRequest();
     if (recovery_locked_) {
       engageHold();
       return;
@@ -776,8 +799,120 @@ private:
     response->task_directory = status_.archive_directory;
   }
 
+  void requestPauseState(
+    bool pause, const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
+  {
+    if (pause_request_pending_) {
+      response->success = false;
+      response->message = "A pause or resume request is already pending.";
+      return;
+    }
+    if (!active_goal_) {
+      response->success = false;
+      response->message = "No active coverage task.";
+      return;
+    }
+    if (pause && status_.state != Status::EXECUTING) {
+      response->success = false;
+      response->message = status_.state == Status::PAUSED ?
+        "Coverage task is already paused." : "Coverage task cannot pause from its current state.";
+      return;
+    }
+    if (!pause && status_.state != Status::PAUSED) {
+      response->success = false;
+      response->message = "Coverage task is not paused.";
+      return;
+    }
+    if (!executor_pause_client_->service_is_ready()) {
+      response->success = false;
+      response->message = "Coverage executor pause service is unavailable.";
+      return;
+    }
+
+    auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+    request->data = pause;
+    const auto generation = ++pause_generation_;
+    pause_request_pending_ = true;
+    pause_request_value_ = pause;
+    pause_intent_ = pause;
+    pause_request_since_ = std::chrono::steady_clock::now();
+    publishStatus(
+      pause ? Status::PAUSING : Status::RESUMING,
+      pause ? "Pause requested; decelerating the active coverage task." :
+      "Resume requested; restoring the active coverage task.");
+    executor_pause_client_->async_send_request(
+      request,
+      [this, generation, pause](rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture future) {
+        if (generation != pause_generation_) {
+          return;
+        }
+        // The intent survives the acknowledgement: it is cleared by the
+        // opposite request, by a refusal, or by the task ending - not by the
+        // executor merely having answered.
+        pause_request_pending_ = false;
+        pause_request_since_.reset();
+        try {
+          const auto result = future.get();
+          if (!result->success) {
+            pause_intent_ = !pause;
+            publishStatus(
+              pause ? Status::EXECUTING : Status::PAUSED,
+              std::string(pause ? "Pause refused: " : "Resume refused: ") + result->message);
+            return;
+          }
+          if (pause) {
+            if (status_.state != Status::PAUSED) {
+              publishStatus(Status::PAUSING, result->message);
+            }
+          } else {
+            publishStatus(Status::EXECUTING, result->message);
+          }
+        } catch (const std::exception & error) {
+          beginPauseFailureStop(std::string("Pause/resume transport failed: ") + error.what());
+        }
+      });
+    response->success = true;
+    response->message = pause ?
+      "Pause request accepted." : "Resume request accepted.";
+  }
+
+  void beginPauseFailureStop(const std::string & reason)
+  {
+    ++pause_generation_;
+    pause_request_pending_ = false;
+    pause_intent_ = false;
+    pause_request_since_.reset();
+    if (!active_goal_) {
+      publishStatus(cached_task_ ? Status::READY : Status::IDLE, reason);
+      return;
+    }
+    stopping_since_ = std::chrono::steady_clock::now();
+    engageHold();
+    action_client_->async_cancel_goal(active_goal_);
+    publishStatus(Status::STOPPING, reason + " Holding and canceling the active task.");
+  }
+
+  void expirePauseRequest()
+  {
+    if (!pause_request_pending_ || !pause_request_since_) {
+      return;
+    }
+    if (std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - *pause_request_since_).count() <
+      pause_response_timeout_s_)
+    {
+      return;
+    }
+    beginPauseFailureStop(
+      pause_request_value_ ? "Pause request timed out." : "Resume request timed out.");
+  }
+
   void beginActionStart(const ExecuteCoverage::Goal & goal)
   {
+    ++pause_generation_;
+    pause_request_pending_ = false;
+    pause_intent_ = false;
+    pause_request_since_.reset();
     const auto task_id = goal.task.task_id;
     const auto revision = goal.task.revision;
     const auto generation = ++goal_generation_;
@@ -1009,6 +1144,33 @@ private:
         status_.planned_total_s = feedback->planned_total_s;
         status_.schedule_lag_s = feedback->schedule_lag_s;
         status_.estimated_remaining_s = feedback->estimated_remaining_s;
+        // The executor owns the pause states and the manager only echoes them,
+        // but nothing orders a service response against the feedback stream.
+        // Feedback produced before the executor saw the request still arrives
+        // after it, and echoing that made the panel flap. So the operator's
+        // standing intent decides which half of the feedback may be echoed:
+        // while a pause is intended only the pause states are, and while it is
+        // not, only the running states are.
+        const bool executor_pausing = feedback->state == ExecuteCoverage::Feedback::PAUSING;
+        const bool executor_paused = feedback->state == ExecuteCoverage::Feedback::PAUSED;
+        if (pause_intent_) {
+          if (executor_paused && status_.state != Status::PAUSED) {
+            publishStatus(
+              Status::PAUSED,
+              "Coverage task paused; task progress and inspection archive are retained.");
+            return;
+          }
+          if (executor_pausing && status_.state != Status::PAUSING) {
+            publishStatus(Status::PAUSING, "Coverage task is decelerating for pause.");
+            return;
+          }
+        } else if (!executor_pausing && !executor_paused &&
+          (status_.state == Status::PAUSING || status_.state == Status::PAUSED ||
+          status_.state == Status::RESUMING))
+        {
+          publishStatus(Status::EXECUTING, "Coverage task resumed.");
+          return;
+        }
         publishProgress();
       };
     options.result_callback = [this, generation](const GoalHandle::WrappedResult & result) {
@@ -1020,6 +1182,10 @@ private:
         // outcome rather than EXECUTOR_LOST. The generation is retired here in
         // either case, so nothing else from this goal can follow it.
         ++goal_generation_;
+        ++pause_generation_;
+        pause_request_pending_ = false;
+        pause_intent_ = false;
+        pause_request_since_.reset();
         stopping_since_.reset();
         unresolved_goal_response_ = false;
         active_goal_.reset();
@@ -1042,6 +1208,10 @@ private:
   void cancel(const std::shared_ptr<std_srvs::srv::Trigger::Response> & response)
   {
     expireStalePending();
+    ++pause_generation_;
+    pause_request_pending_ = false;
+    pause_intent_ = false;
+    pause_request_since_.reset();
     if (archive_prepare_pending_) {
       // No movement Goal exists yet, so retiring this request is safe. Its
       // eventual archive response is finalized as canceled by its generation
@@ -1142,6 +1312,7 @@ private:
   double command_quiet_s_;
   double hold_response_timeout_s_;
   double hold_discovery_grace_s_;
+  double pause_response_timeout_s_;
   double archive_finalize_timeout_s_;
   bool inspection_default_enabled_;
   std::string inspection_output_root_;
@@ -1159,6 +1330,7 @@ private:
   std::optional<std::chrono::steady_clock::time_point> last_hold_status_;
   std::optional<std::chrono::steady_clock::time_point> queued_goal_since_;
   std::optional<std::chrono::steady_clock::time_point> archive_finalize_since_;
+  std::optional<std::chrono::steady_clock::time_point> pause_request_since_;
   // No value until the speed watchdog has published: absent and false are
   // different answers, and only the second one is evidence of anything.
   std::optional<bool> hold_active_;
@@ -1170,6 +1342,11 @@ private:
   bool archive_prepare_pending_{false};
   bool archive_finalize_pending_{false};
   bool archive_failure_stop_{false};
+  bool pause_request_pending_{false};
+  bool pause_request_value_{false};
+  // The pause the operator asked for, independent of what the executor has
+  // confirmed yet. Feedback older than the request must not undo it.
+  bool pause_intent_{false};
   uint64_t hold_generation_{0};
   // Identifies callbacks from one Action request. A timed-out request keeps its
   // generation until its true outcome or a supervised stop retires it.
@@ -1178,6 +1355,7 @@ private:
   uint64_t queued_goal_generation_{0};
   uint64_t archive_start_generation_{0};
   uint64_t archive_finalize_generation_{0};
+  uint64_t pause_generation_{0};
   std::string archive_finalize_message_;
   std::optional<climbot_interfaces::msg::CoverageTask> cached_task_;
   std::optional<ExecuteCoverage::Goal> queued_goal_;
@@ -1188,12 +1366,15 @@ private:
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr hold_subscription_;
   rclcpp::Subscription<ArchiveStatus>::SharedPtr archive_status_subscription_;
   rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr hold_client_;
+  rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr executor_pause_client_;
   rclcpp::Client<PrepareArchive>::SharedPtr archive_prepare_client_;
   rclcpp::Client<FinalizeArchive>::SharedPtr archive_finalize_client_;
   rclcpp_action::Client<ExecuteCoverage>::SharedPtr action_client_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;
   rclcpp::Service<StartCoverage>::SharedPtr configured_start_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr cancel_service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr pause_service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr resume_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr force_abandon_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr rearm_service_;
   rclcpp::Publisher<Status>::SharedPtr status_publisher_;

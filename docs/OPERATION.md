@@ -49,7 +49,13 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 
 ## 运行纪律
 
-- 运行中只用 **Cancel** 正常停止。
+- 想让机器人停一下再接着跑，用 **Pause**，恢复用 **Resume**。暂停不结束任务：任务号、
+  段序号和归档 run 都不变，恢复后从当前位姿继续同一段，段超时和调度时基在暂停期间不走。
+- 真要结束这次任务才按 **Stop**，它的含义没有因为 Pause 的加入而改变。
+- Pause 按下后状态先是 `Pausing`，机器人减速；命令和实测速度都归零之后才变 `Paused`。
+  没到 `Paused` 之前 Resume 会被拒绝，这是正常的，等一下再点。
+- 暂停中定位数据过期时 Resume 会被拒绝并说明原因；任务仍然停在原地，等定位恢复再点一次，
+  不需要重新开始。
 - 归档失败、capture gate 丢失、Action 失败或看门狗超时都要**等受控停车走完**，不要在它
   结束之前再发别的命令。
 - 任何时刻只允许一个上游控制源；不要同时启动键盘遥控和自动控制。
@@ -126,3 +132,6 @@ ros2 run climbot_mosaic inspect_diagnostic_mosaic \
 | 拼接预检拒绝 | 不要修补输入；按 JSON 修复原始归档或标定问题后，重新生成一个独立的 processed-run |
 | 真值 tile 有黑边或零覆盖 | 这是实际足迹缺口，须扩大或调整任务重新采集，不可用后处理填充 |
 | Gazebo 无画面 | 加 `headless:=true` 走非 GUI 流程，或检查 WSLg/GPU 后端 |
+| Pause 之后一直停在 `Pausing` | 机器人没能在 `pause_stop_timeout_s`（`5.0 s`）内停稳，执行器按控制超时中止任务。查看是否有第二个上游控制源在同时发 `/control/cmd_vel` |
+| Pause 被拒绝且提示服务不可用 | 执行器没有提供 `/coverage/executor_pause`。任务原样继续，不是停了；检查 `line_tracker_node` 是否以 `standalone_mode:=false` 启动 |
+| Pause 之后状态变成 `Stopping` | 执行器接了暂停请求却在 `pause_response_timeout_s`（`2.0 s`）内没有应答。管理器无从判断机器人是在减速还是仍在全速，按失联处理：请求 hold 并取消任务 |

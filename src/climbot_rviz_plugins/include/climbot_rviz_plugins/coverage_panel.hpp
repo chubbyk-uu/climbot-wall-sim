@@ -119,6 +119,8 @@ private Q_SLOTS:
   void onReplan();
   void onClearPoints();
   void onStart();
+  void onPause();
+  void onResume();
   void onCancel();
   void onForceAbandon();
   void onRearm();
@@ -177,6 +179,8 @@ private:
   QPushButton * replan_button_{nullptr};
   QPushButton * clear_button_{nullptr};
   QPushButton * start_button_{nullptr};
+  QPushButton * pause_button_{nullptr};
+  QPushButton * resume_button_{nullptr};
   QPushButton * cancel_button_{nullptr};
   QWidget * recovery_controls_{nullptr};
   QPushButton * force_abandon_button_{nullptr};
@@ -200,6 +204,8 @@ private:
   rclcpp::Client<Trigger>::SharedPtr replan_client_;
   rclcpp::Client<Trigger>::SharedPtr clear_client_;
   rclcpp::Client<StartCoverage>::SharedPtr start_client_;
+  rclcpp::Client<Trigger>::SharedPtr pause_client_;
+  rclcpp::Client<Trigger>::SharedPtr resume_client_;
   rclcpp::Client<Trigger>::SharedPtr cancel_client_;
   rclcpp::Client<Trigger>::SharedPtr force_abandon_client_;
   rclcpp::Client<Trigger>::SharedPtr rearm_client_;

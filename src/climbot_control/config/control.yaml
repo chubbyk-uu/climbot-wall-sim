@@ -9,6 +9,13 @@ line_tracker:
     odometry_timeout_s: 0.25
     standalone_mode: true
     segment_timeout_s: 180.0
+    # How long a paused task may take to reach a standstill before the pause is
+    # treated as a control fault rather than a pause. It bounds the
+    # deceleration only: once the task is PAUSED nothing here is running, and
+    # the hold may last as long as the operator wants. Generous against the
+    # ~0.8 s the rate limiter needs from cruise_speed, because a deadline that
+    # ends the run is the wrong thing to make tight.
+    pause_stop_timeout_s: 5.0
     # Inspection-enabled SCANs must keep receiving a matching position-gate
     # heartbeat.  Its timeout uses steady time, not Gazebo's paused ROS clock.
     capture_gate_timeout_s: 0.50

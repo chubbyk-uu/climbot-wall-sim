@@ -183,6 +183,36 @@ TEST(CoveragePanelConfig, freezesEveryPlanningControlWhileATaskRuns)
   EXPECT_TRUE(panel.findChild<QPushButton *>("cancel_button")->isEnabled());
 }
 
+TEST(CoveragePanelConfig, pauseAndResumeFollowTheManagersPermissions)
+{
+  application();
+  climbot_rviz_plugins::CoveragePanel panel;
+  auto * pause = panel.findChild<QPushButton *>("pause_button");
+  auto * resume = panel.findChild<QPushButton *>("resume_button");
+  ASSERT_NE(pause, nullptr);
+  ASSERT_NE(resume, nullptr);
+
+  auto status = runningStatus(true);
+  status.can_pause = true;
+  panel.renderStatus(status);
+  EXPECT_TRUE(pause->isEnabled());
+  EXPECT_FALSE(resume->isEnabled());
+
+  status.state = climbot_rviz_plugins::CoveragePanel::Status::PAUSED;
+  status.can_pause = false;
+  status.can_resume = true;
+  panel.renderStatus(status);
+  EXPECT_FALSE(pause->isEnabled());
+  EXPECT_TRUE(resume->isEnabled());
+  EXPECT_EQ(panel.findChild<QLabel *>("state_value")->text(), QStringLiteral("Paused"));
+  // Stop keeps its meaning inside a pause, and the planning controls stay
+  // shut: a held task is still the task that is loaded.
+  EXPECT_TRUE(panel.findChild<QPushButton *>("cancel_button")->isEnabled());
+  panel.renderConfig(makeConfig("rectangle", "horizontal", 2, 2, true));
+  EXPECT_FALSE(panel.findChild<QPushButton *>("replan_button")->isEnabled());
+  EXPECT_FALSE(panel.findChild<QPushButton *>("clear_button")->isEnabled());
+}
+
 TEST(CoveragePanelConfig, releasesThePlanningControlsWhenTheTaskStops)
 {
   application();

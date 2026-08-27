@@ -23,7 +23,8 @@ add_executable(line_tracker_node src/line_tracker_node.cpp)
 target_compile_features(line_tracker_node PUBLIC cxx_std_17)
 target_link_libraries(line_tracker_node line_tracker)
 ament_target_dependencies(line_tracker_node
-  climbot_interfaces geometry_msgs nav_msgs rcl_interfaces rclcpp rclcpp_action std_msgs)
+  climbot_interfaces geometry_msgs nav_msgs rcl_interfaces rclcpp rclcpp_action std_msgs
+  std_srvs)
 
 add_executable(cmd_vel_watchdog_node src/cmd_vel_watchdog_node.cpp)
 target_compile_features(cmd_vel_watchdog_node PUBLIC cxx_std_17)
@@ -86,6 +87,10 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_manager_hold_release.py TIMEOUT 60 ENV ROS_DOMAIN_ID=57)
   add_launch_test(test/test_coverage_manager_forced_recovery.py TIMEOUT 60 ENV ROS_DOMAIN_ID=55)
   add_launch_test(test/test_coverage_manager_archive.py TIMEOUT 60 ENV ROS_DOMAIN_ID=56)
+  add_launch_test(test/test_coverage_executor_pause.py TIMEOUT 180 ENV ROS_DOMAIN_ID=58)
+  add_launch_test(test/test_coverage_executor_pause_start.py TIMEOUT 90 ENV ROS_DOMAIN_ID=59)
+  add_launch_test(test/test_coverage_manager_pause.py TIMEOUT 120 ENV ROS_DOMAIN_ID=60)
+  add_launch_test(test/test_coverage_manager_pause_loss.py TIMEOUT 120 ENV ROS_DOMAIN_ID=61)
   ament_add_pytest_test(
     test_watchdog_rejects_bad_numbers test/test_watchdog_rejects_bad_numbers.py TIMEOUT 60)
 endif()

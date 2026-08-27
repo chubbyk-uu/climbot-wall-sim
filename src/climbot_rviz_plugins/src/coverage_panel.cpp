@@ -66,6 +66,12 @@ QString stateName(uint8_t state)
       return QObject::tr("Stopping (executor lost)");
     case climbot_interfaces::msg::CoverageStatus::RECOVERY_LOCKED:
       return QObject::tr("Recovery locked");
+    case climbot_interfaces::msg::CoverageStatus::PAUSING:
+      return QObject::tr("Pausing");
+    case climbot_interfaces::msg::CoverageStatus::PAUSED:
+      return QObject::tr("Paused");
+    case climbot_interfaces::msg::CoverageStatus::RESUMING:
+      return QObject::tr("Resuming");
     default:
       return QObject::tr("Unknown (%1)").arg(state);
   }
@@ -329,7 +335,9 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   replan_button_ = new QPushButton(tr("Replan"));
   clear_button_ = new QPushButton(tr("Clear points"));
   start_button_ = new QPushButton(tr("Start"));
-  cancel_button_ = new QPushButton(tr("Cancel / Stop"));
+  pause_button_ = new QPushButton(tr("Pause"));
+  resume_button_ = new QPushButton(tr("Resume"));
+  cancel_button_ = new QPushButton(tr("Stop"));
   force_abandon_button_ = new QPushButton(tr("Force abandon"));
   rearm_button_ = new QPushButton(tr("Rearm after verification"));
   // Named so a test can reach them. Without names the one test that already
@@ -338,6 +346,8 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   replan_button_->setObjectName("replan_button");
   clear_button_->setObjectName("clear_button");
   start_button_->setObjectName("start_button");
+  pause_button_->setObjectName("pause_button");
+  resume_button_->setObjectName("resume_button");
   cancel_button_->setObjectName("cancel_button");
   force_abandon_button_->setObjectName("force_abandon_button");
   rearm_button_->setObjectName("rearm_button");
@@ -456,7 +466,9 @@ CoveragePanel::CoveragePanel(QWidget * parent)
 
   auto * safety_buttons = new QGridLayout();
   safety_buttons->addWidget(start_button_, 0, 0);
-  safety_buttons->addWidget(cancel_button_, 0, 1);
+  safety_buttons->addWidget(pause_button_, 0, 1);
+  safety_buttons->addWidget(resume_button_, 1, 0);
+  safety_buttons->addWidget(cancel_button_, 1, 1);
   // These are real-robot recovery actions, not routine task controls. Keep
   // them out of the normal operator footprint and reveal only the one that
   // the manager has explicitly permitted in an exceptional state.
@@ -497,6 +509,8 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   connect(replan_button_, &QPushButton::clicked, this, &CoveragePanel::onReplan);
   connect(clear_button_, &QPushButton::clicked, this, &CoveragePanel::onClearPoints);
   connect(start_button_, &QPushButton::clicked, this, &CoveragePanel::onStart);
+  connect(pause_button_, &QPushButton::clicked, this, &CoveragePanel::onPause);
+  connect(resume_button_, &QPushButton::clicked, this, &CoveragePanel::onResume);
   connect(cancel_button_, &QPushButton::clicked, this, &CoveragePanel::onCancel);
   connect(
     force_abandon_button_, &QPushButton::clicked,
@@ -551,6 +565,8 @@ void CoveragePanel::onInitialize()
   replan_client_ = node_->create_client<Trigger>("/coverage/replan");
   clear_client_ = node_->create_client<Trigger>("/coverage/clear_points");
   start_client_ = node_->create_client<StartCoverage>("/coverage/start_configured");
+  pause_client_ = node_->create_client<Trigger>("/coverage/pause");
+  resume_client_ = node_->create_client<Trigger>("/coverage/resume");
   cancel_client_ = node_->create_client<Trigger>("/coverage/cancel");
   force_abandon_client_ = node_->create_client<Trigger>("/coverage/force_abandon");
   rearm_client_ = node_->create_client<Trigger>("/coverage/rearm");
@@ -791,7 +807,17 @@ void CoveragePanel::callConfiguredStart()
 
 void CoveragePanel::onCancel()
 {
-  call(cancel_client_, tr("Cancel"));
+  call(cancel_client_, tr("Stop"));
+}
+
+void CoveragePanel::onPause()
+{
+  call(pause_client_, tr("Pause"));
+}
+
+void CoveragePanel::onResume()
+{
+  call(resume_client_, tr("Resume"));
 }
 
 void CoveragePanel::onForceAbandon()
@@ -839,6 +865,8 @@ void CoveragePanel::renderDisconnected()
   replan_button_->setEnabled(true);
   clear_button_->setEnabled(true);
   start_button_->setEnabled(false);
+  pause_button_->setEnabled(false);
+  resume_button_->setEnabled(false);
   cancel_button_->setEnabled(false);
   force_abandon_button_->setEnabled(false);
   rearm_button_->setEnabled(false);
@@ -912,6 +940,8 @@ void CoveragePanel::renderStatus(const Status & status)
   // cached. Replan and clear belong to the planner and only affect the
   // preview, so they are never withheld here.
   start_button_->setEnabled(status.can_start);
+  pause_button_->setEnabled(status.can_pause);
+  resume_button_->setEnabled(status.can_resume);
   cancel_button_->setEnabled(status.can_cancel);
   force_abandon_button_->setEnabled(status.can_force_abandon);
   rearm_button_->setEnabled(status.can_rearm);
@@ -930,7 +960,9 @@ void CoveragePanel::renderStatus(const Status & status)
   // changing the shape now withdraws it mid-drive, which reads as the mission
   // having been altered or lost.
   task_running_ = status.state == Status::STARTING ||
-    status.state == Status::EXECUTING || status.state == Status::STOPPING ||
+    status.state == Status::EXECUTING || status.state == Status::PAUSING ||
+    status.state == Status::PAUSED || status.state == Status::RESUMING ||
+    status.state == Status::STOPPING ||
     status.state == Status::RECOVERY_LOCKED ||
     status.archive_state == climbot_interfaces::msg::InspectionArchiveStatus::FINALIZING;
   replan_button_->setEnabled(!task_running_);

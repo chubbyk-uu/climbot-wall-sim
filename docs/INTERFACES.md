@@ -40,10 +40,20 @@
 | `/coverage/task` | `CoverageTask` | 已验证的任务几何、扫描线和版本 |
 | `/coverage/configure` | service | 仅无运行任务时修改区域形状/扫描方向 |
 | `/coverage/start`、`/coverage/cancel` | service | 受控启动/取消；归档预检失败不得发送运动 Goal |
+| `/coverage/pause`、`/coverage/resume` | service | 就地暂停/继续同一任务；不结束任务、不封存归档 |
+| `/coverage/executor_pause` | service | 管理器到执行器的 `SetBool`；面板不直接调用 |
 | `/coverage/manager_status` | `CoverageStatus` | 管理器权威状态、任务版本、段进度、错误和归档摘要 |
 | `/coverage/status` | `String` | 规划器的点选与规划结果说明，仅供界面显示，不是任务状态 |
 | `ExecuteCoverage` | Action | 执行冻结的多段路径；反馈不等于重新规划 |
 | `/control/execution_reference` | `ExecutionReference` | 当前实际直线与采集许可；不是名义预览路径 |
+
+暂停是任务内的一次停车，不是任务的结束：`task_id`、`revision`、段序号和归档 run 全程不变，
+段超时与调度时基在暂停期间冻结，恢复后从当前位姿继续同一段。执行器在 `PAUSED` 期间发布的
+`ExecutionReference` 带 `inspection_enabled=false`，采集门因此关闭；这与 transition 段是同一
+种形状，采集节点不需要知道“暂停”这件事。关门的时点是机器人真正停住，不是暂停请求被接受：
+`PAUSING` 期间机器人还在走刹车距离，那段路仍是这条扫描线，参考照发 `true`，否则落在其中的触发
+目标会被跳过、恢复时在停住的位置补拍，从而违反归档的纵向重叠合同。Stop 的语义不变，暂停中依然
+是取消本次任务。
 
 矩形点两次、等腰梯形点三次，均在 `odom` 中解释。运行时区域/方向与构造时参数不可混用；
 精确字段、状态迁移和参数表由消息定义、launch 与 YAML 共同维护。

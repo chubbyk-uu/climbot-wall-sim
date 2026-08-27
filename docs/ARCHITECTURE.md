@@ -296,7 +296,9 @@ world
 缓存 `/coverage/task` 的最新有效预览，只有收到操作员明确的 `/coverage/start`，才把它复制
 下来、锁定 `task_id + revision`，然后发出 Action Goal。它同时提供 `/coverage/cancel`，并把
 状态、任务标识、段进度和上次结果汇总到 `/coverage/manager_status`，界面因此不必自己拼装
-状态。规划器不直接
+状态。`/coverage/pause` 与 `/coverage/resume` 也在这里，但管理器只做转发和回显：暂停由执行器
+判定并通过反馈宣布，管理器把请求变成一次到执行器的 `SetBool` 就不再自行推断，理由和上面
+一样——一个自己猜状态的中间层，猜错的那次正是操作员在看的那次。规划器不直接
 调用控制器，RViz 面板也不实现安全状态机。管理器是 Action 客户端而不是启动编排，因此不
 属于只放 launch 的 `climbot_bringup`。
 

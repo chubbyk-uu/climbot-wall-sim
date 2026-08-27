@@ -239,7 +239,7 @@ TEST_P(CoveragePanelLayout, showsEveryMessageInFullAtOperatorDockWidths)
   expectNothingIsCut(
     panel, width,
     {"state_value", "segment_value", "inspection_summary_value"},
-    {"start_button", "cancel_button"});
+    {"start_button", "pause_button", "resume_button", "cancel_button"});
   dumpIfRequested(panel, QString("%1_plan").arg(width));
   selectTab(panel, 1);
   layOut(panel, width, 640);
@@ -268,7 +268,7 @@ TEST(CoveragePanelSizing, showsTheStartupNoticeInFull)
   expectNothingIsCut(
     panel, 240,
     {"state_value", "segment_value", "inspection_summary_value"},
-    {"start_button", "cancel_button"});
+    {"start_button", "pause_button", "resume_button", "cancel_button"});
   dumpIfRequested(panel, "startup");
 }
 
@@ -316,10 +316,12 @@ TEST(CoveragePanelSizing, keepsTheButtonsReachableWhenTheDockIsTooShort)
   ASSERT_NE(scroll, nullptr);
   EXPECT_TRUE(scroll->verticalScrollBar()->maximum() > 0)
     << "the messages were cut off instead of made scrollable";
-  // Routine stop stays permanently visible. Exceptional recovery controls
-  // intentionally stay hidden until the manager permits one, and all other
-  // buttons live inside their scrollable tab.
-  for (const auto * name : {"start_button", "cancel_button"}) {
+  // The routine task controls stay permanently visible - stop above all, but
+  // pause and resume with it, because reaching for a pause and finding it
+  // scrolled away is how an operator ends up pressing stop instead.
+  // Exceptional recovery controls intentionally stay hidden until the manager
+  // permits one, and all other buttons live inside their scrollable tab.
+  for (const auto * name : {"start_button", "pause_button", "resume_button", "cancel_button"}) {
     auto * button = panel.findChild<QPushButton *>(name);
     ASSERT_NE(button, nullptr);
     const QPoint corner = button->mapTo(&panel, QPoint(0, button->height()));

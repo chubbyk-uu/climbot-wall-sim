@@ -41,6 +41,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_archive_recorder_node.py TIMEOUT 45 ENV ROS_DOMAIN_ID=93)
   add_launch_test(test/test_capture_once_node.py TIMEOUT 45 ENV ROS_DOMAIN_ID=91)
   add_launch_test(test/test_automatic_capture_node.py TIMEOUT 45 ENV ROS_DOMAIN_ID=92)
+  add_launch_test(test/test_automatic_capture_pause.py TIMEOUT 60 ENV ROS_DOMAIN_ID=94)
 endif()
 
 ament_package()

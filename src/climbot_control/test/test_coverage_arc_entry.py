@@ -41,6 +41,7 @@ import pytest
 import rclpy
 from rclpy.action import ActionClient
 from rosgraph_msgs.msg import Clock
+from std_srvs.srv import SetBool
 
 
 SIM_STEP_S = 0.01
@@ -144,6 +145,8 @@ class TestArcEntry(unittest.TestCase):
             Twist, '/control/cmd_vel', self._command_callback, 10)
         self.client = ActionClient(
             self.node, ExecuteCoverage, '/coverage/execute')
+        self.pause_client = self.node.create_client(
+            SetBool, '/coverage/executor_pause')
         self.stop_spin = False
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
@@ -246,6 +249,115 @@ class TestArcEntry(unittest.TestCase):
         self.assertTrue(result_future.done(), 'the task never finished')
         return (result_future.result(), samples, arc_end, (x, y, yaw),
                 arc_end_index)
+
+    def _call_pause(self, value, x, y, yaw):
+        """Ask the executor to pause or resume while the plant keeps running."""
+        self.assertTrue(self.pause_client.wait_for_service(timeout_sec=15.0))
+        request = SetBool.Request()
+        request.data = value
+        future = self.pause_client.call_async(request)
+        real_deadline = time.monotonic() + 15.0
+        while not future.done() and time.monotonic() < real_deadline:
+            x, y, yaw = self._drive_one_step(x, y, yaw)
+        self.assertTrue(future.done(), 'the executor never answered the pause service')
+        self.assertTrue(future.result().success, future.result().message)
+        return x, y, yaw
+
+    def _drive_one_step(self, x, y, yaw):
+        with self.lock:
+            linear = self.command.linear.x
+            angular = self.command.angular.z
+        yaw_delta = angular * SIM_STEP_S
+        y -= TURN_SLIP_M_PER_DEG * abs(math.degrees(yaw_delta))
+        yaw += yaw_delta
+        x += linear * math.cos(yaw) * SIM_STEP_S
+        y += linear * math.sin(yaw) * SIM_STEP_S
+        self._publish_odometry(x, y, yaw, linear, angular)
+        self._advance()
+        return x, y, yaw
+
+    def test_a_pause_inside_the_arc_resumes_onto_the_same_entry(self):
+        """
+        The forward arc has a deadline of its own, and a pause freezes it.
+
+        Every other execution state is interrupted in
+        test_coverage_executor_pause.py. The arc entry is not reachable there:
+        it only runs when the robot starts far enough off the line, which is
+        what this file is set up for. Its arc_entry_timeout_s is a deadline no
+        other state reads, so a pause that forgot it would be visible only
+        here - as a task that fails on the arc it was held inside of.
+        """
+        self.assertTrue(self.client.wait_for_server(timeout_sec=15.0))
+        # Offset from the run-in, so the turn onto the scan leaves an error
+        # the arc has to remove.
+        x, y, yaw = 0.08, -0.30, math.pi / 2.0
+        for _ in range(5):
+            self._publish_odometry(x, y, yaw)
+            self._advance(0.02)
+
+        goal = ExecuteCoverage.Goal()
+        goal.task = _task()
+        send_future = self.client.send_goal_async(
+            goal, feedback_callback=self._feedback_callback)
+        for _ in self._pending(send_future, 15.0):
+            self._publish_odometry(x, y, yaw)
+            self._advance()
+        self.assertTrue(send_future.done())
+        handle = send_future.result()
+        self.assertTrue(handle.accepted)
+        result_future = handle.get_result_async()
+
+        paused_in_arc = False
+        held_states = []
+        for _ in self._pending(result_future, 150.0):
+            with self.lock:
+                linear = self.command.linear.x
+                state = self.state
+            # An arc entry is reported as ALIGN while still driving forward;
+            # an in-place alignment is not.
+            if (not paused_in_arc and
+                    state == ExecuteCoverage.Feedback.ALIGN and abs(linear) > 1e-3):
+                paused_in_arc = True
+                x, y, yaw = self._call_pause(True, x, y, yaw)
+                deadline = self.sim_time + 10.0
+                while self.sim_time < deadline:
+                    with self.lock:
+                        current = self.state
+                    if current == ExecuteCoverage.Feedback.PAUSED:
+                        break
+                    x, y, yaw = self._drive_one_step(x, y, yaw)
+                self.assertEqual(
+                    self.state, ExecuteCoverage.Feedback.PAUSED,
+                    'the executor never stopped inside the arc entry')
+                # Longer than arc_entry_timeout_s, which is 15 s here.
+                end = self.sim_time + 20.0
+                while self.sim_time < end:
+                    with self.lock:
+                        held_states.append(self.state)
+                        self.assertEqual(
+                            (self.command.linear.x, self.command.angular.z),
+                            (0.0, 0.0))
+                    x, y, yaw = self._drive_one_step(x, y, yaw)
+                self.assertFalse(
+                    result_future.done(),
+                    'the arc-entry deadline expired while the task was paused')
+                x, y, yaw = self._call_pause(False, x, y, yaw)
+                continue
+            x, y, yaw = self._drive_one_step(x, y, yaw)
+
+        self.assertTrue(paused_in_arc, 'the arc entry never ran')
+        self.assertTrue(set(held_states) == {ExecuteCoverage.Feedback.PAUSED})
+        self.assertTrue(result_future.done(), 'the task never finished')
+        result = result_future.result()
+        self.assertEqual(result.status, GoalStatus.STATUS_SUCCEEDED)
+        self.assertEqual(
+            result.result.result_code, ExecuteCoverage.Result.SUCCESS)
+        # And it still ends on the line the arc entered, not on the offset it
+        # was paused holding.
+        self.assertGreater(x, 1.0, 'the scan did not reach its end')
+        self.assertLess(
+            abs(y), 0.030,
+            'finished %0.1f mm off the scan line' % (1000.0 * y))
 
     def test_an_offset_start_arcs_onto_the_line_and_completes(self):
         """The path no archived Gazebo run exercises."""

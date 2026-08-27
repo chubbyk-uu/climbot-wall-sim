@@ -134,7 +134,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 
 在 RViz 的 **Coverage Task** 面板中完成点选后按 **Replan**，确认 `Capture` 页的保存目录，再按
 **Start**。机器人只会在直线扫描段拍照。完成后，`${CLIMBOT_DATA_ROOT}` 下会出现一个新的任务目录，
-其中包含原始图像、每张图的拍摄位姿、相机标定和 `manifest.json`。需要停止时只按 **Cancel**。
+其中包含原始图像、每张图的拍摄位姿、相机标定和 `manifest.json`。想让它停一下再接着跑，按
+**Pause**，恢复按 **Resume**——任务和归档都不会因此结束；确定不跑了才按 **Stop**。
 
 ![RViz 中执行覆盖任务](docs/images/rviz_coverage_task.png)
 

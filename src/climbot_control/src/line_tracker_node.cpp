@@ -41,6 +41,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 using namespace std::chrono_literals;
 
@@ -91,6 +92,7 @@ public:
     frame_id_ = declare_parameter("frame_id", "odom");
     standalone_mode_ = declare_parameter("standalone_mode", true);
     segment_timeout_s_ = declare_parameter("segment_timeout_s", 120.0);
+    pause_stop_timeout_s_ = declare_parameter("pause_stop_timeout_s", 5.0);
     capture_gate_timeout_s_ = declare_parameter("capture_gate_timeout_s", 0.50);
     capture_gate_start_timeout_s_ = declare_parameter("capture_gate_start_timeout_s", 2.0);
     motion_region_tolerance_ = declare_parameter("motion_region_tolerance_m", 0.02);
@@ -262,6 +264,8 @@ public:
     last_control_time_ = zero;
     task_start_time_ = zero;
     segment_start_time_ = zero;
+    pause_requested_at_ = zero;
+    paused_at_ = zero;
 
     command_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/control/cmd_vel", 10);
     reference_publisher_ = create_publisher<nav_msgs::msg::Path>("/control/reference_path",
@@ -320,6 +324,12 @@ public:
         std::placeholders::_2),
       std::bind(&LineTrackerNode::handleCancel, this, std::placeholders::_1),
       std::bind(&LineTrackerNode::handleAccepted, this, std::placeholders::_1));
+    pause_service_ = create_service<std_srvs::srv::SetBool>(
+      "/coverage/executor_pause",
+      [this](const std_srvs::srv::SetBool::Request::SharedPtr request,
+      const std_srvs::srv::SetBool::Response::SharedPtr response) {
+        setPaused(request->data, response);
+      });
 
     if (standalone_mode_) {
       publishReferencePath();
@@ -357,6 +367,13 @@ private:
   /// The "not set yet" instant, carrying the control clock's type. Subtracting
   /// two rclcpp::Time of different clock types throws, so the sentinel cannot
   /// be a fixed RCL_ROS_TIME zero once the clock is chosen at runtime.
+  /// Whether the fused pose is present and recent enough to act on.
+  bool poseIsFresh(const rclcpp::Time & current_time) const
+  {
+    return have_pose_ && current_time >= last_pose_received_time_ &&
+           (current_time - last_pose_received_time_).seconds() <= odometry_timeout_s_;
+  }
+
   rclcpp::Time zeroInstant() const
   {
     return rclcpp::Time(0, 0, control_clock_->get_clock_type());
@@ -416,6 +433,7 @@ private:
     requirePositive("control_frequency_hz", control_frequency_hz_);
     requirePositive("odometry_timeout_s", odometry_timeout_s_);
     requirePositive("segment_timeout_s", segment_timeout_s_);
+    requirePositive("pause_stop_timeout_s", pause_stop_timeout_s_);
     requirePositive("capture_gate_timeout_s", capture_gate_timeout_s_);
     requirePositive("capture_gate_start_timeout_s", capture_gate_start_timeout_s_);
     requireFinite("turn_slip_per_degree_m", turn_slip_per_degree_);
@@ -608,6 +626,12 @@ private:
     task_start_time_ = controlNow();
     approaching_start_ = true;
     waiting_for_start_pose_ = !have_pose_;
+    pause_requested_ = false;
+    paused_ = false;
+    pause_requested_at_ = zeroInstant();
+    paused_at_ = zeroInstant();
+    paused_feedback_command_ = {};
+    last_feedback_command_ = {};
     segment_start_time_ = task_start_time_;
     // Cleared here and planned in configureStartApproach() instead, because
     // planSegmentDurations() reads pose_ for the first segment's turn and for
@@ -629,6 +653,84 @@ private:
     if (!waiting_for_start_pose_) {
       configureStartApproach();
     }
+  }
+
+  void setPaused(
+    bool pause, const std::shared_ptr<std_srvs::srv::SetBool::Response> & response)
+  {
+    if (standalone_mode_) {
+      response->success = false;
+      response->message = "Pause is available only during managed coverage execution.";
+      return;
+    }
+    if (!active_goal_) {
+      response->success = false;
+      response->message = "No active coverage task.";
+      return;
+    }
+    if (pause) {
+      if (pause_requested_) {
+        response->success = true;
+        response->message = paused_ ? "Coverage task is paused." :
+          "Coverage task is already decelerating for pause.";
+        return;
+      }
+      pause_requested_ = true;
+      paused_ = false;
+      pause_requested_at_ = controlNow();
+      paused_at_ = zeroInstant();
+      paused_feedback_command_ = last_feedback_command_;
+      response->success = true;
+      response->message = "Pause accepted; decelerating coverage motion to zero.";
+      return;
+    }
+    if (!pause_requested_) {
+      response->success = false;
+      response->message = "Coverage task is not paused.";
+      return;
+    }
+    if (!paused_) {
+      response->success = false;
+      response->message = "Coverage task is still decelerating; wait for PAUSED.";
+      return;
+    }
+    const auto current_time = controlNow();
+    // Resuming onto a stale pose would drive the first cycle blind and then
+    // abort the task on the localization timeout. Refusing here keeps the
+    // task paused and safe, and says why, which is the answer an operator can
+    // act on. A task paused before its first pose ever arrived is a different
+    // case: nothing is stale yet, and the start-up grace below still applies.
+    if (have_pose_ && !poseIsFresh(current_time)) {
+      response->success = false;
+      response->message = "Filtered odometry is stale; resume is refused until it recovers.";
+      return;
+    }
+
+    // Only the interval at a genuine standstill is given back. The
+    // deceleration before it was real travel under this task, and crediting it
+    // would hand the schedule a lead the robot never earned.
+    const auto paused_duration = current_time - paused_at_;
+    const auto shift_if_set = [&paused_duration](rclcpp::Time & instant) {
+        if (instant.nanoseconds() != 0) {
+          instant = instant + paused_duration;
+        }
+      };
+    shift_if_set(task_start_time_);
+    shift_if_set(segment_start_time_);
+    shift_if_set(travel_start_);
+    shift_if_set(alignment_profile_start_);
+    shift_if_set(alignment_settle_start_);
+    shift_if_set(arc_entry_start_time_);
+    pause_requested_ = false;
+    paused_ = false;
+    pause_requested_at_ = zeroInstant();
+    paused_at_ = zeroInstant();
+    previous_command_ = {};
+    last_control_time_ = current_time;
+    arrival_.reset();
+    capture_gate_wait_started_.reset();
+    response->success = true;
+    response->message = "Coverage task resumed from its paused segment.";
   }
 
   climbot_control::DurationModel durationModel() const
@@ -1152,7 +1254,13 @@ private:
       } else {
         active_goal_->abort(result);
       }
-    } catch (const rclcpp::exceptions::RCLError &) {
+    } catch (const std::exception &) {
+      // std::exception, not RCLError: the goal handle can be retired from the
+      // server's own bookkeeping during shutdown as well, and terminating it
+      // then throws a plain std::runtime_error that the narrower catch let
+      // through - which aborted the process instead of ending the launch
+      // cleanly. The rethrow above still keeps any failure that happens while
+      // the node is genuinely running.
       if (rclcpp::ok()) {
         throw;
       }
@@ -1171,11 +1279,23 @@ private:
     capture_gate_.reset();
     capture_gate_received_at_.reset();
     capture_gate_wait_started_.reset();
+    pause_requested_ = false;
+    paused_ = false;
+    pause_requested_at_ = zeroInstant();
+    paused_at_ = zeroInstant();
+    paused_feedback_command_ = {};
+    last_feedback_command_ = {};
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
   }
 
   uint8_t feedbackState() const
   {
+    if (paused_) {
+      return ExecuteCoverage::Feedback::PAUSED;
+    }
+    if (pause_requested_) {
+      return ExecuteCoverage::Feedback::PAUSING;
+    }
     if (approaching_start_ || waiting_for_start_pose_) {
       return ExecuteCoverage::Feedback::APPROACH_START;
     }
@@ -1273,10 +1393,13 @@ private:
     feedback->planned_total_s = schedule_.plannedTotal();
     feedback->schedule_lag_s = scheduleLagSeconds();
     feedback->estimated_remaining_s = estimatedRemaining(feedback->progress, command);
+    last_feedback_command_ = command;
     publishExecutionReference(*feedback);
     try {
       active_goal_->publish_feedback(feedback);
-    } catch (const rclcpp::exceptions::RCLError &) {
+    } catch (const std::exception &) {
+      // Same shutdown race as finishGoal(), and the same reason the catch is
+      // not narrowed to RCLError.
       if (rclcpp::ok()) {
         throw;
       }
@@ -1299,11 +1422,20 @@ private:
     reference.end.x = end_.x;
     reference.end.y = end_.y;
     reference.detection_forward_offset = active_task_->detection_forward_offset;
+    // Read from the motion state rather than the reported one, because a pause
+    // masks the reported state from the moment it is requested - and the robot
+    // is still travelling its whole braking distance at that point. Closing the
+    // gate there skipped every trigger target inside those centimetres, and the
+    // exposure then fired on resume from the standstill, far enough past its
+    // target that the recorder rejected it and failed the run. What has to stop
+    // capture is the robot having stopped, so the gate closes on paused_.
+    const bool scanning =
+      motion_state_ == MotionState::TRACK_LINE ||
+      motion_state_ == MotionState::FINAL_APPROACH;
     reference.inspection_enabled =
       inspection_enabled_ && !approaching_start_ && !arc_entry_active_ && reference_prepared_ &&
       feedback.segment_type == climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN &&
-      (feedback.state == ExecuteCoverage::Feedback::TRACK_LINE ||
-      feedback.state == ExecuteCoverage::Feedback::FINAL_APPROACH);
+      scanning && !paused_;
     execution_reference_publisher_->publish(reference);
   }
 
@@ -1420,14 +1552,68 @@ private:
         finishGoal(ExecuteCoverage::Result::CANCELED, "Coverage task canceled.");
         return;
       }
+      if (pause_requested_) {
+        // Everything below this point measures progress the robot is not
+        // making on purpose - the segment timeout, the schedule and the
+        // capture gate - so pause has to be handled before all of them.
+        //
+        // Localization is the exception while the robot is still decelerating.
+        // Deciding that motion has ended reads the measured speed, and a stale
+        // reading is not evidence that anything stopped. Once stopped, the
+        // command is a hard zero every cycle and there is nothing left for
+        // that supervision to protect; resuming re-checks it before moving.
+        if (!paused_ && have_pose_ && !poseIsFresh(current_time)) {
+          previous_command_ = {};
+          geometry_msgs::msg::Twist stop;
+          command_publisher_->publish(stop);
+          finishGoal(
+            ExecuteCoverage::Result::LOCALIZATION_TIMEOUT,
+            "Filtered odometry went stale while the coverage task was pausing.");
+          return;
+        }
+        if (!paused_ &&
+          (current_time - pause_requested_at_).seconds() > pause_stop_timeout_s_)
+        {
+          finishGoal(
+            ExecuteCoverage::Result::CONTROL_TIMEOUT,
+            "Coverage task failed to stop within the pause deadline.");
+          return;
+        }
+        const double dt = last_control_time_.nanoseconds() == 0 ?
+          1.0 / control_frequency_hz_ : (current_time - last_control_time_).seconds();
+        last_control_time_ = current_time;
+        if (!paused_ && dt > 0.0) {
+          limitAndPublish({}, dt, angular_acceleration_);
+          const bool command_stopped =
+            std::abs(previous_command_.linear) <= 1e-9 &&
+            std::abs(previous_command_.angular) <= 1e-9;
+          // A task paused before its first pose arrived has nothing in motion
+          // to stop: this loop has published zero since it started, so the
+          // measured speed is not required as evidence there.
+          const bool robot_stopped = !have_pose_ ||
+            (measured_linear_speed_ <= stopped_linear_speed_ &&
+            measured_angular_speed_ <= stopped_angular_speed_);
+          if (command_stopped && robot_stopped) {
+            paused_ = true;
+            paused_at_ = current_time;
+            previous_command_ = {};
+            geometry_msgs::msg::Twist stop;
+            command_publisher_->publish(stop);
+            RCLCPP_INFO(get_logger(), "Coverage task paused at segment %zu.", current_segment_);
+          }
+        } else {
+          geometry_msgs::msg::Twist stop;
+          command_publisher_->publish(stop);
+        }
+        publishFeedback(paused_feedback_command_);
+        return;
+      }
       if ((current_time - segment_start_time_).seconds() > segment_timeout_s_) {
         finishGoal(ExecuteCoverage::Result::CONTROL_TIMEOUT, "Segment execution timed out.");
         return;
       }
     }
-    if (!have_pose_ || current_time < last_pose_received_time_ ||
-      (current_time - last_pose_received_time_).seconds() > odometry_timeout_s_)
-    {
+    if (!poseIsFresh(current_time)) {
       previous_command_ = {};
       cross_integral_ = 0.0;
       if (motion_state_ != MotionState::SEGMENT_COMPLETE) {
@@ -1842,6 +2028,7 @@ private:
   double control_frequency_hz_{50.0};
   double odometry_timeout_s_{0.25};
   double segment_timeout_s_{120.0};
+  double pause_stop_timeout_s_{5.0};
   double capture_gate_timeout_s_{0.50};
   double capture_gate_start_timeout_s_{2.0};
   double motion_region_tolerance_{0.02};
@@ -1883,6 +2070,8 @@ private:
   // Goal-scoped rather than a mutable parameter: an archive decision made at
   // Start cannot be changed halfway through a scan by another UI client.
   bool inspection_enabled_{false};
+  bool pause_requested_{false};
+  bool paused_{false};
   bool reference_prepared_{true};
   bool arc_entry_active_{false};
   bool approaching_start_{false};
@@ -1919,6 +2108,13 @@ private:
   rclcpp::Time last_control_time_;
   rclcpp::Time task_start_time_;
   rclcpp::Time segment_start_time_;
+  // Two different questions need two different anchors. pause_requested_at_
+  // bounds how long the deceleration may take; paused_at_ is where the task's
+  // own clock stopped, and it is only reached once motion has actually ended.
+  rclcpp::Time pause_requested_at_;
+  rclcpp::Time paused_at_;
+  climbot_control::Command paused_feedback_command_;
+  climbot_control::Command last_feedback_command_;
   std::optional<climbot_interfaces::msg::CoverageTask> active_task_;
   std::optional<climbot_interfaces::msg::InspectionCaptureGate> capture_gate_;
   std::optional<std::chrono::steady_clock::time_point> capture_gate_received_at_;
@@ -1934,6 +2130,7 @@ private:
   rclcpp::Subscription<climbot_interfaces::msg::InspectionCaptureGate>::SharedPtr
     capture_gate_subscription_;
   rclcpp_action::Server<ExecuteCoverage>::SharedPtr action_server_;
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr pause_service_;
   rclcpp::Clock::SharedPtr control_clock_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
     validate_parameters_callback_;
