@@ -22,6 +22,7 @@ from xml.dom import minidom
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from climbot_description.wall_frame import reference_grid_spacing
+from climbot_gazebo.total_station_model import resolve_component_enabled
 from climbot_gazebo.wall_texture import load_manifest, texture_visuals
 from launch import LaunchDescription
 from launch.actions import (
@@ -51,6 +52,40 @@ JOINT_STATE_TOPIC = '/model/climbot/joint_state'
 CAMERA_IDEAL_IMAGE_TOPIC = '/simulation/inspection_camera/ideal_image'
 CAMERA_IDEAL_INFO_TOPIC = '/simulation/inspection_camera/ideal_camera_info'
 CAMERA_TRIGGER_TOPIC = '/simulation/inspection_camera/trigger'
+
+
+def resolved_localization_measurement_model(context):
+    """Resolve a named profile plus explicit component overrides once."""
+    profile = LaunchConfiguration('localization_profile').perform(context)
+    prism_mode = LaunchConfiguration(
+        'prism_extrinsic_error_mode').perform(context)
+    timestamp_mode = LaunchConfiguration(
+        'measurement_timestamp_error_mode').perform(context)
+    residual = yaml.safe_load(LaunchConfiguration(
+        'prism_extrinsic_error_robot_m').perform(context))
+    if not isinstance(residual, (list, tuple)) or len(residual) != 3:
+        raise ValueError('prism_extrinsic_error_robot_m must be a three-value YAML list.')
+    try:
+        residual = [float(value) for value in residual]
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            'prism_extrinsic_error_robot_m must contain finite numbers.') from error
+    if not all(math.isfinite(value) for value in residual):
+        raise ValueError('prism_extrinsic_error_robot_m must contain finite numbers.')
+    return {
+        'localization_profile': profile,
+        'prism_extrinsic_error_enabled': resolve_component_enabled(
+            profile, prism_mode),
+        'prism_extrinsic_error_robot_m': residual,
+        'measurement_timestamp_error_enabled': resolve_component_enabled(
+            profile, timestamp_mode),
+        'measurement_timestamp_bias_s': float(LaunchConfiguration(
+            'measurement_timestamp_bias_s').perform(context)),
+        'measurement_timestamp_jitter_stddev_s': float(LaunchConfiguration(
+            'measurement_timestamp_jitter_stddev_s').perform(context)),
+        'measurement_timestamp_jitter_seed': int(LaunchConfiguration(
+            'measurement_timestamp_jitter_seed').perform(context)),
+    }
 
 
 def running_on_wsl():
@@ -389,6 +424,7 @@ def launch_setup(context, *args, **kwargs):
         wall = yaml.safe_load(handle)['wall']
     with open(os.path.join(package_share, 'config', 'simulation.yaml')) as handle:
         simulation = yaml.safe_load(handle)['simulation']
+    localization_model = resolved_localization_measurement_model(context)
 
     actions = [
         SetEnvironmentVariable(
@@ -561,6 +597,7 @@ def launch_setup(context, *args, **kwargs):
             'fixed_delay_s': LaunchConfiguration('total_station_delay_s'),
             'drop_probability': LaunchConfiguration('total_station_drop_probability'),
             'random_seed': LaunchConfiguration('total_station_seed'),
+            **localization_model,
         }],
         output='screen',
     ))
@@ -638,6 +675,41 @@ def generate_launch_description():
             'total_station_delay_s',
             default_value='0.01',
             description='Fixed total-station delivery delay in seconds.',
+        ),
+        DeclareLaunchArgument(
+            'localization_profile',
+            default_value='precision',
+            description='Total-station model: precision or realistic.',
+        ),
+        DeclareLaunchArgument(
+            'prism_extrinsic_error_mode',
+            default_value='auto',
+            description='Fixed prism residual: auto, enabled, or disabled.',
+        ),
+        DeclareLaunchArgument(
+            'prism_extrinsic_error_robot_m',
+            default_value='[0.020, -0.010, 0.0]',
+            description='Actual prism-minus-EKF robot-frame residual [m].',
+        ),
+        DeclareLaunchArgument(
+            'measurement_timestamp_error_mode',
+            default_value='auto',
+            description='Clock stamp bias/jitter: auto, enabled, or disabled.',
+        ),
+        DeclareLaunchArgument(
+            'measurement_timestamp_bias_s',
+            default_value='0.020',
+            description='Total-station header-stamp clock bias in seconds.',
+        ),
+        DeclareLaunchArgument(
+            'measurement_timestamp_jitter_stddev_s',
+            default_value='0.002',
+            description='Header-stamp zero-mean jitter one-sigma in seconds.',
+        ),
+        DeclareLaunchArgument(
+            'measurement_timestamp_jitter_seed',
+            default_value='20260827',
+            description='Seed for total-station header-stamp jitter.',
         ),
         DeclareLaunchArgument(
             'wheel_forward_velocity_stddev_mps',

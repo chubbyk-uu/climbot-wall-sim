@@ -71,7 +71,7 @@ class RenderGrid:
 _WORKER_INITIAL: tuple[RenderFrame, ...] = ()
 _WORKER_OPTIMIZED: tuple[RenderFrame, ...] = ()
 _WORKER_GRID: RenderGrid | None = None
-_WORKER_FEATHER: np.ndarray | None = None
+_WORKER_INTERIOR_DISTANCE: np.ndarray | None = None
 _WORKER_IMAGES: OrderedDict[str, np.ndarray] = OrderedDict()
 _WORKER_CACHE_SIZE = 4
 _WORKER_CACHE_HITS = 0
@@ -98,6 +98,29 @@ def feather_map(width: int, height: int, fraction: float = 0.10) -> np.ndarray:
     y = np.minimum(np.arange(height) + 1, np.arange(height, 0, -1))
     distance = np.minimum(y[:, None], x[None, :]).astype(np.float32)
     return np.clip(distance / (fraction * min(width, height)), 0.0, 1.0)
+
+
+def interior_distance_map(width: int, height: int) -> np.ndarray:
+    """
+    Return pixel distance to the closest source-image edge.
+
+    The map is a deterministic ownership priority for hard-cut mosaics: in an
+    overlap, the image whose source pixel is furthest from its own edge owns
+    the wall pixel.  The caller keeps the existing owner on equal distances,
+    which makes ties resolve by the stable input-frame order.
+    """
+    if width <= 0 or height <= 0:
+        raise FusionError('interior-distance dimensions are invalid.')
+    x = np.minimum(np.arange(width) + 1, np.arange(width, 0, -1))
+    y = np.minimum(np.arange(height) + 1, np.arange(height, 0, -1))
+    return np.minimum(y[:, None], x[None, :]).astype(np.float32)
+
+
+def hard_cut_ownership(owner_priority: np.ndarray, candidate_priority: np.ndarray) -> np.ndarray:
+    """Choose only strictly stronger owners, retaining stable ties."""
+    if owner_priority.shape != candidate_priority.shape:
+        raise FusionError('hard-cut ownership maps must share a shape.')
+    return candidate_priority > owner_priority
 
 
 def encode_uncertainty(values_m: np.ndarray) -> np.ndarray:
@@ -219,10 +242,11 @@ def common_grid(initial: tuple[RenderFrame, ...], optimized: tuple[RenderFrame, 
 
 def _init_worker(initial: tuple[RenderFrame, ...], optimized: tuple[RenderFrame, ...],
                  grid: RenderGrid, width: int, height: int) -> None:
-    global _WORKER_INITIAL, _WORKER_OPTIMIZED, _WORKER_GRID, _WORKER_FEATHER, _WORKER_IMAGES
+    global _WORKER_INITIAL, _WORKER_OPTIMIZED, _WORKER_GRID
+    global _WORKER_INTERIOR_DISTANCE, _WORKER_IMAGES
     global _WORKER_CACHE_HITS, _WORKER_CACHE_MISSES
     _WORKER_INITIAL, _WORKER_OPTIMIZED, _WORKER_GRID = initial, optimized, grid
-    _WORKER_FEATHER = feather_map(width, height)
+    _WORKER_INTERIOR_DISTANCE = interior_distance_map(width, height)
     _WORKER_IMAGES = OrderedDict()
     _WORKER_CACHE_HITS = 0
     _WORKER_CACHE_MISSES = 0
@@ -253,17 +277,18 @@ def _tile_transform(grid: RenderGrid, tile_row: int, tile_column: int) -> np.nda
                      (0.0, 0.0, 1.0)), np.float64)
 
 
-def _blend(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
-           candidates: tuple[int, ...], auxiliary: bool,
-           quality: bool = False) -> tuple[np.ndarray, ...]:
-    if _WORKER_GRID is None or _WORKER_FEATHER is None:
+def _hard_cut(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
+              candidates: tuple[int, ...], auxiliary: bool,
+              quality: bool = False) -> tuple[np.ndarray, ...]:
+    if _WORKER_GRID is None or _WORKER_INTERIOR_DISTANCE is None:
         raise FusionError('render worker is not initialized.')
     size = _WORKER_GRID.tile_size_px
-    numerator = np.zeros((size, size), np.float32)
-    weights = np.zeros((size, size), np.float32)
+    output = np.zeros((size, size), np.uint8)
+    owner_priority = np.zeros((size, size), np.float32)
     coverage = np.zeros((size, size), np.uint16) if auxiliary or quality else None
-    uncertainty = np.zeros((size, size), np.float32) if auxiliary else None
-    second_moment = np.zeros((size, size), np.float32) if quality else None
+    uncertainty = np.full((size, size), np.nan, np.float32) if auxiliary else None
+    value_sum = np.zeros((size, size), np.float32) if quality else None
+    value_square_sum = np.zeros((size, size), np.float32) if quality else None
     transform = _tile_transform(_WORKER_GRID, tile_row, tile_column)
     columns = _WORKER_GRID.min_x_m + (
         tile_column + np.arange(size, dtype=np.float32) + 0.5) * _WORKER_GRID.resolution_m
@@ -272,43 +297,46 @@ def _blend(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
     for index in candidates:
         frame = frames[index]
         matrix = transform @ np.asarray(frame.homography, np.float64).reshape(3, 3)
-        warped_weight = cv2.warpPerspective(
-            _WORKER_FEATHER, matrix, (size, size), flags=cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_CONSTANT, borderValue=0.0)
-        mask = warped_weight > 1e-6
+        source_mask = np.ones(_WORKER_INTERIOR_DISTANCE.shape, np.uint8)
+        mask = cv2.warpPerspective(
+            source_mask, matrix, (size, size), flags=cv2.INTER_NEAREST,
+            borderMode=cv2.BORDER_CONSTANT, borderValue=0).astype(bool)
         if not np.any(mask):
             continue
         warped = cv2.warpPerspective(
             _image(frame.image_path), matrix, (size, size), flags=cv2.INTER_LINEAR,
             borderMode=cv2.BORDER_CONSTANT, borderValue=0.0)
-        numerator += warped.astype(np.float32) * warped_weight
-        weights += warped_weight
+        priority = cv2.warpPerspective(
+            _WORKER_INTERIOR_DISTANCE, matrix, (size, size), flags=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_CONSTANT, borderValue=0.0)
+        take = mask & hard_cut_ownership(owner_priority, priority)
+        output[take] = warped[take]
+        owner_priority[take] = priority[take]
         if coverage is not None:
             coverage += mask.astype(np.uint16)
-        if second_moment is not None:
-            second_moment += warped.astype(np.float32) ** 2 * warped_weight
+        if value_sum is not None and value_square_sum is not None:
+            values = warped.astype(np.float32)
+            value_sum[mask] += values[mask]
+            value_square_sum[mask] += values[mask] ** 2
         if auxiliary and uncertainty is not None:
             sx, sy, syaw = frame.posterior_std
             radius_squared = ((columns[None, :] - frame.center_xy_m[0]) ** 2 +
                               (rows[:, None] - frame.center_xy_m[1]) ** 2)
             sigma = np.sqrt(sx * sx + sy * sy + syaw * syaw * radius_squared)
-            uncertainty += warped_weight * sigma
-    output = np.zeros((size, size), np.uint8)
-    valid = weights > 1e-6
-    output[valid] = np.clip(np.rint(numerator[valid] / weights[valid]), 0, 255).astype(np.uint8)
+            uncertainty[take] = sigma[take]
+    valid = owner_priority > 0.0
     products: list[np.ndarray] = [output]
     if auxiliary and coverage is not None and uncertainty is not None:
-        uncertainty[valid] /= weights[valid]
         uncertainty[~valid] = np.nan
         products.extend((coverage, uncertainty))
-    if quality and coverage is not None and second_moment is not None:
+    if quality and coverage is not None and value_sum is not None and value_square_sum is not None:
         disagreement = np.full((size, size), np.nan, np.float32)
-        overlap = valid & (coverage >= 2)
+        overlap = coverage >= 2
         mean = np.zeros((size, size), np.float32)
-        mean[valid] = numerator[valid] / weights[valid]
+        mean[overlap] = value_sum[overlap] / coverage[overlap]
         variance = np.zeros((size, size), np.float32)
         variance[overlap] = np.maximum(
-            0.0, second_moment[overlap] / weights[overlap] - mean[overlap] ** 2)
+            0.0, value_square_sum[overlap] / coverage[overlap] - mean[overlap] ** 2)
         disagreement[overlap] = np.sqrt(variance[overlap])
         products.append(disagreement)
     return tuple(products)
@@ -318,12 +346,12 @@ def _render_task(task: tuple[str, int, int, tuple[int, ...], tuple[int, ...]]):
     hits_before, misses_before = _WORKER_CACHE_HITS, _WORKER_CACHE_MISSES
     mode, row, column, initial_candidates, optimized_candidates = task
     if mode == 'initial':
-        products = _blend(_WORKER_INITIAL, row, column, initial_candidates, False, True)
+        products = _hard_cut(_WORKER_INITIAL, row, column, initial_candidates, False, True)
     elif mode == 'optimized':
-        products = _blend(_WORKER_OPTIMIZED, row, column, optimized_candidates, True, True)
+        products = _hard_cut(_WORKER_OPTIMIZED, row, column, optimized_candidates, True, True)
     elif mode == 'difference':
-        first = _blend(_WORKER_INITIAL, row, column, initial_candidates, False)[0]
-        second = _blend(_WORKER_OPTIMIZED, row, column, optimized_candidates, False)[0]
+        first = _hard_cut(_WORKER_INITIAL, row, column, initial_candidates, False)[0]
+        second = _hard_cut(_WORKER_OPTIMIZED, row, column, optimized_candidates, False)[0]
         products = (cv2.absdiff(first, second),)
     else:
         raise FusionError(f'unknown render mode: {mode}.')
@@ -443,8 +471,8 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
         p95_bin = int(np.searchsorted(np.cumsum(quality_histogram), target))
         quality_result = {
             'overlap_pixel_count': quality_count,
-            'weighted_gray_std_mean': quality_sum / quality_count,
-            'weighted_gray_std_p95': p95_bin * 255.0 / 4095.0,
+            'gray_std_mean': quality_sum / quality_count,
+            'gray_std_p95': p95_bin * 255.0 / 4095.0,
         }
     total_accesses = cache_hits + cache_misses
     return {
@@ -624,7 +652,8 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                      'resolution_m_per_pixel': grid.resolution_m,
                      'width_px': grid.width_px, 'height_px': grid.height_px,
                      'tile_size_px': grid.tile_size_px},
-            'fusion': {'method': 'linear edge feather weighted mean',
+            'fusion': {'method': ('single-image hard cut by maximum interior distance; '
+                                  'stable input-frame order resolves ties'),
                        'same_grid_and_pixels_except_pose': True,
                        'jobs': jobs, 'memory_budget_gb': memory_budget_gb,
                        'elapsed_s': time.perf_counter() - started,
@@ -643,7 +672,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                 'nodata': int(UNCERTAINTY_NODATA),
             },
             'quality': {
-                'metric': 'weighted grayscale standard deviation in >=2-image overlap',
+                'metric': 'grayscale standard deviation across source images in >=2-image overlap',
                 'pose_only': initial_pass['quality'],
                 'optimized': optimized_pass['quality'],
             },

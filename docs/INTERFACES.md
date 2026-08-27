@@ -75,6 +75,13 @@ RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出�
 | `total_station_rate_hz` | `12.0` | 模拟全站仪频率 |
 | `total_station_stddev_m` | `0.001` | 全站仪位置一倍标准差 |
 | `total_station_delay_s` | `0.01` | 固定传输延迟（10 ms）；位姿延迟误差保留给标签和后处理，不以巡检限速掩盖 |
+| `localization_profile` | `precision` | 全站仪测量模型：`precision` 保持原 12 Hz / 1 mm / 10 ms 基线；`realistic` 同时启用以下两项系统残差 |
+| `prism_extrinsic_error_mode` | `auto` | `auto` 随 profile，或独立指定 `enabled` / `disabled`；实际棱镜相对 EKF 假定机器人参考点的固定残差 |
+| `prism_extrinsic_error_robot_m` | `[0.020, -0.010, 0.0]` | 棱镜残差 `[前向, 左向, 墙法向]`（m）；由真值墙面 yaw 旋转后加到位置测量 |
+| `measurement_timestamp_error_mode` | `auto` | `auto` 随 profile，或独立指定 `enabled` / `disabled`；仅改变观测 header 时间戳 |
+| `measurement_timestamp_bias_s` | `0.020` | header 时间戳固定时钟偏差（s），不改变位置、协方差或送达时刻 |
+| `measurement_timestamp_jitter_stddev_s` | `0.002` | header 时间戳零均值抖动一倍标准差（s） |
+| `measurement_timestamp_jitter_seed` | `20260827` | 时间戳抖动独立随机种子；不影响位置噪声或丢包序列 |
 | `wheel_forward_velocity_stddev_mps` | `0.03` | 轮式前向速度标准差 |
 | `wheel_yaw_rate_stddev_rps` | `0.05` | 轮式角速度标准差 |
 | `imu_orientation_stddev_rad` | `0.00174532925` | IMU 姿态标准差（0.1°） |
@@ -102,7 +109,10 @@ RViz 的固定坐标系是 `odom`，即墙面平面，所以点选工具给出�
 
 `/model/climbot/ground_truth` 是 Gazebo world 坐标真值，不得成为轨迹控制器输入。
 模拟全站仪和所有评价工具使用前必须将它转换到墙面 `odom` 工作坐标系；模拟全站仪
-还必须经过频率、噪声和延迟模型。
+还必须经过频率、噪声和延迟模型。`realistic` 中的棱镜残差由仿真传感器读取真值
+yaw 后投影到墙面，因此它是可解释的传感器真值模型，控制、归档标签仍只读同一份 EKF 输出。
+时间戳偏差／抖动只改 `/total_station/pose` 的 header stamp；固定 `10 ms` 送达队列仍以
+原始真值采样时刻排程，二者不能互相替代。
 
 `climbot_wall.launch.py` 始终启动 `cmd_vel_watchdog_node`，它是唯一的执行器控制
 输出者：以 `50 Hz` 从
@@ -161,7 +171,7 @@ Action。控制器自身仍按每段 `segment_timeout_s` 独立执行安全停�
 | 子段 | 内容 | 来源 |
 | --- | --- | --- |
 | `git` | `commit`、`branch`、`source_modified`、`traceable` | 工作树 |
-| `noise_sources` | `total_station_sim` 的种子、`stddev`、频率、延迟、丢包率；`wall_imu_adapter` 的种子和 `stddev` | **向节点的参数服务问回来** |
+| `noise_sources` | `total_station_sim` 的位置种子、`stddev`、频率、延迟、丢包率、profile、棱镜残差开关／向量、时间戳开关／偏差／抖动／种子；`wall_imu_adapter` 的种子和 `stddev` | **向节点的参数服务问回来** |
 | `control_parameters` | `line_tracker` 的 `tracking_mode`、`cruise_speed`、`turn_slip_per_degree_m` 和三个扫描偏移门限 | **向节点的参数服务问回来** |
 | `evaluator_parameters` | 评价器自己的全部参数 | 自身 |
 
@@ -1354,8 +1364,9 @@ ros2 run climbot_mosaic build_wall_mosaic \
 ```
 
 命令重新执行严格输入校验，并要求 P2.5 的 `input_summary`、初始位姿和全部帧键与输入逐项
-一致。位姿直投与优化拼接使用同一墙面范围、分辨率、照片、灰度插值、线性边缘羽化和 tile
-顺序，唯一变量是 P2.5 位姿修正。正式目录原子生成：`mosaic_pose_only.tif`、
+一致。位姿直投与优化拼接使用同一墙面范围、分辨率、照片、灰度插值、硬切图归属和 tile
+顺序，唯一变量是 P2.5 位姿修正。每个墙面像素仅保留一张源图：选择对应源像素离边缘最远的
+照片，距离相等时保留稳定输入帧顺序中较早的照片。正式目录原子生成：`mosaic_pose_only.tif`、
 `mosaic_optimized.tif`、`mosaic_difference.tif`、`coverage_count.tif`、`uncertainty.tif`、
 优化预览、三联对比预览和严格 JSON manifest。
 
@@ -1366,9 +1377,15 @@ worker 数、预算、总／逐 pass 耗时、缓存命中和 1 s 采样的 Linu
 `0.00001 m/count`（`0.01 mm/count`），`65535` 表示无覆盖，最大有限值为 `65534`；读取方
 必须按 manifest 的 `uncertainty_encoding` 解码，不能把整数直接解释为米。
 
-当前质量指标是至少两张图覆盖区域内的羽化权重灰度标准差均值与 P95。它只用于同输入、
+当前质量指标是至少两张图覆盖区域内、按源图逐像素计算的灰度标准差均值与 P95。它只用于同输入、
 同网格的 pose-only／optimized 相对比较，不等价于 Gazebo 真值误差，也不能在 P2.7 前当作
 冻结验收线。`work-dir` 只有可删除的中间缓存；完成证据仅是原子发布的输出目录。
+
+`evaluate_diagnostic_mosaic` 是 P2.7c 的离线后验接口：输入一份 hard-cut mosaic 目录、诊断墙
+清单和新输出目录；它从 DDS 母版中按墙面米制坐标读取可见修补块／涂鸦锚点，在两张母版中独立
+定位后报告绝对锚点偏差、相似变换尺度／航向／平移及局部残差。真值清单及 DDS 不得成为拼接
+输入，也不得参与候选、局部匹配或优化；相位响应低于显式门限的锚点会被记录为拒绝，最终比较
+只使用两个版本共同保留的锚点。
 
 ## `climbot_inspection` G2 自动采集接口
 

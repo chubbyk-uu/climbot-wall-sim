@@ -1,0 +1,22 @@
+# P2.7b independent diagnostic-wall dataset: alternating up/down scans.
+# It intentionally preserves the 4.1 x 6.0 m, ten-line, roughly 270-frame
+# geometry of the precision baseline while using a new task ID and the
+# realistic localization profile at launch time.
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    task_id: inspection-diagnostic-realistic-vertical-025mm-20260827
+    input_mode: parameters
+    region_type: rectangle
+    lower_left: [3.0, 1.0]
+    upper_right: [7.1, 7.0]
+    lower_right: [7.1, 1.0]
+    detection_width: 0.50
+    detection_length: 0.28125
+    detection_forward_offset: 0.340
+    detection_edge_overlap: 0.0
+    overlap_ratio: 0.20
+    sweep_direction: vertical
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

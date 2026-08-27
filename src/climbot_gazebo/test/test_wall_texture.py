@@ -26,7 +26,9 @@ sys.path.insert(0, TOOLS)
 import bake_wall_texture  # noqa: E402
 from climbot_gazebo.wall_texture import (  # noqa: E402
     block_extent, load_manifest, sampled_block_extent, texture_visuals)
+import create_diagnostic_wall  # noqa: E402
 import numpy as np  # noqa: E402
+from PIL import Image  # noqa: E402
 import pytest  # noqa: E402
 
 SCALE = 0.001
@@ -159,6 +161,93 @@ def test_minimum_cut_feather_has_no_binary_render_edge():
     assert alpha[:, 0].max() == 0.0
     assert alpha[:, -1].min() == 1.0
     assert np.any((alpha > 0.0) & (alpha < 1.0))
+
+
+def test_diagnostic_layout_is_seeded_sparse_and_recorded_in_wall_metres():
+    """P2.7a details must be reproducible evidence, not untracked scenery."""
+    first = create_diagnostic_wall.feature_layout([0.0, 0.0], [10.0, 8.0],
+                                                  20260827)
+    second = create_diagnostic_wall.feature_layout([0.0, 0.0], [10.0, 8.0],
+                                                   20260827)
+    assert first == second
+    kinds = [feature['kind'] for feature in first]
+    assert kinds.count('construction_seam') == 3
+    assert kinds.count('crack_decal') == 8
+    assert kinds.count('repair_patch') == 6
+    assert kinds.count('graffiti_decal') == 4
+    # The smallest centre separation rules out a dense calibration grid.
+    centres = [feature['center_m'] for feature in first
+               if feature['kind'] in ('repair_patch', 'graffiti_decal')]
+    distances = [np.linalg.norm(np.subtract(left, right))
+                 for index, left in enumerate(centres)
+                 for right in centres[index + 1:]]
+    assert min(distances) > 0.35
+    seams = [feature for feature in first if feature['kind'] == 'construction_seam']
+    for seam in seams:
+        start, end = seam['points_m']
+        assert start[0] == end[0] or start[1] == end[1]
+        edge_tolerance = seam['width_m'] / 2.0 + 1e-12
+        for point in (start, end):
+            assert min(abs(point[0]), abs(point[0] - 10.0),
+                       abs(point[1]), abs(point[1] - 8.0)) <= edge_tolerance
+    cracks = [feature for feature in first if feature['kind'] == 'crack_decal']
+    assert len({tuple(feature['atlas_box_fraction']) for feature in cracks}) == 8
+    assert min(max(feature['size_m']) for feature in cracks) >= 0.78
+    assert sum(max(feature['size_m']) >= 1.0 for feature in cracks) >= 6
+    graffiti = [feature for feature in first
+                if feature['kind'] == 'graffiti_decal']
+    assert min(feature['opacity'] for feature in graffiti) >= 0.40
+    assert min(max(feature['size_m']) for feature in graffiti) >= 0.50
+    for feature in first:
+        x0, y0, x1, y1 = create_diagnostic_wall._feature_bounds(feature)
+        assert 0.0 <= x0 < x1 <= 10.0
+        assert 0.0 <= y0 < y1 <= 8.0
+
+
+def test_default_diagnostic_decal_atlas_is_transparent_and_complete():
+    """The reproducible generator must ship its selected v2 source asset."""
+    with Image.open(create_diagnostic_wall.DEFAULT_DECAL_ATLAS) as atlas:
+        assert atlas.mode == 'RGBA'
+        assert atlas.getchannel('A').getextrema() == (0, 255)
+        for row in range(3):
+            for column in range(4):
+                cell = atlas.crop((column * atlas.width // 4,
+                                   row * atlas.height // 3,
+                                   (column + 1) * atlas.width // 4,
+                                   (row + 1) * atlas.height // 3))
+                assert cell.getchannel('A').getbbox() is not None
+
+
+def test_diagnostic_feature_is_drawn_in_the_declared_world_location():
+    """An overlap sample must place its paint mark from metres, not block row."""
+    image = Image.new('RGB', (200, 200), (128, 128, 128))
+    feature = {
+        'id': 'paint_mark_01', 'kind': 'paint_mark',
+        'center_m': [0.50, 1.50], 'radius_m': 0.08, 'angle_rad': 0.0,
+        'rgba': [80, 40, 30, 255],
+    }
+    rendered = create_diagnostic_wall.render_sample(
+        image, [feature], [0.0, 0.0], [2.0, 2.0], 0.01, 0, 0)
+    # y is top-origin in texture pixels: wall y=1.5 maps to row 50.
+    assert rendered.getpixel((50, 50)) != (128, 128, 128)
+    assert rendered.getpixel((150, 150)) == (128, 128, 128)
+
+
+def test_diagnostic_crack_decal_uses_alpha_and_metric_size():
+    """A decal must composite at its declared wall position and remain local."""
+    image = Image.new('RGB', (200, 200), (128, 128, 128))
+    atlas = Image.new('RGBA', (20, 20), (20, 20, 20, 255))
+    feature = {
+        'id': 'crack_decal_01', 'kind': 'crack_decal',
+        'center_m': [0.50, 1.50], 'size_m': [0.20, 0.20],
+        'angle_deg': 0.0, 'opacity': 1.0,
+        'atlas_box_fraction': [0.0, 0.0, 1.0, 1.0],
+    }
+    rendered = create_diagnostic_wall.render_sample(
+        image, [feature], [0.0, 0.0], [2.0, 2.0], 0.01, 0, 0,
+        atlas)
+    assert rendered.getpixel((50, 50)) != (128, 128, 128)
+    assert rendered.getpixel((80, 80)) == (128, 128, 128)
 
 
 def test_first_block_is_the_top_of_the_wall_not_the_bottom():

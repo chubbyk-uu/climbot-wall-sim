@@ -40,6 +40,19 @@ def generate_launch_description():
             'gpu_backend': LaunchConfiguration('gpu_backend'),
             'wall_grid_spacing': LaunchConfiguration('wall_grid_spacing'),
             'wall_texture': LaunchConfiguration('wall_texture'),
+            'localization_profile': LaunchConfiguration('localization_profile'),
+            'prism_extrinsic_error_mode': LaunchConfiguration(
+                'prism_extrinsic_error_mode'),
+            'prism_extrinsic_error_robot_m': LaunchConfiguration(
+                'prism_extrinsic_error_robot_m'),
+            'measurement_timestamp_error_mode': LaunchConfiguration(
+                'measurement_timestamp_error_mode'),
+            'measurement_timestamp_bias_s': LaunchConfiguration(
+                'measurement_timestamp_bias_s'),
+            'measurement_timestamp_jitter_stddev_s': LaunchConfiguration(
+                'measurement_timestamp_jitter_stddev_s'),
+            'measurement_timestamp_jitter_seed': LaunchConfiguration(
+                'measurement_timestamp_jitter_seed'),
         }.items(),
     )
     coverage = IncludeLaunchDescription(
@@ -112,6 +125,34 @@ def generate_launch_description():
             default_value='',
             description='Bake manifest from tools/bake_wall_texture.py; empty '
                         'leaves the wall its flat colour.',
+        ),
+        DeclareLaunchArgument(
+            'localization_profile', default_value='precision',
+            description='Total-station measurement model: precision or realistic.',
+        ),
+        DeclareLaunchArgument(
+            'prism_extrinsic_error_mode', default_value='auto',
+            description='Fixed prism residual: auto, enabled, or disabled.',
+        ),
+        DeclareLaunchArgument(
+            'prism_extrinsic_error_robot_m', default_value='[0.020, -0.010, 0.0]',
+            description='Actual prism-minus-EKF robot-frame residual [m].',
+        ),
+        DeclareLaunchArgument(
+            'measurement_timestamp_error_mode', default_value='auto',
+            description='Clock stamp bias/jitter: auto, enabled, or disabled.',
+        ),
+        DeclareLaunchArgument(
+            'measurement_timestamp_bias_s', default_value='0.020',
+            description='Header-stamp clock bias in seconds.',
+        ),
+        DeclareLaunchArgument(
+            'measurement_timestamp_jitter_stddev_s', default_value='0.002',
+            description='Header-stamp jitter one-sigma in seconds.',
+        ),
+        DeclareLaunchArgument(
+            'measurement_timestamp_jitter_seed', default_value='20260827',
+            description='Seed for header-stamp jitter.',
         ),
         simulation,
         inspection,

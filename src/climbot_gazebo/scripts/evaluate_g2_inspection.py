@@ -31,6 +31,7 @@ from climbot_gazebo.inspection_contract import (
     DEFAULT_NOMINAL_OVERLAP_RATIO,
 )
 from climbot_gazebo.provenance import git_state
+from climbot_gazebo.provenance import NOISE_SOURCES, parameter_groups
 from climbot_interfaces.msg import CoverageStatus, CoverageTask, InspectionCapture
 from nav_msgs.msg import Odometry
 import rclpy
@@ -48,6 +49,16 @@ def stamp_ns(header):
 def wrap(value):
     """Return an angle in [-pi, pi]."""
     return math.atan2(math.sin(value), math.cos(value))
+
+
+def nearest_rank_percentile(values, fraction):
+    """Return a reproducible nearest-rank percentile from finite samples."""
+    if not values:
+        return None
+    if not 0.0 < fraction <= 1.0:
+        raise ValueError('fraction must be within (0, 1].')
+    ordered = sorted(values)
+    return ordered[max(0, math.ceil(fraction * len(ordered)) - 1)]
 
 
 class G2InspectionEvaluator(Node):
@@ -317,6 +328,8 @@ class G2InspectionEvaluator(Node):
             'minimum_photo_coverage_ratio': minimum_photo_coverage,
             'maximum_camera_position_error_m': (
                 max(self.position_errors) if self.position_errors else None),
+            'p95_camera_position_error_m': nearest_rank_percentile(
+                self.position_errors, 0.95),
             'maximum_camera_position_error_components_m': (
                 [max(abs(value[axis]) for value in self.position_error_components)
                  for axis in range(3)]
@@ -329,6 +342,7 @@ class G2InspectionEvaluator(Node):
             'provenance': {
                 'recorded_utc': datetime.now(timezone.utc).isoformat(),
                 'git': git_state(),
+                'noise_sources': parameter_groups(self, NOISE_SOURCES),
             },
         }
         path = str(self.get_parameter('summary_path').value)
@@ -338,9 +352,12 @@ class G2InspectionEvaluator(Node):
                 handle.write('\n')
         self.get_logger().info(
             'G2_RESULT passed=%s captures=%d segments=%d actual_gap_max=%.3f mm '
-            'camera_error_max=%s mm heading_error_max=%s deg' % (
+            'camera_error_p95=%s mm max=%s mm heading_error_max=%s deg' % (
                 passed, len(self.metadata), len(expected_scan_segments),
                 maximum_actual_gap * 1000.0,
+                ('%.3f' % (nearest_rank_percentile(
+                    self.position_errors, 0.95) * 1000.0)
+                 if self.position_errors else 'n/a'),
                 ('%.3f' % (max(self.position_errors) * 1000.0)
                  if self.position_errors else 'n/a'),
                 ('%.3f' % math.degrees(max(self.heading_errors))

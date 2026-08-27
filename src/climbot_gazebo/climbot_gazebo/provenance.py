@@ -37,7 +37,11 @@ from rclpy.parameter import parameter_value_to_python
 NOISE_SOURCES = (
     ('/total_station_sim',
      ('random_seed', 'position_stddev_m', 'publish_rate_hz',
-      'fixed_delay_s', 'drop_probability')),
+      'fixed_delay_s', 'drop_probability', 'localization_profile',
+      'prism_extrinsic_error_enabled', 'prism_extrinsic_error_robot_m',
+      'measurement_timestamp_error_enabled', 'measurement_timestamp_bias_s',
+      'measurement_timestamp_jitter_stddev_s',
+      'measurement_timestamp_jitter_seed')),
     ('/wall_imu_adapter', ('random_seed', 'orientation_stddev_rad')),
 )
 

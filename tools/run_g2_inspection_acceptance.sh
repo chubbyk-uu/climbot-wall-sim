@@ -22,6 +22,10 @@
 #
 # Usage:
 #   tools/run_g2_inspection_acceptance.sh [horizontal] [vertical] [trapezoid]
+#   INSPECTION_OUTPUT_ROOT=/home/jerry/climbot_data \
+#     WALL_TEXTURE=textures/wall_diagnostic_025/wall_texture.json \
+#     LOCALIZATION_PROFILE=realistic G2_MAX_CAMERA_POSITION_ERROR_M=1.0 \
+#     tools/run_g2_inspection_acceptance.sh p27b_horizontal p27b_vertical
 #
 # With no case names all three cases run.  The run deliberately uses the
 # calibrated planner profile: physical camera geometry (including the +0.340 m
@@ -33,6 +37,11 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 WS=$(dirname "$SCRIPT_DIR")
 RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/climbot_g2_XXXXXX")
 TERM_GRACE_S=${G2_TERM_GRACE_S:-20}
+LOCALIZATION_PROFILE=${LOCALIZATION_PROFILE:-precision}
+PRISM_EXTRINSIC_ERROR_ROBOT_M=${PRISM_EXTRINSIC_ERROR_ROBOT_M:-'[0.020, -0.010, 0.0]'}
+G2_MAX_CAMERA_POSITION_ERROR_M=${G2_MAX_CAMERA_POSITION_ERROR_M:-0.005}
+INSPECTION_OUTPUT_ROOT=${INSPECTION_OUTPUT_ROOT:-}
+WALL_TEXTURE=${WALL_TEXTURE:-}
 PGIDS=()
 ACTIVE_CASE=''
 
@@ -40,16 +49,22 @@ declare -A CONFIG=(
   [horizontal]='coverage_g2_acceptance_horizontal.yaml'
   [vertical]='coverage_g2_acceptance_vertical.yaml'
   [trapezoid]='coverage_g2_acceptance_trapezoid.yaml'
+  [p27b_horizontal]='coverage_p27b_diagnostic_realistic_horizontal.yaml'
+  [p27b_vertical]='coverage_p27b_diagnostic_realistic_vertical.yaml'
 )
 declare -A REGION=(
   [horizontal]='rectangle'
   [vertical]='rectangle'
   [trapezoid]='trapezoid'
+  [p27b_horizontal]='rectangle'
+  [p27b_vertical]='rectangle'
 )
 declare -A SWEEP=(
   [horizontal]='horizontal'
   [vertical]='vertical'
   [trapezoid]='horizontal'
+  [p27b_horizontal]='horizontal'
+  [p27b_vertical]='vertical'
 )
 
 if [ "$#" -eq 0 ]; then
@@ -59,7 +74,7 @@ else
 fi
 for case_name in "${CASES[@]}"; do
   if [ -z "${CONFIG[$case_name]+x}" ]; then
-    echo "Unknown G2 case: $case_name (expected horizontal, vertical or trapezoid)" >&2
+    echo "Unknown case: $case_name" >&2
     exit 2
   fi
 done
@@ -155,7 +170,7 @@ run_case() {
   ACTIVE_CASE=$case_name
   case_dir="$RUN_DIR/$case_name"
   summary="$case_dir/summary.json"
-  archive="$case_dir/archive"
+  archive=${INSPECTION_OUTPUT_ROOT:-"$case_dir/archive"}
   mkdir -p "$case_dir" "$archive"
   export ROS_DOMAIN_ID=$((180 + ${#PGIDS[@]}))
   export ROS_LOCALHOST_ONLY=1
@@ -163,7 +178,10 @@ run_case() {
 
   echo "[$case_name] starting (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, GZ_PARTITION=$GZ_PARTITION)"
   start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo climbot_wall.launch.py \
-    use_sim_time:=true headless:=true gpu_backend:=wsl_d3d12 wall_grid_spacing:=0 || return 1
+    use_sim_time:=true headless:=true gpu_backend:=wsl_d3d12 wall_grid_spacing:=0 \
+    localization_profile:="$LOCALIZATION_PROFILE" \
+    prism_extrinsic_error_robot_m:="$PRISM_EXTRINSIC_ERROR_ROBOT_M" \
+    wall_texture:="$WALL_TEXTURE" || return 1
   if ! wait_for_topic /model/climbot/ground_truth; then
     echo "[$case_name] simulator did not become ready; see $case_dir/simulator.log" >&2
     return 1
@@ -188,6 +206,7 @@ run_case() {
   setsid timeout 900 ros2 run climbot_gazebo evaluate_g2_inspection.py --ros-args \
     -p use_sim_time:=true -p summary_path:="$summary" \
     -p nominal_overlap_ratio:=0.20 -p minimum_actual_overlap_ratio:=0.15 \
+    -p maximum_camera_position_error_m:="$G2_MAX_CAMERA_POSITION_ERROR_M" \
     >"$case_dir/evaluator.log" 2>&1 &
   evaluator_pid=$!
   remember_group "$evaluator_pid" || return 1
@@ -210,7 +229,8 @@ run_case() {
     " gap=" + ((.maximum_actual_gap_m * 1000)|tostring) + "mm/" +
     ((.maximum_actual_gap_limit_m * 1000)|tostring) + "mm, lateral=" +
     ((.maximum_lateral_spacing_m * 1000)|tostring) + "mm/" +
-    ((.maximum_lateral_spacing_limit_m * 1000)|tostring) + "mm, pose=" +
+    ((.maximum_lateral_spacing_limit_m * 1000)|tostring) + "mm, pose p95=" +
+    ((.p95_camera_position_error_m * 1000)|tostring) + "mm max=" +
     ((.maximum_camera_position_error_m * 1000)|tostring) + "mm"' "$summary"
   teardown_case
   ACTIVE_CASE=''

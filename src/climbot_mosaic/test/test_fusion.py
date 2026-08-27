@@ -25,6 +25,8 @@ from climbot_mosaic.fusion import (
     encode_uncertainty,
     feather_map,
     FusionError,
+    hard_cut_ownership,
+    interior_distance_map,
     RenderFrame,
     RenderGrid,
     resolve_jobs,
@@ -54,6 +56,19 @@ def test_feather_is_symmetric_and_has_full_weight_center():
     np.testing.assert_array_equal(values, np.fliplr(values))
     assert values[5, 10] == pytest.approx(1.0)
     assert 0.0 < values[0, 0] < 1.0
+
+
+def test_hard_cut_prefers_interior_source_and_keeps_stable_ties():
+    distance = interior_distance_map(7, 5)
+    np.testing.assert_array_equal(distance, np.flipud(distance))
+    np.testing.assert_array_equal(distance, np.fliplr(distance))
+    owner = np.asarray(((3.0, 4.0), (2.0, 5.0)), np.float32)
+    candidate = np.asarray(((4.0, 4.0), (1.0, 6.0)), np.float32)
+    np.testing.assert_array_equal(
+        hard_cut_ownership(owner, candidate),
+        ((True, False), (False, True)))
+    with pytest.raises(FusionError, match='share a shape'):
+        hard_cut_ownership(owner, candidate[:, :1])
 
 
 def test_resource_and_grid_contracts_reject_invalid_values():

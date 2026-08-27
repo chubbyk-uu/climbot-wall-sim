@@ -51,11 +51,15 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_coverage_metrics test/test_coverage_metrics.py)
   ament_add_pytest_test(test_ekf_startup test/test_ekf_startup.py)
   ament_add_pytest_test(test_execution_metrics test/test_execution_metrics.py)
+  ament_add_pytest_test(
+    test_g2_inspection_metrics test/test_g2_inspection_metrics.py)
   ament_add_pytest_test(test_inspection_contract test/test_inspection_contract.py)
   ament_add_pytest_test(test_model_defaults test/test_model_defaults.py)
   ament_add_pytest_test(
     test_normal_load_statistics test/test_normal_load_statistics.py)
   ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
+  ament_add_pytest_test(
+    test_total_station_model test/test_total_station_model.py)
   ament_add_pytest_test(test_trajectory_io test/test_trajectory_io.py)
   ament_add_pytest_test(test_turn_slip_model test/test_turn_slip_model.py)
   ament_add_pytest_test(test_turn_profile test/test_turn_profile.py)

@@ -479,6 +479,72 @@ tools/run_coverage_regression.sh -t <tag> -j 1 \
 `line_tracker` 的参数服务问回来，写进摘要的 `provenance.noise_sources` 和
 `provenance.control_parameters`。传给一个没起来的节点的参数，在摘要里看得出来。
 
+### P2.7b realistic 定位 profile
+
+默认 `precision` 保持既有 `12 Hz`、`1 mm` 位置白噪声和已知 `10 ms` 送达延迟。需要
+重新采集诊断墙数据时，以 `realistic` 启动；它的初始可校准参数是机器人系
+`[20, -10, 0] mm` 棱镜残差，以及仅作用于观测 header 的 `+20 ms` 时钟偏差和
+`2 ms` 零均值抖动：
+
+```bash
+ros2 launch climbot_bringup coverage_mission.launch.py \
+    wall_texture:=textures/wall_diagnostic_025/wall_texture.json \
+    wall_grid_spacing:=0 \
+    localization_profile:=realistic
+```
+
+棱镜残差按 Gazebo 真值 yaw 投影到墙面坐标，正反向扫描会得到相反的墙面内投影；它不改变
+发布协方差。时间戳项不改变送达时间：已知 `10 ms` 队列仍按真实采样时刻送达，而 clock
+残差只改 header stamp。若要分开做消融试验，可覆盖任一项：
+
+```bash
+# 保留 realistic 的时间戳残差，但关闭棱镜残差
+ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true \
+    localization_profile:=realistic prism_extrinsic_error_mode:=disabled
+
+# precision 基线中只启用棱镜残差，并指定另一个机器人系向量（m）
+ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true \
+    localization_profile:=precision prism_extrinsic_error_mode:=enabled \
+    prism_extrinsic_error_robot_m:='[0.010, 0.008, 0.0]'
+```
+
+`enabled` / `disabled` 显式覆盖 `auto`；时间戳项同理使用
+`measurement_timestamp_error_mode`。摘要会通过参数服务写回 profile、两个实际开关、残差、
+偏差、抖动和种子，连同 Gazebo 真值／EKF 相机中心误差记录在一起，不能把调参值事后写进
+归档标签冒充传感器输入。2026-08-27 的单横向 G2 初步校准（10 张曝光、非正式验收）在
+`[20, -10, 0] mm` 下得到 P95 `24.17 mm`、最大 `24.17 mm`；仍必须以新的横向／竖向
+正式采集复核，不能将这次短运行或 P95 调试带当作最终门限。
+
+### P2.7c 诊断墙真值评价
+
+拼接完成后，才可用独立评价器把 hard-cut BigTIFF 与诊断墙 DDS 母版的米制特征对齐。它只读取
+正式拼接结果、`wall_texture.json` 和 DDS；不得接入候选生成、匹配或位姿图优化：
+
+```bash
+ros2 run climbot_mosaic evaluate_diagnostic_mosaic \
+  --mosaic-dir /home/jerry/climbot_data/mosaic-p27b-hardcut-joint-20260827 \
+  --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
+  --output-dir /home/jerry/climbot_data/mosaic-p27b-hardcut-joint-truth-<new-id> \
+  --anchor-padding-m 0.10 --minimum-phase-response 0.10
+```
+
+评价器仅采用两个图上都完整可见的修补块／涂鸦锚点；相位相关响应低于门限的锚点被明确拒绝，
+两个版本只用同一组保留锚点比较。输出记录绝对锚点偏差、尺度 ppm、航向、局部相似变换残差和
+所有锚点的响应。少于三个保留锚点时仍报告整体相似变换，但 `local_residual_observable=false`，
+不得把两点刚好拟合的零残差解读为局部无形变。
+
+已构建诊断墙时，可用现成脚本采集两条独立 270 帧轨迹；它使用新任务 ID、永久归档根目录，
+且把评价器的旧 `5 mm` 精度上限仅对本次**分布测量**放宽为 `1 m`。因此脚本的 `PASS` 只表示
+任务、归档、照片绑定和几何采集合同通过；必须从摘要读取 P95，不能把它解释成 precision
+定位验收。
+
+```bash
+INSPECTION_OUTPUT_ROOT=/home/jerry/climbot_data \
+WALL_TEXTURE=textures/wall_diagnostic_025/wall_texture.json \
+LOCALIZATION_PROFILE=realistic G2_MAX_CAMERA_POSITION_ERROR_M=1.0 \
+tools/run_g2_inspection_acceptance.sh p27b_horizontal p27b_vertical
+```
+
 ### §14.5 定位对照
 
 不走回归脚本，单独跑一次四方向闭环，逐段用真值同时测融合位姿误差和轮式航位推算
@@ -525,6 +591,33 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 `128 px` 不是只为原始分辨率准备的。它使相邻块经过五级 2× 下采样及 BC1 的 `4×4`
 编码后仍保持相同采样相位，覆盖 Gazebo GUI 从近景到整墙视角通常使用的 mip 范围。
 代价是贴图纹素和压缩产物比无边框版本增加约 `24%`，仍在烘焙器的显存预算内。
+
+### P2.7a 诊断墙
+
+`wall_025` 是当前精度／混凝土基线，必须保持不变。以下命令从它的 DDS 块生成一个
+**独立**的诊断墙：其中只有少量不规则施工缝、裂纹、修补块和喷涂标记，用来检查拼接
+对可人工辨识细节的恢复能力；它不是用于特征算法的密集标定格。
+
+```bash
+python3 tools/create_diagnostic_wall.py \
+  --base-manifest textures/wall_025/wall_texture.json \
+  --output-dir textures/wall_diagnostic_025 \
+  --seed 20260827 \
+  --preview docs/images/wall_diagnostic_preview.png
+
+ros2 launch climbot_bringup coverage_mission.launch.py \
+  wall_texture:=textures/wall_diagnostic_025/wall_texture.json \
+  wall_grid_spacing:=0
+```
+
+生成器拒绝覆盖已有输出目录。裂缝和白色手绘标记来自透明贴片图集
+`tools/assets/diagnostic_wall_decals_v2.png`；v2 裂缝源图本身就是细长、自然分叉且末端渐细的
+发丝裂纹。渲染器保留其走势和分叉，在图集原始分辨率上规范中心线后再统一颜色、尺寸、
+角度和透明度；最终可见轮廓中位宽约 `4.0 mm`，较实核心中位宽约 `2.8 mm`。清单的 `diagnostic_wall` 段记录输入清单
+SHA-256、贴片图集 SHA-256、生成 seed 和每一条特征的墙面米制坐标；所有特征按同一坐标写入相邻 DDS 的重叠 gutter，
+因此块边界本身不能制造假接缝。诊断墙仍只是 wall 的视觉层，不改变碰撞、摩擦、
+WheelSlip 或控制参数。`textures/` 产物不进 Git，脚本、seed 和 manifest 共同构成可复现
+定义。
 
 quilting 仍先在 `384 px` 重叠区寻找最小误差裁切路径，再只在该路径附近做默认
 `96 px` 的窄羽化。羽化不会跨出两块真实照片共同覆盖的区域；它用于去掉硬裁切留下的
