@@ -1,145 +1,65 @@
 # Climbot Sim
 
-基于 ROS 2 Jazzy 和 Gazebo Harmonic 的垂直壁面爬壁机器人仿真项目。机器人
-保留真实重力，通过持续法向吸附力贴墙，以前置差分主动轮和后球形随动轮运动，
-并模拟运动时受重力影响的侧滑。
-
-当前已经完成物理仿真、定位融合、覆盖路径规划、多段覆盖 Action、自定义直线跟踪、
-转向下坠处理和速度安全链，不使用 Nav2。横向与竖向弓字任务共用控制器：转后小
-偏差冻结为平行扫描线，较大偏差先执行一次前进小弧线，正式扫描段始终保持直线。
-工业面阵相机按 `mono8` 灰度输出，支持真实 Brown 镜头畸变、夜间弱月光下的单 LED 主照明、人工
-单拍和沿正式扫描线按位置自动拍摄；每张图像绑定曝光时刻的融合相机位姿与航向，
-前后、左右名义重叠均为 `20%`。弱光成像支持 30 次独立纯灰曝光生成固定 LED 平场
-矩阵，同时保留原图和补偿预览。正式任务把未做光照补偿、未做畸变校正的无损原图及
-曝光位姿标签归档；预处理和全局墙面拼接在同一仓库的独立包中离线执行。
-
-直线段有两种可切换的控制律：按剩余距离制动的位置控制，和按时间参数化速度曲线
-行驶的时间点控制。两者验收指标等价，后者额外给出任务时长预测：长覆盖任务误差约
-`2%`，单段短任务和复杂起点进入仍有 `8%~17%` 的模型偏差（见
-[docs/STATUS.md](docs/STATUS.md)），用 `planned_total_s` 排工期时要按这个口径看。
+基于 ROS 2 Jazzy 与 Gazebo Harmonic 的垂直壁面爬壁机器人仿真。系统保留真实重力，以持续
+法向吸附力贴墙；覆盖规划、直线闭环控制、位置触发采集、离线图像处理和全局墙面拼接均在本仓库
+内完成。控制不依赖 Nav2，拼接算法不读取 Gazebo 真值或墙面纹理。
 
 ![Gazebo 中的墙面与机器人](docs/images/gazebo_wall.png)
 
-Gazebo 里的作业面与机器人：真实重力，靠持续法向吸附力贴墙，前置差分主动轮加
-后球形随动轮。车头的深色标记用来分辨朝向。
+## 你能做什么
 
-## 文档导航
+- 在 Gazebo 中启动墙面、机器人、传感器、EKF 和 RViz；
+- 点选矩形或等腰梯形任务区，执行横向或纵向弓字覆盖；
+- 在正式扫描线自动拍摄原始灰度图，并将每张图和曝光时刻融合相机位姿原子归档；
+- 离线校验归档、平场校正、去畸变、匹配、全局位姿优化和硬切墙面拼接；
+- 用诊断墙真值和原尺寸 tile 检查拼接的绝对偏差、接缝和缺陷细节。
 
-| 文档 | 用途 |
+当前 A～G4 仿真链路已完成；P2 拼接已完成 P2.7e，仍需大工作区盲测补足诊断目标覆盖后冻结
+最终门限。当前状态见 [STATUS](docs/STATUS.md)。
+
+## 环境要求
+
+| 组件 | 已验证版本 |
 | --- | --- |
-| [docs/README.md](docs/README.md) | 文档职责、归档规则与后续重组结构 |
-| [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 项目目标、设计约束、实施阶段和最终验收标准 |
-| [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) | §14 每项要求到自动化测试、Gazebo 结果与实机待办的映射 |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 包职责、依赖方向、配置归属和运行时数据流 |
-| [docs/INTERFACES.md](docs/INTERFACES.md) | launch、话题、服务、参数和 TF |
-| [docs/OPERATION.md](docs/OPERATION.md) | 操作手册：启动、点选、面板、算法切换和回归 |
-| [docs/STATUS.md](docs/STATUS.md) | 阶段完成度、review 闭环和下一步 |
-| [docs/DATA_RETENTION.md](docs/DATA_RETENTION.md) | 本地大数据的保留等级、清理候选和确认流程 |
-| [results/README.md](results/README.md) | 实验结果用途、有效性和重新生成方法 |
-
-## 软件基线
-
-- ROS 2 Jazzy；
-- Gazebo Harmonic / gz-sim 8；
-- `robot_localization`；
-- C++17 用于核心规划和控制；
-- Python 用于 launch、传感器适配、实验和数据分析。
-
-## 工作区结构
-
-```text
-climbot_sim/
-├── PROJECT_GUIDE.md             总指导规范
-├── README.md                    项目入口、安装与构建
-├── docs/                        操作手册、架构、接口和状态
-├── tools/                       并行回归脚本
-├── results/                     可追溯实验输出
-└── src/
-    ├── climbot_description/     共享机器人与墙面描述
-    ├── climbot_gazebo/          仿真、定位与评估工具
-    ├── climbot_interfaces/      覆盖任务消息与执行 Action
-    ├── climbot_coverage/        C++ 覆盖规划与 RViz
-    ├── climbot_rviz_plugins/    RViz 操作面板
-    ├── climbot_control/         C++ 轨迹跟踪和速度安全
-    ├── climbot_inspection/      C++ 单拍、沿轨位置触发与曝光位姿关联
-    ├── climbot_image_processing/  离线归档校验、光照／畸变校正
-    ├── climbot_mosaic/          输入预检与初始米制投影；后续匹配、优化与融合
-    └── climbot_bringup/         整系统组合 launch
-```
-
-依赖方向为：
-
-```text
-                climbot_bringup（只有组合 launch）
-      ┌───────────────┬┴───────────────┬────────────────┐
-      ↓               ↓                ↓                ↓
-climbot_coverage  climbot_control  climbot_gazebo  climbot_inspection
-      │                │                │
-      ├──> climbot_interfaces <──┤       │
-      └──> climbot_description <─┴───────┘
-```
-
-规划器和控制器都不读取 Gazebo 真值或仿真专有参数；Gazebo 包仅因仿真组合 launch
-依赖控制包。组合入口集中在 `climbot_bringup`，它点名下游各包而没有任何包依赖
-它，因此算法包的依赖表里不会出现启动编排带来的依赖。
-
-## 环境安装
-
-本仓库当前在以下环境上验证通过：
-
-| 组件 | 版本 |
-| --- | --- |
-| 操作系统 | Ubuntu 24.04.4 LTS（WSL2，内核 `6.18` microsoft-standard） |
+| 系统 | Ubuntu 24.04 / WSL2 或原生 Ubuntu |
 | ROS 2 | Jazzy Jalisco |
-| Gazebo | Harmonic / gz-sim `8.11.0` |
-| Python | `3.12.3` |
-| 构建工具 | `colcon`（`python3-colcon-common-extensions`） |
+| Gazebo | Harmonic，`gz-sim 8.x` |
+| Python | 3.12 |
+| 构建 | C++17、colcon、rosdep |
 
-### 1. 添加 ROS 2 apt 源并安装 Jazzy
+GUI 在 WSL2 上需要 WSLg/GPU 图形支持；无 GUI 的采集、处理、拼接和测试可使用
+`headless:=true`。墙面 DDS 贴图在 `textures/`，由 `.gitignore` 排除；新克隆若需带贴图的
+视觉任务，按 [墙面贴图](docs/OPERATION.md#墙面贴图) 生成。
 
-apt 源的添加方式以
-[官方安装文档](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
-为准（本机使用的是 `ros2-apt-source` deb 方式）：
+## 安装与部署
+
+先按 [ROS 2 Jazzy 官方 Ubuntu 安装说明](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
+安装 `ros-jazzy-desktop`，再安装工作区工具：
 
 ```bash
-sudo apt update && sudo apt install -y curl
-export ROS_APT_SOURCE_VERSION=$(curl -s \
-  https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest \
-  | grep -F "tag_name" | awk -F\" '{print $4}')
-curl -L -o /tmp/ros2-apt-source.deb \
-  "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo $VERSION_CODENAME)_all.deb"
-sudo apt install -y /tmp/ros2-apt-source.deb
 sudo apt update
-sudo apt install -y ros-jazzy-desktop python3-colcon-common-extensions python3-rosdep
-```
-
-需要 `ros-jazzy-desktop` 而不是 `ros-base`，因为点选和预览依赖 RViz2。
-
-### 2. 安装本仓库声明的依赖
-
-**不需要单独添加 `packages.osrfoundation.org` 源。** Gazebo Harmonic 由
-`ros-jazzy-gz-sim-vendor` 和 `ros-jazzy-gz-tools-vendor` 随
-`ros-jazzy-ros-gz` 一并从 packages.ros.org 装入，`gz` 命令在 source 之后可用。
-
-```bash
-sudo rosdep init      # 只需一次，已初始化过会报错，可忽略
-rosdep update
+sudo apt install -y python3-colcon-common-extensions python3-rosdep
 
 cd ~/robot_ws/climbot_sim
 source /opt/ros/jazzy/setup.bash
+sudo rosdep init  # 首次执行；已初始化时可跳过
+rosdep update
 rosdep install --from-paths src --ignore-src --rosdistro jazzy -y
 ```
 
-该命令会按各包 `package.xml` 装齐 `ros_gz`、`robot_localization`、
-`teleop_twist_keyboard`、`rviz2`、`xacro`、`robot_state_publisher`、
-`python3-yaml` 和 `python3-matplotlib`。想先看会装什么，把 `-y` 换成
-`--simulate`。
-
-### 3. 验证
+构建并加载工作区：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-gz sim --versions        # 应输出 8.x
+cd ~/robot_ws/climbot_sim
+colcon build --symlink-install
+source install/setup.bash
+```
+
+验证基础环境：
+
+```bash
+gz sim --versions
 ros2 doctor --report | head -20
 ```
 
@@ -147,106 +67,149 @@ ros2 doctor --report | head -20
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
 source install/setup.bash
-```
-
-运行全部测试：
-
-```bash
-export COLCON_DEFAULTS_FILE=$(pwd)/colcon_defaults.yaml   # 打开并行,见下
 colcon test
 colcon test-result --verbose
 ```
 
-`colcon_defaults.yaml` 只做一件事:`ctest-args: ['-j8']`。不设这个环境变量也能跑,
-只是串行,慢六倍。等价写法是 `colcon test --ctest-args -j8`。
-
-**并行是安全的,因为每个 launch 测试独占一个 `ROS_DOMAIN_ID`**(见各包
-`CMakeLists.txt`)。它们都在众所周知的话题名上启动真实节点,共用一张 ROS 图时会
-互相串台——不只是并行才有问题:一个没退干净的残留节点就足以让下一个测试锁到错误
-数据,这在本仓库真实发生过,并且差点被误判成规划器回归。改动构型时**不要让两个
-测试共用同一个域号**。
-
-| 全量耗时 | |
-| --- | ---: |
-| 串行 | `75 s` |
-| 并行 | `42 s` |
-| 并行 + 执行器跑仿真时间 | **`11 s`** |
-
-`test_coverage_executor.py` 曾占全量的一半(`38.8 s`)。它现在让跟踪器运行在
-`use_sim_time` 下、由测试自己发布 `/clock` 并以 `10×` 推进:控制环仍是 `50 Hz`
-**仿真时间**,所有超时也仍以仿真秒计,只是墙钟等待没有了。
-
-核心 C++ 的 Clang 静态分析只检查维护的产品源码，不扫描 Qt 自动生成文件、GoogleTest
-或测试源码。首次或清理过 `build/` 后先生成编译数据库：
+需要产品源码静态分析时：
 
 ```bash
 colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 bash tools/run_clang_tidy.sh --log /tmp/climbot-clang-tidy.log
 ```
 
-该检查启用 `clang-analyzer-*`；有产品源码告警即返回非零。GitHub CI 在每个 main 推送和
-Pull Request 上运行同一构建、静态分析与串行测试流程。
+CI 在每个 main 推送和 Pull Request 上执行构建、静态分析和串行测试。完整测试策略与故障排查见
+[OPERATION](docs/OPERATION.md)。
 
-## 启动
+## 快速启动
 
-一条命令启动仿真、规划器、RViz、跟踪器和任务管理器：
+以下命令均假定已执行：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch climbot_bringup coverage_mission.launch.py
+source ~/robot_ws/climbot_sim/install/setup.bash
 ```
 
-在 RViz 的 `Publish Point` 工具下点选机器人任务可走区角点，然后用左侧 **Coverage Task**
-面板的 Start 按钮执行。
+### 1. 只看仿真
 
-![执行中的覆盖任务](docs/images/rviz_coverage_task.png)
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py
+```
 
-一次执行中的梯形纵向覆盖任务。图中：
+无 GUI：
 
-- **左下角的坐标轴**是墙面工作系原点，在墙面左下角：`X` 向右、`Y` 向上，点选和
-  所有任务坐标都用这套；
-- **灰色方块**是 `10 × 8 m` 的作业面，上面 `1 m` 一格的参考网格线由
-  `Wall Reference Grid` 显示项画，随时可勾掉；Gazebo 墙面上那套是另一个开关，见
-  [docs/OPERATION.md](docs/OPERATION.md)；
-- **绿色虚线框**是墙面按机器人安全边距内缩后的绝对安全区域，从启动起常驻，点必须落在里面；
-- **橙色四边形**是用户限制的机器人任务可走区，`A`/`B`/`C`/`D` 是四个顶点。梯形只需点三下——
-  `A` 左下、`B` 右上、`C` 右下，`D` 由这三点定出来；
-- **蓝色折线**是完全位于橙区内的 `base_link` 弓字扫描路径；
-- **黄色半透明带**是规划后由相机外参和有效视场推导的预计拍摄覆盖，可自然伸出橙区并形成不规则边缘；
-- 左下面板的 `Plan` 页给出区域形状、扫描方向、直线控制算法和点选状态；`Capture`
-  页为本次任务选择是否归档原始照片及记录器端根目录，并分列显示名义总预计、已冻结实际计划、
-  已保存和失败计数，以及最终目录和错误；
-  `Details` 页显示 Task、Schedule、管理器、规划器和最近请求。公共区显示进度和采集
-  摘要。任务执行中，规划与采集设置连同 Start 一起置灰，只有 Cancel / Stop 及必要的
-  恢复操作可点；
-- **Task** 一行是 `rviz-selection`。点选模式下形状由面板在运行时决定，所以任务
-  标识只说明区域从哪来，不声称它是什么形状。
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
+```
 
-只看仿真、只预览规划、参数式演示、切换扫描方向与控制算法、批量回归，以及面板
-每一行的含义，见 **[docs/OPERATION.md](docs/OPERATION.md)**。
+### 2. 规划预览
 
+启动墙面、规划器和 RViz，但不执行机器人：
 
-## 当前状态
+```bash
+ros2 launch climbot_bringup coverage_sim.launch.py
+```
 
-- 阶段 A：基础物理与机器人模型——完成；
-- 阶段 B：运动侧滑——完成；
-- 阶段 C：传感器与定位融合——完成；
-- 阶段 D：覆盖路径规划——完成；
-- 阶段 E：自定义轨迹跟踪——完成（规范八项全部实现并有归档证据：多段 Action、动态换道、转后平行扫描、小弧线入轨、时间点控制，以及远距离起点进入与不可进入安全停车）；
-- 阶段 F：系统测试与数据评价——仿真阶段完成（§14 逐项映射见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)，正式批次与指标见 [results/README.md](results/README.md)；实机阈值和硬件急停仍待实机冻结）。
+在 RViz 使用 `Publish Point` 点选任务可走区。矩形点 A（左下）和 B（右上）；等腰梯形点 A（左下）、
+B（右上）、C（右下）。所有点必须位于绿色安全框内。
 
-详细证据和待办见 [docs/STATUS.md](docs/STATUS.md)。
+### 3. 规划、控制与自动采集
 
-## 安全提示
+```bash
+ros2 launch climbot_bringup coverage_mission.launch.py \
+  inspection_output_root:=/home/jerry/climbot_data \
+  wall_grid_spacing:=0
+```
 
-Gazebo DiffDrive 会持续执行最后收到的 `/cmd_vel`，因此仿真 launch 始终启动速度
-看门狗，并由它作为 `/cmd_vel` 的唯一发布者。键盘、实验脚本和自动控制统一发布到
-`/control/cmd_vel`；当前一次只能运行一个上游控制源，不要同时启动键盘和自动任务。
+在 RViz 的 **Coverage Task** 面板中点选、Replan；在 `Capture` 页确认原始归档开关与根目录，
+再按 Start。系统只在正式 `SCAN` 段采图，归档原始 `mono8` 图像、曝光标签、标定和 manifest。
+执行中只使用 Cancel；恢复操作的安全语义见 [任务归档](docs/OPERATION.md#任务级原始图像归档)。
 
-控制环和看门狗的定时器**不使用节点默认时钟**，因为系统时钟在 WSL2 下会往回跳，
-建在它上面的定时器在回跳期间不触发。详见
-[docs/OPERATION.md](docs/OPERATION.md) 的"安全提示"和
-[docs/INTERFACES.md](docs/INTERFACES.md) 的"控制环时钟"。
+常用变体：
+
+```bash
+# 纵向扫描
+ros2 launch climbot_bringup coverage_mission.launch.py sweep_direction:=vertical
+
+# realistic 定位诊断墙
+ros2 launch climbot_bringup coverage_mission.launch.py \
+  wall_texture:=textures/wall_diagnostic_025/wall_texture.json \
+  wall_grid_spacing:=0 localization_profile:=realistic
+```
+
+### 4. 离线图像处理
+
+输入必须是已完成的 G4 原始归档；输出目录必须为不存在的绝对路径，且不得位于输入目录内：
+
+```bash
+RAW_RUN=/home/jerry/climbot_data/<task-id>/<run-id>
+PROCESSED_RUN=/home/jerry/climbot_data/processed-<new-id>
+
+ros2 run climbot_image_processing process_inspection_archive \
+  --input-run "$RAW_RUN" \
+  --output-dir "$PROCESSED_RUN" \
+  --flat-field-file /home/jerry/climbot_data/calibration/<flat-field>.npz \
+  --denoise none --jobs auto --memory-budget-gb 4
+```
+
+该链路校验原始 SHA-256，保持原图不变，再执行可选暗场/平场、去噪和畸变校正。完整参数和
+平场标定流程见 [image processing README](src/climbot_image_processing/README.md)。
+
+### 5. 离线墙面拼接
+
+将一个或多个 processed run 代入下列变量。所有输出目录均应为新的绝对路径；`WORK` 只是可删除
+缓存，正式证据是每一步原子发布的输出目录。
+
+```bash
+RUN_H=/home/jerry/climbot_data/processed-<horizontal-id>
+RUN_V=/home/jerry/climbot_data/processed-<vertical-id>
+ROOT=/home/jerry/climbot_data/mosaic-<new-id>
+
+ros2 run climbot_mosaic validate_mosaic_inputs \
+  --input-run "$RUN_H" --input-run "$RUN_V"
+
+ros2 run climbot_mosaic build_overlap_candidates \
+  --input-run "$RUN_H" --input-run "$RUN_V" \
+  --output-dir "$ROOT-candidates"
+
+ros2 run climbot_mosaic build_local_matches \
+  --input-run "$RUN_H" --input-run "$RUN_V" \
+  --output-dir "$ROOT-matches" --work-dir "$ROOT-work-match" --jobs auto
+
+ros2 run climbot_mosaic build_pose_graph \
+  --input-run "$RUN_H" --input-run "$RUN_V" \
+  --local-matches "$ROOT-matches/local_matches.json" \
+  --output-dir "$ROOT-pose-graph"
+
+ros2 run climbot_mosaic build_wall_mosaic \
+  --input-run "$RUN_H" --input-run "$RUN_V" \
+  --pose-graph-dir "$ROOT-pose-graph" \
+  --output-dir "$ROOT-hardcut" --work-dir "$ROOT-work-fusion" \
+  --resolution-mm-per-pixel 0.25 --jobs auto --memory-budget-gb 4
+```
+
+`mosaic_pose_only.tif` 与 `mosaic_optimized.tif` 使用相同输入、网格与 hard-cut 像素归属；唯一变量
+是位姿图修正。诊断墙还可在拼接后运行[真值评价](docs/OPERATION.md#p27c-诊断墙真值评价)和
+[原尺寸检查](docs/OPERATION.md#p27e-原尺寸缺陷接缝巡检)。
+
+## 文档导航
+
+| 需要了解 | 唯一入口 |
+| --- | --- |
+| 文档职责、归档和写作边界 | [docs/README.md](docs/README.md) |
+| 项目目标、范围、硬约束与规范验收 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) |
+| 包职责、依赖和数据流 | [ARCHITECTURE](docs/ARCHITECTURE.md) |
+| 话题、服务、Action、参数、文件格式 | [INTERFACES](docs/INTERFACES.md) |
+| 完整操作、参数和故障处置 | [OPERATION](docs/OPERATION.md) |
+| 当前验收状态与正式证据 | [ACCEPTANCE](docs/ACCEPTANCE.md) |
+| 当前项目状态、风险与下一步 | [STATUS](docs/STATUS.md) |
+| 离线拼接设计与门禁 | [MOSAIC_PLAN](docs/MOSAIC_PLAN.md) |
+| 结果有效性、基线与重生成入口 | [results/README.md](results/README.md) |
+| 本地大数据保留与清理规则 | [DATA_RETENTION](docs/DATA_RETENTION.md) |
+
+## 安全边界
+
+Gazebo DiffDrive 会持续执行最后收到的速度命令。系统以速度看门狗作为 `/cmd_vel` 的唯一发布者；
+键盘、自动控制和脚本统一向 `/control/cmd_vel` 发布，运行时只能启用一个上游控制源。ROS 的受控
+停车不等同于实机硬件急停；硬件失效关闭链路和实机门限仍是项目外部待验事项。
