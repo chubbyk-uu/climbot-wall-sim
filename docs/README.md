@@ -12,7 +12,7 @@
 | 文档 | 只应包含 | 不应包含 |
 | --- | --- | --- |
 | `README.md` | 环境需求、安装部署、构建测试、各功能快速启动、文档入口 | 参数细节、实验过程、历史决策 |
-| `PROJECT_GUIDE.md` | 产品目标、范围、不可违背的设计约束、规范性验收要求 | 具体命令、已完成的开发日志 |
+| [`PROJECT_GUIDE.md`](../PROJECT_GUIDE.md) | 产品目标、范围、不可违背的设计约束、规范性验收要求 | 具体命令、已完成的开发日志 |
 | `ARCHITECTURE.md` | 包职责、依赖、配置归属、运行时数据流 | 命令教程、接口字段的逐项字典 |
 | `INTERFACES.md` | 当前话题、服务、Action、参数、文件格式与兼容性合同 | 已废弃接口的演变过程 |
 | `OPERATION.md` | 可复制的完整操作流程、诊断与故障处置 | 架构解释、结果结论 |
@@ -38,7 +38,7 @@ docs/
   DATA_RETENTION.md          数据保留与清理清单
   archive/
     README.md                归档索引与迁移规则
-    reviews/                 已关闭 review
+    reviews/                 本地、未纳入版本控制的 review（见归档规则）
     plans/                   已完成或被替代的设计计划
     status-history/          状态与开发过程记录
     references/              非代码参考资料
