@@ -479,7 +479,7 @@ tools/run_coverage_regression.sh -t <tag> -j 1 \
 `line_tracker` 的参数服务问回来，写进摘要的 `provenance.noise_sources` 和
 `provenance.control_parameters`。传给一个没起来的节点的参数，在摘要里看得出来。
 
-### P2.7b realistic 定位 profile
+### 诊断墙的 realistic 定位 profile
 
 默认 `precision` 保持既有 `12 Hz`、`1 mm` 位置白噪声和已知 `10 ms` 送达延迟。需要
 重新采集诊断墙数据时，以 `realistic` 启动；它的初始可校准参数是机器人系
@@ -509,22 +509,20 @@ ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true \
 ```
 
 `enabled` / `disabled` 显式覆盖 `auto`；时间戳项同理使用
-`measurement_timestamp_error_mode`。摘要会通过参数服务写回 profile、两个实际开关、残差、
-偏差、抖动和种子，连同 Gazebo 真值／EKF 相机中心误差记录在一起，不能把调参值事后写进
-归档标签冒充传感器输入。2026-08-27 的单横向 G2 初步校准（10 张曝光、非正式验收）在
-`[20, -10, 0] mm` 下得到 P95 `24.17 mm`、最大 `24.17 mm`；仍必须以新的横向／竖向
-正式采集复核，不能将这次短运行或 P95 调试带当作最终门限。
+`measurement_timestamp_error_mode`。摘要通过参数服务记录 profile、实际开关、残差、偏差、
+抖动、种子和 Gazebo 真值/EKF 相机中心误差；不能把调参值事后写入归档标签冒充传感器输入。
+当前正式证据及其有效范围见 [结果索引](../results/README.md)。
 
-### P2.7c 诊断墙真值评价
+### 诊断墙真值评价
 
 拼接完成后，才可用独立评价器把 hard-cut BigTIFF 与诊断墙 DDS 母版的米制特征对齐。它只读取
 正式拼接结果、`wall_texture.json` 和 DDS；不得接入候选生成、匹配或位姿图优化：
 
 ```bash
 ros2 run climbot_mosaic evaluate_diagnostic_mosaic \
-  --mosaic-dir "$CLIMBOT_DATA_ROOT/mosaic-p27b-hardcut-joint-20260827" \
+  --mosaic-dir "$CLIMBOT_DATA_ROOT/<mosaic-run>" \
   --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
-  --output-dir "$CLIMBOT_DATA_ROOT/mosaic-p27b-hardcut-joint-truth-<new-id>" \
+  --output-dir "$CLIMBOT_DATA_ROOT/<mosaic-run>-truth-<new-id>" \
   --anchor-padding-m 0.10 --minimum-phase-response 0.10
 ```
 
@@ -533,30 +531,28 @@ ros2 run climbot_mosaic evaluate_diagnostic_mosaic \
 所有锚点的响应。少于三个保留锚点时仍报告整体相似变换，但 `local_residual_observable=false`，
 不得把两点刚好拟合的零残差解读为局部无形变。
 
-已构建诊断墙时，可用现成脚本采集两条独立 270 帧轨迹；它使用新任务 ID、永久归档根目录，
-且把评价器的旧 `5 mm` 精度上限仅对本次**分布测量**放宽为 `1 m`。因此脚本的 `PASS` 只表示
-任务、归档、照片绑定和几何采集合同通过；必须从摘要读取 P95，不能把它解释成 precision
-定位验收。
+可用现成脚本采集横向和竖向诊断任务。脚本的 `PASS` 只表示任务、归档、照片绑定和几何采集
+合同通过；绝对误差应从真值摘要读取，不能把脚本退出码解释为定位验收。
 
 ```bash
 INSPECTION_OUTPUT_ROOT="$CLIMBOT_DATA_ROOT" \
 WALL_TEXTURE=textures/wall_diagnostic_025/wall_texture.json \
 LOCALIZATION_PROFILE=realistic G2_MAX_CAMERA_POSITION_ERROR_M=1.0 \
-tools/run_g2_inspection_acceptance.sh p27b_horizontal p27b_vertical
+tools/run_g2_inspection_acceptance.sh <horizontal-case> <vertical-case>
 ```
 
-### P2.7e 原尺寸缺陷／接缝巡检
+### 原尺寸缺陷／接缝巡检
 
-`inspect_diagnostic_mosaic` 是 P2.7e 的另一条**后验**证据链。它只读取已完成的 hard-cut
+`inspect_diagnostic_mosaic` 是一条**后验**证据链。它只读取已完成的 hard-cut
 拼接、覆盖次数图和诊断墙 DDS；不参与候选、局部匹配或位姿图优化。对每个诊断墙 feature，
 它输出一组不缩放的 PNG tile，三个横向 panel 从左至右固定为 `immutable_truth`、`pose_only`、
 `optimized`；每个 panel 保持母版的 `0.25 mm/px`，方便在图像查看器中以 100% 缩放逐项查看。
 
 ```bash
 ros2 run climbot_mosaic inspect_diagnostic_mosaic \
-  --mosaic-dir "$CLIMBOT_DATA_ROOT/mosaic-p27d-hardcut-joint-20260827" \
+  --mosaic-dir "$CLIMBOT_DATA_ROOT/<mosaic-run>" \
   --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
-  --output-dir "$CLIMBOT_DATA_ROOT/mosaic-p27d-hardcut-joint-inspection-<new-id>" \
+  --output-dir "$CLIMBOT_DATA_ROOT/<mosaic-run>-inspection-<new-id>" \
   --padding-m 0.05 --tile-size-px 2048
 ```
 
