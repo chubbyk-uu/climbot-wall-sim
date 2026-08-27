@@ -130,6 +130,10 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 再按 Start。系统只在正式 `SCAN` 段采图，归档原始 `mono8` 图像、曝光标签、标定和 manifest。
 执行中只使用 Cancel；归档与受控停止语义见 [操作手册](docs/OPERATION.md#仿真规划与执行)。
 
+![RViz 中执行覆盖任务](docs/images/rviz_coverage_task.png)
+
+绿色虚线是安全工作区，橙色是选定任务区，蓝线是机器人中心路径，黄色带是相机预测足迹。
+
 常用变体：
 
 ```bash
@@ -165,6 +169,19 @@ ros2 run climbot_image_processing process_inspection_archive \
 将一个或多个 processed run 代入下列变量。所有输出目录均应为新的绝对路径；`WORK` 只是可删除
 缓存，正式证据是每一步原子发布的输出目录。
 
+拼接按下面的单向阶段运行。前一阶段失败时先修复输入或参数，不要跳过它强行运行后续阶段。
+
+| 阶段 | 命令 | 做什么 | 关键产物 |
+| --- | --- | --- | --- |
+| 0 | `validate_mosaic_inputs` | 只读校验 processed 图像、标签、标定、位姿与 SHA-256 | 终端 JSON 摘要；不写目录 |
+| 1 | `build_overlap_candidates` | 用曝光位姿投影足迹，并找出真正空间重叠的照片对 | `overlap_candidates.json` |
+| 2 | `build_local_matches` | 仅在候选重叠区做特征匹配、RANSAC 与局部 SE(2) 约束 | `local_matches.json`；`WORK` 中是可重建缓存 |
+| 3 | `build_pose_graph` | 结合 EKF 绝对先验与视觉边，优化每张照片的 `x/y/yaw` 修正 | `optimized_poses.json`、`pose_graph.json` |
+| 4 | `build_wall_mosaic` | 以同一 hard-cut 规则渲染 pose-only 与 optimized 母版 | BigTIFF、覆盖/不确定度图、预览和 manifest |
+
+`build_initial_projection` 是可选的几何诊断命令：它只输出每张图的墙面足迹预览，适合先检查
+相机朝向、尺度和任务覆盖范围；阶段 1 会自行执行同一投影，因此常规流水无需单独运行它。
+
 ```bash
 RUN_H="$CLIMBOT_DATA_ROOT/processed-<horizontal-id>"
 RUN_V="$CLIMBOT_DATA_ROOT/processed-<vertical-id>"
@@ -173,6 +190,7 @@ ROOT="$CLIMBOT_DATA_ROOT/mosaic-<new-id>"
 ros2 run climbot_mosaic validate_mosaic_inputs \
   --input-run "$RUN_H" --input-run "$RUN_V"
 
+# 阶段 1：只保留足迹确有正面积相交的照片对。
 ros2 run climbot_mosaic build_overlap_candidates \
   --input-run "$RUN_H" --input-run "$RUN_V" \
   --output-dir "$ROOT-candidates"
@@ -194,7 +212,8 @@ ros2 run climbot_mosaic build_wall_mosaic \
 ```
 
 `mosaic_pose_only.tif` 与 `mosaic_optimized.tif` 使用相同输入、网格与 hard-cut 像素归属；唯一变量
-是位姿图修正。诊断墙还可在拼接后运行[真值评价与原尺寸检查](docs/OPERATION.md#诊断墙后验检查)。
+是位姿图修正。`coverage_count.tif` 的零值表示相机从未覆盖该墙面像素；`uncertainty.tif` 的
+nodata 同样不能被当作有效图像。诊断墙还可在拼接后运行[真值评价与原尺寸检查](docs/OPERATION.md#诊断墙后验检查)。
 
 ## 文档导航
 
