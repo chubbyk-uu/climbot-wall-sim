@@ -137,9 +137,16 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 其中包含原始图像、每张图的拍摄位姿、相机标定和 `manifest.json`。想让它停一下再接着跑，按
 **Pause**，恢复按 **Resume**——任务和归档都不会因此结束；确定不跑了才按 **Stop**。
 
+![Gazebo 与 RViz 中同步执行的覆盖任务](docs/images/coverage_run.gif)
+
+左边是 Gazebo，右边是 RViz；机器人正在跑一条梯形区的横向弓字路径，面板同步显示段进度和已保存
+的照片数。
+
 ![RViz 中执行覆盖任务](docs/images/rviz_coverage_task.png)
 
-绿色虚线是安全工作区，橙色是选定任务区，蓝线是机器人中心路径，黄色带是相机预测足迹。
+绿色虚线是安全工作区，橙色是选定任务区，蓝线是机器人中心路径，黄色带是相机预测足迹。这张是
+纵向扫描（上面的动图是横向），任务正处于 **Paused**：段进度、任务号和归档 run 都还在，Resume
+会从当前位姿继续同一段。
 
 改成纵向扫描：
 
@@ -225,6 +232,11 @@ ros2 run climbot_mosaic build_wall_mosaic \
 `mosaic_optimized.tif` 是经过第 3 步对齐后拼出的结果。两者使用同一批照片，因此可以直接比较。
 `coverage_count.tif` 中为零的位置表示相机从未拍到，那些区域不能当作有效墙面图。需要检查诊断墙时，
 继续运行[真值评价与原尺寸检查](docs/OPERATION.md#诊断墙后验检查)。
+
+[![pose-only、optimized 与两者差值的三联对照](docs/images/mosaic_comparison.jpg)](docs/images/mosaic_comparison_full.jpg)
+
+左起分别是 pose-only、optimized 和两者的绝对差值。点开可看原尺寸（7887 × 4096）。差值图上仍然
+发亮的位置就是全局优化真正改动过的地方，其余接近全黑说明两条路径在那里本来就一致。
 
 ## 文档导航
 
