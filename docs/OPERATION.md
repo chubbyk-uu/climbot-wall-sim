@@ -545,6 +545,27 @@ LOCALIZATION_PROFILE=realistic G2_MAX_CAMERA_POSITION_ERROR_M=1.0 \
 tools/run_g2_inspection_acceptance.sh p27b_horizontal p27b_vertical
 ```
 
+### P2.7e 原尺寸缺陷／接缝巡检
+
+`inspect_diagnostic_mosaic` 是 P2.7e 的另一条**后验**证据链。它只读取已完成的 hard-cut
+拼接、覆盖次数图和诊断墙 DDS；不参与候选、局部匹配或位姿图优化。对每个诊断墙 feature，
+它输出一组不缩放的 PNG tile，三个横向 panel 从左至右固定为 `immutable_truth`、`pose_only`、
+`optimized`；每个 panel 保持母版的 `0.25 mm/px`，方便在图像查看器中以 100% 缩放逐项查看。
+
+```bash
+ros2 run climbot_mosaic inspect_diagnostic_mosaic \
+  --mosaic-dir /home/jerry/climbot_data/mosaic-p27d-hardcut-joint-20260827 \
+  --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
+  --output-dir /home/jerry/climbot_data/mosaic-p27d-hardcut-joint-inspection-<new-id> \
+  --padding-m 0.05 --tile-size-px 2048
+```
+
+输出的 `diagnostic_inspection_summary.json` 逐项列出 feature 的完整／部分／网格外可见性、实际
+`coverage_count.tif` 的零覆盖／单图／重叠像素数，以及渲染阶段已经对**所有**重叠像素计算的
+灰度离散。这里“100%”只指每个与实际拼接域相交的诊断 feature 都导出了原尺寸 tile，绝不把
+网格相交或 feature 的包围盒误写成相机足迹覆盖；零覆盖像素必须保留为失败边界，而不是由黑色
+填充后声称已检查。该工具的输出是人工细节检查的可复核证据，不产生新的毫米门限。
+
 ### §14.5 定位对照
 
 不走回归脚本，单独跑一次四方向闭环，逐段用真值同时测融合位姿误差和轮式航位推算

@@ -13,6 +13,7 @@ install(PROGRAMS
   scripts/build_overlap_candidates
   scripts/build_initial_projection
   scripts/evaluate_diagnostic_mosaic
+  scripts/inspect_diagnostic_mosaic
   scripts/validate_mosaic_inputs
   DESTINATION lib/${PROJECT_NAME})
 
@@ -29,6 +30,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_pose_graph test/test_pose_graph.py)
   ament_add_pytest_test(test_fusion test/test_fusion.py)
   ament_add_pytest_test(test_diagnostic_truth test/test_diagnostic_truth.py)
+  ament_add_pytest_test(test_diagnostic_inspection test/test_diagnostic_inspection.py)
 endif()
 
 ament_package()

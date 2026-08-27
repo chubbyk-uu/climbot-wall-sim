@@ -1387,6 +1387,13 @@ worker 数、预算、总／逐 pass 耗时、缓存命中和 1 s 采样的 Linu
 输入，也不得参与候选、局部匹配或优化；相位响应低于显式门限的锚点会被记录为拒绝，最终比较
 只使用两个版本共同保留的锚点。
 
+`inspect_diagnostic_mosaic` 是 P2.7e 的独立离线后验接口。它要求同一 hard-cut 目录中的
+`mosaic_pose_only.tif`、`mosaic_optimized.tif` 与 `coverage_count.tif`，以及诊断墙 manifest/DDS，
+并原子发布新的检查目录。`diagnostic_inspection_summary.json` 记录输入 manifest 哈希、米制像素
+比例、每个 feature 的可见边界和逐像素覆盖计数；`native_tiles/<feature>/r####_c####.png` 的每个
+tile 均不缩放，三列固定为 immutable truth、pose-only、optimized。若 feature 仅与渲染网格
+相交但其几何内有 `coverage_count==0`，接口必须明确记录为未覆盖，不能把它当作“已 100% 检查”。
+
 ## `climbot_inspection` G2 自动采集接口
 
 | 名称 | 类型 | 语义 |

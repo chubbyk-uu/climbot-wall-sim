@@ -1,0 +1,52 @@
+{
+  "evidence": {
+    "all_acquisition_runs_complete": true,
+    "joint_absolute_anchor_offset_p95_improved": true,
+    "joint_local_residual_p95_observable": true,
+    "native_resolution_tiles_resampled": false,
+    "visible_feature_pixels_all_covered": false
+  },
+  "inspection": {
+    "feature_counts": {
+      "declared": 21,
+      "fully_visible": 9,
+      "intersecting_mosaic_domain": 16,
+      "outside_mosaic_domain": 5,
+      "partially_visible": 7
+    },
+    "joint_inspection_output": "mosaic-p27d-hardcut-joint-inspection-v2-20260827",
+    "joint_inspection_summary_sha256": "193eed716c339c1eac52d42e6013d0902df5d9b09f813e2dee26063482e060e3",
+    "native_tile_count": 120,
+    "pixel_scale_mm": 0.25,
+    "visible_feature_coverage": {
+      "pixel_count": 83903032,
+      "uncovered_pixel_count": 19291260,
+      "uncovered_percent": 22.992328
+    }
+  },
+  "joint": {
+    "frame_count": 540,
+    "mosaic_manifest_sha256": "27492cac6eacf69063192d2a3e74540a69822906ca329d40093fe9c04c10393b",
+    "optimized_absolute_anchor_offset_p95_mm": 10.403133,
+    "optimized_local_residual_p95_mm": 0.380983,
+    "optimized_overlap_gray_std_mean": 2.260179,
+    "optimized_overlap_gray_std_p95": 4.172161,
+    "pose_only_absolute_anchor_offset_p95_mm": 19.475361,
+    "pose_only_local_residual_p95_mm": 9.738199,
+    "pose_only_overlap_gray_std_mean": 4.320918,
+    "pose_only_overlap_gray_std_p95": 9.527473,
+    "truth_summary_sha256": "480389ec798f690a0991b7763c1b0559c281868cd1b8174991ad93e7ac13f8d4"
+  },
+  "limitations": [
+    "This is one clean-tree blind simulation collection, not a frozen final acceptance threshold.",
+    "The inspected joint mosaic does not cover all diagnostic feature pixels; it cannot close P2-06.",
+    "Horizontal local residual was 0.678478 to 0.874227 mm; vertical has only two trusted anchors, so local residual is unobservable."
+  ],
+  "provenance": {
+    "commit": "bae86b9",
+    "source_modified": false,
+    "wall_manifest": "textures/wall_diagnostic_025/wall_texture.json"
+  },
+  "schema_version": 1,
+  "status": "blind_validation_partial_coverage"
+}
