@@ -16,6 +16,8 @@
   闭环和历史待办；当前状态以 [`../STATUS.md`](../STATUS.md) 为准。
 - [PLAN_2026-08-18_time_control.md](plans/PLAN_2026-08-18_time_control.md)：基于时间点的
   轨迹控制实施记录；当前控制入口与参数以 [`../INTERFACES.md`](../INTERFACES.md) 为准。
+- [MOSAIC_PLAN_2026-08-27.md](plans/MOSAIC_PLAN_2026-08-27.md)：P2.1～P2.7e 的完整设计、
+  阶段流水和当时的基线分析；当前设计与未关闭门禁以 [`../MOSAIC_PLAN.md`](../MOSAIC_PLAN.md) 为准。
 
 `docs/REVIEW_*.md` 是刻意忽略的本地 review 工作稿，尚未纳入 Git。它们不属于当前文档
 体系；如需正式保留，应先逐份确认内容与提交必要性，再迁入 `reviews/`。
