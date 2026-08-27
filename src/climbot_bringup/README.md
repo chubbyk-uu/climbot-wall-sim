@@ -20,7 +20,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 `control_config_file`（`coverage_mission`）、`region_type` 和 `sweep_direction`。
 `coverage_mission` 另有 `tracking_mode`（`distance` 或 `time`），透传给执行器选择
 直线段控制律；运行中也可以从面板的 Algorithm 下拉框改。
-完整参数和演示配置见 [docs/OPERATION.md](../../docs/OPERATION.md)。
+主线启动命令见 [根 README 的快速启动](../../README.md#快速启动)，批处理与实验变体见
+[docs/OPERATION.md](../../docs/OPERATION.md)。
 
 ## 为什么单独成包
 

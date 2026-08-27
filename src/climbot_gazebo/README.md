@@ -29,7 +29,7 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 - `scripts/measure_turn_slip.py`：多角度原地转向下滑；
 - `scripts/evaluate_coverage_execution.py`：执行内置紧凑任务，或用 `case:=planned_task` 执行规划器发布的完整任务，按动态直线参考统计 Gazebo 真值横轨、终点、转向结束航向、水平高度漂移、路径长度和补偿量，并计算实际二维检测足迹覆盖率；
 - `scripts/evaluate_localization.py`：四方向定位误差评价。
-- `climbot_gazebo/wall_texture.py`：把烘焙好的贴图块作为纯视觉 visual 挂到墙面上；碰撞盒与摩擦参数不动。烘焙工具在 `tools/`，产物不进仓库，用法见 [OPERATION.md](../../docs/OPERATION.md) 的「墙面贴图」。
+- `climbot_gazebo/wall_texture.py`：把烘焙好的贴图块作为纯视觉 visual 挂到墙面上；碰撞盒与摩擦参数不动。烘焙工具在 `tools/`，产物不进仓库，用法见 [OPERATION.md](../../docs/OPERATION.md) 的“墙面贴图”。
 
 ## 侧滑标定
 

@@ -6,27 +6,37 @@
 
 ## 包依赖方向
 
+在线 ROS 图，箭头指向被依赖方（`package.xml` 的实际声明）：
+
 ```text
-                      climbot_bringup
-                     /       │        \
-                    v        v         v
-climbot_rviz_plugins   climbot_coverage  climbot_control   climbot_gazebo
-                    \        │        /                    /
-                     v       v       v                    v
-                    climbot_interfaces        climbot_description
-                             ^                       ^
-                             └── climbot_inspection ─┘
+                            climbot_bringup
+         ┌───────────┬───────────┼───────────┬───────────┐
+         v           v           v           v           v
+      gazebo      coverage    control    description  inspection
+         │           │
+         │           └────> rviz_plugins
+         └────> control                       （exec：启动速度看门狗）
+         └────> inspection                    （test：契约测试读对方配置）
+
+{gazebo, coverage, control, rviz_plugins, inspection} ──> interfaces
+{gazebo, coverage, control, inspection}               ──> description
 ```
 
-自上而下读：`climbot_bringup` 只有组合 launch，在运行时点名下游三个包；
-`climbot_interfaces` 和 `climbot_description` 是两个共享上游。
+（图中省略 `climbot_` 前缀。）
+
+`climbot_image_processing` 和 `climbot_mosaic` 不进入这张图：它们没有 ROS 图依赖，
+`package.xml` 也不依赖任何项目包，只按目录读取已封存的产物。
+
+自上而下读：`climbot_bringup` 只有组合 launch，在运行时点名下游各包；
+`climbot_interfaces` 和 `climbot_description` 是两个共享上游，都不依赖其他项目包。
 
 `climbot_rviz_plugins` 只依赖 `climbot_interfaces`、`std_srvs` 和 RViz/Qt，不依赖
 规划或控制实现。`climbot_coverage` 运行时依赖它，是因为 `coverage.rviz` 载入该面板。
 
-`climbot_interfaces` 是无业务实现的公共 ROS 接口包，不依赖其他项目包。
 `climbot_description` 是共享物理描述的唯一上游。规划器和控制器不得依赖
-`climbot_gazebo`，也不得读取 Gazebo 真值或仿真专有参数。
+`climbot_gazebo`，也不得读取 Gazebo 真值或仿真专有参数。`climbot_gazebo` 对
+`climbot_inspection` 的依赖是 `test_depend` 而非 `exec_depend`：契约测试要读对方
+安装到 ament index 的配置，因此要求它先构建，这不是运行期算法依赖。
 
 组合入口 `coverage_sim.launch.py` 和 `coverage_mission.launch.py` 集中在
 `climbot_bringup`。它们在运行时查找 `climbot_gazebo`、`climbot_coverage` 和
@@ -37,13 +47,25 @@ climbot_rviz_plugins   climbot_coverage  climbot_control   climbot_gazebo
 
 ## 包职责
 
-### `climbot_interfaces`（阶段 E 新建）
+### `climbot_interfaces`
 
 只包含跨包通信定义：
 
-- `msg/CoverageTask.msg`：不可分割的名义覆盖任务；
-- `msg/CoverageStatus.msg`：面向操作界面的管理器状态汇总；
-- `action/ExecuteCoverage.action`：任务执行、取消、反馈和结果。
+| 定义 | 用途 |
+| --- | --- |
+| `msg/CoverageTask.msg` | 不可分割的名义覆盖任务 |
+| `msg/CoverageConfig.msg` | 面板可写的区域形状与扫描方向 |
+| `msg/CoverageStatus.msg` | 面向操作界面的管理器状态汇总 |
+| `msg/ExecutionReference.msg` | 转向后冻结的实际直线与采集许可 |
+| `msg/InspectionCapture.msg` | 单张成功图的任务、触发与曝光位姿绑定 |
+| `msg/InspectionCaptureGate.msg` | 采集侧的存活 heartbeat；v1 要求 `active=false` |
+| `msg/InspectionArchiveStatus.msg` | 归档权威状态、计数、目录与错误 |
+| `srv/ConfigureCoverage.srv` | 无运行任务时改区域/方向 |
+| `srv/StartCoverage.srv` | 带采集选项的受控启动 |
+| `srv/CaptureOnce.srv` | G1 单次人工触发及其拒绝码 |
+| `srv/PrepareInspectionArchive.srv` | 原子创建 run 与预检 |
+| `srv/FinalizeInspectionArchive.srv` | 封存 run 并复核计数 |
+| `action/ExecuteCoverage.action` | 任务执行、取消、反馈和结果 |
 
 该包不得读取 YAML，不包含几何规划、控制算法、Gazebo 代码或节点实现。
 
@@ -76,7 +98,7 @@ Gazebo 真值接口。
 Gazebo 真值只能用于模拟传感器生成、记录和独立评价，不得反馈给规划器或
 未来控制闭环。
 
-### `climbot_inspection`（阶段 G 新建）
+### `climbot_inspection`
 
 视觉巡检采集和图像关联：
 
@@ -103,7 +125,7 @@ Gazebo 触发相机可能为静态场景返回像素完全相同的缓存渲染�
 时间标准差三重门禁确认 30 张确为独立样本，不能靠复制一张图满足样本数。
 
 正式归档永远订阅 `image_raw`；`image_compensated` 是默认关闭的在线调试预览，不是
-数据产品。离线处理仍放在本仓库，但使用计划新增的独立包保持进程、依赖和数据边界：
+数据产品。离线处理仍放在本仓库，但由独立包承担，以保持进程、依赖和数据边界：
 
 ```text
 climbot_inspection ──原图+标签目录──> climbot_image_processing ──校正图──> climbot_mosaic
@@ -112,8 +134,8 @@ climbot_inspection ──原图+标签目录──> climbot_image_processing ─
 ```
 
 `climbot_image_processing` 和 `climbot_mosaic` 只读取已封存任务目录，不向在线规划、
-控制或拍照触发发布反馈。当前平场计算核心以后下沉／复用到图像处理包；现有补偿话题仅
-保留为同算法的可视化验证入口。
+控制或拍照触发发布反馈；两者都没有 ROS 图依赖，`package.xml` 也不依赖任何项目包。
+在线补偿话题保留为同算法的可视化验证入口，不是数据产品。
 
 ### `climbot_coverage`
 
@@ -161,7 +183,7 @@ C++ 轨迹控制和速度安全：
 - `line_tracker_node`：融合位姿输入、定位超时停车和单段参考显示；
 - `cmd_vel_watchdog_node`：`/control/cmd_vel` 到 `/cmd_vel` 的唯一安全出口，
   同时提供 `/control/hold`——唯一一条不经过执行器的停止通路。其余所有停止都是
-  「请求正在驱动的一方停下来」，只在它还应答时有效；保持位于轮子前的最后一跳，
+  “请求正在驱动的一方停下来”，只在它还应答时有效；保持位于轮子前的最后一跳，
   与图上其余部分处于什么状态无关。该保持是看门狗进程内的易失状态，不是硬件急停，
   实机最后边界必须由默认失效关闭的硬件级停机回路承担；
 - `include/climbot_control/control_clock.hpp`：控制环和安全兜底该用哪个时钟。
@@ -190,7 +212,7 @@ C++ 轨迹控制和速度安全：
 | 配置 | 所有者 | 消费者 | 说明 |
 | --- | --- | --- | --- |
 | `robot.yaml` | description | Gazebo、coverage、未来 control | 真实物理属性、相机／支架惯性和保守规划轮廓 |
-| `inspection_camera.yaml`（G1 新增） | description | Gazebo、inspection、未来实机 | 分辨率、内参、畸变、有效 ROI 和标称相机外参 |
+| `inspection_camera.yaml` | description | Gazebo、inspection、未来实机 | 分辨率、内参、畸变、有效 ROI 和标称相机外参 |
 | `wall.yaml` | description | Gazebo、coverage、定位、未来实机 | `world → wall` 基准、作业面尺寸和参考网格线间距 |
 | `simulation.yaml` | gazebo | 仅 Gazebo | 吸附、摩擦、WheelSlip、出生位姿、仿真噪声 |
 | `ekf_wall.yaml` | gazebo | `robot_localization` | 定位链路配置，随喂给它的仿真传感器留在 gazebo；不属于编排，未随 bringup 外移 |
@@ -255,31 +277,36 @@ world
 `+z` 指向墙面，光学 `+x` 对应机器人横向，光学 `+y` 对应机器人反向。该前置偏移
 意味着相机投影中心不是 `base_link`；巡检覆盖和端点计算必须显式使用 TF。
 
-## 后续包边界
+## 跨包职责的关键约定
 
-`climbot_interfaces` 和 `climbot_control` 已建立。控制包最终负责 50 Hz
-C++ 通用直线段跟踪、任务状态机、
-线段类型执行、转向下坠补偿、左右轮联合限幅和速度看门狗。横向为主与竖向为主
-的覆盖路径共用同一控制器，只由规划结果和段类型驱动。控制器保留名义覆盖路径，
-并在转向后根据 EKF 实际位置冻结单独的平行直线执行参考：小偏差直接接受为平行
-扫描线，较大但可恢复的偏差先执行一次前进小弧线再冻结直线。横向保留第二次转向
-下滑预补偿，竖向不预补偿且不逐列倒车。
+这些约定解释各包**为什么**这样切分，是评审改动时的判据；具体字段和参数见
+[INTERFACES.md](INTERFACES.md)。
 
-`coverage_manager_node` 已订阅 `/coverage/task` 并缓存最新有效预览，只有收到操作员
-明确的 `/coverage/start` 后才复制并锁定 `task_id + revision`、发送 Action Goal。
-它还提供 `/coverage/cancel`，并在 `/coverage/manager_status` 上以
-`climbot_interfaces/msg/CoverageStatus` 汇总状态、任务标识、段进度和上次结果，
-使界面无需自行拼装状态；失去执行器时它先进入 `STOPPING` 停机而不是直接报完成，
-速度保持只作为持续施加的保护而不作为任务已经终止的证据；离开该状态只认无人继续
-下达运动指令或执行器最终应答，期间停止入口一直有效。应答永远不到时，操作员可二次
-确认强制放弃监督，但只会进入持续 hold、禁止启动的 `RECOVERY_LOCKED`；物理确认后另行
-Rearm 才恢复任务入口；规划器不直接调用控制器，
-RViz 面板也不直接实现安全状态机。执行器在首条扫描前完成采集关闭的起点进入：一条直线开到首个路点，
-终点按该处转向的预计下坠抬高，与换道段共用同一套预留；首条扫描随后复用统一的动态
-入轨判据。首点之外的直线不计入覆盖段。管理器留在 `climbot_control`：它是任务状态机和 Action 客户端，
-不是启动编排，而 `climbot_bringup` 只放 launch。
+**控制器是唯一的运动执行方。** `climbot_control` 负责 50 Hz 直线段跟踪、任务状态机、
+线段类型执行、转向下坠补偿、左右轮联合限幅和速度看门狗。横向与竖向覆盖共用同一个
+控制器，只由规划结果和段类型驱动，不为方向分叉出第二套控制律。
 
-面阵相机及位置触发采集归属于独立的 `climbot_inspection`。它消费冻结后的动态
-执行参考、任务状态、EKF 位姿和相机图像，生成触发事件及带位姿的检测数据；不参与
-底盘闭环，也不得使用 Gazebo 真值决定拍照。墙面纹理和仿真相机传感器属于
-`climbot_gazebo`，真实/共享相机几何安装关系属于 `climbot_description`。
+**名义路径和执行参考不是一回事。** 控制器保留规划器发布的名义覆盖路径，并在每次转向后
+按 EKF 实际位置另行冻结一条平行直线作为执行参考：偏差小就直接接受，偏差较大但可恢复
+时先走一段采集关闭的前进小弧线再冻结。横向扫描保留第二次转向的下滑预补偿，竖向不预
+补偿、也不逐列倒车。首条扫描之前还有一次采集关闭的起点进入——一条直线开到首个路点，
+终点会按该处转向的预计下坠量抬高一截，与换道段共用同一套预留。这条直线不计入覆盖段。
+
+**任务状态机留在 `climbot_control`，不在编排包也不在界面里。** `coverage_manager_node`
+缓存 `/coverage/task` 的最新有效预览，只有收到操作员明确的 `/coverage/start`，才把它复制
+下来、锁定 `task_id + revision`，然后发出 Action Goal。它同时提供 `/coverage/cancel`，并把
+状态、任务标识、段进度和上次结果汇总到 `/coverage/manager_status`，界面因此不必自己拼装
+状态。规划器不直接
+调用控制器，RViz 面板也不实现安全状态机。管理器是 Action 客户端而不是启动编排，因此不
+属于只放 launch 的 `climbot_bringup`。
+
+**失去执行器时先停机，不报完成。** 管理器进入 `STOPPING`：速度保持只是持续施加的保护，
+不是任务已经终止的证据。离开这个状态只认两件事之一：再没有任何一方下达运动指令，
+或者执行器最终应答了；这期间停止入口始终有效。如果应答永远不来，操作员可以二次确认、
+强制放弃监督，但那也只会进入持续 hold、禁止启动的 `RECOVERY_LOCKED`——必须到现场确认过
+之后再单独 Rearm，任务入口才会重新打开。
+
+**采集不进入底盘闭环。** `climbot_inspection` 消费冻结后的执行参考、任务状态、EKF 位姿和
+相机图像，产出触发事件与带位姿的检测数据，但不参与底盘控制，也不得用 Gazebo 真值决定拍照。
+墙面纹理和仿真相机传感器属于 `climbot_gazebo`，共享的相机几何安装关系属于
+`climbot_description`。

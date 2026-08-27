@@ -1,6 +1,6 @@
 # climbot_rviz_plugins
 
-覆盖任务的 RViz 操作面板。按 PROJECT_GUIDE §11.1，面板只负责人机交互：
+覆盖任务的 RViz 操作面板。按[架构约定](../../docs/ARCHITECTURE.md)，面板只负责人机交互：
 它渲染管理器发布的状态、调用管理器的服务，任务锁定、版本检查和安全状态转换
 全部留在管理器里。
 
@@ -34,7 +34,7 @@ Progress 和 Schedule 分开是有意的。Progress 说**做完了多少工作�
 Algorithm 走参数接口而不是 `/coverage/configure`，因为后者是规划器的服务，
 `tracking_mode` 是执行器的配置。
 
-规划失败与"未选择区域"在管理器看来都是空任务，无法区分，都会报 `Idle`。
+规划失败与“未选择区域”在管理器看来都是空任务，无法区分，都会报 `Idle`。
 真正的原因只在 Planner 一行。
 
 按钮：
@@ -50,7 +50,7 @@ Algorithm 走参数接口而不是 `/coverage/configure`，因为后者是规划
 
 四个任务操作按钮的可用性直接取自 `CoverageStatus` 的 `can_start`、`can_cancel`、
 `can_force_abandon`、`can_rearm`——由管理器按自己服务的前置条件计算，面板不做推断。面板自行从
-`state` 推断正是"取消后无法重新开始"那个 bug 的成因。
+`state` 推断正是“取消后无法重新开始”那个 bug 的成因。
 
 Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点击只显示“这不证明任务
 停止”的风险说明，5 秒内第二次点击才调用服务；管理器随后进入 `RECOVERY_LOCKED` 并
@@ -61,7 +61,7 @@ Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点�
 **任务运行期间，Region、Sweep、Algorithm、Replan、Clear points 五个控件全部置灰**，
 只留 Cancel。它们发出的请求确实只改预览、不动运行中的 Goal，但预览就是画在机器人
 身上的那条轨迹，运行中改它看起来就像任务被换掉了；换形状还会直接把它撤掉。置灰
-同样取自 `can_cancel`，面板不另立一套"是否在运行"的判断。
+同样取自 `can_cancel`，面板不另立一套“是否在运行”的判断。
 
 这些都是提示而非校验：无论面板显示什么，非法请求都由管理器或规划器拒绝，并把
 原因显示在 Last request 一行。
@@ -70,10 +70,10 @@ Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点�
 
 面板停靠在渲染窗口旁边的 dock 里，宽度由操作者拖动决定，而管理器发布的是整句话
 而不是词。最初的两列网格把每条消息的整行宽度当成硬性要求交给 dock，最窄要
-566 px，dock 给不起，RViz 就直接把文字裁掉——按钮上剩下"Cancel / Sto"。现在：
+566 px，dock 给不起，RViz 就直接把文字裁掉——按钮上剩下“Cancel / Sto”。现在：
 
 - 长文本（Task / Manager / Planner / Last request）各占整行，字段名在上方；
-  只有 State / Segment / Progress 还保留"名字在左、值在右"的两列。
+  只有 State / Segment / Progress 还保留“名字在左、值在右”的两列。
 - 这些标签的水平尺寸策略是 `QSizePolicy::Ignored`，即接受 dock 给的任何宽度，
   再用 `heightForWidth` 自己申报高度，不会反过来把 dock 撑宽。
 - 任务号 `coverage_20260817_143512_rectangle` 里没有空格，换行算法无处可断，

@@ -33,7 +33,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 通过 `config_file:=<配置绝对路径>` 选择配置（`coverage_mission.launch.py` 用
 `planner_config_file`）。用 `coverage_sim.launch.py` 时还需另行启动
 `climbot_control/coverage_executor.launch.py` 才能执行；`coverage_mission.launch.py`
-已经包含它。完整命令见 [docs/OPERATION.md](../../docs/OPERATION.md)。
+已经包含它。主线命令见 [根 README 的快速启动](../../README.md#快速启动)，
+批处理与实验变体见 [docs/OPERATION.md](../../docs/OPERATION.md)。
 
 等腰梯形点选顺序为 A（左下）、B（右上）、C（右下）；矩形只使用 A、B。点选工具
 发布的点必须在规划器的 `frame_id`（默认 `odom`，即墙面平面）中，其他坐标系的点
@@ -97,5 +98,5 @@ colcon test-result --verbose
 
 测试覆盖矩形/梯形、横纵扫描、名义覆盖率、确定性、路径航向和失败空路径。
 几何单测仍按 `98%` 断言名义覆盖率：那是对规划几何质量的回归保护，
-与 §14.3 的 `95%` 验收门限是两回事。
+与[验收矩阵](../../docs/ACCEPTANCE.md) TT-07 的 `95%` 门限是两回事。
 完整参数与服务见 [接口文档](../../docs/INTERFACES.md)。

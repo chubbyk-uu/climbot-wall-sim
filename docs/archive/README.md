@@ -25,5 +25,6 @@
 - [OPERATION_2026-08-27.md](operations/OPERATION_2026-08-27.md)：此前完整操作与实验记录；
   当前流程以 [`../OPERATION.md`](../OPERATION.md) 为准。
 
-`docs/REVIEW_*.md` 是刻意忽略的本地 review 工作稿，尚未纳入 Git。它们不属于当前文档
-体系；如需正式保留，应先逐份确认内容与提交必要性，再迁入 `reviews/`。
+`docs/REVIEW_*.md` 由 `.gitignore` 第 15 行忽略，是尚未纳入 Git 的本地 review 工作稿。
+它们不属于当前文档体系；如需正式保留，应先逐份确认内容与提交必要性，再迁入 `reviews/`。
+`reviews/` 目前为空。

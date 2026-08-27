@@ -1,7 +1,7 @@
 # 操作手册
 
 从零启动一次覆盖任务需要知道的全部内容。包边界和数据流见
-[ARCHITECTURE.md](ARCHITECTURE.md)，话题、服务和参数的完整清单见
+[ARCHITECTURE.md](../../ARCHITECTURE.md)，话题、服务和参数的完整清单见
 [INTERFACES.md](../../INTERFACES.md)，安装与构建见
 [README](../README.md)。
 
@@ -57,7 +57,7 @@ ros2 launch climbot_bringup coverage_sim.launch.py
 ```
 
 使用独立规划器或等腰梯形的命令见
-[climbot_coverage/README.md](../src/climbot_coverage/README.md)。
+[climbot_coverage/README.md](../../../src/climbot_coverage/README.md)。
 
 ## 完整任务：点选区域并执行
 
@@ -198,7 +198,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py wall_grid_spacing:=0
 
 ### 面板
 
-![Coverage Task 面板](images/rviz_coverage_task.png)
+![Coverage Task 面板](../../images/rviz_coverage_task.png)
 
 面板上方公共区始终显示 State、Segment、Progress 和 Inspection 摘要；中间页签分别为
 `Plan`、`Capture`、`Details`，底部的 Start 与停车按钮不随页签滚动。
@@ -256,7 +256,7 @@ Start 后开关和根目录冻结，直到任务完成、取消或归档失败�
 面板由 `climbot_rviz_plugins` 提供，已写入 `coverage.rviz`，随 launch 自动出现；
 若被关掉，用 RViz 菜单 `Panels → Add New Panel → climbot_rviz_plugins/Coverage`
 恢复。排版细节见
-[`src/climbot_rviz_plugins/README.md`](../src/climbot_rviz_plugins/README.md)。
+[`src/climbot_rviz_plugins/README.md`](../../../src/climbot_rviz_plugins/README.md)。
 
 同样的操作也可以走命令行，两者等价：
 
@@ -354,8 +354,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py region_type:=trapezoid
 
 `time` 是默认值，理由是后一列而不是前几列：它逐拍上报自己与计划的偏差，落后了会
 自己说出来；`distance` 只能等任务结束后对账。原地转向段两种模式相同——它本来就是
-时间参数化的。实测数据见 [`results/README.md`](../results/README.md)「两种算法的
-对照」和 [PLAN_2026-08-18_time_control.md](PLAN_2026-08-18_time_control.md) 第 8 节。
+时间参数化的。实测数据见 [`results/README.md`](../../../results/README.md)「两种算法的
+对照」和 [PLAN_2026-08-18_time_control.md](../plans/PLAN_2026-08-18_time_control.md) 第 8 节。
 
 **任务运行中不能切换**，执行器会拒绝并说明原因：控制律换了而时间表还是按旧律排
 的，那是危险的。面板在运行期间已经把这个框置灰。
@@ -440,7 +440,7 @@ tools/run_coverage_regression.sh -j 4 -t <tag> -m distance  # 位置控制
 ```
 
 结果写进 `results/coverage_<case>_<tag>_summary.json` 和同名轨迹 CSV，汇总表附在
-命令输出末尾。用途和有效性见 [results/README.md](../results/README.md)。
+命令输出末尾。用途和有效性见 [results/README.md](../../../results/README.md)。
 
 **跑正式基线前先把 `src/` 提交干净。** 脚本开跑前检查工作树，非干净时自动给标签加
 `-dirty` 后缀并打印醒目告警。带 `-dirty` 的结果只能当过程记录。
@@ -511,7 +511,7 @@ ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true \
 `enabled` / `disabled` 显式覆盖 `auto`；时间戳项同理使用
 `measurement_timestamp_error_mode`。摘要通过参数服务记录 profile、实际开关、残差、偏差、
 抖动、种子和 Gazebo 真值/EKF 相机中心误差；不能把调参值事后写入归档标签冒充传感器输入。
-当前正式证据及其有效范围见 [结果索引](../results/README.md)。
+当前正式证据及其有效范围见 [结果索引](../../../results/README.md)。
 
 ### 诊断墙真值评价
 

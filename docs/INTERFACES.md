@@ -1,7 +1,8 @@
 # ROS 2 与离线数据接口合同
 
 更新：2026-08-27。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
-[接口归档](archive/interfaces/INTERFACES_2026-08-27.md)。操作步骤见 [OPERATION](OPERATION.md)，
+[接口归档](archive/interfaces/INTERFACES_2026-08-27.md)。主线操作步骤见
+[根 README](../README.md#快速启动)，实验变体与故障处置见 [OPERATION](OPERATION.md)，
 架构职责见 [ARCHITECTURE](ARCHITECTURE.md)。
 
 ## 启动入口
@@ -39,7 +40,8 @@
 | `/coverage/task` | `CoverageTask` | 已验证的任务几何、扫描线和版本 |
 | `/coverage/configure` | service | 仅无运行任务时修改区域形状/扫描方向 |
 | `/coverage/start`、`/coverage/cancel` | service | 受控启动/取消；归档预检失败不得发送运动 Goal |
-| `/coverage/status` | `CoverageStatus` | 状态、任务版本、进度、错误和归档摘要 |
+| `/coverage/manager_status` | `CoverageStatus` | 管理器权威状态、任务版本、段进度、错误和归档摘要 |
+| `/coverage/status` | `String` | 规划器的点选与规划结果说明，仅供界面显示，不是任务状态 |
 | `ExecuteCoverage` | Action | 执行冻结的多段路径；反馈不等于重新规划 |
 | `/control/execution_reference` | `ExecutionReference` | 当前实际直线与采集许可；不是名义预览路径 |
 

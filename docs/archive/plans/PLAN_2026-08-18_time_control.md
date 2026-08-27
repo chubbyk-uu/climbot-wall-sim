@@ -5,7 +5,7 @@
 
 本文档记录把项目 Word 文档 §5.3《基于两点直线运动的位置和航向闭环控制》所述
 的时间参数化控制引入 `climbot_control` 的设计结论和实施步骤。目标、算法约束和
-验收阈值仍以 [PROJECT_GUIDE.md](../../PROJECT_GUIDE.md) 为准；本文档只覆盖本次改动。
+验收阈值仍以 [PROJECT_GUIDE.md](../../../PROJECT_GUIDE.md) 为准；本文档只覆盖本次改动。
 
 ## 1. 目标
 
@@ -402,7 +402,7 @@ schedule_handshake_s: 0.43
 > （`source_modified=true`），因此不可作为验收证据引用。同一配置已在提交
 > `104caaa` 的干净工作树上重跑，落点 `2.53~3.98 mm`、`act/plan` `0.988~1.020`、
 > 峰值滞后 `0.03~0.05 s`，与上表落在同一散布带内。正式基线见
-> [`results/README.md`](../results/README.md)。上表保留是因为本节的调参推理引用
+> [`results/README.md`](../../../results/README.md)。上表保留是因为本节的调参推理引用
 > 了它的具体数字。
 
 ### 8.1 三轮回归对照

@@ -10,12 +10,12 @@
 
 - 在 Gazebo 中启动墙面、机器人、传感器、EKF 和 RViz；
 - 点选矩形或等腰梯形任务区，执行横向或纵向弓字覆盖；
-- 在正式扫描线自动拍摄原始灰度图，并将每张图和曝光时刻融合相机位姿原子归档；
+- 在正式扫描线上自动拍摄原始灰度图，把每张图连同曝光那一刻的融合相机位姿一起原子归档；
 - 离线校验归档、平场校正、去畸变、匹配、全局位姿优化和硬切墙面拼接；
 - 用诊断墙真值和原尺寸 tile 检查拼接的绝对偏差、接缝和缺陷细节。
 
-当前 A～G4 仿真链路已完成；P2 拼接已完成 P2.7e，仍需大工作区盲测补足诊断目标覆盖后冻结
-最终门限。当前状态见 [STATUS](docs/STATUS.md)。
+A～G4 的仿真链路和 P1 离线预处理都已完成；P2 拼接做到 P2.7e，还需要一次大工作区盲测把
+诊断目标的覆盖补齐，之后才能冻结最终门限。当前状态见 [STATUS](docs/STATUS.md)。
 
 ## 环境要求
 
@@ -28,8 +28,8 @@
 | 构建 | C++17、colcon、rosdep |
 
 GUI 在 WSL2 上需要 WSLg/GPU 图形支持；无 GUI 的采集、处理、拼接和测试可使用
-`headless:=true`。墙面 DDS 贴图在 `textures/`，由 `.gitignore` 排除；新克隆若需带贴图的
-视觉任务按 [墙面贴图与故障处置](docs/OPERATION.md#墙面贴图与故障处置) 生成。
+`headless:=true`。墙面 DDS 贴图放在 `textures/`，由 `.gitignore` 排除；刚克隆下来的仓库如果要跑带贴图的
+视觉任务，按 [墙面贴图](docs/OPERATION.md#墙面贴图) 自行生成。
 
 采集、预处理与拼接的大文件不进入仓库。启用这些功能前，在**记录器所在主机**设置一个持久化、
 可写的绝对目录：`export CLIMBOT_DATA_ROOT=/your/chosen/data/root`。未设置时，带采集的任务会
@@ -83,7 +83,7 @@ colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 bash tools/run_clang_tidy.sh --log /tmp/climbot-clang-tidy.log
 ```
 
-CI 在每个 main 推送和 Pull Request 上执行构建、静态分析和串行测试。完整测试策略与故障排查见
+CI 在每个 main 推送和 Pull Request 上执行构建、静态分析和串行测试。批量回归与故障排查见
 [OPERATION](docs/OPERATION.md)。
 
 ## 快速启动
@@ -103,7 +103,7 @@ source ~/robot_ws/climbot_sim/install/setup.bash
 ros2 launch climbot_gazebo climbot_wall.launch.py
 ```
 
-没有图形界面时，在后台运行：
+没有图形界面时，改用无窗口模式：
 
 ```bash
 ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
@@ -111,7 +111,7 @@ ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
 
 ### 2. 规划预览
 
-想先画出覆盖路径、但不让机器人运动，运行：
+想先画出覆盖路径但不让机器人动，运行：
 
 ```bash
 ros2 launch climbot_bringup coverage_sim.launch.py
@@ -138,21 +138,18 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 
 绿色虚线是安全工作区，橙色是选定任务区，蓝线是机器人中心路径，黄色带是相机预测足迹。
 
-常用变体：
+改成纵向扫描：
 
 ```bash
-# 纵向扫描
 ros2 launch climbot_bringup coverage_mission.launch.py sweep_direction:=vertical
-
-# realistic 定位诊断墙
-ros2 launch climbot_bringup coverage_mission.launch.py \
-  wall_texture:=textures/wall_diagnostic_025/wall_texture.json \
-  wall_grid_spacing:=0 localization_profile:=realistic
 ```
+
+无 GUI 批处理、诊断墙贴图和 realistic 定位属于实验用法，见
+[OPERATION 的启动变体](docs/OPERATION.md#启动变体)。
 
 ### 4. 离线图像处理
 
-照片采集完成后，这一步把原图校验、平场校正和去畸变，生成拼接可以读取的新目录。`RAW_RUN` 是
+照片采集完成后，这一步对原图做校验、平场校正和去畸变，生成拼接可以读取的新目录。`RAW_RUN` 是
 上一步生成的任务目录；`PROCESSED_RUN` 必须是一个还不存在的新目录：
 
 ```bash
@@ -172,7 +169,8 @@ ros2 run climbot_image_processing process_inspection_archive \
 ### 5. 离线墙面拼接
 
 这一步把多张照片拼成一张墙面图。通常把横向和竖向两次采集一起输入：`RUN_H`、`RUN_V` 是上一步
-得到的两个 processed 目录；`ROOT` 是本次拼接使用的新名称。命令会在它后面自动加不同后缀。
+得到的两个 processed 目录；`ROOT` 是本次拼接的目录前缀，下面每一步都在它后面加一个不同的
+后缀，作为自己的输出目录。
 
 按顺序执行下面五步。某一步报错时，先看该步输出的错误，不要跳到后面继续运行。
 
@@ -184,8 +182,11 @@ ros2 run climbot_image_processing process_inspection_archive \
 | 3 | `build_pose_graph` | 把所有照片的偏移一起调整，让整面墙尽量对齐 | 调整后的照片位置与质量报告 |
 | 4 | `build_wall_mosaic` | 把调整前和调整后的照片各拼成一张完整墙面图 | 两张 BigTIFF、预览图、覆盖图和报告 |
 
-`build_initial_projection` 是可选的检查命令：它画出每张照片预计落在墙上的范围，适合先看相机
-方向、比例和任务区域是否合理。正常拼接不必单独运行，因为第 1 步会完成同样的计算。
+第 0、1 两步的产物是给人查阅的记录，后面的命令并不读取它们：第 2 步会用同一套代码自己重算
+一遍候选。照做一遍的好处是出了问题能分步定位，也留下可复查的证据。
+
+`build_initial_projection` 同样是可选的检查命令：它画出每张照片预计落在墙上的范围，适合
+先看相机方向、比例和任务区域是否合理。正常拼接不必单独运行，因为第 1 步会做同样的计算。
 
 ```bash
 RUN_H="$CLIMBOT_DATA_ROOT/processed-<horizontal-id>"
@@ -218,7 +219,7 @@ ros2 run climbot_mosaic build_wall_mosaic \
 
 最终重点看两个文件：`mosaic_pose_only.tif` 是直接按拍摄位姿拼出的结果；
 `mosaic_optimized.tif` 是经过第 3 步对齐后拼出的结果。两者使用同一批照片，因此可以直接比较。
-`coverage_count.tif` 中为零的位置表示相机从未拍到，不能把它当作有效墙面图。需要检查诊断墙时，
+`coverage_count.tif` 中为零的位置表示相机从未拍到，那些区域不能当作有效墙面图。需要检查诊断墙时，
 继续运行[真值评价与原尺寸检查](docs/OPERATION.md#诊断墙后验检查)。
 
 ## 文档导航
@@ -229,15 +230,31 @@ ros2 run climbot_mosaic build_wall_mosaic \
 | 项目目标、范围、硬约束与规范验收 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) |
 | 包职责、依赖和数据流 | [ARCHITECTURE](docs/ARCHITECTURE.md) |
 | 话题、服务、Action、参数、文件格式 | [INTERFACES](docs/INTERFACES.md) |
-| 完整操作、参数和故障处置 | [OPERATION](docs/OPERATION.md) |
+| 批量回归、参数变体与故障处置 | [OPERATION](docs/OPERATION.md) |
 | 当前验收状态与正式证据 | [ACCEPTANCE](docs/ACCEPTANCE.md) |
 | 当前项目状态、风险与下一步 | [STATUS](docs/STATUS.md) |
 | 离线拼接设计与门禁 | [MOSAIC_PLAN](docs/MOSAIC_PLAN.md) |
 | 结果有效性、基线与重生成入口 | [results/README.md](results/README.md) |
 | 本地大数据保留与清理规则 | [DATA_RETENTION](docs/DATA_RETENTION.md) |
 
+单个包的参数、边界和测试命令写在各自的 README：
+[bringup](src/climbot_bringup/README.md)、
+[control](src/climbot_control/README.md)、
+[coverage](src/climbot_coverage/README.md)、
+[description](src/climbot_description/README.md)、
+[gazebo](src/climbot_gazebo/README.md)、
+[image_processing](src/climbot_image_processing/README.md)、
+[inspection](src/climbot_inspection/README.md)、
+[interfaces](src/climbot_interfaces/README.md)、
+[mosaic](src/climbot_mosaic/README.md)、
+[rviz_plugins](src/climbot_rviz_plugins/README.md)。
+
 ## 安全边界
 
 Gazebo DiffDrive 会持续执行最后收到的速度命令。系统以速度看门狗作为 `/cmd_vel` 的唯一发布者；
 键盘、自动控制和脚本统一向 `/control/cmd_vel` 发布，运行时只能启用一个上游控制源。ROS 的受控
-停车不等同于实机硬件急停；硬件失效关闭链路和实机门限仍是项目外部待验事项。
+停车不等同于实机硬件急停；硬件的失效关闭链路和实机门限都在本项目范围之外，尚待验证。
+
+## 许可
+
+Apache License 2.0，见 [LICENSE](LICENSE)。
