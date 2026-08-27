@@ -29,7 +29,7 @@
 
 GUI 在 WSL2 上需要 WSLg/GPU 图形支持；无 GUI 的采集、处理、拼接和测试可使用
 `headless:=true`。墙面 DDS 贴图在 `textures/`，由 `.gitignore` 排除；新克隆若需带贴图的
-视觉任务，按 [墙面贴图](docs/OPERATION.md#墙面贴图) 生成。
+视觉任务按 [墙面贴图与故障处置](docs/OPERATION.md#墙面贴图与故障处置) 生成。
 
 采集、预处理与拼接的大文件不进入仓库。启用这些功能前，在**记录器所在主机**设置一个持久化、
 可写的绝对目录：`export CLIMBOT_DATA_ROOT=/your/chosen/data/root`。未设置时，带采集的任务会
@@ -128,7 +128,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 
 在 RViz 的 **Coverage Task** 面板中点选、Replan；在 `Capture` 页确认原始归档开关与根目录，
 再按 Start。系统只在正式 `SCAN` 段采图，归档原始 `mono8` 图像、曝光标签、标定和 manifest。
-执行中只使用 Cancel；恢复操作的安全语义见 [任务归档](docs/OPERATION.md#任务级原始图像归档)。
+执行中只使用 Cancel；归档与受控停止语义见 [操作手册](docs/OPERATION.md#仿真规划与执行)。
 
 常用变体：
 
@@ -194,8 +194,7 @@ ros2 run climbot_mosaic build_wall_mosaic \
 ```
 
 `mosaic_pose_only.tif` 与 `mosaic_optimized.tif` 使用相同输入、网格与 hard-cut 像素归属；唯一变量
-是位姿图修正。诊断墙还可在拼接后运行[真值评价](docs/OPERATION.md#p27c-诊断墙真值评价)和
-[原尺寸检查](docs/OPERATION.md#p27e-原尺寸缺陷接缝巡检)。
+是位姿图修正。诊断墙还可在拼接后运行[真值评价与原尺寸检查](docs/OPERATION.md#诊断墙后验检查)。
 
 ## 文档导航
 

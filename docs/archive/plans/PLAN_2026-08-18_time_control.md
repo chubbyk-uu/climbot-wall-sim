@@ -5,7 +5,7 @@
 
 本文档记录把项目 Word 文档 §5.3《基于两点直线运动的位置和航向闭环控制》所述
 的时间参数化控制引入 `climbot_control` 的设计结论和实施步骤。目标、算法约束和
-验收阈值仍以 [PROJECT_GUIDE.md](../PROJECT_GUIDE.md) 为准；本文档只覆盖本次改动。
+验收阈值仍以 [PROJECT_GUIDE.md](../../PROJECT_GUIDE.md) 为准；本文档只覆盖本次改动。
 
 ## 1. 目标
 

@@ -167,7 +167,7 @@ C++ 轨迹控制和速度安全：
 - `include/climbot_control/control_clock.hpp`：控制环和安全兜底该用哪个时钟。
   节点默认时钟在非仿真时间下退化为**可被设置、可倒退**的系统时钟，定时器建在
   它上面会在时钟回跳期间停止触发。仿真时间激活时跟节点时钟，否则用单调时钟；
-  消息时间戳仍用 ROS 时间。详见 [INTERFACES.md](INTERFACES.md) 的"控制环时钟"；
+  消息时间戳仍用 ROS 时间。控制接口边界见 [INTERFACES.md](INTERFACES.md)；
 - `config/control.yaml`：正常作业限幅、控制增益、超时，以及两种直线控制律的参数；
 - `launch/line_tracker.launch.py`：从共享机器人描述注入轮距和轮缘硬限值。
 

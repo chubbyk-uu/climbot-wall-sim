@@ -18,6 +18,12 @@
   轨迹控制实施记录；当前控制入口与参数以 [`../INTERFACES.md`](../INTERFACES.md) 为准。
 - [MOSAIC_PLAN_2026-08-27.md](plans/MOSAIC_PLAN_2026-08-27.md)：P2.1～P2.7e 的完整设计、
   阶段流水和当时的基线分析；当前设计与未关闭门禁以 [`../MOSAIC_PLAN.md`](../MOSAIC_PLAN.md) 为准。
+- [PROJECT_GUIDE_2026-08-27.md](specifications/PROJECT_GUIDE_2026-08-27.md)：此前完整项目规范；
+  当前目标与硬约束以 [`../../PROJECT_GUIDE.md`](../../PROJECT_GUIDE.md) 为准。
+- [INTERFACES_2026-08-27.md](interfaces/INTERFACES_2026-08-27.md)：此前完整参数与接口字典；
+  当前合同以 [`../INTERFACES.md`](../INTERFACES.md) 为准。
+- [OPERATION_2026-08-27.md](operations/OPERATION_2026-08-27.md)：此前完整操作与实验记录；
+  当前流程以 [`../OPERATION.md`](../OPERATION.md) 为准。
 
 `docs/REVIEW_*.md` 是刻意忽略的本地 review 工作稿，尚未纳入 Git。它们不属于当前文档
 体系；如需正式保留，应先逐份确认内容与提交必要性，再迁入 `reviews/`。

@@ -22,15 +22,13 @@
 | `results/README.md` | 当前有效基线和归档结果的索引、重生成入口 | 长篇技术分析 |
 | `DATA_RETENTION.md` | 工作区外大数据的保留等级、清理前置条件和目录清单 | 删除命令或临时日志 |
 
-## 目标结构
-
-后续整理按以下结构迁移；迁移时先保留原文和索引，再缩短当前文档，不丢失历史信息。
+## 当前结构
 
 ```text
 docs/
   README.md                 本页：文档导航与写作边界
   ARCHITECTURE.md            当前架构
-  INTERFACES.md              当前接口；过大时按 control/inspection/mosaic 拆分
+  INTERFACES.md              当前接口合同
   OPERATION.md               当前操作手册
   ACCEPTANCE.md              当前验收矩阵
   MOSAIC_PLAN.md             当前离线拼接设计
@@ -40,11 +38,14 @@ docs/
     README.md                归档索引与迁移规则
     reviews/                 本地、未纳入版本控制的 review（见归档规则）
     plans/                   已完成或被替代的设计计划
+    specifications/          已替代的完整规范
+    interfaces/              已替代的详细接口说明
+    operations/              已替代的操作与实验流水
     status-history/          状态与开发过程记录
     references/              非代码参考资料
 ```
 
-`results/` 后续也分为“当前正式基线”和“历史对照”两层；文件本身可以保留，根目录索引只指向
+`results/` 分为“当前正式基线”和“历史对照”两层；文件本身可以保留，根目录索引只指向
 当前仍有效的证据和归档入口。
 
 ## 迁移规则
