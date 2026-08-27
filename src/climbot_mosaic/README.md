@@ -9,8 +9,8 @@ expensive feature extraction begins:
 
 ```bash
 ros2 run climbot_mosaic validate_mosaic_inputs \
-  --input-run /home/jerry/climbot_data/processed-inspection-dataset-horizontal-025mm-20260826 \
-  --input-run /home/jerry/climbot_data/processed-inspection-dataset-vertical-025mm-20260826
+  --input-run "$CLIMBOT_DATA_ROOT/processed-inspection-dataset-horizontal-025mm-20260826" \
+  --input-run "$CLIMBOT_DATA_ROOT/processed-inspection-dataset-vertical-025mm-20260826"
 ```
 
 It verifies every processed PNG SHA-256, every processing label, rectified
@@ -23,9 +23,9 @@ The next delivered P2.3 command is the initial, image-free geometric baseline:
 
 ```bash
 ros2 run climbot_mosaic build_initial_projection \
-  --input-run /home/jerry/climbot_data/processed-inspection-dataset-horizontal-025mm-20260826 \
-  --input-run /home/jerry/climbot_data/processed-inspection-dataset-vertical-025mm-20260826 \
-  --output-dir /home/jerry/climbot_data/mosaic-initial-<new-run-id>
+  --input-run "$CLIMBOT_DATA_ROOT/processed-inspection-dataset-horizontal-025mm-20260826" \
+  --input-run "$CLIMBOT_DATA_ROOT/processed-inspection-dataset-vertical-025mm-20260826" \
+  --output-dir "$CLIMBOT_DATA_ROOT/mosaic-initial-<new-run-id>"
 ```
 
 It uses only archived rectified calibration and exposure poses to intersect the

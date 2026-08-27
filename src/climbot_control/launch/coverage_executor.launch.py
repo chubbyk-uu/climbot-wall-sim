@@ -18,7 +18,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -42,7 +42,9 @@ def generate_launch_description():
         DeclareLaunchArgument('control_config_file', default_value=default_config),
         DeclareLaunchArgument('tracking_mode', default_value='time'),
         DeclareLaunchArgument('inspection_default_enabled', default_value='true'),
-        DeclareLaunchArgument('inspection_output_root', default_value='~/climbot_data'),
+        DeclareLaunchArgument(
+            'inspection_output_root',
+            default_value=EnvironmentVariable('CLIMBOT_DATA_ROOT', default_value='')),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(tracker_launch),
             launch_arguments={

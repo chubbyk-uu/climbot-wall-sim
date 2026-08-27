@@ -140,7 +140,7 @@ ros2 run climbot_inspection calibrate_flat_field --ros-args \
 
 ```bash
 ros2 launch climbot_bringup coverage_mission.launch.py \
-  flat_field_file:=/home/jerry/climbot_data/calibration/flat_field_sim_moonlight_led2_exp065_20260825.npz
+  flat_field_file:="$CLIMBOT_DATA_ROOT/calibration/<flat-field>.npz"
 ```
 
 仿真默认纯灰板目标均值为 `172.75 DN`；它在当前 LED／短曝光组合下复现混凝土补偿图约
@@ -230,7 +230,7 @@ Start、Cancel、Force abandon 和 Rearm 的置灰由管理器发布的许可位
 ### 任务级原始图像归档
 
 默认启动的完整 `coverage_mission` 开启采集。规划完成后在 `Capture` 页确认
-**Capture raw images** 和记录器端根目录（默认 `~/climbot_data`），再按 Start。该服务
+**Capture raw images** 和记录器端根目录（默认读取 `CLIMBOT_DATA_ROOT`），再按 Start。该服务
 只表示“归档准备请求已受理”：管理器先让记录器检查目录、标定和可写性，成功后才向
 执行器发送运动 Goal。运行目录、计数和故障以公共区／Capture 页中的任务状态为准。
 
@@ -522,9 +522,9 @@ ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true \
 
 ```bash
 ros2 run climbot_mosaic evaluate_diagnostic_mosaic \
-  --mosaic-dir /home/jerry/climbot_data/mosaic-p27b-hardcut-joint-20260827 \
+  --mosaic-dir "$CLIMBOT_DATA_ROOT/mosaic-p27b-hardcut-joint-20260827" \
   --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
-  --output-dir /home/jerry/climbot_data/mosaic-p27b-hardcut-joint-truth-<new-id> \
+  --output-dir "$CLIMBOT_DATA_ROOT/mosaic-p27b-hardcut-joint-truth-<new-id>" \
   --anchor-padding-m 0.10 --minimum-phase-response 0.10
 ```
 
@@ -539,7 +539,7 @@ ros2 run climbot_mosaic evaluate_diagnostic_mosaic \
 定位验收。
 
 ```bash
-INSPECTION_OUTPUT_ROOT=/home/jerry/climbot_data \
+INSPECTION_OUTPUT_ROOT="$CLIMBOT_DATA_ROOT" \
 WALL_TEXTURE=textures/wall_diagnostic_025/wall_texture.json \
 LOCALIZATION_PROFILE=realistic G2_MAX_CAMERA_POSITION_ERROR_M=1.0 \
 tools/run_g2_inspection_acceptance.sh p27b_horizontal p27b_vertical
@@ -554,9 +554,9 @@ tools/run_g2_inspection_acceptance.sh p27b_horizontal p27b_vertical
 
 ```bash
 ros2 run climbot_mosaic inspect_diagnostic_mosaic \
-  --mosaic-dir /home/jerry/climbot_data/mosaic-p27d-hardcut-joint-20260827 \
+  --mosaic-dir "$CLIMBOT_DATA_ROOT/mosaic-p27d-hardcut-joint-20260827" \
   --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
-  --output-dir /home/jerry/climbot_data/mosaic-p27d-hardcut-joint-inspection-<new-id> \
+  --output-dir "$CLIMBOT_DATA_ROOT/mosaic-p27d-hardcut-joint-inspection-<new-id>" \
   --padding-m 0.05 --tile-size-px 2048
 ```
 

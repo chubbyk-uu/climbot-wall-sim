@@ -1219,7 +1219,8 @@ output_root/
 `/coverage/start` 保留给命令行和兼容测试，使用管理器参数中的
 `inspection_default_enabled` 与 `inspection_output_root`：裸 `coverage_manager_node`
 默认 motion-only，完整 `coverage_mission.launch.py` 显式传入 `inspection:=true` 和默认
-根目录 `~/climbot_data`。具体字段可扩展，但这套异步与权威状态语义不得改变。
+根目录由 `CLIMBOT_DATA_ROOT` 或显式 launch 参数提供。具体字段可扩展，但这套异步与权威状态
+语义不得改变。
 
 管理器状态将聚合记录器的权威状态，供面板显示：是否启用、`PREPARING`／`READY`／
 `RECORDING`／`FINALIZING`／`COMPLETED`／`CANCELED`／`FAILED`、预计／成功／失败照片数、

@@ -15,10 +15,10 @@ Run it after sourcing the workspace:
 
 ```bash
 ros2 run climbot_image_processing process_inspection_archive \
-  --input-run /home/jerry/climbot_data/example/r000001_20260826T120000Z_x \
-  --output-dir /home/jerry/climbot_processed/example_run \
-  --flat-field-file /home/jerry/climbot_calibration/flat_field.npz \
-  --dark-frame /home/jerry/climbot_calibration/dark.png \
+  --input-run "$CLIMBOT_DATA_ROOT/example/r000001_20260826T120000Z_x" \
+  --output-dir "$CLIMBOT_DATA_ROOT/processed/example_run" \
+  --flat-field-file "$CLIMBOT_DATA_ROOT/calibration/flat_field.npz" \
+  --dark-frame "$CLIMBOT_DATA_ROOT/calibration/dark.png" \
   --denoise median3 \
   --jobs auto --memory-budget-gb 4.0
 ```

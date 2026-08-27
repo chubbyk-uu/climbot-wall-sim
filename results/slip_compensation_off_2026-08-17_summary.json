@@ -60,11 +60,11 @@
       "repetitions": 3,
       "settle_duration_s": 3.0,
       "startup_timeout_s": 30.0,
-      "summary_json": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_off_2026-08-17_summary.json",
-      "trajectory_csv": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_off_2026-08-17_trajectory.csv",
+      "summary_json": "results/slip_compensation_off_2026-08-17_summary.json",
+      "trajectory_csv": "results/slip_compensation_off_2026-08-17_trajectory.csv",
       "turn_timeout_s": 30.0,
       "visible_excursion_m": 0.02,
-      "wall_config": "/home/jerry/robot_ws/climbot_sim/install/climbot_description/share/climbot_description/config/wall.yaml"
+      "wall_config": "src/climbot_description/config/wall.yaml"
     },
     "git": {
       "branch": "main",

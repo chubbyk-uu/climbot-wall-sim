@@ -64,7 +64,7 @@ public:
     // A bare control-node process stays motion-only for compatibility and
     // safety. The complete mission launch explicitly enables inspection.
     inspection_default_enabled_(declare_parameter("inspection_default_enabled", false)),
-    inspection_output_root_(declare_parameter("inspection_output_root", "~/climbot_data"))
+    inspection_output_root_(declare_parameter("inspection_output_root", ""))
   {
     if (!std::isfinite(start_response_timeout_s_) || !(start_response_timeout_s_ > 0.0)) {
       throw std::invalid_argument("start_response_timeout_s must be positive.");
@@ -88,7 +88,8 @@ public:
       throw std::invalid_argument("archive_finalize_timeout_s must be positive.");
     }
     if (inspection_output_root_.empty()) {
-      throw std::invalid_argument("inspection_output_root must not be empty.");
+      throw std::invalid_argument(
+        "inspection_output_root must be absolute; set CLIMBOT_DATA_ROOT or pass the launch argument.");
     }
     // The feedback throttle and the start-response deadline are elapsed times,
     // and off sim time the node clock is the settable system clock. A backward

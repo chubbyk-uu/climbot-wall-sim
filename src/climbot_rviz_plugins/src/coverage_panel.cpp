@@ -309,11 +309,11 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   inspection_enabled_box_ = new QCheckBox(tr("Capture raw images"));
   inspection_enabled_box_->setObjectName("inspection_enabled_box");
   inspection_enabled_box_->setChecked(true);
-  archive_root_edit_ = new QLineEdit(QStringLiteral("~/climbot_data"));
+  archive_root_edit_ = new QLineEdit();
   archive_root_edit_->setObjectName("archive_root_edit");
   archive_root_edit_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
   archive_root_edit_->setToolTip(tr(
-    "Path interpreted by the archive recorder host; it may differ from this RViz host."));
+    "Path interpreted by the archive recorder host; leave empty to use its launch value."));
   browse_archive_root_button_ = new QPushButton(tr("Browse..."));
   browse_archive_root_button_->setObjectName("browse_archive_root_button");
   default_archive_root_button_ = new QPushButton(tr("Default"));
@@ -503,7 +503,7 @@ CoveragePanel::CoveragePanel(QWidget * parent)
       }
     });
   connect(default_archive_root_button_, &QPushButton::clicked, this, [this]() {
-      archive_root_edit_->setText(QStringLiteral("~/climbot_data"));
+      archive_root_edit_->clear();
     });
 
   renderDisconnected();

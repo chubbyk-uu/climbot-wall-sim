@@ -6,7 +6,7 @@
 
 | 位置 | 大小 | 说明 |
 | --- | ---: | --- |
-| `/home/jerry/climbot_data` | 约 16 GB | 原始归档、处理结果、拼接产品与开发中间产物 |
+| `${CLIMBOT_DATA_ROOT}` | 约 16 GB | 原始归档、处理结果、拼接产品与开发中间产物 |
 | `textures/` | 约 1.9 GB | 忽略的 DDS 墙面贴图；可由脚本重建，但重建成本高 |
 | `results/` | 约 47 MB | Git 跟踪的正式摘要和轨迹证据 |
 | `log/` | 约 301 MB | 可再生的本机构建/测试日志 |
@@ -16,12 +16,12 @@
 
 这些目录是当前 P2 证据链或重建环境的一部分，在 P2 最终门限冻结前不得删除：
 
-- `/home/jerry/climbot_data/calibration`；
+- `${CLIMBOT_DATA_ROOT}/calibration`；
 - `textures/wall`、`textures/wall_025`、`textures/wall_diagnostic_025`；
-- `/home/jerry/climbot_data/p27d_blind_20260827`；
-- `/home/jerry/climbot_data/processed-p27d-blind-horizontal-20260827` 与
+- `${CLIMBOT_DATA_ROOT}/p27d_blind_20260827`；
+- `${CLIMBOT_DATA_ROOT}/processed-p27d-blind-horizontal-20260827` 与
   `processed-p27d-blind-vertical-20260827`；
-- 三个 `/home/jerry/climbot_data/mosaic-p27d-hardcut-{horizontal,vertical,joint}-20260827`；
+- 三个 `${CLIMBOT_DATA_ROOT}/mosaic-p27d-hardcut-{horizontal,vertical,joint}-20260827`；
 - 三个对应的 `mosaic-p27d-hardcut-*-truth-20260827`，以及
   `mosaic-p27d-hardcut-joint-inspection-v2-20260827`；
 - `results/` 的已跟踪文件；

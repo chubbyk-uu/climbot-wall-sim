@@ -22,7 +22,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 
 
 def generate_launch_description():
@@ -145,8 +145,8 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'inspection_output_root',
-            default_value='~/climbot_data',
-            description='Default G4 root on the archive recorder host.',
+            default_value=EnvironmentVariable('CLIMBOT_DATA_ROOT', default_value=''),
+            description='G4 root on the archive recorder host; defaults to CLIMBOT_DATA_ROOT and must be absolute.',
         ),
         DeclareLaunchArgument(
             'flat_field_file',

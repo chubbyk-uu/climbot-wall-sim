@@ -191,8 +191,8 @@
       "maximum_visible_reversals": 0,
       "minimum_actual_coverage_ratio": 0.95,
       "startup_timeout_s": 30.0,
-      "summary_json": "/home/jerry/robot_ws/climbot_sim/results/coverage_trapezoid_vertical_2026-08-17_summary.json",
-      "trajectory_csv": "/home/jerry/robot_ws/climbot_sim/results/coverage_trapezoid_vertical_2026-08-17_trajectory.csv",
+      "summary_json": "results/coverage_trapezoid_vertical_2026-08-17_summary.json",
+      "trajectory_csv": "results/coverage_trapezoid_vertical_2026-08-17_trajectory.csv",
       "visible_excursion_m": 0.02
     },
     "git": {

@@ -7,7 +7,7 @@
     "open_loop_mean_absolute_height_error_m": 0.1214266748453885,
     "open_loop_mean_descent_ratio": 0.1038674569658808,
     "reference_commit": "515e5e3500fcdbc96859e5c0d1e5a5e72de088be",
-    "reference_summary_json": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_off_2026-08-17_summary.json",
+    "reference_summary_json": "results/slip_compensation_off_2026-08-17_summary.json",
     "required_height_error_reduction": 0.7
   },
   "completed": true,
@@ -68,15 +68,15 @@
       "minimum_height_error_reduction": 0.7,
       "minimum_measured_fraction": 0.95,
       "mode": "compensated",
-      "reference_summary_json": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_off_2026-08-17_summary.json",
+      "reference_summary_json": "results/slip_compensation_off_2026-08-17_summary.json",
       "repetitions": 3,
       "settle_duration_s": 3.0,
       "startup_timeout_s": 30.0,
-      "summary_json": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_on_2026-08-17_summary.json",
-      "trajectory_csv": "/home/jerry/robot_ws/climbot_sim/results/slip_compensation_on_2026-08-17_trajectory.csv",
+      "summary_json": "results/slip_compensation_on_2026-08-17_summary.json",
+      "trajectory_csv": "results/slip_compensation_on_2026-08-17_trajectory.csv",
       "turn_timeout_s": 30.0,
       "visible_excursion_m": 0.02,
-      "wall_config": "/home/jerry/robot_ws/climbot_sim/install/climbot_description/share/climbot_description/config/wall.yaml"
+      "wall_config": "src/climbot_description/config/wall.yaml"
     },
     "git": {
       "branch": "main",

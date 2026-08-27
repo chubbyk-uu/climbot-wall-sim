@@ -21,7 +21,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 import yaml
 
@@ -84,7 +84,9 @@ def generate_launch_description():
         OpaqueFunction(function=_validate_inspection_contract),
         DeclareLaunchArgument('flat_field_file', default_value=''),
         DeclareLaunchArgument('archive_recorder', default_value='true'),
-        DeclareLaunchArgument('inspection_output_root', default_value='~/climbot_data'),
+        DeclareLaunchArgument(
+            'inspection_output_root',
+            default_value=EnvironmentVariable('CLIMBOT_DATA_ROOT', default_value='')),
         Node(
             package='climbot_inspection',
             executable='capture_once_node',

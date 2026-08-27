@@ -31,6 +31,10 @@ GUI 在 WSL2 上需要 WSLg/GPU 图形支持；无 GUI 的采集、处理、拼�
 `headless:=true`。墙面 DDS 贴图在 `textures/`，由 `.gitignore` 排除；新克隆若需带贴图的
 视觉任务，按 [墙面贴图](docs/OPERATION.md#墙面贴图) 生成。
 
+采集、预处理与拼接的大文件不进入仓库。启用这些功能前，在**记录器所在主机**设置一个持久化、
+可写的绝对目录：`export CLIMBOT_DATA_ROOT=/your/chosen/data/root`。未设置时，带采集的任务会
+明确拒绝启动；不要把真实主机路径写入文档、注释或提交的结果。
+
 ## 安装与部署
 
 先按 [ROS 2 Jazzy 官方 Ubuntu 安装说明](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
@@ -118,7 +122,7 @@ B（右上）、C（右下）。所有点必须位于绿色安全框内。
 
 ```bash
 ros2 launch climbot_bringup coverage_mission.launch.py \
-  inspection_output_root:=/home/jerry/climbot_data \
+  inspection_output_root:="$CLIMBOT_DATA_ROOT" \
   wall_grid_spacing:=0
 ```
 
@@ -143,13 +147,13 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 输入必须是已完成的 G4 原始归档；输出目录必须为不存在的绝对路径，且不得位于输入目录内：
 
 ```bash
-RAW_RUN=/home/jerry/climbot_data/<task-id>/<run-id>
-PROCESSED_RUN=/home/jerry/climbot_data/processed-<new-id>
+RAW_RUN="$CLIMBOT_DATA_ROOT/<task-id>/<run-id>"
+PROCESSED_RUN="$CLIMBOT_DATA_ROOT/processed-<new-id>"
 
 ros2 run climbot_image_processing process_inspection_archive \
   --input-run "$RAW_RUN" \
   --output-dir "$PROCESSED_RUN" \
-  --flat-field-file /home/jerry/climbot_data/calibration/<flat-field>.npz \
+  --flat-field-file "$CLIMBOT_DATA_ROOT/calibration/<flat-field>.npz" \
   --denoise none --jobs auto --memory-budget-gb 4
 ```
 
@@ -162,9 +166,9 @@ ros2 run climbot_image_processing process_inspection_archive \
 缓存，正式证据是每一步原子发布的输出目录。
 
 ```bash
-RUN_H=/home/jerry/climbot_data/processed-<horizontal-id>
-RUN_V=/home/jerry/climbot_data/processed-<vertical-id>
-ROOT=/home/jerry/climbot_data/mosaic-<new-id>
+RUN_H="$CLIMBOT_DATA_ROOT/processed-<horizontal-id>"
+RUN_V="$CLIMBOT_DATA_ROOT/processed-<vertical-id>"
+ROOT="$CLIMBOT_DATA_ROOT/mosaic-<new-id>"
 
 ros2 run climbot_mosaic validate_mosaic_inputs \
   --input-run "$RUN_H" --input-run "$RUN_V"
