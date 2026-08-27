@@ -6,7 +6,7 @@
 
 | 位置 | 大小 | 说明 |
 | --- | ---: | --- |
-| `${CLIMBOT_DATA_ROOT}` | 约 16 GB | 原始归档、处理结果、拼接产品与开发中间产物 |
+| `${CLIMBOT_DATA_ROOT}` | 约 11 GB | 原始归档、处理结果、拼接产品与开发中间产物 |
 | `textures/` | 约 1.9 GB | 忽略的 DDS 墙面贴图；可由脚本重建，但重建成本高 |
 | `results/` | 约 47 MB | Git 跟踪的正式摘要和轨迹证据 |
 | `log/` | 约 301 MB | 可再生的本机构建/测试日志 |
@@ -28,19 +28,15 @@
 - 2026-08-26 当前正式相对基线的原始/processed 输入及
   `mosaic-horizontal-vertical-camera-zfix-traceable-final-025mm-20260826`。
 
-## 第一批候选：可再生或已确认重复
+## 已清理：第一批重复与缓存
 
-执行前仍须逐项核对路径、哈希和文档引用；预计可释放约 5.8 GB。
+2026-08-27 已逐项核对后，将以下 16 个目录移入系统废纸篓：五份与保留
+`traceable-final` 母版的 pose-only/optimized SHA-256 相同的联合产品、一份已被 `-v2`
+替代的 P2.7d 检查包、五份 2 mm 调试预览和五份 P2 工作缓存，共约 `5.0 GB`。它们已不在
+`${CLIMBOT_DATA_ROOT}` 下，但在清空系统废纸篓前仍可恢复。
 
-| 组别 | 目录规则 | 预计大小 | 依据 |
-| --- | --- | ---: | --- |
-| P2.7d 旧检查包 | `mosaic-p27d-hardcut-joint-inspection-20260827` | 297 MB | `-v2` 是当前被结果摘要引用的版本 |
-| 联合拼接重复产品 | `mosaic-horizontal-vertical-camera-zfix-025mm-20260826`，以及同前缀的 `bounded-final`、`final`、`pss-final`、`u16` 产品 | 约 4.6 GB | 与保留的 `traceable-final` 拥有相同 optimized 产品 SHA-256 |
-| 2 mm 调试预览 | `mosaic-preview-horizontal-vertical-camera-zfix-*` | 约 146 MB | 可由保留输入重新生成，非正式证据 |
-| P2 工作缓存 | `mosaic-work-*`、`mosaic-*-work-fusion-*` | 约 96 MB | 临时 feature/tile cache，不是发布证据 |
-| 本地构建日志 | `log/`、`.pytest_cache/` | 约 301 MB | 常规可再生产物 |
-
-`build/` 和 `install/` 也可清理，但会要求完整重建，默认不纳入第一批。
+`build/`、`install/`、`log/` 与 `.pytest_cache/` 仍是可再生产物；清理会要求完整重建，暂不纳入
+数据根清理。
 
 ## 第二批候选：已被洁净树盲测替代的开发数据
 
