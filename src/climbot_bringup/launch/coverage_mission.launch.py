@@ -31,6 +31,7 @@ def generate_launch_description():
     coverage_share = get_package_share_directory('climbot_coverage')
     control_share = get_package_share_directory('climbot_control')
     inspection_share = get_package_share_directory('climbot_inspection')
+    default_archive_root = os.path.join(os.path.expanduser('~'), 'climbot_data')
 
     simulation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -145,8 +146,11 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'inspection_output_root',
-            default_value=EnvironmentVariable('CLIMBOT_DATA_ROOT', default_value=''),
-            description='G4 root on the archive recorder host; defaults to CLIMBOT_DATA_ROOT and must be absolute.',
+            default_value=EnvironmentVariable(
+                'CLIMBOT_DATA_ROOT', default_value=default_archive_root),
+            description=(
+                'G4 root on the archive recorder host; defaults to CLIMBOT_DATA_ROOT, '
+                'or the current user home directory plus climbot_data. Must be absolute.'),
         ),
         DeclareLaunchArgument(
             'flat_field_file',

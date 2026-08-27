@@ -13,11 +13,12 @@
 ```bash
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-export CLIMBOT_DATA_ROOT=/your/chosen/data/root
+# 可选：未设置时保留系统默认的 $HOME/climbot_data；已有值会被保留。
+export CLIMBOT_DATA_ROOT="${CLIMBOT_DATA_ROOT:-$HOME/climbot_data}"
 ```
 
-`CLIMBOT_DATA_ROOT` 仅在采集、预处理或拼接时需要，必须是记录器主机可写的绝对路径。不要将
-真实路径写入参数文件、说明、日志或提交的结果。
+`CLIMBOT_DATA_ROOT` 用于覆盖默认数据根，必须是记录器主机可写的绝对路径。未设置时，launch 使用
+当前用户的 `$HOME/climbot_data`，并在首次归档时创建；不要将真实路径写入参数文件、说明、日志或提交的结果。
 
 ## 启动变体
 
@@ -119,7 +120,7 @@ ros2 run climbot_mosaic inspect_diagnostic_mosaic \
 
 | 现象 | 处置 |
 | --- | --- |
-| 采集任务无法启动 | 检查 `CLIMBOT_DATA_ROOT` 已设置、绝对且记录器可写；再看 `/inspection/archive/status` 的错误字段 |
+| 采集任务无法启动 | 检查数据根（默认 `$HOME/climbot_data` 或 `CLIMBOT_DATA_ROOT`）可写；再看 `/inspection/archive/status` 的错误字段 |
 | 只有预览、机器人不动 | 用 `coverage_mission.launch.py`，不是 `coverage_sim.launch.py` |
 | SCAN 刚开始就零速中止 | capture gate 没有到达。查采集节点日志：任务的 `detection_forward_offset` 与相机安装外参不符时，采集节点**故意一条心跳都不发** |
 | 拼接预检拒绝 | 不要修补输入；按 JSON 修复原始归档或标定问题后，重新生成一个独立的 processed-run |

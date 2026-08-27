@@ -63,6 +63,7 @@ def generate_launch_description():
     package_share = get_package_share_directory('climbot_inspection')
     description_share = get_package_share_directory('climbot_description')
     default_config = os.path.join(package_share, 'config', 'inspection.yaml')
+    default_archive_root = os.path.join(os.path.expanduser('~'), 'climbot_data')
     with open(os.path.join(
             description_share, 'config', 'inspection_camera.yaml')) as handle:
         camera = yaml.safe_load(handle)['inspection_camera']
@@ -86,7 +87,8 @@ def generate_launch_description():
         DeclareLaunchArgument('archive_recorder', default_value='true'),
         DeclareLaunchArgument(
             'inspection_output_root',
-            default_value=EnvironmentVariable('CLIMBOT_DATA_ROOT', default_value='')),
+            default_value=EnvironmentVariable(
+                'CLIMBOT_DATA_ROOT', default_value=default_archive_root)),
         Node(
             package='climbot_inspection',
             executable='capture_once_node',

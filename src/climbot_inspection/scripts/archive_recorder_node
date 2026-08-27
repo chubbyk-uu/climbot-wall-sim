@@ -183,7 +183,7 @@ class ArchiveRecorderNode(Node):
         self._expected_frame = str(self.declare_parameter(
             'expected_frame_id', 'inspection_camera_optical_frame').value)
         self._default_root = str(self.declare_parameter(
-            'output_root', '').value)
+            'output_root', str(Path.home() / 'climbot_data')).value)
         self._minimum_free_bytes = self._positive_int('minimum_free_bytes', 536_870_912)
         self._pending_timeout_s = self._positive_float('pair_timeout_s', 2.0)
         self._actual_spacing_tolerance = self._positive_float(

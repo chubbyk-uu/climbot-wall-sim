@@ -27,6 +27,7 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDir>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -146,6 +147,21 @@ TEST(CoveragePanelConfig, hidesPointCountingWhenTheRegionComesFromAFile)
   auto * clear = panel.findChild<QPushButton *>("clear_button");
   ASSERT_NE(clear, nullptr);
   EXPECT_FALSE(clear->isEnabled());
+}
+
+TEST(CoveragePanelConfig, showsAndRestoresTheHomeDataDirectory)
+{
+  application();
+  climbot_rviz_plugins::CoveragePanel panel;
+  auto * root = panel.findChild<QLineEdit *>("archive_root_edit");
+  auto * defaults = panel.findChild<QPushButton *>("default_archive_root_button");
+  ASSERT_NE(root, nullptr);
+  ASSERT_NE(defaults, nullptr);
+  const QString expected = QDir::homePath() + QStringLiteral("/climbot_data");
+  EXPECT_EQ(root->text(), expected);
+  root->setText(QStringLiteral("/another/data/root"));
+  defaults->click();
+  EXPECT_EQ(root->text(), expected);
 }
 
 // Every one of these sends a request that reshapes the task being previewed.

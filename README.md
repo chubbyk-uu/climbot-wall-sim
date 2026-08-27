@@ -31,9 +31,10 @@ GUI 在 WSL2 上需要 WSLg/GPU 图形支持；无 GUI 的采集、处理、拼�
 `headless:=true`。墙面 DDS 贴图放在 `textures/`，由 `.gitignore` 排除；刚克隆下来的仓库如果要跑带贴图的
 视觉任务，按 [墙面贴图](docs/OPERATION.md#墙面贴图) 自行生成。
 
-采集、预处理与拼接的大文件不进入仓库。启用这些功能前，在**记录器所在主机**设置一个持久化、
-可写的绝对目录：`export CLIMBOT_DATA_ROOT=/your/chosen/data/root`。未设置时，带采集的任务会
-明确拒绝启动；不要把真实主机路径写入文档、注释或提交的结果。
+采集、预处理与拼接的大文件不进入仓库。默认写入**记录器所在主机**当前用户的
+`$HOME/climbot_data`，并在首次归档时创建。要使用另一块数据盘或共享目录时，再设置一个持久化、
+可写的绝对目录：`export CLIMBOT_DATA_ROOT=/your/chosen/data/root`。不要把真实主机路径写入
+文档、注释或提交的结果。
 
 ## 安装与部署
 
@@ -58,6 +59,8 @@ source /opt/ros/jazzy/setup.bash
 cd ~/robot_ws/climbot_sim
 colcon build --symlink-install
 source install/setup.bash
+# 下面的离线命令使用这个变量；已有自定义值会被保留。
+export CLIMBOT_DATA_ROOT="${CLIMBOT_DATA_ROOT:-$HOME/climbot_data}"
 ```
 
 验证基础环境：
@@ -126,7 +129,6 @@ ros2 launch climbot_bringup coverage_sim.launch.py
 
 ```bash
 ros2 launch climbot_bringup coverage_mission.launch.py \
-  inspection_output_root:="$CLIMBOT_DATA_ROOT" \
   wall_grid_spacing:=0
 ```
 

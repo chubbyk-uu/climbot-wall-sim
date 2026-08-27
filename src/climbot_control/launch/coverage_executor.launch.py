@@ -14,6 +14,8 @@
 
 """Launch the multi-segment coverage executor."""
 
+import os
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
@@ -30,6 +32,7 @@ def generate_launch_description():
         FindPackageShare('climbot_control'), 'launch', 'line_tracker.launch.py'])
     default_config = PathJoinSubstitution([
         FindPackageShare('climbot_control'), 'config', 'control.yaml'])
+    default_archive_root = os.path.join(os.path.expanduser('~'), 'climbot_data')
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         # Deliberately not named config_file. Included launch files inherit the
@@ -44,7 +47,8 @@ def generate_launch_description():
         DeclareLaunchArgument('inspection_default_enabled', default_value='true'),
         DeclareLaunchArgument(
             'inspection_output_root',
-            default_value=EnvironmentVariable('CLIMBOT_DATA_ROOT', default_value='')),
+            default_value=EnvironmentVariable(
+                'CLIMBOT_DATA_ROOT', default_value=default_archive_root)),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(tracker_launch),
             launch_arguments={

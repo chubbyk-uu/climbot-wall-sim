@@ -17,7 +17,7 @@
 | `inspection.launch.py` | G1/G2/G4 相机、触发、归档与可选平场预览 |
 
 带归档的 launch 从 `CLIMBOT_DATA_ROOT` 取得 `inspection_output_root`；调用方也可传入绝对路径。
-未配置时必须失败，不能回退到机器私有目录。
+未配置时使用记录器主机当前用户的 `$HOME/climbot_data`，绝不把具体用户目录写入仓库。
 
 ## 坐标、控制与定位
 

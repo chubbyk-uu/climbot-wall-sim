@@ -21,9 +21,10 @@
 #include <mutex>
 #include <string>
 
+#include <QDir>
+#include <QFileDialog>
 #include <QFont>
 #include <QFontMetrics>
-#include <QFileDialog>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -68,6 +69,11 @@ QString stateName(uint8_t state)
     default:
       return QObject::tr("Unknown (%1)").arg(state);
   }
+}
+
+QString defaultArchiveRoot()
+{
+  return QDir::homePath() + QStringLiteral("/climbot_data");
 }
 
 QString archiveStateText(uint8_t state)
@@ -312,8 +318,9 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   archive_root_edit_ = new QLineEdit();
   archive_root_edit_->setObjectName("archive_root_edit");
   archive_root_edit_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+  archive_root_edit_->setText(defaultArchiveRoot());
   archive_root_edit_->setToolTip(tr(
-    "Path interpreted by the archive recorder host; leave empty to use its launch value."));
+    "Path interpreted by the archive recorder host. Defaults to this user's climbot_data directory."));
   browse_archive_root_button_ = new QPushButton(tr("Browse..."));
   browse_archive_root_button_->setObjectName("browse_archive_root_button");
   default_archive_root_button_ = new QPushButton(tr("Default"));
@@ -503,7 +510,7 @@ CoveragePanel::CoveragePanel(QWidget * parent)
       }
     });
   connect(default_archive_root_button_, &QPushButton::clicked, this, [this]() {
-      archive_root_edit_->clear();
+      archive_root_edit_->setText(defaultArchiveRoot());
     });
 
   renderDisconnected();

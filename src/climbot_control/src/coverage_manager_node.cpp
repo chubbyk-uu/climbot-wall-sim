@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -36,6 +37,20 @@
 #include "std_srvs/srv/trigger.hpp"
 
 using namespace std::chrono_literals;
+
+namespace
+{
+
+std::string defaultInspectionOutputRoot()
+{
+  const char * const home = std::getenv("HOME");
+  if (home == nullptr || home[0] == '\0') {
+    return "";
+  }
+  return std::string(home) + "/climbot_data";
+}
+
+}  // namespace
 
 class CoverageManagerNode : public rclcpp::Node
 {
@@ -64,7 +79,8 @@ public:
     // A bare control-node process stays motion-only for compatibility and
     // safety. The complete mission launch explicitly enables inspection.
     inspection_default_enabled_(declare_parameter("inspection_default_enabled", false)),
-    inspection_output_root_(declare_parameter("inspection_output_root", ""))
+    inspection_output_root_(declare_parameter(
+        "inspection_output_root", defaultInspectionOutputRoot()))
   {
     if (!std::isfinite(start_response_timeout_s_) || !(start_response_timeout_s_ > 0.0)) {
       throw std::invalid_argument("start_response_timeout_s must be positive.");
@@ -89,7 +105,7 @@ public:
     }
     if (inspection_output_root_.empty()) {
       throw std::invalid_argument(
-        "inspection_output_root must be absolute; set CLIMBOT_DATA_ROOT or pass the launch argument.");
+        "inspection_output_root must be absolute.");
     }
     // The feedback throttle and the start-response deadline are elapsed times,
     // and off sim time the node clock is the settable system clock. A backward

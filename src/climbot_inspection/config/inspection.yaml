@@ -47,8 +47,7 @@ archive_recorder_node:
     expected_width: 1920
     expected_height: 1080
     # This is a reserve in addition to the conservative per-task estimate.
-    # The root is interpreted on this node's host, not necessarily RViz's host.
-    output_root: ''
+    # The root is injected by launch. A bare node derives $HOME/climbot_data.
     minimum_free_bytes: 536870912
     pair_timeout_s: 2.0
     image_overlap_ratio: 0.20
