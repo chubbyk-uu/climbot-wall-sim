@@ -88,7 +88,7 @@ CI 在每个 main 推送和 Pull Request 上执行构建、静态分析和串行
 
 ## 快速启动
 
-以下命令均假定已执行：
+以下命令均假定已经完成构建，并在一个终端执行过：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -97,11 +97,13 @@ source ~/robot_ws/climbot_sim/install/setup.bash
 
 ### 1. 只看仿真
 
+想先确认机器人、墙面和传感器是否正常，运行：
+
 ```bash
 ros2 launch climbot_gazebo climbot_wall.launch.py
 ```
 
-无 GUI：
+没有图形界面时，在后台运行：
 
 ```bash
 ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
@@ -109,16 +111,18 @@ ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
 
 ### 2. 规划预览
 
-启动墙面、规划器和 RViz，但不执行机器人：
+想先画出覆盖路径、但不让机器人运动，运行：
 
 ```bash
 ros2 launch climbot_bringup coverage_sim.launch.py
 ```
 
-在 RViz 使用 `Publish Point` 点选任务可走区。矩形点 A（左下）和 B（右上）；等腰梯形点 A（左下）、
-B（右上）、C（右下）。所有点必须位于绿色安全框内。
+随后在 RViz 选择 `Publish Point`，点击任务区域：矩形点左下和右上两个角；等腰梯形再点右下角。
+所有点都必须在绿色安全框内。此模式只显示路径，不会控制机器人。
 
 ### 3. 规划、控制与自动采集
+
+想让机器人执行路径并保存巡检照片，先设置数据保存位置，再启动完整任务：
 
 ```bash
 ros2 launch climbot_bringup coverage_mission.launch.py \
@@ -126,9 +130,9 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
   wall_grid_spacing:=0
 ```
 
-在 RViz 的 **Coverage Task** 面板中点选、Replan；在 `Capture` 页确认原始归档开关与根目录，
-再按 Start。系统只在正式 `SCAN` 段采图，归档原始 `mono8` 图像、曝光标签、标定和 manifest。
-执行中只使用 Cancel；归档与受控停止语义见 [操作手册](docs/OPERATION.md#仿真规划与执行)。
+在 RViz 的 **Coverage Task** 面板中完成点选后按 **Replan**，确认 `Capture` 页的保存目录，再按
+**Start**。机器人只会在直线扫描段拍照。完成后，`${CLIMBOT_DATA_ROOT}` 下会出现一个新的任务目录，
+其中包含原始图像、每张图的拍摄位姿、相机标定和 `manifest.json`。需要停止时只按 **Cancel**。
 
 ![RViz 中执行覆盖任务](docs/images/rviz_coverage_task.png)
 
@@ -148,7 +152,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 
 ### 4. 离线图像处理
 
-输入必须是已完成的 G4 原始归档；输出目录必须为不存在的绝对路径，且不得位于输入目录内：
+照片采集完成后，这一步把原图校验、平场校正和去畸变，生成拼接可以读取的新目录。`RAW_RUN` 是
+上一步生成的任务目录；`PROCESSED_RUN` 必须是一个还不存在的新目录：
 
 ```bash
 RAW_RUN="$CLIMBOT_DATA_ROOT/<task-id>/<run-id>"
@@ -161,26 +166,28 @@ ros2 run climbot_image_processing process_inspection_archive \
   --denoise none --jobs auto --memory-budget-gb 4
 ```
 
-该链路校验原始 SHA-256，保持原图不变，再执行可选暗场/平场、去噪和畸变校正。完整参数和
-平场标定流程见 [image processing README](src/climbot_image_processing/README.md)。
+原始照片不会被修改。命令成功后，在 `PROCESSED_RUN` 中得到校正后的图像和对应标签。平场文件
+不可用时，去掉 `--flat-field-file ...`；完整参数见 [image processing README](src/climbot_image_processing/README.md)。
 
 ### 5. 离线墙面拼接
 
-将一个或多个 processed run 代入下列变量。所有输出目录均应为新的绝对路径；`WORK` 只是可删除
-缓存，正式证据是每一步原子发布的输出目录。
+这一步把多张照片拼成一张墙面图。通常把横向和竖向两次采集一起输入：`RUN_H`、`RUN_V` 是上一步
+得到的两个 processed 目录；`ROOT` 是本次拼接使用的新名称。命令会在它后面自动加不同后缀。
 
-拼接按下面的单向阶段运行。前一阶段失败时先修复输入或参数，不要跳过它强行运行后续阶段。
+按顺序执行下面五步。某一步报错时，先看该步输出的错误，不要跳到后面继续运行。
 
 | 阶段 | 命令 | 做什么 | 关键产物 |
 | --- | --- | --- | --- |
-| 0 | `validate_mosaic_inputs` | 只读校验 processed 图像、标签、标定、位姿与 SHA-256 | 终端 JSON 摘要；不写目录 |
-| 1 | `build_overlap_candidates` | 用曝光位姿投影足迹，并找出真正空间重叠的照片对 | `overlap_candidates.json` |
-| 2 | `build_local_matches` | 仅在候选重叠区做特征匹配、RANSAC 与局部 SE(2) 约束 | `local_matches.json`；`WORK` 中是可重建缓存 |
-| 3 | `build_pose_graph` | 结合 EKF 绝对先验与视觉边，优化每张照片的 `x/y/yaw` 修正 | `optimized_poses.json`、`pose_graph.json` |
-| 4 | `build_wall_mosaic` | 以同一 hard-cut 规则渲染 pose-only 与 optimized 母版 | BigTIFF、覆盖/不确定度图、预览和 manifest |
+| 步骤 | 命令 | 它在做什么 | 成功后得到什么 |
+| --- | --- | --- | --- |
+| 0 | `validate_mosaic_inputs` | 检查照片、标签和标定是否齐全、是否匹配 | 终端里的检查结果；不创建目录 |
+| 1 | `build_overlap_candidates` | 找出哪些照片拍到了同一块墙 | 候选照片对列表 |
+| 2 | `build_local_matches` | 比较重叠部分，估计两张照片之间的细小偏移 | 照片之间的匹配结果；临时缓存可删除 |
+| 3 | `build_pose_graph` | 把所有照片的偏移一起调整，让整面墙尽量对齐 | 调整后的照片位置与质量报告 |
+| 4 | `build_wall_mosaic` | 把调整前和调整后的照片各拼成一张完整墙面图 | 两张 BigTIFF、预览图、覆盖图和报告 |
 
-`build_initial_projection` 是可选的几何诊断命令：它只输出每张图的墙面足迹预览，适合先检查
-相机朝向、尺度和任务覆盖范围；阶段 1 会自行执行同一投影，因此常规流水无需单独运行它。
+`build_initial_projection` 是可选的检查命令：它画出每张照片预计落在墙上的范围，适合先看相机
+方向、比例和任务区域是否合理。正常拼接不必单独运行，因为第 1 步会完成同样的计算。
 
 ```bash
 RUN_H="$CLIMBOT_DATA_ROOT/processed-<horizontal-id>"
@@ -190,7 +197,7 @@ ROOT="$CLIMBOT_DATA_ROOT/mosaic-<new-id>"
 ros2 run climbot_mosaic validate_mosaic_inputs \
   --input-run "$RUN_H" --input-run "$RUN_V"
 
-# 阶段 1：只保留足迹确有正面积相交的照片对。
+# 第 1 步：找出拍到同一块墙的照片对。
 ros2 run climbot_mosaic build_overlap_candidates \
   --input-run "$RUN_H" --input-run "$RUN_V" \
   --output-dir "$ROOT-candidates"
@@ -211,9 +218,10 @@ ros2 run climbot_mosaic build_wall_mosaic \
   --resolution-mm-per-pixel 0.25 --jobs auto --memory-budget-gb 4
 ```
 
-`mosaic_pose_only.tif` 与 `mosaic_optimized.tif` 使用相同输入、网格与 hard-cut 像素归属；唯一变量
-是位姿图修正。`coverage_count.tif` 的零值表示相机从未覆盖该墙面像素；`uncertainty.tif` 的
-nodata 同样不能被当作有效图像。诊断墙还可在拼接后运行[真值评价与原尺寸检查](docs/OPERATION.md#诊断墙后验检查)。
+最终重点看两个文件：`mosaic_pose_only.tif` 是直接按拍摄位姿拼出的结果；
+`mosaic_optimized.tif` 是经过第 3 步对齐后拼出的结果。两者使用同一批照片，因此可以直接比较。
+`coverage_count.tif` 中为零的位置表示相机从未拍到，不能把它当作有效墙面图。需要检查诊断墙时，
+继续运行[真值评价与原尺寸检查](docs/OPERATION.md#诊断墙后验检查)。
 
 ## 文档导航
 
