@@ -237,8 +237,9 @@ G1 通过前不把 `coverage` 配置中的临时 `detection_length=0.01 m` 直�
 | PR-07 | 按钮许可随状态迁移 | `can_pause`／`can_resume` 互斥，`can_cancel` 全程有效，`can_start` 全程无效；重复暂停恢复不改变任务标识 | **通过**：管理器测试覆盖三轮暂停恢复；`test_coverage_panel_config` 覆盖面板按钮跟随许可 |
 | PR-08 | 暂停请求失联按失联处理 | 执行器不提供该服务＝明确答复，拒绝请求、任务原样继续；接了请求却在 `pause_response_timeout_s` 内不应答＝无法判断机器人状态，请求 hold 并取消任务 | **通过**：`test_coverage_manager_pause_loss.py` 两例，后者断言 hold 先于状态播报生效 |
 | PR-09 | 采集门关闭而归档保持 | 暂停期间不得触发曝光、不得发心跳；恢复后触发序号接着数不重来；在飞曝光跨越暂停后仍只交付一次 | **通过**：`test_automatic_capture_pause.py` 两例，其中一例把里程计推过下一个触发目标以证明关门的是采集门而不是“没动” |
-| PR-11 | 关门时点是静止而非请求 | `PAUSING` 期间机器人仍在走刹车距离，参考必须保持 `inspection_enabled=true`，只有 `PAUSED` 才转 `false`；否则刹车距离内的触发目标被跳过，恢复时补拍落在目标后方，违反归档纵向重叠容差 | **通过**：`test_coverage_executor_pause.py` 订阅跟踪器真实发出的 `/control/execution_reference`，断言不存在“机器人仍在动而参考已撤”的样本。这一条是实机跑出来的缺陷补的回归——原先两侧分开测，采集侧自己造 `inspection_enabled=false` 当输入，把错误假设写进了测试 |
 | PR-10 | 暂停不封存归档 | 暂停与恢复期间既不得调用 finalize，也不得开第二个 run；跨暂停的帧属于同一个 run | **通过**：`test_coverage_manager_archive.py` 断言 finalize 请求数为零、prepare 请求数不变，收尾时唯一一次 finalize 仍是暂停前打开的 run |
+| PR-11 | 关门时点是静止而非请求 | `PAUSING` 期间机器人仍在走刹车距离，参考必须保持 `inspection_enabled=true`，只有 `PAUSED` 才转 `false`；否则刹车距离内的触发目标被跳过，恢复时补拍落在目标后方，违反归档纵向重叠容差 | **通过**：`test_coverage_executor_pause.py` 订阅跟踪器真实发出的 `/control/execution_reference`，断言不存在“机器人仍在动而参考已撤”的样本。这一条是实机跑出来的缺陷补的回归——原先两侧分开测，采集侧自己造 `inspection_enabled=false` 当输入，把错误假设写进了测试 |
+| PR-12 | 恢复不得追赶进度 | 恢复后的命令速度不得超出暂停前的巡航速度；`time` 模式尤其如此，因为它带调度修正 | **通过**：`test_coverage_executor_pause.py` 在一条 `0.80 m` 的扫描线上测量暂停前后的峰值命令速度。这一条也是实机发现的：改前恢复瞬间冲到 `0.350 m/s`（正是 `catch_up_max_linear_speed` 上限）而暂停前是 `0.203 m/s` |
 
 ## 离线预处理最小链验收（已通过）
 

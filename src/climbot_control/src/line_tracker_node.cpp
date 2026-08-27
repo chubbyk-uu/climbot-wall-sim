@@ -717,10 +717,31 @@ private:
       };
     shift_if_set(task_start_time_);
     shift_if_set(segment_start_time_);
-    shift_if_set(travel_start_);
-    shift_if_set(alignment_profile_start_);
     shift_if_set(alignment_settle_start_);
     shift_if_set(arc_entry_start_time_);
+
+    // A deadline can be shifted; a motion profile cannot. Both the travel and
+    // the turn curves are time-parameterised from a standing start, so
+    // resuming one in its middle asks the robot to already be at cruise while
+    // it is at zero. In time mode the schedule correction reads that gap as
+    // lag and works it off at catch_up_max_linear_speed - a visible dash after
+    // any mid-line pause. The braking distance makes it worse: the curve
+    // advances at cruise for the whole deceleration while the robot covers
+    // half as much, which injects the lag before the robot has even stopped.
+    //
+    // The robot did stop, so the honest repair is to plan again from where it
+    // stands, exactly as the start of a segment does. Distance mode never read
+    // these curves, which is why it always resumed cleanly.
+    if (motion_state_ == MotionState::TRACK_LINE ||
+      motion_state_ == MotionState::FINAL_APPROACH)
+    {
+      beginTravel(current_time);
+    } else if (motion_state_ == MotionState::ALIGN_PROFILE) {
+      // Re-entering the brake state is the whole re-plan: updateAlignment()
+      // plans a fresh turn for whatever heading error is left once the command
+      // has settled at zero, which it already has.
+      motion_state_ = MotionState::ALIGN_BRAKE;
+    }
     pause_requested_ = false;
     paused_ = false;
     pause_requested_at_ = zeroInstant();

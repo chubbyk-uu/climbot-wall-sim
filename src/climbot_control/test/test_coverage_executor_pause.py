@@ -156,6 +156,32 @@ def _task():
     return task
 
 
+def _long_scan_task():
+    """
+    Build one scan line long enough that the robot reaches and holds cruise.
+
+    The three-segment task above is 0.20 m a side, which the acceleration and
+    braking ramps consume entirely - there is no plateau on it to compare a
+    resumed speed against.
+    """
+    task = CoverageTask()
+    task.header.frame_id = 'odom'
+    task.task_id = 'pause-test'
+    task.revision = 1
+    task.sweep_direction = CoverageTask.SWEEP_HORIZONTAL
+    task.waypoints = [_pose(0.0, 0.0, 0.0), _pose(0.80, 0.0, 0.0)]
+    task.segment_types = [CoverageTask.SEGMENT_SCAN]
+    for x, y in [(-0.6, -0.6), (1.4, -0.6), (1.4, 0.6), (-0.6, 0.6)]:
+        point = Point32()
+        point.x = x
+        point.y = y
+        task.coverage_region.points.append(point)
+        task.motion_region.points.append(point)
+    task.detection_width = 0.10
+    task.detection_length = 0.10
+    return task
+
+
 class TestCoverageExecutorPause(unittest.TestCase):
     """Close a planar plant around the Action server and interrupt it."""
 
@@ -332,14 +358,14 @@ class TestCoverageExecutorPause(unittest.TestCase):
         self.assertTrue(handle.accepted)
         return handle
 
-    def _start_task(self, with_odometry=True):
+    def _start_task(self, with_odometry=True, task=None):
         self.assertTrue(self.client.wait_for_server(timeout_sec=15.0))
         for _ in range(5):
             if with_odometry:
                 self._publish_odometry()
             self._advance(0.02)
         goal = ExecuteCoverage.Goal()
-        goal.task = _task()
+        goal.task = _task() if task is None else task
         send_future = self.client.send_goal_async(
             goal, feedback_callback=self._feedback_callback)
         real_deadline = time.monotonic() + 20.0
@@ -510,6 +536,78 @@ class TestCoverageExecutorPause(unittest.TestCase):
             10.0, 'the executor to leave the pause states')
         handle.cancel_goal_async()
         self._drive_until(lambda: result_future.done(), 30.0, 'the canceled result')
+
+    def test_resuming_a_scan_does_not_sprint_to_catch_up(self):
+        """
+        Resume from the standstill, not from the middle of the speed curve.
+
+        The travel curve is time-parameterised from a standing start. Resuming
+        it where it was left asks the robot to already be at cruise while it is
+        at zero, and in time mode the schedule correction reads that gap as lag
+        and works it off at catch_up_max_linear_speed. The deceleration adds to
+        it: the curve advances at cruise for the whole braking time while the
+        robot covers half the distance. Both are repaired by planning again
+        from where the robot actually stands.
+        """
+        handle = self._start_task(task=_long_scan_task())
+        result_future = handle.get_result_async()
+        self._drive_until(
+            lambda: self._observed()[0] == ExecuteCoverage.Feedback.TRACK_LINE and
+            self._current_command()[0] > 0.05,
+            60.0, 'the scan line to reach speed')
+
+        # What the schedule asks for when nothing has interrupted it.
+        cruising = 0.0
+        for _ in range(150):
+            cruising = max(cruising, self._current_command()[0])
+            self._tick()
+        self.assertGreater(cruising, 0.10, 'the scan line never reached cruise')
+
+        self._pause_and_resume(hold_s=0.3)
+
+        resumed = 0.0
+        for _ in range(250):
+            resumed = max(resumed, self._current_command()[0])
+            self._tick()
+        self.assertLessEqual(
+            resumed, cruising * 1.10 + 0.005,
+            'resuming commanded %.3f m/s against %.3f m/s before the pause, so the '
+            'speed curve was resumed in its middle rather than replanned from the '
+            'standstill' % (resumed, cruising))
+
+        handle.cancel_goal_async()
+        self._drive_until(lambda: result_future.done(), 30.0, 'the canceled result')
+
+    def test_a_pause_inside_the_turn_profile_replans_the_turn(self):
+        """
+        Reach the in-place turn itself, which the state feedback cannot name.
+
+        feedbackState() reports WAITING_FOR_ALIGNMENT, ALIGN_BRAKE,
+        ALIGN_PROFILE and ARC_ENTRY all as ALIGN, so the every-state test above
+        pauses in whichever comes first - the brake, not the turn. Only
+        ALIGN_PROFILE is running a time-parameterised curve, and it is the one
+        the resume path replans, so it needs reaching deliberately. It is the
+        only ALIGN sub-state that commands angular speed with no linear speed;
+        an arc entry drives forward while it turns.
+        """
+        handle = self._start_task()
+        result_future = handle.get_result_async()
+        self._drive_until(
+            lambda: self._observed()[0] == ExecuteCoverage.Feedback.ALIGN and
+            abs(self._current_command()[1]) > 0.2 and
+            abs(self._current_command()[0]) < 1e-3,
+            60.0, 'an in-place turn to reach speed')
+        segment = self._observed()[1]
+
+        self._pause_and_resume(hold_s=0.3)
+        self.assertEqual(
+            self._observed()[1], segment,
+            'the task changed segment across a pause inside the turn')
+
+        self._drive_until(lambda: result_future.done(), 240.0, 'the task to finish')
+        wrapped = result_future.result()
+        self.assertEqual(wrapped.status, GoalStatus.STATUS_SUCCEEDED)
+        self.assertEqual(wrapped.result.completed_segments, 3)
 
     def test_a_pause_outlasts_the_segment_deadline(self):
         """The segment timeout is frozen, not merely generous."""
