@@ -498,7 +498,7 @@ def _write_raw_tiles(path: Path, raw_path: Path, dtype: np.dtype, grid: RenderGr
 
 def _render_preview(initial: tuple[RenderFrame, ...], optimized: tuple[RenderFrame, ...],
                     grid: RenderGrid, camera_width: int, camera_height: int,
-                    jobs: int, max_side: int = 1600) -> tuple[np.ndarray, np.ndarray]:
+                    jobs: int, max_side: int) -> tuple[np.ndarray, np.ndarray]:
     coarse_resolution = grid.resolution_m * max(
         1.0, max(grid.width_px, grid.height_px) / float(max_side))
     coarse = common_grid(initial, optimized, coarse_resolution, 256)
@@ -574,7 +574,8 @@ class _ProcessTreePssMonitor:
 
 def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                       pose_graph_dir: Path, resolution_m: float,
-                      jobs: int, memory_budget_gb: float) -> dict[str, Any]:
+                      jobs: int, memory_budget_gb: float,
+                      preview_max_side_px: int = 4096) -> dict[str, Any]:
     """Atomically build comparable BigTIFF products with bounded worker memory."""
     if not output_dir.is_absolute() or output_dir.exists() or not output_dir.parent.is_dir():
         raise FusionError('output directory must be absolute, new and have an existing parent.')
@@ -584,6 +585,9 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         raise FusionError('memory budget must be finite and positive.')
     if jobs <= 0:
         raise FusionError('jobs must be positive.')
+    if (isinstance(preview_max_side_px, bool) or
+            not isinstance(preview_max_side_px, int) or preview_max_side_px < 512):
+        raise FusionError('preview_max_side_px must be an integer of at least 512.')
     started = time.perf_counter()
     projections = project_inputs(inputs)
     initial, optimized = read_pose_graph(pose_graph_dir, inputs, projections)
@@ -624,7 +628,8 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         _write_raw_tiles(temporary / 'uncertainty.tif', uncertainty_path,
                          np.dtype(np.uint16), grid, 'position_std_uint16', True)
         pose_preview, optimized_preview = _render_preview(
-            initial, optimized, grid, inputs.camera.width, inputs.camera.height, jobs)
+            initial, optimized, grid, inputs.camera.width, inputs.camera.height, jobs,
+            preview_max_side_px)
         difference = cv2.absdiff(pose_preview, optimized_preview)
         comparison = cv2.hconcat((pose_preview, optimized_preview, difference))
         panel_width = pose_preview.shape[1]
@@ -656,6 +661,11 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                                   'stable input-frame order resolves ties'),
                        'same_grid_and_pixels_except_pose': True,
                        'jobs': jobs, 'memory_budget_gb': memory_budget_gb,
+                       'preview_max_side_px': preview_max_side_px,
+                       'preview_panel_width_px': int(pose_preview.shape[1]),
+                       'preview_panel_height_px': int(pose_preview.shape[0]),
+                       'comparison_width_px': int(comparison.shape[1]),
+                       'comparison_height_px': int(comparison.shape[0]),
                        'elapsed_s': time.perf_counter() - started,
                        'peak_process_tree_pss_bytes': resource_monitor.peak_bytes,
                        'pss_sample_interval_s': resource_monitor.interval_s,

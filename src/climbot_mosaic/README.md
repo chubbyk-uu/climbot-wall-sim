@@ -75,12 +75,16 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
 | `mosaic_difference.tif` | 两者差分 |
 | `coverage_count.tif` | 每个像素被几张照片覆盖；**为零表示相机从未拍到** |
 | `uncertainty.tif` | 量化后验不确定度，`65535` 标记无覆盖 |
-| `mosaic_preview.jpg` | 可比较的预览，**不能用于测量或缺陷判断** |
+| `mosaic_preview.jpg` | optimized 母版的 JPEG 预览 |
+| `mosaic_comparison.jpg` | pose-only、optimized 和差分的并排 JPEG；默认每个 panel 最长边 4096 px |
 | `mosaic_manifest.json` | 哈希、共享网格、重叠分歧、每一遍的耗时、缓存统计和进程树 PSS 采样 |
 
 正式母版是 `0.25 mm/px` 的无损 tiled BigTIFF（`--resolution-mm-per-pixel`）。
 `--jobs` 和 `--memory-budget-gb` 只改变耗时：帧键、随机源、候选与边的排序、接受的边、
 优化问题和输出像素必须保持确定。
+
+`--preview-max-side-px` 只改变两份 JPEG 预览的尺寸，不会改变正式 BigTIFF 或位姿图。默认 `4096`
+便于查看接缝和局部细节；想减小文件可设为 `2048`，最小值为 `512`。
 
 ## 后验评价
 

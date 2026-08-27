@@ -214,7 +214,8 @@ ros2 run climbot_mosaic build_wall_mosaic \
   --input-run "$RUN_H" --input-run "$RUN_V" \
   --pose-graph-dir "$ROOT-pose-graph" \
   --output-dir "$ROOT-hardcut" --work-dir "$ROOT-work-fusion" \
-  --resolution-mm-per-pixel 0.25 --jobs auto --memory-budget-gb 4
+  --resolution-mm-per-pixel 0.25 --jobs auto --memory-budget-gb 4 \
+  --preview-max-side-px 4096
 ```
 
 最终重点看两个文件：`mosaic_pose_only.tif` 是直接按拍摄位姿拼出的结果；

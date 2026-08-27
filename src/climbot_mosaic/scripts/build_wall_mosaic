@@ -34,6 +34,9 @@ def main() -> int:
     parser.add_argument('--resolution-mm-per-pixel', type=float, default=0.25)
     parser.add_argument('--jobs', type=_jobs, default=None, metavar='auto|N')
     parser.add_argument('--memory-budget-gb', type=float, default=4.0)
+    parser.add_argument(
+        '--preview-max-side-px', type=int, default=4096,
+        help='Longest edge of each JPEG preview panel (default: 4096; minimum: 512).')
     arguments = parser.parse_args()
     try:
         jobs = resolve_jobs(arguments.jobs, arguments.memory_budget_gb)
@@ -41,7 +44,7 @@ def main() -> int:
             arguments.output_dir, arguments.work_dir,
             validate_processed_runs(arguments.input_run), arguments.pose_graph_dir,
             arguments.resolution_mm_per_pixel / 1000.0,
-            jobs, arguments.memory_budget_gb)
+            jobs, arguments.memory_budget_gb, arguments.preview_max_side_px)
     except (MosaicInputError, ProjectionError, FusionError, OSError, ValueError) as error:
         print(f'wall mosaic failed: {error}')
         return 2

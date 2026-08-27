@@ -21,6 +21,7 @@ from climbot_mosaic.fusion import (
     _tile_count,
     _tiles_from_raw,
     _write_raw_tile,
+    build_wall_mosaic,
     common_grid,
     encode_uncertainty,
     feather_map,
@@ -76,6 +77,13 @@ def test_resource_and_grid_contracts_reject_invalid_values():
         common_grid((_frame(0, (0.0, 0.0, 1.0, 1.0)),), (), 0.0)
     assert resolve_jobs(None, 0.1) == 1
     assert resolve_jobs(64, 32.0) == 8
+
+
+def test_preview_size_contract_rejects_too_small_panels(tmp_path):
+    with pytest.raises(FusionError, match='preview_max_side_px'):
+        build_wall_mosaic(
+            tmp_path / 'result', tmp_path / 'work', None, None,
+            0.001, 1, 1.0, preview_max_side_px=511)
 
 
 def test_uncertainty_encoding_has_precision_range_and_explicit_nodata():
