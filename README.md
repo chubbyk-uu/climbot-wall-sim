@@ -27,12 +27,14 @@ Gazebo 里的作业面与机器人：真实重力，靠持续法向吸附力贴�
 
 | 文档 | 用途 |
 | --- | --- |
+| [docs/README.md](docs/README.md) | 文档职责、归档规则与后续重组结构 |
 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 项目目标、设计约束、实施阶段和最终验收标准 |
 | [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) | §14 每项要求到自动化测试、Gazebo 结果与实机待办的映射 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 包职责、依赖方向、配置归属和运行时数据流 |
 | [docs/INTERFACES.md](docs/INTERFACES.md) | launch、话题、服务、参数和 TF |
 | [docs/OPERATION.md](docs/OPERATION.md) | 操作手册：启动、点选、面板、算法切换和回归 |
 | [docs/STATUS.md](docs/STATUS.md) | 阶段完成度、review 闭环和下一步 |
+| [docs/DATA_RETENTION.md](docs/DATA_RETENTION.md) | 本地大数据的保留等级、清理候选和确认流程 |
 | [results/README.md](results/README.md) | 实验结果用途、有效性和重新生成方法 |
 
 ## 软件基线
