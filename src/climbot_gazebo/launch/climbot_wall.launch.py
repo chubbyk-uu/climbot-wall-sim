@@ -618,7 +618,7 @@ def launch_setup(context, *args, **kwargs):
 
     actions.append(Node(
         package='climbot_gazebo',
-        executable='wall_imu_adapter.py',
+        executable='wall_imu_adapter_node',
         name='wall_imu_adapter',
         parameters=[{
             'use_sim_time': LaunchConfiguration('use_sim_time'),
