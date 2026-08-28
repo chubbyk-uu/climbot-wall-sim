@@ -521,7 +521,12 @@ private:
     }
     metadata_publisher_->publish(pending_->metadata);
     pending_.reset();
-    publishCaptureHeartbeat();
+    // Deliberately no heartbeat here. The gate must age on the same clock as
+    // the execution reference that produces it: a capture completing after the
+    // reference stream stalled would otherwise reset the gate while the
+    // reference kept ageing, and the tracker would stop the robot later than
+    // this node stopped triggering. The only cost is that the gate's reason
+    // text stays "in flight" until the next reference, at most one heartbeat.
     tryTrigger();
   }
 

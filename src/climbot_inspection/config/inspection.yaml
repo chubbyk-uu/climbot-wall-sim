@@ -34,7 +34,14 @@ automatic_capture_node:
     # Longitudinal photo-trigger policy. It is intentionally independent from
     # the planner's lateral overlap_ratio; both defaults are 20% for G2.
     image_overlap_ratio: 0.20
-    reference_timeout_s: 0.5
+    # Liveness only, not freshness: line_tracker publishes a new reference the
+    # instant any field changes, so a segment boundary, a frozen geometry
+    # update, a pause and a resume all arrive immediately; the 5 Hz beat in
+    # between merely says the executor is alive. It must therefore outlast the
+    # tracker's own capture-gate supervision (2 x capture_gate_timeout_s),
+    # otherwise triggering stops while the robot is still driving and the next
+    # exposure lands past its target. See the contract test in climbot_gazebo.
+    reference_timeout_s: 1.0
     # capture_once may wait up to 5 s for Gazebo transport. Leave room for the
     # service response itself to be scheduled under a loaded GUI session.
     capture_response_timeout_s: 6.0

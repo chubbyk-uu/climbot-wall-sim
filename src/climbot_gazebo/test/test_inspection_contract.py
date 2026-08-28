@@ -50,3 +50,34 @@ def test_archive_spacing_guard_fits_within_the_g2_measured_overlap_limit():
     assert float(automatic['image_overlap_ratio']) == pytest.approx(
         float(recorder['image_overlap_ratio']))
     assert archive_limit <= evaluator_limit
+
+
+def test_capture_supervision_outlasts_the_execution_reference_heartbeat():
+    """
+    A stalled execution reference must stop the robot, not just the camera.
+
+    Two independent timers watch the same signal. automatic_capture stops
+    triggering once the reference is older than reference_timeout_s, and
+    line_tracker stops the robot once the capture gate that reference produces
+    has been stale for capture_gate_timeout_s and then unanswered for another
+    capture_gate_timeout_s. If the capture timer is the shorter of the two, a
+    stall opens a window in which the robot still drives a scan line while no
+    exposure is being taken, and the first exposure after recovery lands past
+    its target and is rejected by the archive's longitudinal contract.
+
+    The reference is not a sampled measurement whose value decays: line_tracker
+    publishes immediately whenever any field changes, so segment boundaries,
+    frozen geometry, pause and resume are never delayed by the heartbeat. The
+    beat in between only asserts that the executor is alive, which is why
+    widening this timeout costs nothing and closing the window is worth it.
+    """
+    control = _config('climbot_control', 'control.yaml')['line_tracker']['ros__parameters']
+    automatic = _config(
+        'climbot_inspection', 'inspection.yaml')['automatic_capture_node']['ros__parameters']
+    gate_timeout = float(control['capture_gate_timeout_s'])
+    reference_timeout = float(automatic['reference_timeout_s'])
+    heartbeat_period = 1.0 / float(control['execution_reference_heartbeat_hz'])
+    assert reference_timeout >= 2.0 * gate_timeout
+    # The heartbeat is what both timers are measured against, so it has to be
+    # comfortably shorter than the tighter of them rather than merely shorter.
+    assert heartbeat_period <= 0.5 * gate_timeout

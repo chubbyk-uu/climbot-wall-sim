@@ -74,6 +74,14 @@
 | `/inspection/archive/prepare`、`finalize` | service | 原子创建/封存 run；失败保留已提交证据且报告失败 |
 | `/inspection/archive/status` | `InspectionArchiveStatus` | 归档权威状态、计数、目录和错误 |
 
+`/control/execution_reference` 是采集侧的唯一活性信号：几何、状态或段号一变立即可靠发布，其余
+时间按 `execution_reference_heartbeat_hz`（5 Hz）保活。它同时驱动两个监督计时器 ——
+`automatic_capture_node.reference_timeout_s` 决定何时停止触发，`line_tracker` 的采集门在
+`capture_gate_timeout_s` 判陈旧、再过同样时长判超时并停车。前者必须不短于后者的两倍，否则
+参考断流时会出现"已停止拍照、机器人仍在走"的窗口，恢复后的第一张必然越过目标位置被归档拒绝。
+采集完成不额外刷新采集门，两个计时器因此始终共用同一个时钟起点。该合同由
+`climbot_gazebo/test/test_inspection_contract.py` 跨包断言。
+
 G4 按时间戳配对每张原图和 `InspectionCapture`，同时使用 transient-local 的最新会话标定；
 标定内容在 run 内发生变化必须失败。run 必须有 manifest、原图 SHA-256、每图标签和相机快照，
 且 `expected_images == saved_images`。
