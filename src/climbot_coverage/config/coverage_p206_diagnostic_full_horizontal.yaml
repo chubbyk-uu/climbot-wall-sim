@@ -14,6 +14,12 @@ coverage_planner:
     detection_forward_offset: 0.340
     detection_edge_overlap: 0.0
     overlap_ratio: 0.20
+    # The same dynamic envelope is checked for horizontal tracks. It leaves
+    # side boundaries untouched for vertical gravity, but protects any tracks
+    # whose turn or compensation is close to the top/bottom hard boundary.
+    maneuver_boundary_margin_m: 0.10
+    maneuver_drift_direction: [0.0, -1.0]
+    minimum_nominal_coverage_ratio: 0.95
     sweep_direction: horizontal
     start_corner: lower_left
     path_height: 0.06

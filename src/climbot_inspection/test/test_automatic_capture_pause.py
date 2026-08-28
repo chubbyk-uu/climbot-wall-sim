@@ -48,7 +48,7 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.qos import QoSProfile, ReliabilityPolicy
-from sensor_msgs.msg import Image
+from std_msgs.msg import Header
 
 
 # The exposure this file deliberately leaves in flight has to survive the pause
@@ -88,8 +88,8 @@ class TestAutomaticCapturePause(unittest.TestCase):
             ExecutionReference, '/control/execution_reference', reliable)
         self.odometry = self.node.create_publisher(
             Odometry, '/odometry/filtered', 10)
-        self.images = self.node.create_publisher(
-            Image, '/inspection/camera/image_raw', reliable)
+        self.receipts = self.node.create_publisher(
+            Header, '/inspection/capture_receipt', reliable)
         self.node.create_subscription(
             InspectionCapture, '/inspection/capture_metadata',
             self.metadata_callback, reliable)
@@ -148,12 +148,10 @@ class TestAutomaticCapturePause(unittest.TestCase):
         self.references.publish(message)
 
     def _publish_image(self):
-        image = Image()
-        image.header.stamp = self.image_stamp
-        image.header.frame_id = 'inspection_camera_optical_frame'
-        image.width = 8
-        image.height = 6
-        self.images.publish(image)
+        receipt = Header()
+        receipt.stamp = self.image_stamp
+        receipt.frame_id = 'inspection_camera_optical_frame'
+        self.receipts.publish(receipt)
 
     def _odom(self, seconds, base_x):
         message = Odometry()

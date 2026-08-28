@@ -30,7 +30,7 @@ import pytest
 import rclpy
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Header
 
 
 @pytest.mark.launch_test
@@ -75,11 +75,15 @@ class TestCaptureOnceNode(unittest.TestCase):
             Image, '/inspection/camera/image_raw', self._on_output_image, qos)
         self.node.create_subscription(
             CameraInfo, '/inspection/camera/camera_info', self._on_output_info, qos)
+        self.node.create_subscription(
+            Header, '/inspection/capture_receipt', self._on_receipt,
+            QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE))
         self.client = self.node.create_client(CaptureOnce, '/inspection/capture_once')
         self.lock = Lock()
         self.trigger_count = 0
         self.output_images = []
         self.output_infos = []
+        self.receipts = []
         self.trigger_event = Event()
         self.mode = 'immediate'
         self.stamp_sequence = 1
@@ -142,6 +146,10 @@ class TestCaptureOnceNode(unittest.TestCase):
         with self.lock:
             self.output_infos.append(message)
 
+    def _on_receipt(self, message):
+        with self.lock:
+            self.receipts.append(message)
+
     def _call(self, timeout=3.0):
         future = self.client.call_async(CaptureOnce.Request())
         deadline = time.monotonic() + timeout
@@ -169,9 +177,11 @@ class TestCaptureOnceNode(unittest.TestCase):
         with self.lock:
             self.assertEqual(len(self.output_images), 1)
             self.assertEqual(len(self.output_infos), 1)
+            self.assertEqual(len(self.receipts), 1)
             self.assertEqual(
                 self.output_images[0].header.stamp,
                 self.output_infos[0].header.stamp)
+            self.assertEqual(self.output_images[0].header.stamp, self.receipts[0].stamp)
 
         with self.lock:
             self.mode = 'delay'
@@ -205,6 +215,7 @@ class TestCaptureOnceNode(unittest.TestCase):
         with self.lock:
             self.assertEqual(len(self.output_images), 3)
             self.assertEqual(len(self.output_infos), 3)
+            self.assertEqual(len(self.receipts), 3)
 
 
 @launch_testing.post_shutdown_test()

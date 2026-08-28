@@ -69,6 +69,23 @@ def test_exposure_targets_use_ceil_count_and_not_a_terminal_camera_pose():
         (0, (1.25, 1.25)), (1, (1.75, 1.25))]
 
 
+def test_preflight_reserves_the_planner_maneuver_envelope_at_a_hard_boundary():
+    task = _task(
+        lower_left=[0.15, 0.15], upper_right=[3.85, 3.85],
+        sweep_direction='vertical', maneuver_boundary_margin_m=0.10,
+        maneuver_drift_direction=[0.0, -1.0])
+    truth = {'diagnostic_wall': {'features': []}}
+    report = preflight_diagnostic_coverage(
+        task, truth, _camera(), _robot(), _wall(), 0.01)
+    route = report['task']['maneuver_safe_route_rectangle_m']
+    safety_margin = 0.5 * (0.2 ** 2 + 0.2 ** 2) ** 0.5
+    assert route == pytest.approx([
+        0.15, safety_margin + 0.10, 3.85, 4.0 - safety_margin - 0.10])
+    assert report['task']['exposure_count'] < len(
+        planned_exposures(
+            planned_scan_segments(task, 0.5), 0.5, 0.20, 0.25))
+
+
 def test_preflight_measures_declared_feature_samples_with_discrete_photos():
     truth = {'diagnostic_wall': {'features': [{
         'id': 'patch', 'kind': 'repair_patch',

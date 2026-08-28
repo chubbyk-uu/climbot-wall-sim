@@ -19,7 +19,7 @@
 | G2/G4 采集 | `g2_accept_{horizontal,vertical,trapezoid}_2026-08-26_summary.json` | 异步匀速位置触发、位姿绑定与原始归档正式结果 |
 | P2 相对拼接 | [mosaic_p2_baseline_2026-08-26_summary.json](mosaic_p2_baseline_2026-08-26_summary.json) | 0.25 mm 相对拼接基线；尚未冻结验收门槛 |
 | P2 clean blind | [mosaic_p27d_blind_2026-08-27_summary.json](mosaic_p27d_blind_2026-08-27_summary.json) | 诊断墙绝对真值与检查切片；仍有覆盖缺口 |
-| P2-06 采集前预检 | [p206_diagnostic_coverage_preflight_2026-08-28.json](p206_diagnostic_coverage_preflight_2026-08-28.json) | 绿框内横／竖互补任务的离散曝光预测；不是实际拼接验收 |
+| P2-06 采集前预检 | [p206_diagnostic_coverage_preflight_2026-08-28.json](p206_diagnostic_coverage_preflight_2026-08-28.json) | 含 100 mm 机动裕量的横 680／竖 660 张离散曝光联合预测；不是实际拼接验收 |
 
 完整的验收要求、证据路径和缺口请看 [验收矩阵](../docs/ACCEPTANCE.md)。
 

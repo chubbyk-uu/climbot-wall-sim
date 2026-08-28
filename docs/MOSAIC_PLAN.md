@@ -89,8 +89,9 @@ P2.1～P2.7e 均已实现。当前正式相对基线与洁净树盲测摘要见
 
 1. **已完成（采集前预检）**：定义绿框内 `0.55…9.45 × 0.55…7.45 m` 的诊断矩形；
    `coverage_p206_diagnostic_full_{horizontal,vertical}.yaml` 分别产生 17 条／680 张和
-   22 条／682 张离散曝光。`preflight_diagnostic_coverage` 以 `1 mm` 的 declared feature
-   几何采样核对：横向单独仍漏 3 个边缘 decal，横纵联合 1,362 张对 21 个与目标域相交的
+   22 条／660 张离散曝光；纵向上下端点已经包含 100 mm 机动裕量。`preflight_diagnostic_coverage`
+   以 `1 mm` 的 declared feature
+   几何采样核对：横向单独仍漏 3 个边缘 decal，横纵联合 1,340 张对 21 个与目标域相交的
    feature 为零漏采样。此为计划预测，**不是**实际 `coverage_count.tif` 证据；
 2. 以新任务 ID 采集横向、竖向 realistic 数据，完整重跑预处理、位姿图、hard-cut、真值评价
    与原尺寸检查；

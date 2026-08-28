@@ -1283,6 +1283,12 @@ private:
         get_logger(),
         "Prepared dynamic transition after observing %.1f mm downward motion during alignment.",
         observed_turn_drop * 1000.0);
+      if (dynamic.turn_reserve_limited) {
+        RCLCPP_WARN(
+          get_logger(),
+          "Dynamic turn reserve was limited by motion_region; the task should be replanned "
+          "with a larger maneuver boundary margin.");
+      }
       if (!climbot_control::pointInPolygon(
           dynamic.end.x, dynamic.end.y, active_task_->motion_region, 1e-6))
       {

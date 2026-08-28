@@ -39,7 +39,7 @@ import pytest
 from rcl_interfaces.srv import SetParameters
 import rclpy
 from rclpy.parameter import Parameter
-from rclpy.qos import QoSProfile, ReliabilityPolicy
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
 
 
@@ -71,8 +71,12 @@ class TestArchiveRecorderNode(unittest.TestCase):
         rclpy.init()
         self.node = rclpy.create_node('archive_recorder_test')
         qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
+        calibration_qos = QoSProfile(
+            depth=1, reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.images = self.node.create_publisher(Image, '/inspection/camera/image_raw', qos)
-        self.infos = self.node.create_publisher(CameraInfo, '/inspection/camera/camera_info', qos)
+        self.infos = self.node.create_publisher(
+            CameraInfo, '/inspection/camera/camera_info', calibration_qos)
         self.metadata = self.node.create_publisher(
             InspectionCapture, '/inspection/capture_metadata', qos)
         self.references = self.node.create_publisher(
@@ -319,7 +323,10 @@ class TestArchiveRecorderNode(unittest.TestCase):
             capture.camera_pose.pose.orientation.w = 1.0
             capture.reference_end.x = 0.25
             self.images.publish(image)
-            self.infos.publish(info)
+            # CameraInfo is immutable session calibration, not an exposure
+            # component. One latched snapshot must serve both image pairs.
+            if trigger_index == 0:
+                self.infos.publish(info)
             self.metadata.publish(capture)
 
         deadline = time.monotonic() + 5.0
@@ -375,7 +382,7 @@ class TestArchiveRecorderNode(unittest.TestCase):
         self.assertEqual(manifest['failed_images'], 2)
 
     def test_pair_timeout_is_degraded_until_finalization(self):
-        """A transient incomplete triple must not kill the live recorder."""
+        """A transient incomplete image/metadata pair must not kill the recorder."""
         self.assertTrue(self.prepare.wait_for_service(timeout_sec=10.0))
         request = PrepareInspectionArchive.Request()
         request.task = self._task()

@@ -45,6 +45,7 @@ class CameraDistortionAdapter(Node):
         self.declare_parameter('exposure_scale', 1.0)
         self.declare_parameter('output_noise_stddev', 0.004)
         self.declare_parameter('output_noise_seed', 73)
+        self.declare_parameter('slow_frame_warning_ms', 500.0)
         path = str(self.get_parameter('camera_config').value)
         if not path:
             raise ValueError('camera_config must name the shared calibration YAML')
@@ -58,8 +59,21 @@ class CameraDistortionAdapter(Node):
         if not np.isfinite(noise) or not 0.0 < noise <= 0.02:
             raise ValueError('output_noise_stddev must be in (0, 0.02]')
         self._noise_dn = noise * 255.0
-        self._rng = np.random.default_rng(
-            int(self.get_parameter('output_noise_seed').value))
+        noise_seed = int(self.get_parameter('output_noise_seed').value)
+        if not -(2 ** 31) <= noise_seed < 2 ** 31:
+            raise ValueError('output_noise_seed must fit a signed 32-bit integer')
+        # OpenCV fills a reusable float32 buffer substantially faster than
+        # allocating a NumPy normal array for every full-HD exposure.  This
+        # process has one image callback thread, so its seeded RNG remains
+        # deterministic for an acceptance run.
+        cv2.setRNGSeed(noise_seed)
+        self._noise = np.empty((self._height, self._width), dtype=np.float32)
+        self._noisy_output = np.empty(
+            (self._height, self._width), dtype=np.uint8)
+        self._slow_frame_warning_s = 1e-3 * float(
+            self.get_parameter('slow_frame_warning_ms').value)
+        if not np.isfinite(self._slow_frame_warning_s) or self._slow_frame_warning_s <= 0.0:
+            raise ValueError('slow_frame_warning_ms must be positive and finite')
         scale = float(self.get_parameter('render_focal_scale').value)
         self._map_x, self._map_y = make_distortion_maps(self._camera, scale)
         if not maps_fit_source(
@@ -73,6 +87,7 @@ class CameraDistortionAdapter(Node):
                                 self._exposure_scale)
         self._bridge = CvBridge()
         self._reported_first_frame = False
+        self._frame_count = 0
         # A triggered 1920x1080 frame is task data, not a disposable video
         # preview. Best-effort dropped the 6 MB image while CameraInfo arrived.
         self._qos = QoSProfile(
@@ -118,9 +133,11 @@ class CameraDistortionAdapter(Node):
                     message.width, message.height))
             return
         source = self._bridge.imgmsg_to_cv2(message, desired_encoding='passthrough')
+        converted = time.monotonic()
         distorted = cv2.remap(
             source, self._map_x, self._map_y, interpolation=cv2.INTER_LINEAR,
             borderMode=cv2.BORDER_CONSTANT)
+        remapped = time.monotonic()
         if distorted.ndim != 3 or distorted.shape[2] != 3:
             self.get_logger().error(
                 'Rejecting ideal image that is not a three-channel RGB frame')
@@ -131,20 +148,38 @@ class CameraDistortionAdapter(Node):
         # even when SDF camera noise is configured. Model the industrial
         # sensor's read noise at the final mono8 stage so every exposure has
         # independent, reproducible white noise in the delivered image.
-        grayscale = np.clip(
-            grayscale.astype(np.float32) + self._rng.normal(
-                0.0, self._noise_dn, grayscale.shape),
-            0.0, 255.0).astype(np.uint8)
+        cv2.randn(self._noise, 0.0, self._noise_dn)
+        cv2.add(
+            grayscale, self._noise, self._noisy_output,
+            dtype=cv2.CV_8U)
+        grayscale = self._noisy_output
+        processed = time.monotonic()
         output = self._bridge.cv2_to_imgmsg(
             grayscale, encoding=self._output_encoding)
         output.header = message.header
         self._info_publisher.publish(self._camera_info(message.header))
         self._image_publisher.publish(output)
+        finished = time.monotonic()
+        self._frame_count += 1
+        timing = (
+            1000.0 * (converted - started),
+            1000.0 * (remapped - converted),
+            1000.0 * (processed - remapped),
+            1000.0 * (finished - processed),
+            1000.0 * (finished - started),
+        )
+        timing_message = (
+            'Distortion frame %d timing: bridge %.1f ms, remap %.1f ms, '
+            'mono/noise %.1f ms, publish %.1f ms, total %.1f ms' %
+            ((self._frame_count,) + timing))
+        if finished - started > self._slow_frame_warning_s:
+            self.get_logger().warning(timing_message)
+        elif self._frame_count % 50 == 0:
+            self.get_logger().info(timing_message)
         if not self._reported_first_frame:
             self._reported_first_frame = True
             self.get_logger().info(
-                'Published first distorted frame in %.1f ms' % (
-                    1000.0 * (time.monotonic() - started)))
+                'Published first distorted frame in %.1f ms' % timing[-1])
 
 
 def main():

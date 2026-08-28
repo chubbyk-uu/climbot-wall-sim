@@ -14,7 +14,14 @@ ros2 launch climbot_gazebo climbot_wall.launch.py
 ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
 ```
 
-WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`。
+WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`。软件渲染只用于
+排查渲染后端差异，显式传 `gpu_backend:=software` 即可；它会让 Gazebo、RViz 和传感器
+渲染统一走 llvmpipe，资源占用明显高于默认 GPU 路径，不作为正常运行配置。
+
+巡检相机的反向触发使用独立 `inspection_trigger_bridge`，图像、标定和其他仿真数据使用
+`simulation_data_bridge`。不要把触发重新并回全高清图像所在的 bridge：GUI/RViz 负载下，
+大图序列化或 DDS 流控会阻塞同一 executor 中的小触发消息，机器人可能在相机真正曝光前
+已经驶离目标位置。
 
 ## 内容
 

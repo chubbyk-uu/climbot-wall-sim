@@ -121,10 +121,43 @@ def _contains(container: Bounds, candidate: Bounds) -> bool:
                 candidate[3] <= container[3] + 1e-9))
 
 
+def _maneuver_safe_route_bounds(task: dict[str, Any], target: Bounds,
+                                safe: Bounds) -> Bounds:
+    """Mirror the planner's symmetric translation envelope for rectangles."""
+    margin = _number(
+        task.get('maneuver_boundary_margin_m', 0.10),
+        'maneuver_boundary_margin_m')
+    if margin < 0.0:
+        raise DiagnosticCoveragePreflightError(
+            'maneuver_boundary_margin_m must be non-negative.')
+    direction = _pair(
+        task.get('maneuver_drift_direction', [0.0, -1.0]),
+        'maneuver_drift_direction')
+    norm = math.hypot(*direction)
+    if margin > 0.0 and norm <= 1e-9:
+        raise DiagnosticCoveragePreflightError(
+            'maneuver_drift_direction must be non-zero when the margin is positive.')
+    translation = (0.0, 0.0) if margin == 0.0 else (
+        margin * direction[0] / norm, margin * direction[1] / norm)
+    maneuver_safe = (
+        safe[0] + abs(translation[0]), safe[1] + abs(translation[1]),
+        safe[2] - abs(translation[0]), safe[3] - abs(translation[1]))
+    route = (
+        max(target[0], maneuver_safe[0]), max(target[1], maneuver_safe[1]),
+        min(target[2], maneuver_safe[2]), min(target[3], maneuver_safe[3]))
+    if route[2] <= route[0] or route[3] <= route[1]:
+        raise DiagnosticCoveragePreflightError(
+            'selected region has no area inside the maneuver-safe envelope.')
+    return route
+
+
 def planned_scan_segments(task: dict[str, Any],
-                          detection_width_m: float) -> tuple[ScanSegment, ...]:
+                          detection_width_m: float,
+                          route_bounds: Bounds | None = None) -> tuple[ScanSegment, ...]:
     """Mirror the rectangular branch of coverage_geometry.cpp exactly."""
     bounds, direction, corner, overlap = _rectangle_parameters(task)
+    if route_bounds is not None:
+        bounds = route_bounds
     width = _number(detection_width_m, 'detection_width_m', positive=True)
     horizontal = direction == 'horizontal'
     cross_low, cross_high = (bounds[1], bounds[3]) if horizontal else (bounds[0], bounds[2])
@@ -254,6 +287,7 @@ def preflight_diagnostic_coverage(task: dict[str, Any], wall_manifest: dict[str,
     if not _contains(safe, target):
         raise DiagnosticCoveragePreflightError(
             'task rectangle lies outside the green wall-safe region.')
+    route = _maneuver_safe_route_bounds(task, target, safe)
     footprint = camera.get('inspection_camera', {}).get('footprint', {})
     mount = camera.get('inspection_camera', {}).get('optical_mount', {})
     effective_width = _number(
@@ -265,7 +299,7 @@ def preflight_diagnostic_coverage(task: dict[str, Any], wall_manifest: dict[str,
         raise DiagnosticCoveragePreflightError(
             'camera optical_mount.center_xyz_m must contain three coordinates.')
     forward_offset = _number(mount_xyz[0], 'camera forward mount offset')
-    segments = planned_scan_segments(task, effective_width)
+    segments = planned_scan_segments(task, effective_width, route)
     exposures = planned_exposures(segments, effective_length, 0.20, forward_offset)
     diagnostic = wall_manifest.get('diagnostic_wall')
     if not isinstance(diagnostic, dict) or not isinstance(diagnostic.get('features'), list):
@@ -290,6 +324,7 @@ def preflight_diagnostic_coverage(task: dict[str, Any], wall_manifest: dict[str,
         'task': {
             'task_id': task.get('task_id'), 'sweep_direction': direction,
             'drive_rectangle_m': list(target), 'green_safe_rectangle_m': list(safe),
+            'maneuver_safe_route_rectangle_m': list(route),
             'scan_segment_count': len(segments), 'exposure_count': len(exposures),
         },
         'feature_coverage': {
@@ -332,10 +367,12 @@ def preflight_diagnostic_coverage_set(tasks: tuple[dict[str, Any], ...],
     task_records, all_exposures = [], []
     for task in tasks:
         _, direction, _, _ = _rectangle_parameters(task)
-        segments = planned_scan_segments(task, effective_width)
+        route = _maneuver_safe_route_bounds(task, target, safe)
+        segments = planned_scan_segments(task, effective_width, route)
         exposures = planned_exposures(segments, effective_length, 0.20, forward_offset)
         task_records.append({
             'task_id': task.get('task_id'), 'sweep_direction': direction,
+            'maneuver_safe_route_rectangle_m': list(route),
             'scan_segment_count': len(segments), 'exposure_count': len(exposures),
         })
         all_exposures.extend(exposures)

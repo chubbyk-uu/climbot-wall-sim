@@ -30,6 +30,7 @@
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/header.hpp"
 #include "std_msgs/msg/u_int8.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
@@ -82,7 +83,9 @@ public:
     capture_timeout_(seconds(requiredPositive<double>(*this, "capture_timeout_s", 5.0))),
     discovery_settle_(seconds(requiredPositive<double>(*this, "discovery_settle_s", 0.5))),
     warmup_retry_(seconds(requiredPositive<double>(*this, "warmup_retry_s", 1.0))),
-    warmup_quiet_(seconds(requiredPositive<double>(*this, "warmup_quiet_s", 0.25)))
+    warmup_quiet_(seconds(requiredPositive<double>(*this, "warmup_quiet_s", 0.25))),
+    slow_capture_warning_(seconds(requiredPositive<double>(
+        *this, "slow_capture_warning_s", 0.5)))
   {
     const auto source_image = requiredString(
       *this, "source_image_topic", "/simulation/inspection_camera/image_raw");
@@ -94,6 +97,8 @@ public:
       *this, "output_image_topic", "/inspection/camera/image_raw");
     const auto output_info = requiredString(
       *this, "output_camera_info_topic", "/inspection/camera/camera_info");
+    const auto receipt_topic = requiredString(
+      *this, "capture_receipt_topic", "/inspection/capture_receipt");
     const auto service_name = requiredString(
       *this, "capture_service", "/inspection/capture_once");
     const auto reset_service_name = requiredString(
@@ -105,7 +110,13 @@ public:
     const auto image_qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable();
     trigger_publisher_ = create_publisher<std_msgs::msg::Bool>(trigger_topic, image_qos);
     image_publisher_ = create_publisher<sensor_msgs::msg::Image>(output_image, image_qos);
-    info_publisher_ = create_publisher<sensor_msgs::msg::CameraInfo>(output_info, image_qos);
+    // Intrinsics are immutable for one recorder process. Latch the latest
+    // snapshot instead of making archive integrity depend on 660 individual
+    // CameraInfo deliveries in a large mission.
+    info_publisher_ = create_publisher<sensor_msgs::msg::CameraInfo>(
+      output_info, rclcpp::QoS(1).reliable().transient_local());
+    receipt_publisher_ = create_publisher<std_msgs::msg::Header>(
+      receipt_topic, rclcpp::QoS(10).reliable());
     state_publisher_ = create_publisher<std_msgs::msg::UInt8>(
       state_topic, rclcpp::QoS(1).reliable().transient_local());
 
@@ -266,6 +277,7 @@ private:
     capture_image_ = image_message;
     capture_info_ = info_message;
     capture_ready_ = true;
+    capture_pair_received_ = SteadyClock::now();
     condition_.notify_all();
   }
 
@@ -347,6 +359,8 @@ private:
     }
 
     state_ = State::CAPTURING;
+    const uint64_t capture_id = ++capture_sequence_;
+    const auto capture_started = SteadyClock::now();
     images_.clear();
     infos_.clear();
     capture_image_.reset();
@@ -377,10 +391,19 @@ private:
     }
     const auto image = capture_image_;
     const auto info = capture_info_;
+    const auto pair_received = capture_pair_received_;
+    const double simulation_lag_ms = 1e-6 * static_cast<double>(
+      stampKey(image->header.stamp) - trigger_stamp_key_);
     lock.unlock();
 
+    const auto publish_started = SteadyClock::now();
     info_publisher_->publish(*info);
     image_publisher_->publish(*image);
+    // The trigger controller needs correlation, not another full image copy.
+    // Emit the lightweight receipt only after both canonical outputs were
+    // handed to their reliable DDS publishers.
+    receipt_publisher_->publish(image->header);
+    const auto publish_finished = SteadyClock::now();
 
     lock.lock();
     capture_image_.reset();
@@ -392,6 +415,25 @@ private:
     response->success = true;
     response->reason = CaptureOnce::Response::OK;
     response->message = "Published one matched inspection image and CameraInfo pair.";
+    const auto total = publish_finished - capture_started;
+    const double pair_ms = 1000.0 * std::chrono::duration<double>(
+      pair_received - capture_started).count();
+    const double publish_ms = 1000.0 * std::chrono::duration<double>(
+      publish_finished - publish_started).count();
+    const double total_ms = 1000.0 * std::chrono::duration<double>(total).count();
+    if (total > slow_capture_warning_) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Slow capture %lu: source pair %.1f ms, simulation lag %.1f ms, publish %.1f ms, "
+        "total %.1f ms.",
+        static_cast<unsigned long>(capture_id), pair_ms, simulation_lag_ms, publish_ms, total_ms);
+    } else if (capture_id == 1U || capture_id % 50U == 0U) {
+      RCLCPP_INFO(
+        get_logger(),
+        "Capture %lu timing: source pair %.1f ms, simulation lag %.1f ms, publish %.1f ms, "
+        "total %.1f ms.",
+        static_cast<unsigned long>(capture_id), pair_ms, simulation_lag_ms, publish_ms, total_ms);
+    }
   }
 
   void reset(
@@ -421,6 +463,7 @@ private:
   const SteadyClock::duration discovery_settle_;
   const SteadyClock::duration warmup_retry_;
   const SteadyClock::duration warmup_quiet_;
+  const SteadyClock::duration slow_capture_warning_;
   bool enforce_trigger_stamp_{};
 
   std::mutex mutex_;
@@ -430,10 +473,12 @@ private:
   bool warmup_trigger_sent_{false};
   bool warmup_frame_seen_{false};
   bool capture_ready_{false};
+  uint64_t capture_sequence_{};
   SteadyClock::time_point discovery_time_{};
   SteadyClock::time_point last_warmup_trigger_{};
   SteadyClock::time_point last_warmup_frame_{};
   SteadyClock::time_point last_drain_frame_{};
+  SteadyClock::time_point capture_pair_received_{};
   int64_t trigger_stamp_key_{};
   std::unordered_map<int64_t, sensor_msgs::msg::Image::SharedPtr> images_;
   std::unordered_map<int64_t, sensor_msgs::msg::CameraInfo::SharedPtr> infos_;
@@ -445,6 +490,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr trigger_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Header>::SharedPtr receipt_publisher_;
   rclcpp::Publisher<std_msgs::msg::UInt8>::SharedPtr state_publisher_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr info_subscription_;

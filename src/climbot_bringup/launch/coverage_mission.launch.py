@@ -40,6 +40,7 @@ def generate_launch_description():
             'use_sim_time': 'true',
             'headless': LaunchConfiguration('headless'),
             'gpu_backend': LaunchConfiguration('gpu_backend'),
+            'gui_gpu_backend': LaunchConfiguration('gui_gpu_backend'),
             'wall_grid_spacing': LaunchConfiguration('wall_grid_spacing'),
             'wall_texture': LaunchConfiguration('wall_texture'),
             'localization_profile': LaunchConfiguration('localization_profile'),
@@ -114,7 +115,13 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'gpu_backend',
             default_value='auto',
-            description='Rendering backend: auto, wsl_d3d12, or native.',
+            description='Rendering backend: auto, software, wsl_d3d12, or native. '
+                        'WSL auto uses the D3D12 GPU path.',
+        ),
+        DeclareLaunchArgument(
+            'gui_gpu_backend',
+            default_value='auto',
+            description='Gazebo GUI backend: auto, shared, or software.',
         ),
         DeclareLaunchArgument(
             'rviz',

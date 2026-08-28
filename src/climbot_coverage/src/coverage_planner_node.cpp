@@ -208,6 +208,14 @@ public:
     detection_forward_offset_ = declare_parameter("detection_forward_offset", 0.0);
     detection_edge_overlap_ = declare_parameter("detection_edge_overlap", 0.0);
     overlap_ratio_ = declare_parameter("overlap_ratio", 0.20);
+    // The execution controller can move briefly along gravity both while a
+    // scan-end turn settles (down) and while it pre-compensates the next turn
+    // (up).  This is a route-planning envelope, not an extra wall clearance:
+    // it only changes a selected region where that envelope reaches the hard
+    // wall-safe boundary.  0.10 m covers the calibrated 73.8 mm 180 degree
+    // turn drop, the 20 mm runtime boundary tolerance, and measurement room.
+    maneuver_boundary_margin_ = declare_parameter("maneuver_boundary_margin_m", 0.10);
+    maneuver_drift_direction_ = pointParameter("maneuver_drift_direction", {0.0, -1.0});
     robot_length_ = declare_parameter("robot_length", -1.0);
     robot_width_ = declare_parameter("robot_width", -1.0);
     edge_clearance_ = declare_parameter("edge_clearance", -1.0);
@@ -308,6 +316,9 @@ private:
     requireFinite("detection_forward_offset", detection_forward_offset_);
     requireFinite("detection_edge_overlap", detection_edge_overlap_);
     requireFinite("overlap_ratio", overlap_ratio_);
+    requireFinite("maneuver_boundary_margin_m", maneuver_boundary_margin_);
+    requireFinite("maneuver_drift_direction.x", maneuver_drift_direction_.x);
+    requireFinite("maneuver_drift_direction.y", maneuver_drift_direction_.y);
     requireFinite("minimum_nominal_coverage_ratio", minimum_nominal_coverage_ratio_);
     requireFinite("robot_length", robot_length_);
     requireFinite("robot_width", robot_width_);
@@ -326,6 +337,15 @@ private:
     }
     if (overlap_ratio_ < 0.0 || overlap_ratio_ >= 1.0) {
       throw std::invalid_argument("overlap_ratio must be within [0, 1).");
+    }
+    if (maneuver_boundary_margin_ < 0.0) {
+      throw std::invalid_argument("maneuver_boundary_margin_m must be non-negative.");
+    }
+    if (maneuver_boundary_margin_ > 0.0 &&
+      std::hypot(maneuver_drift_direction_.x, maneuver_drift_direction_.y) <= 1e-9)
+    {
+      throw std::invalid_argument(
+              "maneuver_drift_direction must be non-zero when maneuver_boundary_margin_m is positive.");
     }
     if (minimum_nominal_coverage_ratio_ < 0.0 ||
       minimum_nominal_coverage_ratio_ > 1.0)
@@ -608,21 +628,33 @@ private:
         throw std::invalid_argument(
                 "Requested robot drive region lies outside the green wall-safe region.");
       }
+      const double drift_norm = std::hypot(
+        maneuver_drift_direction_.x, maneuver_drift_direction_.y);
+      const Point2 envelope_translation = maneuver_boundary_margin_ <= 0.0 ?
+        Point2{} : Point2{
+        maneuver_boundary_margin_ * maneuver_drift_direction_.x / drift_norm,
+        maneuver_boundary_margin_ * maneuver_drift_direction_.y / drift_norm};
+      const Polygon maneuver_safe = insetConvexPolygonForSymmetricTranslation(
+        wall_safe, envelope_translation);
+      const Polygon route_region = intersectConvexPolygons(region.polygon, maneuver_safe);
       auto path = generateFootprintAwareBoustrophedonPath(
-        region.polygon, region.polygon, detection_width_, row_spacing_,
+        route_region, route_region, detection_width_, row_spacing_,
         sweep_direction_, start_corner_);
       double coverage_ratio = sampledCoverageRatio(
         region.polygon, path, detection_width_, detection_length_, 300,
         detection_forward_offset_);
       const std::string finishing_scan =
-        appendTopEdgeFinishingScan(region.polygon, region.polygon, path, coverage_ratio);
+        appendTopEdgeFinishingScan(route_region, route_region, path, coverage_ratio);
       if (minimum_nominal_coverage_ratio_ > 0.0 &&
         coverage_ratio < minimum_nominal_coverage_ratio_)
       {
         std::ostringstream reason;
-        reason << "Nominal detection footprint covers " << coverage_ratio * 100.0 <<
+        reason << "Maneuver-safe route's nominal detection footprint covers " <<
+          coverage_ratio * 100.0 <<
           " percent, below the required " << minimum_nominal_coverage_ratio_ * 100.0 <<
-          " percent.";
+          " percent after reserving " << maneuver_boundary_margin_ * 1000.0 <<
+          " mm for turn motion near the hard boundary. Shrink the selected region, "
+          "expand motion_region, or use a compatible sweep direction.";
         throw std::invalid_argument(reason.str());
       }
       publishTask(makeTask(region.polygon, wall_safe, path));
@@ -632,6 +664,14 @@ private:
         " coverage path with " << path.size() << " waypoints; row spacing <= " <<
         row_spacing_ << " m, selected-drive-region camera coverage " <<
         coverage_ratio * 100.0 << "% and wall safety margin " << safety_margin_ << " m.";
+      const double route_area_change = std::abs(polygonArea(region.polygon)) -
+        std::abs(polygonArea(route_region));
+      if (route_area_change > 1e-8) {
+        status << " Reserved a " << maneuver_boundary_margin_ * 1000.0 <<
+          " mm bidirectional maneuver envelope along drift direction (" <<
+          maneuver_drift_direction_.x << ", " << maneuver_drift_direction_.y <<
+          "); scan endpoints near the hard boundary were moved inward.";
+      }
       if (!finishing_scan.empty()) {
         status << " " << finishing_scan;
       }
@@ -971,6 +1011,8 @@ private:
   double detection_forward_offset_;
   double detection_edge_overlap_;
   double overlap_ratio_;
+  double maneuver_boundary_margin_;
+  Point2 maneuver_drift_direction_;
   double minimum_nominal_coverage_ratio_;
   std::string top_edge_scan_;
   double robot_length_;

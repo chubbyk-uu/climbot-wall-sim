@@ -54,13 +54,22 @@ def test_wall_launch_starts_watchdog():
     assert "'/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist'" not in source
 
 
+def test_camera_trigger_has_a_dedicated_bridge_executor():
+    """A full-HD image callback must not starve the reverse trigger route."""
+    source = LAUNCH_PATH.read_text()
+    assert "name='simulation_data_bridge'" in source
+    assert "name='inspection_trigger_bridge'" in source
+    trigger_route = "CAMERA_TRIGGER_TOPIC + '@std_msgs/msg/Bool]gz.msgs.Boolean'"
+    assert source.count(trigger_route) == 1
+
+
 def test_gui_exit_cannot_terminate_the_required_simulation_server():
     """An intermittent WSLg GUI context failure must leave physics running."""
     source = LAUNCH_PATH.read_text()
     assert 'gz_sim_supervisor.py' in source
     assert "cmd=[gazebo_supervisor, 'server', '--world', world]" in source
     assert "name='gazebo_server', output='screen', on_exit=Shutdown()" in source
-    assert "cmd=[gazebo_supervisor, 'gui'], name='gazebo_gui', output='screen'" in source
+    assert "cmd=gui_command, name='gazebo_gui', output='screen'" in source
     assert 'period=2.0' in source
 
 
@@ -68,6 +77,7 @@ def test_gazebo_supervisor_forwards_shutdown_to_its_whole_process_group():
     """Keep GZ's Ruby launcher from orphaning its real server or GUI child."""
     source = (PACKAGE_ROOT / 'scripts' / 'gz_sim_supervisor.py').read_text()
     assert 'start_new_session=True' in source
+    assert "environment['GALLIUM_DRIVER'] = 'llvmpipe'" in source
     assert 'os.killpg(self._child.pid, signal.SIGTERM)' in source
     assert 'return 0 if self._stopping else self._child.returncode' in source
 

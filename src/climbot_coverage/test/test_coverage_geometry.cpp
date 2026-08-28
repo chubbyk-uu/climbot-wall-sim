@@ -128,6 +128,38 @@ TEST(CoverageGeometry, InsetsTrapezoidAlongEveryEdge)
   EXPECT_LT(inset[2].y, region.polygon[2].y);
 }
 
+TEST(CoverageGeometry, ReservesOnlyTheAffectedEdgesForAVerticalManeuverEnvelope)
+{
+  const auto motion = makeRectangle({0.0, 0.0}, {10.0, 8.0}).polygon;
+  const auto safe = insetConvexPolygonForSymmetricTranslation(motion, {0.0, 0.10});
+  ASSERT_EQ(safe.size(), 4U);
+  EXPECT_NEAR(safe[0].x, 0.0, 1e-12);
+  EXPECT_NEAR(safe[1].x, 10.0, 1e-12);
+  EXPECT_NEAR(safe[0].y, 0.10, 1e-12);
+  EXPECT_NEAR(safe[2].y, 7.90, 1e-12);
+  for (const auto & point : safe) {
+    EXPECT_TRUE(insideConvex(motion, {point.x, point.y + 0.10}));
+    EXPECT_TRUE(insideConvex(motion, {point.x, point.y - 0.10}));
+  }
+}
+
+TEST(CoverageGeometry, IntersectsSelectedRegionWithManeuverEnvelope)
+{
+  const auto selected = makeRectangle({0.05, 0.05}, {9.95, 7.95}).polygon;
+  const auto motion = makeRectangle({0.0, 0.0}, {10.0, 8.0}).polygon;
+  const auto safe = insetConvexPolygonForSymmetricTranslation(motion, {0.0, 0.10});
+  const auto route = intersectConvexPolygons(selected, safe);
+  ASSERT_EQ(route.size(), 4U);
+  EXPECT_NEAR(route[0].x, 0.05, 1e-12);
+  EXPECT_NEAR(route[1].x, 9.95, 1e-12);
+  EXPECT_NEAR(route[0].y, 0.10, 1e-12);
+  EXPECT_NEAR(route[2].y, 7.90, 1e-12);
+  EXPECT_THROW(
+    intersectConvexPolygons(
+      makeRectangle({0.0, 0.0}, {1.0, 0.05}).polygon, safe),
+    std::invalid_argument);
+}
+
 TEST(CoverageGeometry, GeneratesHorizontalStraightAlternatingLines)
 {
   const auto coverage = makeRectangle({-3.0, 0.5}, {3.0, 6.5}).polygon;

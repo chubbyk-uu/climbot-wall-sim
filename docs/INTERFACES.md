@@ -1,6 +1,6 @@
 # ROS 2 与离线数据接口合同
 
-更新：2026-08-27。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
+更新：2026-08-28。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
 [接口归档](archive/interfaces/INTERFACES_2026-08-27.md)。主线操作步骤见
 [根 README](../README.md#快速启动)，实验变体与故障处置见 [OPERATION](OPERATION.md)，
 架构职责见 [ARCHITECTURE](ARCHITECTURE.md)。
@@ -66,13 +66,17 @@
 
 | 名称 | 类型 | 合同 |
 | --- | --- | --- |
-| `/inspection/camera/image_raw`、`camera_info` | 图像/标定 | 原始 `mono8`；补偿图不能替代归档原图 |
+| `/inspection/camera/image_raw` | `sensor_msgs/Image` | 每次成功曝光的原始 `mono8`；补偿图不能替代归档原图 |
+| `/inspection/camera/camera_info` | `sensor_msgs/CameraInfo` | reliable + transient-local 的会话级不可变标定；源相机侧仍逐次与图像同时间戳配对 |
+| `/inspection/capture_receipt` | `std_msgs/Header` | G1 在正式图像与标定交给 DDS 后发布的轻量完成回执；G2/评价器用它关联曝光，不重复复制全高清图像 |
 | `/inspection/capture_metadata` | `InspectionCapture` | 成功图的任务、触发、冻结参考和曝光 EKF 相机位姿 |
 | `/inspection/capture_gate` | `InspectionCaptureGate` | Reliable + transient-local 健康 heartbeat；失联受控停车 |
 | `/inspection/archive/prepare`、`finalize` | service | 原子创建/封存 run；失败保留已提交证据且报告失败 |
 | `/inspection/archive/status` | `InspectionArchiveStatus` | 归档权威状态、计数、目录和错误 |
 
-G4 run 必须有 manifest、原图 SHA-256、每图标签和相机快照，且 `expected_images == saved_images`。
+G4 按时间戳配对每张原图和 `InspectionCapture`，同时使用 transient-local 的最新会话标定；
+标定内容在 run 内发生变化必须失败。run 必须有 manifest、原图 SHA-256、每图标签和相机快照，
+且 `expected_images == saved_images`。
 P1 仅接收完整 run，输出新的 processed-run；处理顺序固定为暗场、平场、可选去噪、去畸变。
 
 ## 离线拼接

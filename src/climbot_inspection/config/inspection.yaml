@@ -5,6 +5,7 @@ capture_once_node:
     trigger_topic: /simulation/inspection_camera/trigger
     output_image_topic: /inspection/camera/image_raw
     output_camera_info_topic: /inspection/camera/camera_info
+    capture_receipt_topic: /inspection/capture_receipt
     capture_service: /inspection/capture_once
     capture_reset_service: /inspection/capture_reset
     capture_state_topic: /inspection/capture_state
@@ -15,6 +16,9 @@ capture_once_node:
     discovery_settle_s: 0.5
     warmup_retry_s: 1.0
     warmup_quiet_s: 0.25
+    # Emit stage timing only for unusually slow captures (plus a sparse
+    # periodic sample), so long missions stay diagnosable without log spam.
+    slow_capture_warning_s: 0.5
     # Reject frames timestamped before the trigger. This assumes source clocks
     # are synchronized, as they are in the Gazebo transport.
     enforce_trigger_stamp: true
@@ -23,7 +27,7 @@ automatic_capture_node:
   ros__parameters:
     execution_reference_topic: /control/execution_reference
     odometry_topic: /odometry/filtered
-    image_topic: /inspection/camera/image_raw
+    capture_receipt_topic: /inspection/capture_receipt
     capture_service: /inspection/capture_once
     metadata_topic: /inspection/capture_metadata
     capture_gate_topic: /inspection/capture_gate
@@ -31,9 +35,15 @@ automatic_capture_node:
     # the planner's lateral overlap_ratio; both defaults are 20% for G2.
     image_overlap_ratio: 0.20
     reference_timeout_s: 0.5
-    # Service success is not evidence that its image arrived. Retry the same
-    # spatial target if the image transport/QoS path is broken or drops a frame.
+    # capture_once may wait up to 5 s for Gazebo transport. Leave room for the
+    # service response itself to be scheduled under a loaded GUI session.
+    capture_response_timeout_s: 6.0
+    # Starts only after a successful service response. capture_once publishes
+    # the image before replying, so this is transport-delivery allowance.
     image_wait_timeout_s: 1.0
+    # Report a slow request without changing capture correctness. The archive
+    # remains the authority for the image's labelled spatial lag.
+    slow_capture_warning_s: 0.5
     pose_wait_timeout_s: 0.5
     pose_cache_duration_s: 3.0
 
@@ -53,6 +63,7 @@ archive_recorder_node:
     # filesystem commit. Completion, cancellation and failure force a final
     # commit, so a successful archive always has zero staged images.
     durable_commit_batch_images: 32
+    slow_archive_write_ms: 500.0
     pair_timeout_s: 2.0
     image_overlap_ratio: 0.20
     # Runtime guard for the actual, labelled camera positions. The nominal

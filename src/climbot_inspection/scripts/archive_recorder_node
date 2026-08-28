@@ -189,6 +189,8 @@ class ArchiveRecorderNode(Node):
         self._minimum_free_bytes = self._positive_int('minimum_free_bytes', 536_870_912)
         self._durable_commit_batch_images = self._positive_int(
             'durable_commit_batch_images', 32)
+        self._slow_archive_write_s = 1e-3 * self._positive_float(
+            'slow_archive_write_ms', 500.0)
         self._pending_timeout_s = self._positive_float('pair_timeout_s', 2.0)
         self._actual_spacing_tolerance = self._positive_float(
             'actual_spacing_tolerance_m', 0.010)
@@ -214,7 +216,7 @@ class ArchiveRecorderNode(Node):
         status_topic = str(self.declare_parameter(
             'status_topic', '/inspection/archive/status').value)
         self._images: dict[int, tuple[float, Image]] = {}
-        self._infos: dict[int, tuple[float, CameraInfo]] = {}
+        self._latest_info: CameraInfo | None = None
         self._metadata: dict[int, tuple[float, InspectionCapture]] = {}
         self._session: Session | None = None
         status_qos = QoSProfile(
@@ -222,7 +224,10 @@ class ArchiveRecorderNode(Node):
             durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self._status_pub = self.create_publisher(InspectionArchiveStatus, status_topic, status_qos)
         self.create_subscription(Image, image_topic, self._on_image, 10)
-        self.create_subscription(CameraInfo, info_topic, self._on_info, 10)
+        calibration_qos = QoSProfile(
+            depth=1, reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.create_subscription(CameraInfo, info_topic, self._on_info, calibration_qos)
         self.create_subscription(InspectionCapture, metadata_topic, self._on_metadata, 10)
         self.create_subscription(ExecutionReference, reference_topic, self._on_reference, 10)
         self.create_service(PrepareInspectionArchive, '/inspection/archive/prepare', self._prepare)
@@ -411,7 +416,7 @@ class ArchiveRecorderNode(Node):
             self._write_calibration_manifest(session)
             self._write_manifest(session)
             self._images.clear()
-            self._infos.clear()
+            self._latest_info = None
             self._metadata.clear()
             self._session = session
             self._publish()
@@ -517,8 +522,11 @@ class ArchiveRecorderNode(Node):
         if self._session is None or self._session.state not in {
                 InspectionArchiveStatus.READY, InspectionArchiveStatus.RECORDING}:
             return
-        self._infos[stamp_key(message.header)] = (time.monotonic(), message)
-        self._match(stamp_key(message.header))
+        self._latest_info = message
+        # Calibration is session state, not exposure data. Complete any image
+        # and metadata pairs that arrived before the latched snapshot.
+        for key in set(self._images) & set(self._metadata):
+            self._match(key)
 
     def _on_metadata(self, message: InspectionCapture) -> None:
         if self._session is None or self._session.state not in {
@@ -584,14 +592,19 @@ class ArchiveRecorderNode(Node):
             raise ArchiveError(f'raw image frame_id must be {self._expected_frame!r}.')
         if image.step < image.width or len(image.data) < image.step * image.height:
             raise ArchiveError('raw image data length/step is inconsistent.')
-        rows = numpy.frombuffer(bytes(image.data), dtype=numpy.uint8).reshape(image.height, image.step)
-        return rows[:, :image.width].copy()
+        # ROS owns the message for the duration of this synchronous callback.
+        # Keep a zero-copy view for tightly packed mono8 instead of allocating
+        # two additional full-frame buffers before PNG encoding.
+        rows = numpy.frombuffer(memoryview(image.data), dtype=numpy.uint8).reshape(
+            image.height, image.step)
+        pixels = rows[:, :image.width]
+        return pixels if pixels.flags.c_contiguous else pixels.copy()
 
     def _validate_pair(self, image: Image, info: CameraInfo, metadata: InspectionCapture) -> tuple[str, int, int, int]:
         session = self._session
         assert session is not None
-        if stamp_key(image.header) != stamp_key(info.header) or stamp_key(image.header) != stamp_key(metadata.header):
-            raise ArchiveError('image, CameraInfo and capture metadata timestamps differ.')
+        if stamp_key(image.header) != stamp_key(metadata.header):
+            raise ArchiveError('image and capture metadata timestamps differ.')
         if image.header.frame_id != info.header.frame_id or image.header.frame_id != metadata.header.frame_id:
             raise ArchiveError('image, CameraInfo and capture metadata frame_id values differ.')
         if info.width != image.width or info.height != image.height:
@@ -660,17 +673,20 @@ class ArchiveRecorderNode(Node):
             int(metadata.trigger_index)] = float(metadata.actual_along_track)
 
     def _persist(self, image: Image, info: CameraInfo, metadata: InspectionCapture) -> None:
+        started = time.monotonic()
         session = self._session
         assert session is not None
         key = self._validate_pair(image, info, metadata)
         self._validate_capture_geometry(metadata)
         pixels = self._image_array(image)
         self._write_camera_info_once(session, info)
+        validated = time.monotonic()
         encoded_ok, encoded = cv2.imencode('.png', pixels)
         if not encoded_ok:
             raise ArchiveError('OpenCV could not encode raw mono8 PNG.')
         image_bytes = bytes(encoded)
         digest = sha256_bytes(image_bytes)
+        encoded_at = time.monotonic()
         index = session.saved_images
         image_name = f'{index:06d}.png'
         metadata_name = f'{index:06d}.json'
@@ -690,6 +706,7 @@ class ArchiveRecorderNode(Node):
         except Exception:
             image_path.unlink(missing_ok=True)
             raise
+        files_written = time.monotonic()
         self._commit_capture_geometry(metadata)
         session.keys.add(key)
         session.saved_images += 1
@@ -699,20 +716,33 @@ class ArchiveRecorderNode(Node):
         # _commit_staged has made both payloads and this state durable.
         self._write_manifest(session, durable=False)
         self._commit_staged(session)
+        finished = time.monotonic()
         staged = session.saved_images - session.durably_committed_images
         session.message = (
             f'Recording: stored {session.saved_images}/{session.expected_images} images; '
             f'{session.durably_committed_images} durably committed, {staged} staged.')
         self._publish()
+        elapsed = finished - started
+        if elapsed > self._slow_archive_write_s or session.saved_images % 50 == 0:
+            message = (
+                f'Archive image {session.saved_images} timing: validate '
+                f'{1000.0 * (validated - started):.1f} ms, PNG/hash '
+                f'{1000.0 * (encoded_at - validated):.1f} ms, files '
+                f'{1000.0 * (files_written - encoded_at):.1f} ms, manifest/commit '
+                f'{1000.0 * (finished - files_written):.1f} ms, total '
+                f'{1000.0 * elapsed:.1f} ms.')
+            if elapsed > self._slow_archive_write_s:
+                self.get_logger().warning(message)
+            else:
+                self.get_logger().info(message)
 
     def _match(self, key: int) -> None:
-        if key not in self._images or key not in self._infos or key not in self._metadata:
+        if key not in self._images or key not in self._metadata or self._latest_info is None:
             return
         _, image = self._images.pop(key)
-        _, info = self._infos.pop(key)
         _, metadata = self._metadata.pop(key)
         try:
-            self._persist(image, info, metadata)
+            self._persist(image, self._latest_info, metadata)
         except (ArchiveError, OSError, ValueError, cv2.error) as error:
             self._record_failure(f'Capture at stamp {key} was rejected: {error}')
 
@@ -721,22 +751,22 @@ class ArchiveRecorderNode(Node):
                 InspectionArchiveStatus.READY, InspectionArchiveStatus.RECORDING}:
             return
         now = time.monotonic()
-        keys = set(self._images) | set(self._infos) | set(self._metadata)
+        keys = set(self._images) | set(self._metadata)
         for key in sorted(keys):
             ages = [
-                entry[0] for entries in (self._images, self._infos, self._metadata)
+                entry[0] for entries in (self._images, self._metadata)
                 if (entry := entries.get(key)) is not None]
             if not ages or not force and now - min(ages) < self._pending_timeout_s:
                 continue
             present = ', '.join(name for name, entries in (
-                ('image', self._images), ('CameraInfo', self._infos), ('metadata', self._metadata))
+                ('image', self._images), ('metadata', self._metadata))
                 if key in entries)
             self._images.pop(key, None)
-            self._infos.pop(key, None)
             self._metadata.pop(key, None)
             self._record_degraded(
-                f'Exposure stamp {key} timed out waiting for a complete image/CameraInfo/metadata '
-                f'triple; received: {present}.')
+                f'Exposure stamp {key} timed out waiting for a complete image/metadata pair; '
+                f'received: {present}; camera calibration '
+                f'{"was available" if self._latest_info is not None else "was unavailable"}.')
 
     def _record_degraded(self, reason: str) -> None:
         """Record one lost exposure while preserving the session for recovery."""

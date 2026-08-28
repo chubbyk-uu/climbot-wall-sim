@@ -37,7 +37,7 @@ from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
-from sensor_msgs.msg import Image
+from std_msgs.msg import Header
 import yaml
 
 
@@ -107,8 +107,11 @@ class G2InspectionEvaluator(Node):
             CoverageTask, '/coverage/task', self._on_task, latched)
         self.create_subscription(
             CoverageStatus, '/coverage/manager_status', self._on_status, latched)
+        # CaptureOnce publishes this only after the canonical Image and
+        # CameraInfo pair.  The evaluator needs the exposure stamp, not a
+        # second Python copy of every full-resolution image.
         self.create_subscription(
-            Image, '/inspection/camera/image_raw', self._on_image, reliable)
+            Header, '/inspection/capture_receipt', self._on_image, reliable)
         self.create_subscription(
             InspectionCapture, '/inspection/capture_metadata',
             self._on_metadata, reliable)
@@ -125,7 +128,7 @@ class G2InspectionEvaluator(Node):
             self.finished_at = time.monotonic()
 
     def _on_image(self, message):
-        self.images[stamp_ns(message.header)] += 1
+        self.images[stamp_ns(message)] += 1
 
     def _on_metadata(self, message):
         self.metadata.append(message)

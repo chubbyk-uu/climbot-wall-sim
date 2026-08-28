@@ -72,7 +72,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
   wall_texture:="$PWD/textures/wall_diagnostic_025/wall_texture.json" \
   wall_grid_spacing:=0 localization_profile:=realistic
 
-# vertical: 22 SCAN / nominal 682 exposures
+# vertical: 22 SCAN / nominal 660 exposures after maneuver-envelope reservation
 ros2 launch climbot_bringup coverage_mission.launch.py \
   input_mode:=parameters region_type:=rectangle sweep_direction:=vertical \
   planner_config_file:="$PWD/src/climbot_coverage/config/coverage_p206_diagnostic_full_vertical.yaml" \
@@ -82,6 +82,14 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 
 两次 G4 archive 必须保留并共同送进后续预处理和 hard-cut 流程。不要把横向单独作为“全覆盖”
 数据：预检已证明它在三个边缘 decal 上留有离散曝光缺口。
+
+当前预检结果是横向 17 条／680 张、纵向 22 条／660 张，联合 1340 张。纵向少于最初未预留
+边界机动空间时的 682 张，是因为上下端点各向内保留了 100 mm 转向／补偿裕量；预检工具与
+在线规划器使用同一安全矩形，不能手工把旧计数当成归档期望值。
+
+WSL 默认用 D3D12 GPU 渲染。只有排查渲染后端时才加 `gpu_backend:=software` 做对照；软件路径
+会让 Gazebo、RViz 和传感器统一走 llvmpipe，通常更慢、CPU 和内存也更高。正常运行不要设置
+该参数；`auto` 会回到 D3D12。
 
 G4 对高帧数任务采用每 32 张一次的耐久提交，避免逐图 `fsync` 造成宿主磁盘长时间满载；图像和
 标签本身仍是一对一原子可见。运行中 manifest 的 `staged_images` 是尚未耐久提交的尾批，任务通过
@@ -176,6 +184,7 @@ ros2 run climbot_mosaic inspect_diagnostic_mosaic \
 | 拼接预检拒绝 | 不要修补输入；按 JSON 修复原始归档或标定问题后，重新生成一个独立的 processed-run |
 | 真值 tile 有黑边或零覆盖 | 这是实际足迹缺口，须扩大或调整任务重新采集，不可用后处理填充 |
 | Gazebo 无画面 | 加 `headless:=true` 走非 GUI 流程，或检查 WSLg/GPU 后端 |
+| GUI 下曝光明显晚于目标或长任务少图 | 查 `Slow capture`、`Capture trigger ... late` 和 archive manifest；确认 launch 中存在独立的 `inspection_trigger_bridge`，不要把触发与全高清图像并回同一个 bridge。`gpu_backend:=software` 只能用于 A/B，不能代替桥接隔离。 |
 | Pause 之后一直停在 `Pausing` | 机器人没能在 `pause_stop_timeout_s`（`5.0 s`）内停稳，执行器按控制超时中止任务。查看是否有第二个上游控制源在同时发 `/control/cmd_vel` |
 | Pause 被拒绝且提示服务不可用 | 执行器没有提供 `/coverage/executor_pause`。任务原样继续，不是停了；检查 `line_tracker_node` 是否以 `standalone_mode:=false` 启动 |
 | Pause 之后状态变成 `Stopping` | 执行器接了暂停请求却在 `pause_response_timeout_s`（`2.0 s`）内没有应答。管理器无从判断机器人是在减速还是仍在全速，按失联处理：请求 hold 并取消任务 |

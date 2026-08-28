@@ -43,6 +43,19 @@ RegionResult makeIsoscelesTrapezoid(
 
 Polygon insetConvexPolygon(const Polygon & polygon, double margin);
 
+// Erodes a counter-clockwise convex polygon by the symmetric translation
+// envelope {-translation, +translation}.  Every returned point can move by
+// either translation direction and still remain in the original polygon.
+// Unlike an isotropic inset, a vertical envelope does not unnecessarily take
+// room away from the left and right boundaries.
+Polygon insetConvexPolygonForSymmetricTranslation(
+  const Polygon & polygon, const Point2 & translation);
+
+// Returns the counter-clockwise convex overlap of two counter-clockwise convex
+// polygons. Throws when they do not overlap in an area, because that means no
+// executable route remains for the selected region.
+Polygon intersectConvexPolygons(const Polygon & first, const Polygon & second);
+
 // True when every candidate vertex lies inside (or on) the convex container.
 // Coverage regions are convex rectangles or isosceles trapezoids, so checking
 // their vertices is sufficient to prove that the entire requested region fits.

@@ -36,6 +36,10 @@ struct ExecutionSegment
 {
   Point2 start;
   Point2 end;
+  // True only when the terminal hard-boundary fallback shortened the dynamic
+  // turn reserve. A planner-generated task should never need this; keeping it
+  // visible distinguishes a safety intervention from normal execution.
+  bool turn_reserve_limited{false};
 };
 
 // Freeze a scan line parallel to its nominal line at the measured cross-track

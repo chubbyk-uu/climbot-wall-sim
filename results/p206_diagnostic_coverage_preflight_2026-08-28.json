@@ -7,9 +7,9 @@
         "id": "construction_seam_01",
         "intersects_target": true,
         "kind": "construction_seam",
-        "overlap_sample_count": 75900,
+        "overlap_sample_count": 74492,
         "sample_count": 75900,
-        "single_exposure_sample_count": 0,
+        "single_exposure_sample_count": 1408,
         "target_bounds_m": [
           3.3945000000000003,
           0.55,
@@ -23,9 +23,9 @@
         "id": "construction_seam_02",
         "intersects_target": true,
         "kind": "construction_seam",
-        "overlap_sample_count": 75900,
+        "overlap_sample_count": 74492,
         "sample_count": 75900,
-        "single_exposure_sample_count": 0,
+        "single_exposure_sample_count": 1408,
         "target_bounds_m": [
           6.9945,
           0.55,
@@ -55,9 +55,9 @@
         "id": "crack_decal_01",
         "intersects_target": true,
         "kind": "crack_decal",
-        "overlap_sample_count": 797500,
+        "overlap_sample_count": 792917,
         "sample_count": 797500,
-        "single_exposure_sample_count": 0,
+        "single_exposure_sample_count": 4583,
         "target_bounds_m": [
           0.55,
           0.6645968790364588,
@@ -167,9 +167,9 @@
         "id": "crack_decal_08",
         "intersects_target": true,
         "kind": "crack_decal",
-        "overlap_sample_count": 481297,
+        "overlap_sample_count": 474286,
         "sample_count": 529497,
-        "single_exposure_sample_count": 48200,
+        "single_exposure_sample_count": 55211,
         "target_bounds_m": [
           8.634137825968196,
           0.5541378259681958,
@@ -279,9 +279,9 @@
         "id": "graffiti_decal_01",
         "intersects_target": true,
         "kind": "graffiti_decal",
-        "overlap_sample_count": 279509,
+        "overlap_sample_count": 285045,
         "sample_count": 302502,
-        "single_exposure_sample_count": 22993,
+        "single_exposure_sample_count": 17457,
         "target_bounds_m": [
           0.55,
           4.251091270347398,
@@ -295,9 +295,9 @@
         "id": "graffiti_decal_02",
         "intersects_target": true,
         "kind": "graffiti_decal",
-        "overlap_sample_count": 296400,
+        "overlap_sample_count": 296308,
         "sample_count": 296400,
-        "single_exposure_sample_count": 0,
+        "single_exposure_sample_count": 92,
         "target_bounds_m": [
           3.266179760730323,
           6.526179760730323,
@@ -327,9 +327,9 @@
         "id": "graffiti_decal_04",
         "intersects_target": true,
         "kind": "graffiti_decal",
-        "overlap_sample_count": 135841,
+        "overlap_sample_count": 139238,
         "sample_count": 150991,
-        "single_exposure_sample_count": 15150,
+        "single_exposure_sample_count": 11753,
         "target_bounds_m": [
           9.046446609406726,
           4.526446609406726,
@@ -354,11 +354,11 @@
     "task_configs": [
       {
         "file_name": "coverage_p206_diagnostic_full_horizontal.yaml",
-        "sha256": "4994c913804173a003097e49984727089508b5a61077c0f7c4d4fee9ae45f057"
+        "sha256": "7412731b85a85840a0f0fa198d74006ca1eed2fcf7d63ab92d5272c0d8822f85"
       },
       {
         "file_name": "coverage_p206_diagnostic_full_vertical.yaml",
-        "sha256": "6de7e4170a64c0f293d783a6e2894750af65e7b6c87f1e3ce41e8139b51abf74"
+        "sha256": "4bc83bccd65b019f593763a9e056d6db3abcb2361796c6a59721b19ae4e273de"
       }
     ],
     "wall_config": {
@@ -388,7 +388,7 @@
       9.45,
       7.45
     ],
-    "exposure_count": 1362,
+    "exposure_count": 1340,
     "green_safe_rectangle_m": [
       0.5481141037726887,
       0.5481141037726887,
@@ -398,12 +398,24 @@
     "tasks": [
       {
         "exposure_count": 680,
+        "maneuver_safe_route_rectangle_m": [
+          0.55,
+          0.6481141037726886,
+          9.45,
+          7.351885896227312
+        ],
         "scan_segment_count": 17,
         "sweep_direction": "horizontal",
         "task_id": "inspection-diagnostic-full-horizontal-025mm-20260828"
       },
       {
-        "exposure_count": 682,
+        "exposure_count": 660,
+        "maneuver_safe_route_rectangle_m": [
+          0.55,
+          0.6481141037726886,
+          9.45,
+          7.351885896227312
+        ],
         "scan_segment_count": 22,
         "sweep_direction": "vertical",
         "task_id": "inspection-diagnostic-full-vertical-025mm-20260828"

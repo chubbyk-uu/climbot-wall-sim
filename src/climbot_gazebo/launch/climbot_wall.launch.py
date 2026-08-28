@@ -33,6 +33,7 @@ from launch.actions import (
     SetEnvironmentVariable,
     Shutdown,
     TimerAction,
+    UnsetEnvironmentVariable,
 )
 from launch.conditions import UnlessCondition
 from launch.event_handlers import OnShutdown
@@ -455,9 +456,26 @@ def launch_setup(context, *args, **kwargs):
             name='GALLIUM_DRIVER', value='d3d12'))
         actions.append(SetEnvironmentVariable(
             name='MESA_D3D12_DEFAULT_ADAPTER_NAME', value='NVIDIA'))
+    elif backend == 'software':
+        # This launch-level environment reaches the server and, in the
+        # combined bringup launch, the Gazebo GUI and RViz as well.
+        actions.append(SetEnvironmentVariable(
+            name='GALLIUM_DRIVER', value='llvmpipe'))
+        actions.append(UnsetEnvironmentVariable(
+            name='MESA_D3D12_DEFAULT_ADAPTER_NAME'))
     elif backend != 'native':
         raise ValueError(
-            'gpu_backend must be auto, wsl_d3d12, or native, not ' + backend)
+            'gpu_backend must be auto, software, wsl_d3d12, or native, not ' + backend)
+
+    gui_backend = LaunchConfiguration('gui_gpu_backend').perform(context)
+    if gui_backend == 'auto':
+        gui_backend = 'shared'
+    if gui_backend not in ('shared', 'software'):
+        raise ValueError(
+            'gui_gpu_backend must be auto, shared, or software, not ' + gui_backend)
+    gui_command = [gazebo_supervisor, 'gui']
+    if gui_backend == 'software':
+        gui_command.append('--software-rendering')
 
     # The simulation server owns physics, sensors and /clock, so it remains a
     # required process. Keep both Gazebo clients under a small supervisor:
@@ -470,7 +488,7 @@ def launch_setup(context, *args, **kwargs):
     actions.append(TimerAction(
         period=2.0,
         actions=[ExecuteProcess(
-            cmd=[gazebo_supervisor, 'gui'], name='gazebo_gui', output='screen',
+            cmd=gui_command, name='gazebo_gui', output='screen',
             condition=UnlessCondition(LaunchConfiguration('headless')),
         )],
     ))
@@ -478,6 +496,7 @@ def launch_setup(context, *args, **kwargs):
     actions.append(Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
+        name='simulation_data_bridge',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
@@ -488,7 +507,6 @@ def launch_setup(context, *args, **kwargs):
             '@sensor_msgs/msg/Image[gz.msgs.Image',
             CAMERA_IDEAL_INFO_TOPIC +
             '@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
-            CAMERA_TRIGGER_TOPIC + '@std_msgs/msg/Bool]gz.msgs.Boolean',
             JOINT_STATE_TOPIC + '@sensor_msgs/msg/JointState[gz.msgs.Model',
             # Contact sensors ignore their <topic> tag, so the fully qualified
             # Gazebo names are bridged and remapped to short ROS topics below.
@@ -504,6 +522,23 @@ def launch_setup(context, *args, **kwargs):
         ],
         parameters=[{
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
+        }],
+        output='screen',
+    ))
+    # A full-HD image and the reverse-direction exposure trigger must not
+    # share one bridge executor. Under GUI/RViz load, serialization or DDS
+    # flow control for the image can otherwise starve the tiny trigger long
+    # enough for the moving robot to leave its exposure target.
+    actions.append(Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='inspection_trigger_bridge',
+        arguments=[
+            CAMERA_TRIGGER_TOPIC + '@std_msgs/msg/Bool]gz.msgs.Boolean',
+        ],
+        parameters=[{
+            'qos_overrides./simulation/inspection_camera/trigger.subscriber.reliability':
+                'reliable',
         }],
         output='screen',
     ))
@@ -674,7 +709,14 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'gpu_backend',
             default_value='auto',
-            description='Rendering backend: auto, wsl_d3d12, or native.',
+            description='Rendering backend: auto, software, wsl_d3d12, or native. '
+                        'WSL auto uses the D3D12 GPU path.',
+        ),
+        DeclareLaunchArgument(
+            'gui_gpu_backend',
+            default_value='auto',
+            description='Gazebo GUI backend: auto, shared, or software. Auto shares the '
+                        'selected rendering backend.',
         ),
         DeclareLaunchArgument(
             'total_station_rate_hz',

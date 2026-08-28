@@ -461,6 +461,7 @@ TEST(CoverageExecution, HorizontalTransitionPreloadsTheSecondTurnDrop)
   // The next line is horizontal, so the robot ends the turn holding 6 degrees
   // of up-slope: it turns 84, not the nominal 90.
   EXPECT_NEAR(segment.end.y, 0.241986, 1e-6);
+  EXPECT_FALSE(segment.turn_reserve_limited);
   expectSelfConsistentReserve(task, 1U, {1.0, -0.045}, 0.0005, limits);
 }
 
@@ -492,6 +493,7 @@ TEST(CoverageExecution, VerticalTransitionCapsTheTurnReserveAtTheMotionBoundary)
   EXPECT_DOUBLE_EQ(segment.start.y, 0.955);
   EXPECT_LE(segment.end.y, 1.0 + 1e-6);
   EXPECT_GE(segment.end.y, 1.0 - 1e-6);
+  EXPECT_TRUE(segment.turn_reserve_limited);
 }
 
 TEST(CoverageExecution, ReserveUsesTheDrivenHeadingNotTheNominalOne)

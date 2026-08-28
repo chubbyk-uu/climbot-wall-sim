@@ -31,7 +31,7 @@
 #include "climbot_interfaces/srv/capture_once.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/image.hpp"
+#include "std_msgs/msg/header.hpp"
 
 namespace
 {
@@ -131,7 +131,9 @@ public:
     mount_pitch_(finite(*this, "camera_mount_pitch_rad", 0.0)),
     mount_yaw_(finite(*this, "camera_mount_yaw_rad", -0.5 * std::acos(-1.0))),
     reference_timeout_(finitePositive(*this, "reference_timeout_s", 0.5)),
+    capture_response_timeout_(finitePositive(*this, "capture_response_timeout_s", 6.0)),
     image_wait_timeout_(finitePositive(*this, "image_wait_timeout_s", 1.0)),
+    slow_capture_warning_(finitePositive(*this, "slow_capture_warning_s", 0.5)),
     pose_wait_timeout_(finitePositive(*this, "pose_wait_timeout_s", 0.5)),
     cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0))
   {
@@ -142,7 +144,8 @@ public:
     const auto reference_topic = nonEmpty(
       *this, "execution_reference_topic", "/control/execution_reference");
     const auto odometry_topic = nonEmpty(*this, "odometry_topic", "/odometry/filtered");
-    const auto image_topic = nonEmpty(*this, "image_topic", "/inspection/camera/image_raw");
+    const auto receipt_topic = nonEmpty(
+      *this, "capture_receipt_topic", "/inspection/capture_receipt");
     const auto service = nonEmpty(*this, "capture_service", "/inspection/capture_once");
     const auto metadata_topic = nonEmpty(
       *this, "metadata_topic", "/inspection/capture_metadata");
@@ -155,9 +158,9 @@ public:
     odometry_subscription_ = create_subscription<nav_msgs::msg::Odometry>(
       odometry_topic, rclcpp::SensorDataQoS(),
       std::bind(&AutomaticCaptureNode::onOdometry, this, std::placeholders::_1));
-    image_subscription_ = create_subscription<sensor_msgs::msg::Image>(
-      image_topic, rclcpp::QoS(1).reliable(),
-      std::bind(&AutomaticCaptureNode::onImage, this, std::placeholders::_1));
+    receipt_subscription_ = create_subscription<std_msgs::msg::Header>(
+      receipt_topic, rclcpp::QoS(10).reliable(),
+      std::bind(&AutomaticCaptureNode::onReceipt, this, std::placeholders::_1));
     capture_client_ = create_client<CaptureOnce>(service);
     metadata_publisher_ = create_publisher<Metadata>(metadata_topic, rclcpp::QoS(10).reliable());
     gate_publisher_ = create_publisher<CaptureGate>(
@@ -185,12 +188,25 @@ private:
   {
     Metadata metadata;
     std::chrono::steady_clock::time_point requested;
+    uint64_t request_id{};
+    std::optional<std::chrono::steady_clock::time_point> response_received;
+    std::optional<bool> response_succeeded;
     std::optional<rclcpp::Time> image_stamp;
   };
 
   void onReference(const Reference::SharedPtr message)
   {
-    latest_reference_time_ = std::chrono::steady_clock::now();
+    const auto receipt_time = std::chrono::steady_clock::now();
+    if (last_reference_receipt_) {
+      const double gap = std::chrono::duration<double>(
+        receipt_time - *last_reference_receipt_).count();
+      if (gap > 0.5) {
+        RCLCPP_WARN(
+          get_logger(), "Execution-reference callback gap was %.1f ms.", gap * 1000.0);
+      }
+    }
+    last_reference_receipt_ = receipt_time;
+    latest_reference_time_ = receipt_time;
     if (!message->inspection_enabled || message->segment_index < 0) {
       reference_.reset();
       // A transition/entry reference is not an inspection heartbeat. Publishing
@@ -257,6 +273,16 @@ private:
 
   void onOdometry(const nav_msgs::msg::Odometry::SharedPtr message)
   {
+    const auto receipt_time = std::chrono::steady_clock::now();
+    if (last_odometry_receipt_) {
+      const double gap = std::chrono::duration<double>(
+        receipt_time - *last_odometry_receipt_).count();
+      if (gap > 0.25) {
+        RCLCPP_WARN(
+          get_logger(), "Odometry callback gap was %.1f ms.", gap * 1000.0);
+      }
+    }
+    last_odometry_receipt_ = receipt_time;
     const double t = stampSeconds(message->header.stamp);
     if (!std::isfinite(t) || !std::isfinite(message->pose.pose.position.x) ||
       !std::isfinite(message->pose.pose.position.y))
@@ -309,8 +335,32 @@ private:
     if (!std::isfinite(progress) || progress + 1e-6 < target) {
       return;
     }
+    const double odometry_age_ms = 1000.0 * (
+      now().seconds() - stampSeconds(poses_.back()->header.stamp));
+    const double trigger_lateness = progress - target;
+    const auto log_trigger_decision = [this, next_trigger = next_trigger_, progress, target,
+        trigger_lateness, odometry_age_ms](bool warning) {
+        const char * format =
+          "Capture trigger %u decision: progress %.4f m, target %.4f m, late %.1f mm, "
+          "odometry simulation age %.1f ms.";
+        if (warning) {
+          RCLCPP_WARN(
+            get_logger(), format, next_trigger, progress, target,
+            trigger_lateness * 1000.0, odometry_age_ms);
+        } else {
+          RCLCPP_INFO(
+            get_logger(), format, next_trigger, progress, target,
+            trigger_lateness * 1000.0, odometry_age_ms);
+        }
+      };
+    if (trigger_lateness > 0.005 || odometry_age_ms > 50.0) {
+      log_trigger_decision(true);
+    } else if (next_trigger_ == 0U) {
+      log_trigger_decision(false);
+    }
     Pending pending;
     pending.requested = std::chrono::steady_clock::now();
+    pending.request_id = ++next_request_id_;
     pending.metadata.task_id = key_->task_id;
     pending.metadata.revision = key_->revision;
     pending.metadata.segment_index = key_->segment;
@@ -322,9 +372,15 @@ private:
     pending_ = pending;
     ++next_trigger_;
     auto request = std::make_shared<CaptureOnce::Request>();
+    const uint64_t request_id = pending.request_id;
     capture_client_->async_send_request(
-      request, [this](rclcpp::Client<CaptureOnce>::SharedFuture future) {
+      request, [this, request_id](rclcpp::Client<CaptureOnce>::SharedFuture future) {
         const auto response = future.get();
+        if (!pending_ || pending_->request_id != request_id) {
+          return;
+        }
+        pending_->response_received = std::chrono::steady_clock::now();
+        pending_->response_succeeded = response->success;
         if (!response->success && pending_ && !pending_->image_stamp) {
           RCLCPP_WARN(get_logger(), "Automatic capture rejected (reason %u): %s",
           response->reason, response->message.c_str());
@@ -345,13 +401,24 @@ private:
       });
   }
 
-  void onImage(const sensor_msgs::msg::Image::SharedPtr message)
+  void onReceipt(const std_msgs::msg::Header::SharedPtr message)
   {
     if (!pending_ || pending_->image_stamp) {
       return;
     }
-    pending_->metadata.header = message->header;
-    pending_->image_stamp = rclcpp::Time(message->header.stamp, get_clock()->get_clock_type());
+    pending_->metadata.header = *message;
+    pending_->image_stamp = rclcpp::Time(message->stamp, get_clock()->get_clock_type());
+    const double request_to_image = std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - pending_->requested).count();
+    if (request_to_image > slow_capture_warning_) {
+      const double response_ms = pending_->response_received ?
+        1000.0 * std::chrono::duration<double>(
+        *pending_->response_received - pending_->requested).count() : -1.0;
+      RCLCPP_WARN(
+        get_logger(),
+        "Slow capture trigger %u: completion receipt after %.1f ms (service response %.1f ms).",
+        pending_->metadata.trigger_index, request_to_image * 1000.0, response_ms);
+    }
     // The image may arrive after both surrounding EKF samples. Resolve here
     // as well as from onOdometry(), otherwise no later odometry is available
     // to complete a valid interpolation bracket.
@@ -468,10 +535,25 @@ private:
     }
     const double age = std::chrono::duration<double>(
       std::chrono::steady_clock::now() - pending_->requested).count();
-    if (!pending_->image_stamp && age > image_wait_timeout_) {
+    if (!pending_->response_received && age > capture_response_timeout_) {
       RCLCPP_ERROR(
         get_logger(),
-        "Capture service succeeded but no inspection image arrived; disabling segment.");
+        "Capture service did not respond within %.0f ms for trigger %u; disabling segment.",
+        capture_response_timeout_ * 1000.0, pending_->metadata.trigger_index);
+      disableCurrentSegment();
+      pending_.reset();
+      return;
+    }
+    if (pending_->response_succeeded && !pending_->image_stamp &&
+      std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - *pending_->response_received).count() >
+      image_wait_timeout_)
+    {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Capture service responded successfully for trigger %u but its inspection image did "
+        "not arrive within %.0f ms; disabling segment.",
+        pending_->metadata.trigger_index, image_wait_timeout_ * 1000.0);
       disableCurrentSegment();
       pending_.reset();
       return;
@@ -530,20 +612,24 @@ private:
   const double overlap_;
   const double mount_x_, mount_y_, mount_z_;
   const double mount_roll_, mount_pitch_, mount_yaw_;
-  const double reference_timeout_, image_wait_timeout_, pose_wait_timeout_, cache_duration_;
+  const double reference_timeout_, capture_response_timeout_, image_wait_timeout_;
+  const double slow_capture_warning_, pose_wait_timeout_, cache_duration_;
   double spacing_{};
   std::optional<Key> key_, disabled_key_;
   std::optional<Reference> reference_;
   std::optional<Pending> pending_;
   uint32_t next_trigger_{};
+  uint64_t next_request_id_{};
   uint32_t trigger_count_{};
   double trigger_interval_{};
   double first_trigger_{};
   std::optional<std::chrono::steady_clock::time_point> latest_reference_time_;
+  std::optional<std::chrono::steady_clock::time_point> last_reference_receipt_;
+  std::optional<std::chrono::steady_clock::time_point> last_odometry_receipt_;
   std::deque<nav_msgs::msg::Odometry::SharedPtr> poses_;
   rclcpp::Subscription<Reference>::SharedPtr reference_subscription_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
-  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
+  rclcpp::Subscription<std_msgs::msg::Header>::SharedPtr receipt_subscription_;
   rclcpp::Client<CaptureOnce>::SharedPtr capture_client_;
   rclcpp::Publisher<Metadata>::SharedPtr metadata_publisher_;
   rclcpp::Publisher<CaptureGate>::SharedPtr gate_publisher_;

@@ -28,7 +28,7 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.qos import QoSProfile, ReliabilityPolicy
-from sensor_msgs.msg import Image
+from std_msgs.msg import Header
 
 
 @pytest.mark.launch_test
@@ -43,6 +43,7 @@ def generate_test_description():
             'effective_length_m': 0.25,
             'image_overlap_ratio': 0.20,
             'reference_timeout_s': 2.0,
+            'capture_response_timeout_s': 1.0,
             'image_wait_timeout_s': 0.25,
             'pose_wait_timeout_s': 1.0,
         }],
@@ -63,8 +64,8 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             ExecutionReference, '/control/execution_reference', reliable)
         self.odometry = self.node.create_publisher(
             Odometry, '/odometry/filtered', 10)
-        self.images = self.node.create_publisher(
-            Image, '/inspection/camera/image_raw', reliable)
+        self.receipts = self.node.create_publisher(
+            Header, '/inspection/capture_receipt', reliable)
         self.node.create_subscription(
             InspectionCapture, '/inspection/capture_metadata',
             self._metadata_callback, reliable)
@@ -75,6 +76,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.capture_calls = 0
         self.reject_next = False
         self.drop_next_image = False
+        self.delay_next_capture_s = 0.0
         self.image_stamp = Time(sec=10, nanosec=500_000_000)
         self.node.create_service(
             CaptureOnce, '/inspection/capture_once', self._capture_callback)
@@ -105,6 +107,9 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         if self.drop_next_image:
             self.drop_next_image = False
         else:
+            if self.delay_next_capture_s:
+                time.sleep(self.delay_next_capture_s)
+                self.delay_next_capture_s = 0.0
             self._publish_image()
         response.success = True
         response.reason = CaptureOnce.Response.OK
@@ -136,13 +141,11 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.references.publish(message)
 
     def _publish_image(self):
-        """Publish the configured test frame, including after DDS discovery."""
-        image = Image()
-        image.header.stamp = self.image_stamp
-        image.header.frame_id = 'inspection_camera_optical_frame'
-        image.width = 8
-        image.height = 6
-        self.images.publish(image)
+        """Publish the configured completion receipt after DDS discovery."""
+        receipt = Header()
+        receipt.stamp = self.image_stamp
+        receipt.frame_id = 'inspection_camera_optical_frame'
+        self.receipts.publish(receipt)
 
     def _odom(self, seconds, base_x, base_z=0.052):
         message = Odometry()
@@ -350,6 +353,22 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             time.sleep(0.01)
         self.assertEqual(self.gates, [])
         self.assertEqual(self.metadata, [])
+
+    def test_slow_successful_capture_uses_the_service_response_budget(self):
+        """A valid camera response may take longer than image delivery allowance."""
+        time.sleep(0.3)
+        self.delay_next_capture_s = 0.35
+        self.image_stamp = Time(sec=35, nanosec=500_000_000)
+        self._odom(35, 0.125)
+        deadline = time.monotonic() + 2.0
+        while not self.metadata and time.monotonic() < deadline:
+            self._reference(True, segment=15)
+            self._odom(35, 0.125)
+            self._odom(36, 0.150)
+            time.sleep(0.01)
+        self._wait_count(1)
+        self.assertEqual(self.capture_calls, 1)
+        self.assertEqual(self.metadata[0].segment_index, 15)
 
     def test_pose_timeout_disables_and_withholds_its_heartbeat(self):
         """An unrecoverable pose bind must fail the SCAN promptly."""

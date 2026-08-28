@@ -8,7 +8,7 @@
 
 | 节点 | 阶段 | 职责 |
 | --- | --- | --- |
-| `capture_once_node` | G1 | 桥接原图与 `CameraInfo`，提供单次触发服务并检查图像／标定／TF 一致性 |
+| `capture_once_node` | G1 | 桥接原图与 `CameraInfo`，提供单次触发服务并检查图像／标定／TF 一致性；成功发布后发送轻量 capture receipt |
 | `automatic_capture_node` | G2 | 按冻结执行参考和 EKF 沿轨进度触发拍照，绑定任务版本、扫描线、触发编号和插值位姿 |
 | `flat_field_node` | G3 | 用固定 LED 平场矩阵并行发布补偿图（默认关闭的在线调试预览） |
 | `archive_recorder_node` | G4 | 把原始畸变图和曝光标签原子写入任务目录 |
@@ -71,6 +71,12 @@ transient-local。协议要求 `active=false`——正常采图不允许调制�
 ## 归档不可变
 
 正式归档永远订阅 `image_raw`；`image_compensated` 是调试预览，不是数据产品。
+`CameraInfo` 是记录器进程内不可变的会话标定，以 reliable + transient-local 发布；每次曝光
+仍在 `capture_once_node` 内严格匹配同时间戳的源图和源标定，但 G2 与评价器只订阅轻量的
+`/inspection/capture_receipt`，G4 使用最新的会话标定匹配每一对图像／metadata。封存时仍逐项
+核对相机快照，运行中若标定内容变化会失败，不会静默混用。这样归档完整性不再依赖长任务中
+数百份完全相同的 `CameraInfo` 都被重复送达。
+
 一个 run 必须有 manifest、原图 SHA-256、每图标签和相机快照，且
 `expected_images == saved_images`；封存后不可改写，后续处理一律写新目录。为避免长任务把
 磁盘同步队列打满，原图和标签仍逐对原子写入，但默认每 32 张才做一次文件系统耐久提交；结束、

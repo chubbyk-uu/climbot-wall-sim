@@ -49,10 +49,23 @@ G2_EXTERNAL_TIMEOUT_S=${G2_EXTERNAL_TIMEOUT_S:-1800}
 # long stability runs to verify the same workload remains visually healthy.
 G2_HEADLESS=${G2_HEADLESS:-true}
 G2_RVIZ=${G2_RVIZ:-false}
+G2_GPU_BACKEND=${G2_GPU_BACKEND:-wsl_d3d12}
+G2_GUI_GPU_BACKEND=${G2_GUI_GPU_BACKEND:-auto}
 INSPECTION_OUTPUT_ROOT=${INSPECTION_OUTPUT_ROOT:-}
 WALL_TEXTURE=${WALL_TEXTURE:-}
 PGIDS=()
 ACTIVE_CASE=''
+
+# Acceptance must put every renderer in the requested lane. The simulator and
+# RViz are separate launch processes here, so a launch-local environment from
+# climbot_wall cannot reach RViz.
+if [ "$G2_GPU_BACKEND" = software ]; then
+  export GALLIUM_DRIVER=llvmpipe
+  unset MESA_D3D12_DEFAULT_ADAPTER_NAME || true
+elif [ "$G2_GPU_BACKEND" = wsl_d3d12 ]; then
+  export GALLIUM_DRIVER=d3d12
+  export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
+fi
 
 # ROS 2 parameters are typed.  Shell environment variables commonly spell a
 # whole number without a decimal point, but evaluate_g2_inspection declares
@@ -200,7 +213,8 @@ run_case() {
 
   echo "[$case_name] starting (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, GZ_PARTITION=$GZ_PARTITION)"
   start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo climbot_wall.launch.py \
-    use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:=wsl_d3d12 wall_grid_spacing:=0 \
+    use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:="$G2_GPU_BACKEND" wall_grid_spacing:=0 \
+    gui_gpu_backend:="$G2_GUI_GPU_BACKEND" \
     localization_profile:="$LOCALIZATION_PROFILE" \
     prism_extrinsic_error_robot_m:="$PRISM_EXTRINSIC_ERROR_ROBOT_M" \
     wall_texture:="$WALL_TEXTURE" || return 1

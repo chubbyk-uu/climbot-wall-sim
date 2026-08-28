@@ -26,8 +26,9 @@ import time
 class GazeboSupervisor:
     """Forward launch shutdown to a separately grouped Gazebo process tree."""
 
-    def __init__(self, command: list[str]) -> None:
+    def __init__(self, command: list[str], environment: dict[str, str] | None = None) -> None:
         self._command = command
+        self._environment = environment
         self._child: subprocess.Popen | None = None
         self._stopping = False
         self._deadline = 0.0
@@ -49,7 +50,8 @@ class GazeboSupervisor:
     def run(self) -> int:
         for number in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
             signal.signal(number, self._stop)
-        self._child = subprocess.Popen(self._command, start_new_session=True)
+        self._child = subprocess.Popen(
+            self._command, start_new_session=True, env=self._environment)
         if self._stopping:
             self._stop(None, None)
         while self._child.poll() is None:
@@ -70,6 +72,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode', choices=('server', 'gui'))
     parser.add_argument('--world', help='Rendered SDF file; required for server mode.')
+    parser.add_argument(
+        '--software-rendering', action='store_true',
+        help='Run this client with Mesa llvmpipe instead of the shared GPU.')
     arguments = parser.parse_args()
     if arguments.mode == 'server' and not arguments.world:
         parser.error('--world is required for server mode')
@@ -82,7 +87,14 @@ def main() -> int:
     else:
         command += ['-g', '-v', '3']
     command += ['--force-version', '8']
-    return GazeboSupervisor(command).run()
+    environment = None
+    if arguments.software_rendering:
+        if arguments.mode != 'gui':
+            parser.error('--software-rendering is only valid for GUI mode')
+        environment = os.environ.copy()
+        environment['GALLIUM_DRIVER'] = 'llvmpipe'
+        environment.pop('MESA_D3D12_DEFAULT_ADAPTER_NAME', None)
+    return GazeboSupervisor(command, environment).run()
 
 
 if __name__ == '__main__':

@@ -259,6 +259,7 @@ ExecutionSegment dynamicTransitionSegment(
     }
     segment.end.x = nominal_end.x + lift_direction.x * lower;
     segment.end.y = nominal_end.y + lift_direction.y * lower;
+    segment.turn_reserve_limited = true;
   }
   return segment;
 }

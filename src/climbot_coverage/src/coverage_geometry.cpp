@@ -71,6 +71,15 @@ Point2 intersectInfiniteLines(
   return add(first_origin, scale(first_direction, parameter));
 }
 
+Point2 intersectLines(
+  const Point2 & first_start, const Point2 & first_end,
+  const Point2 & second_start, const Point2 & second_end)
+{
+  return intersectInfiniteLines(
+    first_start, subtract(first_end, first_start), second_start,
+    subtract(second_end, second_start));
+}
+
 std::pair<double, double> bounds(
   const Polygon & polygon, bool horizontal_sweep)
 {
@@ -136,6 +145,15 @@ bool insideConvex(const Polygon & polygon, const Point2 & point)
     }
   }
   return true;
+}
+
+void appendDistinctPoint(Polygon & polygon, const Point2 & point)
+{
+  if (polygon.empty() || !approximatelyEqual(polygon.back().x, point.x, 1e-8) ||
+    !approximatelyEqual(polygon.back().y, point.y, 1e-8))
+  {
+    polygon.push_back(point);
+  }
 }
 
 bool coveredByFootprint(
@@ -249,6 +267,94 @@ Polygon insetConvexPolygon(const Polygon & polygon, double margin)
     throw std::invalid_argument("Safety margin removes the entire working region.");
   }
   return inset;
+}
+
+Polygon insetConvexPolygonForSymmetricTranslation(
+  const Polygon & polygon, const Point2 & translation)
+{
+  if (polygon.size() < 3U || polygonArea(polygon) <= kEpsilon) {
+    throw std::invalid_argument("Envelope inset requires a counter-clockwise convex polygon.");
+  }
+  if (!std::isfinite(translation.x) || !std::isfinite(translation.y)) {
+    throw std::invalid_argument("Maneuver envelope translation must be finite.");
+  }
+  if (std::hypot(translation.x, translation.y) <= kEpsilon) {
+    return polygon;
+  }
+
+  std::vector<Point2> origins;
+  std::vector<Point2> directions;
+  origins.reserve(polygon.size());
+  directions.reserve(polygon.size());
+  for (std::size_t index = 0; index < polygon.size(); ++index) {
+    const Point2 direction = subtract(polygon[(index + 1U) % polygon.size()], polygon[index]);
+    const double length = std::hypot(direction.x, direction.y);
+    if (length < kEpsilon) {
+      throw std::invalid_argument("Polygon contains a zero-length edge.");
+    }
+    const Point2 inward_normal{-direction.y / length, direction.x / length};
+    const double edge_margin = std::abs(
+      inward_normal.x * translation.x + inward_normal.y * translation.y);
+    origins.push_back(add(polygon[index], scale(inward_normal, edge_margin)));
+    directions.push_back(direction);
+  }
+
+  Polygon inset;
+  inset.reserve(polygon.size());
+  for (std::size_t index = 0; index < polygon.size(); ++index) {
+    const std::size_t previous = (index + polygon.size() - 1U) % polygon.size();
+    inset.push_back(intersectInfiniteLines(
+      origins[previous], directions[previous], origins[index], directions[index]));
+  }
+  if (polygonArea(inset) <= kEpsilon) {
+    throw std::invalid_argument("Maneuver envelope removes the entire motion region.");
+  }
+  return inset;
+}
+
+Polygon intersectConvexPolygons(const Polygon & first, const Polygon & second)
+{
+  if (first.size() < 3U || second.size() < 3U ||
+    polygonArea(first) <= kEpsilon || polygonArea(second) <= kEpsilon)
+  {
+    throw std::invalid_argument(
+            "Convex intersection requires two non-empty counter-clockwise polygons.");
+  }
+  Polygon output = first;
+  for (std::size_t edge_index = 0; edge_index < second.size(); ++edge_index) {
+    const Point2 & clip_start = second[edge_index];
+    const Point2 & clip_end = second[(edge_index + 1U) % second.size()];
+    if (output.empty()) {
+      break;
+    }
+    const Polygon input = output;
+    output.clear();
+    for (std::size_t point_index = 0; point_index < input.size(); ++point_index) {
+      const Point2 & start = input[point_index];
+      const Point2 & end = input[(point_index + 1U) % input.size()];
+      const bool start_inside =
+        cross(subtract(clip_end, clip_start), subtract(start, clip_start)) >= -kEpsilon;
+      const bool end_inside =
+        cross(subtract(clip_end, clip_start), subtract(end, clip_start)) >= -kEpsilon;
+      if (start_inside && end_inside) {
+        appendDistinctPoint(output, end);
+      } else if (start_inside && !end_inside) {
+        appendDistinctPoint(output, intersectLines(start, end, clip_start, clip_end));
+      } else if (!start_inside && end_inside) {
+        appendDistinctPoint(output, intersectLines(start, end, clip_start, clip_end));
+        appendDistinctPoint(output, end);
+      }
+    }
+    if (output.size() > 1U && approximatelyEqual(output.front().x, output.back().x, 1e-8) &&
+      approximatelyEqual(output.front().y, output.back().y, 1e-8))
+    {
+      output.pop_back();
+    }
+  }
+  if (output.size() < 3U || polygonArea(output) <= kEpsilon) {
+    throw std::invalid_argument("Selected region has no area inside the maneuver-safe envelope.");
+  }
+  return output;
 }
 
 bool containsConvexPolygon(const Polygon & container, const Polygon & candidate)
