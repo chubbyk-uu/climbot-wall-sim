@@ -94,6 +94,10 @@ bash tools/run_clang_tidy.sh --log /tmp/climbot-clang-tidy.log
 CI 在每个 main 推送和 Pull Request 上执行构建、静态分析和串行测试。批量回归与故障排查见
 [OPERATION](docs/OPERATION.md)。
 
+`climbot_bringup` 的 `test_workspace_consistency` 守两条没有任何单个包能自查的约定：launch
+文件里写出的每个 `executable` 必须真的被安装，以及每个 launch test 的 `ROS_DOMAIN_ID` 在整个
+工作区内唯一。两类错误都能正常构建、也能通过所属包自己的测试，只在真正启动时才暴露。
+
 ## 快速启动
 
 以下命令均假定已经完成构建，并在一个终端执行过：

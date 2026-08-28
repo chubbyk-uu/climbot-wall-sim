@@ -112,9 +112,7 @@ def test_gazebo_supervisor_does_not_extend_its_kill_deadline_on_a_second_signal(
 
 def test_simulation_adapters_exit_cleanly_after_launch_sigint():
     """Do not mask a required-process exit with duplicate rclpy shutdown errors."""
-    for name in (
-            'wall_imu_adapter.py', 'wall_wheel_odom_adapter.py',
-            'total_station_sim.py', 'camera_distortion_adapter.py'):
+    for name in ('total_station_sim.py', 'camera_distortion_adapter.py'):
         source = (PACKAGE_ROOT / 'scripts' / name).read_text()
         assert 'ExternalShutdownException' in source
         assert 'except (KeyboardInterrupt, ExternalShutdownException):' in source

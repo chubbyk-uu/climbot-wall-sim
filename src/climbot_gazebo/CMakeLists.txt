@@ -70,8 +70,6 @@ install(
     scripts/measure_turn_slip.py
     scripts/plot_wall_slip.py
     scripts/total_station_sim.py
-    scripts/wall_imu_adapter.py
-    scripts/wall_wheel_odom_adapter.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
