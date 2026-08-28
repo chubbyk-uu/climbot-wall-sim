@@ -255,7 +255,12 @@ P95 为 21.09 mm、最大 24.42 mm。控制器和 filtered 的唯一超过 250 m
 接受之前；任务期 P99.9 为约 48--49 ms，因此尚未复现原始故障，不能据此关闭根因。随后 P1.1
 轮速适配器迁移后的相同任务也通过（680 张、位姿 P95 20.98 mm），启动前仍有同类单次空窗，
 说明轮速 Python 热路径不是该空窗的充分原因。P1.2 IMU 适配器已迁移并通过输入输出、参数拒绝和
-headless 链路测试；原始与适配 IMU 的 header 连续、适配延迟低于 0.4 ms，完整任务对照待执行。
+headless 链路测试；原始与适配 IMU 的 header 连续、适配延迟低于 0.4 ms。其完整横向对照也已
+通过（680 张、位姿 P95 2.67 mm）；运行期 control/filtered P99.9 为约 46 ms，且无第二个超过
+100 ms 的间隔。P2-06 的正常完整运行超过 600 s，因此验收脚本的默认 evaluator/外层超时已改为
+1500/1800 s，避免健康任务被提前截断。P1.3 进一步将 `ExecutionReference` 改为状态、段或冻结
+几何变化时立即可靠发布，其余时间 5 Hz 保活，并将 writer 队列深度收为 1；全状态暂停/恢复、采集
+心跳和线跟踪集成测试均通过。
 
 ## 当前待办清单
 
@@ -266,7 +271,7 @@ headless 链路测试；原始与适配 IMU 的 header 连续、适配延迟低�
 - [x] P0.5 完整 P2-06 基线长跑并判定第一个断档层；
 - [x] P1.1 将 wheel adapter 迁移到 C++；
 - [x] P1.2 将 IMU adapter 迁移到 C++；
-- [ ] P1.3 优化 `ExecutionReference` 发布策略；
+- [x] P1.3 优化 `ExecutionReference` 发布策略；
 - [ ] P1.4 按 P0 证据决定 Executor、`/clock` 和 CPU 调度改动；
 - [ ] O2/S1 完成长时验证并形成正式摘要；
 - [ ] 根因关闭后更新 [STATUS](STATUS.md)、[ACCEPTANCE](ACCEPTANCE.md) 和结果索引。

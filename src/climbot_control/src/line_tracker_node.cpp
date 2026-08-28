@@ -92,6 +92,8 @@ public:
     control_frequency_hz_ = declare_parameter("control_frequency_hz", 50.0);
     odometry_timeout_s_ = declare_parameter("odometry_timeout_s", 0.25);
     timing_summary_period_s_ = declare_parameter("timing_summary_period_s", 10.0);
+    execution_reference_heartbeat_hz_ = declare_parameter(
+      "execution_reference_heartbeat_hz", 5.0);
     frame_id_ = declare_parameter("frame_id", "odom");
     standalone_mode_ = declare_parameter("standalone_mode", true);
     segment_timeout_s_ = declare_parameter("segment_timeout_s", 120.0);
@@ -275,7 +277,7 @@ public:
       rclcpp::QoS(1).reliable().transient_local());
     execution_reference_publisher_ =
       create_publisher<climbot_interfaces::msg::ExecutionReference>(
-      "/control/execution_reference", rclcpp::QoS(10).reliable());
+      "/control/execution_reference", rclcpp::QoS(1).reliable());
     capture_gate_subscription_ =
       create_subscription<climbot_interfaces::msg::InspectionCaptureGate>(
       declare_parameter("capture_gate_topic", std::string("/inspection/capture_gate")),
@@ -492,6 +494,7 @@ private:
     requirePositive("control_frequency_hz", control_frequency_hz_);
     requirePositive("odometry_timeout_s", odometry_timeout_s_);
     requirePositive("timing_summary_period_s", timing_summary_period_s_);
+    requirePositive("execution_reference_heartbeat_hz", execution_reference_heartbeat_hz_);
     requirePositive("segment_timeout_s", segment_timeout_s_);
     requirePositive("pause_stop_timeout_s", pause_stop_timeout_s_);
     requirePositive("capture_gate_timeout_s", capture_gate_timeout_s_);
@@ -680,6 +683,8 @@ private:
   {
     active_goal_ = goal;
     active_task_ = goal->get_goal()->task;
+    last_execution_reference_.reset();
+    last_execution_reference_published_steady_.reset();
     inspection_enabled_ = goal->get_goal()->inspection_enabled;
     completed_segments_ = 0U;
     current_segment_ = 0U;
@@ -1355,6 +1360,8 @@ private:
   void clearActiveGoal()
   {
     previous_command_ = {};
+    last_execution_reference_.reset();
+    last_execution_reference_published_steady_.reset();
     active_goal_.reset();
     active_task_.reset();
     capture_gate_.reset();
@@ -1517,7 +1524,35 @@ private:
       inspection_enabled_ && !approaching_start_ && !arc_entry_active_ && reference_prepared_ &&
       feedback.segment_type == climbot_interfaces::msg::CoverageTask::SEGMENT_SCAN &&
       scanning && !paused_;
+    const auto published_at = std::chrono::steady_clock::now();
+    const bool heartbeat_due = !last_execution_reference_published_steady_ ||
+      published_at - *last_execution_reference_published_steady_ >=
+      std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+      std::chrono::duration<double>(1.0 / execution_reference_heartbeat_hz_));
+    if (!heartbeat_due && last_execution_reference_ &&
+      executionReferenceMatches(*last_execution_reference_, reference))
+    {
+      return;
+    }
     execution_reference_publisher_->publish(reference);
+    last_execution_reference_ = reference;
+    last_execution_reference_published_steady_ = published_at;
+  }
+
+  static bool executionReferenceMatches(
+    const climbot_interfaces::msg::ExecutionReference & left,
+    const climbot_interfaces::msg::ExecutionReference & right)
+  {
+    return left.task_id == right.task_id &&
+           left.revision == right.revision &&
+           left.segment_index == right.segment_index &&
+           left.segment_type == right.segment_type &&
+           left.executor_state == right.executor_state &&
+           left.start.x == right.start.x && left.start.y == right.start.y &&
+           left.start.z == right.start.z && left.end.x == right.end.x &&
+           left.end.y == right.end.y && left.end.z == right.end.z &&
+           left.detection_forward_offset == right.detection_forward_offset &&
+           left.inspection_enabled == right.inspection_enabled;
   }
 
   bool captureGateIsRequired() const
@@ -2119,6 +2154,7 @@ private:
   double control_frequency_hz_{50.0};
   double odometry_timeout_s_{0.25};
   double timing_summary_period_s_{10.0};
+  double execution_reference_heartbeat_hz_{5.0};
   double segment_timeout_s_{120.0};
   double pause_stop_timeout_s_{5.0};
   double capture_gate_timeout_s_{0.50};
@@ -2208,10 +2244,12 @@ private:
   climbot_control::Command paused_feedback_command_;
   climbot_control::Command last_feedback_command_;
   std::optional<climbot_interfaces::msg::CoverageTask> active_task_;
+  std::optional<climbot_interfaces::msg::ExecutionReference> last_execution_reference_;
   std::optional<climbot_interfaces::msg::InspectionCaptureGate> capture_gate_;
   std::optional<std::chrono::steady_clock::time_point> capture_gate_received_at_;
   std::optional<std::chrono::steady_clock::time_point> capture_gate_wait_started_;
   std::optional<int64_t> last_odometry_callback_steady_ns_;
+  std::optional<std::chrono::steady_clock::time_point> last_execution_reference_published_steady_;
   std::optional<int64_t> last_stale_timing_reported_callback_steady_ns_;
   climbot_control::TimingSeries odometry_callback_timing_;
   climbot_control::TimingSeries control_timer_timing_;

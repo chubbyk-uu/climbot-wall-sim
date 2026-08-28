@@ -7,6 +7,10 @@ line_tracker:
     heading_gain: 2.0
     control_frequency_hz: 50.0
     odometry_timeout_s: 0.25
+    # Frozen scan geometry and state are reliable state messages, not a 50 Hz
+    # control stream. Publish changes immediately and renew capture liveness
+    # at 5 Hz, comfortably inside the 0.50 s gate timeout below.
+    execution_reference_heartbeat_hz: 5.0
     standalone_mode: true
     segment_timeout_s: 180.0
     # How long a paused task may take to reach a standstill before the pause is
