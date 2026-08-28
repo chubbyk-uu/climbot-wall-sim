@@ -18,10 +18,16 @@
 | `build_wall_mosaic` | processed-run + 位姿图 | 两张母版、差分、覆盖、不确定度、预览、manifest |
 | `evaluate_diagnostic_mosaic` | 母版 + 墙面 manifest | `diagnostic_truth_summary.json` |
 | `inspect_diagnostic_mosaic` | 母版 + 墙面 manifest | `diagnostic_inspection_summary.json`、原尺寸检查 tile |
+| `preflight_diagnostic_coverage` | 任务 YAML + 相机/机器人/墙配置 + 墙面 manifest | 采集前的离散曝光 feature 覆盖 JSON |
 
 所有输入/输出目录必须是绝对路径；输入只读，输出目录必须不存在且原子发布。
 `--input-run` 可重复给出，把横向和竖向两次采集一起送进同一次拼接。
 跨 run 的帧身份是 `(source_run_id, frame_index)`，不能只用文件名。
+
+`preflight_diagnostic_coverage` 是 P2-06 的**采集前**工具，不参与任何拼接候选、匹配、
+位姿优化或渲染。它精确复现 `automatic_capture_node` 的首张、计数和间隔合同，而不是把 SCAN
+当作连续曝光；可重复给出横、竖任务以核对联合覆盖。它只以墙面 manifest 的 declared feature
+几何作离线计划验证，完成采集后仍必须由 `coverage_count.tif` 和原尺寸检查重新证明实际覆盖。
 
 ## 正常顺序
 

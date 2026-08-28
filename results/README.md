@@ -19,6 +19,7 @@
 | G2/G4 采集 | `g2_accept_{horizontal,vertical,trapezoid}_2026-08-26_summary.json` | 异步匀速位置触发、位姿绑定与原始归档正式结果 |
 | P2 相对拼接 | [mosaic_p2_baseline_2026-08-26_summary.json](mosaic_p2_baseline_2026-08-26_summary.json) | 0.25 mm 相对拼接基线；尚未冻结验收门槛 |
 | P2 clean blind | [mosaic_p27d_blind_2026-08-27_summary.json](mosaic_p27d_blind_2026-08-27_summary.json) | 诊断墙绝对真值与检查切片；仍有覆盖缺口 |
+| P2-06 采集前预检 | [p206_diagnostic_coverage_preflight_2026-08-28.json](p206_diagnostic_coverage_preflight_2026-08-28.json) | 绿框内横／竖互补任务的离散曝光预测；不是实际拼接验收 |
 
 完整的验收要求、证据路径和缺口请看 [验收矩阵](../docs/ACCEPTANCE.md)。
 
@@ -27,6 +28,8 @@
 - 正式覆盖与控制结论仅适用于表中的仿真工况；它们不是实机验收结果。
 - P2.7d 的三锚点绝对 P95 已从 Pose 的 19.48 mm 降至优化后的 10.40 mm，但诊断特征
   几何区域仍有 22.99% 未被相机覆盖，P2-06 不能据此关闭。
+- P2-06 新任务的采集前预检预测横、竖联合 1,362 张能覆盖绿框目标域内全部 21 个 declared
+  feature；它不读取新采图像，不能替代 `coverage_count.tif` 或关闭 P2-06。
 - 2026-08-18b 之前的法向载荷口径为 220 N；与当前 400 N 基线不能直接混用。
 - 仅带 `source_modified` 的记录用于趋势观察；可复现实验须有完整源码版本、命令与输入溯源。
 

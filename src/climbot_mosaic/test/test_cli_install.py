@@ -28,6 +28,7 @@ def test_installed_program_sources_are_executable():
         'build_wall_mosaic',
         'evaluate_diagnostic_mosaic',
         'inspect_diagnostic_mosaic',
+        'preflight_diagnostic_coverage',
         'validate_mosaic_inputs',
     }
     assert {path.name for path in scripts.iterdir()} == expected

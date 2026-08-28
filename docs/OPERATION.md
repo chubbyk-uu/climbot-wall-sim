@@ -1,6 +1,6 @@
 # 实验与故障处置手册
 
-更新：2026-08-27。第一次跑通全链路请看 [README 的快速启动](../README.md#快速启动)——
+更新：2026-08-28。第一次跑通全链路请看 [README 的快速启动](../README.md#快速启动)——
 仿真、规划预览、点选任务、离线处理和墙面拼接的主线命令都在那里，本页不重复。
 
 本页只写主线之外的内容：批量回归、评价工具、参数变体和故障处置。接口字段见
@@ -44,6 +44,44 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 `parameters` 之后，区域角点来自 `planner_config_file`，而 `region_type` 和
 `sweep_direction` 覆盖配置里的对应项；可用的演示配置见
 [climbot_coverage README](../src/climbot_coverage/README.md)。
+
+### P2-06 近绿框诊断采集
+
+先从仓库根目录运行一次采集前预检；它按真实离散触发合同检查横、竖任务的**联合**覆盖，
+不启动 Gazebo，也不替代采集后的实际覆盖图：
+
+```bash
+ros2 run climbot_mosaic preflight_diagnostic_coverage \
+  --task-config src/climbot_coverage/config/coverage_p206_diagnostic_full_horizontal.yaml \
+  --task-config src/climbot_coverage/config/coverage_p206_diagnostic_full_vertical.yaml \
+  --wall-manifest textures/wall_diagnostic_025/wall_texture.json \
+  --camera-config src/climbot_description/config/inspection_camera.yaml \
+  --robot-config src/climbot_description/config/robot.yaml \
+  --wall-config src/climbot_description/config/wall.yaml \
+  --output "$PWD/results/p206_diagnostic_coverage_preflight_2026-08-28.json"
+```
+
+然后分别启动横向和纵向任务。`sweep_direction` 是 launch 覆盖项，必须显式写出，不能只依赖
+YAML 内同名字段。每次在 RViz 确认蓝线和绿色安全框后按 **Start**；任务完成才启动下一次。
+
+```bash
+# horizontal: 17 SCAN / nominal 680 exposures
+ros2 launch climbot_bringup coverage_mission.launch.py \
+  input_mode:=parameters region_type:=rectangle sweep_direction:=horizontal \
+  planner_config_file:="$PWD/src/climbot_coverage/config/coverage_p206_diagnostic_full_horizontal.yaml" \
+  wall_texture:="$PWD/textures/wall_diagnostic_025/wall_texture.json" \
+  wall_grid_spacing:=0 localization_profile:=realistic
+
+# vertical: 22 SCAN / nominal 682 exposures
+ros2 launch climbot_bringup coverage_mission.launch.py \
+  input_mode:=parameters region_type:=rectangle sweep_direction:=vertical \
+  planner_config_file:="$PWD/src/climbot_coverage/config/coverage_p206_diagnostic_full_vertical.yaml" \
+  wall_texture:="$PWD/textures/wall_diagnostic_025/wall_texture.json" \
+  wall_grid_spacing:=0 localization_profile:=realistic
+```
+
+两次 G4 archive 必须保留并共同送进后续预处理和 hard-cut 流程。不要把横向单独作为“全覆盖”
+数据：预检已证明它在三个边缘 decal 上留有离散曝光缺口。
 
 带贴图运行时一律设 `wall_grid_spacing:=0`，避免参考网格线进入巡检图像。
 

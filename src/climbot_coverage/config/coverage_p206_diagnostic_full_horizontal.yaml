@@ -1,0 +1,20 @@
+# P2-06 full diagnostic target: the largest practical rectangle inside the
+# green robot-safe frame. Camera geometry is injected from inspection_camera.yaml.
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    task_id: inspection-diagnostic-full-horizontal-025mm-20260828
+    input_mode: parameters
+    region_type: rectangle
+    lower_left: [0.55, 0.55]
+    upper_right: [9.45, 7.45]
+    lower_right: [9.45, 0.55]
+    detection_width: 0.50
+    detection_length: 0.28125
+    detection_forward_offset: 0.340
+    detection_edge_overlap: 0.0
+    overlap_ratio: 0.20
+    sweep_direction: horizontal
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

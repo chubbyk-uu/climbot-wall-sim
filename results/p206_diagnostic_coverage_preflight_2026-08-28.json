@@ -1,0 +1,413 @@
+{
+  "feature_coverage": {
+    "all_intersecting_feature_samples_covered": true,
+    "features": [
+      {
+        "fully_covered": true,
+        "id": "construction_seam_01",
+        "intersects_target": true,
+        "kind": "construction_seam",
+        "overlap_sample_count": 75900,
+        "sample_count": 75900,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          3.3945000000000003,
+          0.55,
+          3.4055000000000004,
+          7.45
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "construction_seam_02",
+        "intersects_target": true,
+        "kind": "construction_seam",
+        "overlap_sample_count": 75900,
+        "sample_count": 75900,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          6.9945,
+          0.55,
+          7.0055,
+          7.45
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "construction_seam_03",
+        "intersects_target": true,
+        "kind": "construction_seam",
+        "overlap_sample_count": 97900,
+        "sample_count": 97900,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          0.55,
+          4.234500000000001,
+          9.45,
+          4.2455
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "crack_decal_01",
+        "intersects_target": true,
+        "kind": "crack_decal",
+        "overlap_sample_count": 797500,
+        "sample_count": 797500,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          0.55,
+          0.6645968790364588,
+          2.075403120963541,
+          2.215403120963541
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "crack_decal_02",
+        "intersects_target": true,
+        "kind": "crack_decal",
+        "overlap_sample_count": 937501,
+        "sample_count": 937501,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          1.7711310131443374,
+          5.591131013144338,
+          3.2288689868556624,
+          7.048868986855663
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "crack_decal_03",
+        "intersects_target": true,
+        "kind": "crack_decal",
+        "overlap_sample_count": 682002,
+        "sample_count": 682002,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          3.6686522352934157,
+          2.1686522352934157,
+          4.931347764706584,
+          3.431347764706584
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "crack_decal_04",
+        "intersects_target": true,
+        "kind": "crack_decal",
+        "overlap_sample_count": 702002,
+        "sample_count": 702002,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          4.976657066115939,
+          5.036657066115939,
+          6.42334293388406,
+          6.48334293388406
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "crack_decal_05",
+        "intersects_target": true,
+        "kind": "crack_decal",
+        "overlap_sample_count": 747998,
+        "sample_count": 747998,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          5.788260676431538,
+          0.7482606764315376,
+          7.011739323568463,
+          1.9717393235684626
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "crack_decal_06",
+        "intersects_target": true,
+        "kind": "crack_decal",
+        "overlap_sample_count": 754001,
+        "sample_count": 754001,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          7.188241614029031,
+          2.48824161402903,
+          8.61175838597097,
+          3.91175838597097
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "crack_decal_07",
+        "intersects_target": true,
+        "kind": "crack_decal",
+        "overlap_sample_count": 504006,
+        "sample_count": 504006,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          8.322743557853185,
+          5.502743557853185,
+          9.45,
+          6.6572564421468154
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "crack_decal_08",
+        "intersects_target": true,
+        "kind": "crack_decal",
+        "overlap_sample_count": 481297,
+        "sample_count": 529497,
+        "single_exposure_sample_count": 48200,
+        "target_bounds_m": [
+          8.634137825968196,
+          0.5541378259681958,
+          9.45,
+          1.6858621740318043
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "repair_patch_01",
+        "intersects_target": true,
+        "kind": "repair_patch",
+        "overlap_sample_count": 113509,
+        "sample_count": 113509,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          1.7639033978094318,
+          3.358351448024625,
+          2.215707107199783,
+          3.672207827838917
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "repair_patch_02",
+        "intersects_target": true,
+        "kind": "repair_patch",
+        "overlap_sample_count": 193311,
+        "sample_count": 193311,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          4.080627383192017,
+          1.6354923028834931,
+          4.707682985343949,
+          2.0341223993746578
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "repair_patch_03",
+        "intersects_target": true,
+        "kind": "repair_patch",
+        "overlap_sample_count": 165775,
+        "sample_count": 165775,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          6.171135039298557,
+          4.682669488311744,
+          6.603937534242972,
+          5.215990820672875
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "repair_patch_04",
+        "intersects_target": true,
+        "kind": "repair_patch",
+        "overlap_sample_count": 111384,
+        "sample_count": 111384,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          8.537978931379902,
+          1.9962984779463928,
+          9.063342840953203,
+          2.299946370913752
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "repair_patch_05",
+        "intersects_target": true,
+        "kind": "repair_patch",
+        "overlap_sample_count": 58622,
+        "sample_count": 58622,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          1.4416899710548694,
+          5.477293198518047,
+          1.7545140768636076,
+          5.7151187130002965
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "repair_patch_06",
+        "intersects_target": true,
+        "kind": "repair_patch",
+        "overlap_sample_count": 103509,
+        "sample_count": 103509,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          7.598507969165478,
+          6.556030851271472,
+          7.987416811876783,
+          6.875738264364397
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "graffiti_decal_01",
+        "intersects_target": true,
+        "kind": "graffiti_decal",
+        "overlap_sample_count": 279509,
+        "sample_count": 302502,
+        "single_exposure_sample_count": 22993,
+        "target_bounds_m": [
+          0.55,
+          4.251091270347398,
+          1.2889087296526012,
+          5.028908729652601
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "graffiti_decal_02",
+        "intersects_target": true,
+        "kind": "graffiti_decal",
+        "overlap_sample_count": 296400,
+        "sample_count": 296400,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          3.266179760730323,
+          6.526179760730323,
+          4.133820239269677,
+          7.393820239269677
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "graffiti_decal_03",
+        "intersects_target": true,
+        "kind": "graffiti_decal",
+        "overlap_sample_count": 300999,
+        "sample_count": 300999,
+        "single_exposure_sample_count": 0,
+        "target_bounds_m": [
+          6.789238512029182,
+          2.0692385120291825,
+          7.610761487970817,
+          2.8907614879708174
+        ],
+        "uncovered_sample_count": 0
+      },
+      {
+        "fully_covered": true,
+        "id": "graffiti_decal_04",
+        "intersects_target": true,
+        "kind": "graffiti_decal",
+        "overlap_sample_count": 135841,
+        "sample_count": 150991,
+        "single_exposure_sample_count": 15150,
+        "target_bounds_m": [
+          9.046446609406726,
+          4.526446609406726,
+          9.45,
+          5.233553390593274
+        ],
+        "uncovered_sample_count": 0
+      }
+    ],
+    "intersecting_feature_count": 21,
+    "uncovered_sample_count": 0
+  },
+  "inputs": {
+    "camera_config": {
+      "file_name": "inspection_camera.yaml",
+      "sha256": "f76bb343e0ebcf8cab65354a135a42ff413bbd7198a845cd727fa0c15138eabb"
+    },
+    "robot_config": {
+      "file_name": "robot.yaml",
+      "sha256": "8e324b1e2f00cfdfd787327fbb38e343bea09046ddade871cd3728c2d05f9013"
+    },
+    "task_configs": [
+      {
+        "file_name": "coverage_p206_diagnostic_full_horizontal.yaml",
+        "sha256": "4994c913804173a003097e49984727089508b5a61077c0f7c4d4fee9ae45f057"
+      },
+      {
+        "file_name": "coverage_p206_diagnostic_full_vertical.yaml",
+        "sha256": "6de7e4170a64c0f293d783a6e2894750af65e7b6c87f1e3ce41e8139b51abf74"
+      }
+    ],
+    "wall_config": {
+      "file_name": "wall.yaml",
+      "sha256": "39426794fc0b8c0b33f207cbdf497901d5822e22923ab90ecd7f2f6c0f6db049"
+    },
+    "wall_manifest": {
+      "file_name": "wall_texture.json",
+      "sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c"
+    }
+  },
+  "model": {
+    "camera_footprint_m": [
+      0.5,
+      0.28125
+    ],
+    "camera_forward_offset_m": 0.34,
+    "description": "union of planned rectangular SCANs plus automatic_capture_node discrete trigger contract; declared feature support sampled at 0.001000 m",
+    "feature_resolution_m": 0.001,
+    "image_overlap_ratio": 0.2
+  },
+  "schema_version": 1,
+  "task_set": {
+    "drive_rectangle_m": [
+      0.55,
+      0.55,
+      9.45,
+      7.45
+    ],
+    "exposure_count": 1362,
+    "green_safe_rectangle_m": [
+      0.5481141037726887,
+      0.5481141037726887,
+      9.451885896227312,
+      7.451885896227312
+    ],
+    "tasks": [
+      {
+        "exposure_count": 680,
+        "scan_segment_count": 17,
+        "sweep_direction": "horizontal",
+        "task_id": "inspection-diagnostic-full-horizontal-025mm-20260828"
+      },
+      {
+        "exposure_count": 682,
+        "scan_segment_count": 22,
+        "sweep_direction": "vertical",
+        "task_id": "inspection-diagnostic-full-vertical-025mm-20260828"
+      }
+    ]
+  }
+}

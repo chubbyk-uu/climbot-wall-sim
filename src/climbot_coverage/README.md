@@ -29,6 +29,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 - `config/coverage_horizontal_demo.yaml`：`4.30 × 1.70 m` 横向任务。
 - `config/coverage_trapezoid_horizontal_demo.yaml`：大型等腰梯形横向任务；
 - `config/coverage_trapezoid_vertical_demo.yaml`：同一梯形竖向任务。
+- `config/coverage_p206_diagnostic_full_{horizontal,vertical}.yaml`：P2-06 诊断墙的互补
+  横／竖任务；二者都使用绿框内 `0.55…9.45 × 0.55…7.45 m` 的矩形，必须成对采集。
 
 通过 `config_file:=<配置绝对路径>` 选择配置（`coverage_mission.launch.py` 用
 `planner_config_file`）。用 `coverage_sim.launch.py` 时还需另行启动

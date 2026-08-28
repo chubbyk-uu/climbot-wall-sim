@@ -37,7 +37,8 @@ P95 从 `19.48 mm` 降到 `10.40 mm`，局部残差 P95 从 `9.74 mm` 降到 `0.
 
 ## 近期工作顺序
 
-1. 定义接近绿色安全工作框的诊断矩形任务，先离线核对相机足迹能覆盖哪些诊断 feature；
+1. **已完成**：定义绿框内 P2-06 矩形并用离散触发预检核对横、竖联合覆盖；证据见
+   [p206_diagnostic_coverage_preflight_2026-08-28.json](../results/p206_diagnostic_coverage_preflight_2026-08-28.json)。
 2. 采集新的横向、竖向 realistic 盲测数据，并重跑预处理、拼接、真值评价和原尺寸检查；
 3. 若全目标覆盖和三组结果均满足，再根据分布冻结 P2 门限，更新 `ACCEPTANCE`、结果索引和
    `MOSAIC_PLAN`；
