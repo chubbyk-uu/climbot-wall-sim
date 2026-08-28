@@ -119,6 +119,7 @@ public:
     control_clock_ = climbot_control::controlClock(this);
     last_publish_ = rclcpp::Time(0, 0, control_clock_->get_clock_type());
     status_.current_segment = -1;
+    status_.archive_default_root = inspection_output_root_;
     // Created before the task subscription so no preview can ever be handled
     // before there is somewhere to report it.
     status_publisher_ = create_publisher<Status>(

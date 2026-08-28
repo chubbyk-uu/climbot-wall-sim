@@ -55,7 +55,8 @@ def generate_test_description():
                 'wheel_acceleration_limit': 0.40,
             }]),
         launch_ros.actions.Node(
-            package='climbot_control', executable='coverage_manager_node'),
+            package='climbot_control', executable='coverage_manager_node',
+            parameters=[{'inspection_output_root': '/tmp/manager-test-default'}]),
         launch_testing.actions.ReadyToTest(),
     ])
 
@@ -209,6 +210,7 @@ class TestCoverageManager(unittest.TestCase):
         # show "0 of 1" rather than waiting for the first feedback message.
         self.assertEqual(ready.total_segments, 1)
         self.assertEqual(ready.current_segment, -1)
+        self.assertEqual(ready.archive_default_root, '/tmp/manager-test-default')
         self.assertIn('Ready: manager-test revision 13', ready.message)
 
         for _ in range(4):

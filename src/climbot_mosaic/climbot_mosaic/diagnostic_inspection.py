@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
+import re
 import shutil
 import tempfile
 from typing import Any
@@ -48,6 +49,25 @@ class DiagnosticInspectionError(ValueError):
 
 
 Bounds = tuple[float, float, float, float]
+
+
+def _safe_feature_id(value: Any) -> str:
+    """Return a bounded portable directory component for one declared feature."""
+    if not isinstance(value, str) or len(value) > 128 or re.fullmatch(
+            r'[A-Za-z0-9][A-Za-z0-9._-]*', value) is None:
+        raise DiagnosticInspectionError('diagnostic feature id is not a safe file name.')
+    return value
+
+
+def _register_feature_id(feature: Any, existing: set[str]) -> str:
+    """Validate and reserve one feature id so output directories cannot collide."""
+    if not isinstance(feature, dict):
+        raise DiagnosticInspectionError('diagnostic feature is malformed.')
+    feature_id = _safe_feature_id(feature.get('id'))
+    if feature_id in existing:
+        raise DiagnosticInspectionError(f'diagnostic feature id is duplicated: {feature_id}.')
+    existing.add(feature_id)
+    return feature_id
 
 
 def _intersection(first: Bounds, second: Bounds) -> Bounds | None:
@@ -260,12 +280,11 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                 raise DiagnosticInspectionError(
                     'diagnostic wall and mosaic have no common extent.')
             feature_specs = []
+            feature_ids: set[str] = set()
             visible_core_pixels = 0
             uncovered_core_pixels = 0
             for raw_feature in diagnostic['features']:
-                if not isinstance(raw_feature, dict) or not isinstance(raw_feature.get('id'), str):
-                    raise DiagnosticInspectionError('diagnostic feature has no safe id.')
-                feature_id = raw_feature['id']
+                feature_id = _register_feature_id(raw_feature, feature_ids)
                 core_bounds = _feature_bounds(raw_feature)
                 visible_core = _intersection(core_bounds, common_bounds)
                 record: dict[str, Any] = {

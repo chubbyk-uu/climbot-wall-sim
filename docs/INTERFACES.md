@@ -55,6 +55,10 @@
 目标会被跳过、恢复时在停住的位置补拍，从而违反归档的纵向重叠合同。Stop 的语义不变，暂停中依然
 是取消本次任务。
 
+`CoverageStatus.archive_default_root` 是管理器解析完显式 launch 参数、`CLIMBOT_DATA_ROOT` 和
+`$HOME/climbot_data` 回退后的权威默认数据根。RViz 始终显示这个非空值；用户在面板中修改目录只会
+覆盖该面板发出的 Start 请求，不修改进程环境变量，Default 恢复管理器发布的值。
+
 矩形点两次、等腰梯形点三次，均在 `odom` 中解释。运行时区域/方向与构造时参数不可混用；
 精确字段、状态迁移和参数表由消息定义、launch 与 YAML 共同维护。
 

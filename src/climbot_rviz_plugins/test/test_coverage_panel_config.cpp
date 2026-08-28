@@ -27,7 +27,6 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
-#include <QDir>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -149,19 +148,40 @@ TEST(CoveragePanelConfig, hidesPointCountingWhenTheRegionComesFromAFile)
   EXPECT_FALSE(clear->isEnabled());
 }
 
-TEST(CoveragePanelConfig, showsAndRestoresTheHomeDataDirectory)
+TEST(CoveragePanelConfig, showsManagerDefaultAndKeepsAnOperatorOverride)
 {
   application();
+  const bool environment_was_set = qEnvironmentVariableIsSet("CLIMBOT_DATA_ROOT");
+  const QByteArray previous_environment = qgetenv("CLIMBOT_DATA_ROOT");
+  qputenv("CLIMBOT_DATA_ROOT", "/environment/data/root");
   climbot_rviz_plugins::CoveragePanel panel;
   auto * root = panel.findChild<QLineEdit *>("archive_root_edit");
   auto * defaults = panel.findChild<QPushButton *>("default_archive_root_button");
   ASSERT_NE(root, nullptr);
   ASSERT_NE(defaults, nullptr);
-  const QString expected = QDir::homePath() + QStringLiteral("/climbot_data");
-  EXPECT_EQ(root->text(), expected);
+  EXPECT_EQ(root->text(), QStringLiteral("/environment/data/root"));
+
+  auto status = runningStatus(false);
+  status.archive_default_root = "/manager/launch/root";
+  panel.renderStatus(status);
+  EXPECT_EQ(root->text(), QStringLiteral("/manager/launch/root"));
+
   root->setText(QStringLiteral("/another/data/root"));
+  root->textEdited(root->text());
+  status.archive_default_root = "/manager/changed/root";
+  panel.renderStatus(status);
+  EXPECT_EQ(root->text(), QStringLiteral("/another/data/root"));
   defaults->click();
-  EXPECT_EQ(root->text(), expected);
+  EXPECT_EQ(root->text(), QStringLiteral("/manager/changed/root"));
+
+  root->clear();
+  root->editingFinished();
+  EXPECT_EQ(root->text(), QStringLiteral("/manager/changed/root"));
+  if (environment_was_set) {
+    qputenv("CLIMBOT_DATA_ROOT", previous_environment);
+  } else {
+    qunsetenv("CLIMBOT_DATA_ROOT");
+  }
 }
 
 // Every one of these sends a request that reshapes the task being previewed.

@@ -18,12 +18,13 @@
 ## 启动
 
 ```bash
-ros2 launch climbot_inspection inspection.launch.py \
-  inspection_output_root:="$CLIMBOT_DATA_ROOT"
+ros2 launch climbot_inspection inspection.launch.py
 ```
 
-`coverage_mission.launch.py` 已经包含这一条。`inspection_output_root` 未配置时必须失败，
-不能回退到机器私有目录。launch 启动时校验 `automatic_capture_node` 与
+`coverage_mission.launch.py` 已经包含这一条。数据根优先使用显式传入的
+`inspection_output_root`，否则读取 `CLIMBOT_DATA_ROOT`，两者都没有时使用记录器主机当前用户的
+`$HOME/climbot_data`；RViz 的 Capture 页显示管理器最终解析出的默认值，手动修改只覆盖从该面板
+启动的任务，不修改环境变量。launch 启动时校验 `automatic_capture_node` 与
 `archive_recorder_node` 共享同一个 `[0, 1)` 内的 `image_overlap_ratio`——两边不一致
 就会算出不同的拍照计划，宁可启动失败也不要在封存时才发现计数对不上。相机几何
 （`effective_length_m`、安装外参、图像尺寸）由 launch 从

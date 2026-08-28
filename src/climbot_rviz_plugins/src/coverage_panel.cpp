@@ -79,6 +79,10 @@ QString stateName(uint8_t state)
 
 QString defaultArchiveRoot()
 {
+  const QString environment = qEnvironmentVariable("CLIMBOT_DATA_ROOT");
+  if (!environment.isEmpty()) {
+    return environment;
+  }
   return QDir::homePath() + QStringLiteral("/climbot_data");
 }
 
@@ -324,9 +328,12 @@ CoveragePanel::CoveragePanel(QWidget * parent)
   archive_root_edit_ = new QLineEdit();
   archive_root_edit_->setObjectName("archive_root_edit");
   archive_root_edit_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-  archive_root_edit_->setText(defaultArchiveRoot());
+  manager_archive_root_ = defaultArchiveRoot();
+  archive_root_edit_->setText(manager_archive_root_);
   archive_root_edit_->setToolTip(tr(
-    "Path interpreted by the archive recorder host. Defaults to this user's climbot_data directory."));
+    "Path interpreted by the archive recorder host. The manager resolves its launch argument, "
+    "CLIMBOT_DATA_ROOT, or the recorder user's home default; editing this field overrides only "
+    "coverage tasks started from this panel."));
   browse_archive_root_button_ = new QPushButton(tr("Browse..."));
   browse_archive_root_button_->setObjectName("browse_archive_root_button");
   default_archive_root_button_ = new QPushButton(tr("Default"));
@@ -516,15 +523,26 @@ CoveragePanel::CoveragePanel(QWidget * parent)
     force_abandon_button_, &QPushButton::clicked,
     this, &CoveragePanel::onForceAbandon);
   connect(rearm_button_, &QPushButton::clicked, this, &CoveragePanel::onRearm);
+  connect(
+    archive_root_edit_, &QLineEdit::textEdited, this,
+    [this](const QString &) {archive_root_overridden_ = true;});
+  connect(archive_root_edit_, &QLineEdit::editingFinished, this, [this]() {
+      if (archive_root_edit_->text().trimmed().isEmpty()) {
+        archive_root_overridden_ = false;
+        archive_root_edit_->setText(manager_archive_root_);
+      }
+    });
   connect(browse_archive_root_button_, &QPushButton::clicked, this, [this]() {
       const QString selected = QFileDialog::getExistingDirectory(
         this, tr("Choose archive root on this computer"), archive_root_edit_->text());
       if (!selected.isEmpty()) {
+        archive_root_overridden_ = true;
         archive_root_edit_->setText(selected);
       }
     });
   connect(default_archive_root_button_, &QPushButton::clicked, this, [this]() {
-      archive_root_edit_->setText(defaultArchiveRoot());
+      archive_root_overridden_ = false;
+      archive_root_edit_->setText(manager_archive_root_);
     });
 
   renderDisconnected();
@@ -881,6 +899,12 @@ void CoveragePanel::renderDisconnected()
 
 void CoveragePanel::renderStatus(const Status & status)
 {
+  if (!status.archive_default_root.empty()) {
+    manager_archive_root_ = QString::fromStdString(status.archive_default_root);
+    if (!archive_root_overridden_) {
+      archive_root_edit_->setText(manager_archive_root_);
+    }
+  }
   state_label_->setText(stateName(status.state));
   task_label_->setText(
     status.task_id.empty() ?

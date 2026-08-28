@@ -19,9 +19,13 @@ from climbot_mosaic.diagnostic_inspection import (
     _feature_mask,
     _intersection,
     _pad_to_shape,
+    _register_feature_id,
+    _safe_feature_id,
+    DiagnosticInspectionError,
 )
 from climbot_mosaic.diagnostic_truth import MosaicGrid
 import numpy as np
+import pytest
 
 
 def test_intersection_keeps_only_positive_area():
@@ -34,6 +38,20 @@ def test_padding_preserves_pixels_without_resampling():
     padded = _pad_to_shape(image, 3, 4)
     np.testing.assert_array_equal(padded[:2, :2], image)
     assert padded[2, 3] == 0
+
+
+def test_feature_id_is_one_portable_directory_component():
+    assert _safe_feature_id('crack_decal_01') == 'crack_decal_01'
+    for value in ('', '.', '..', '../escape', '/tmp/escape', 'two/parts', 'white space'):
+        with pytest.raises(DiagnosticInspectionError, match='safe file name'):
+            _safe_feature_id(value)
+
+
+def test_feature_ids_must_be_unique():
+    existing = set()
+    assert _register_feature_id({'id': 'repair_patch_01'}, existing) == 'repair_patch_01'
+    with pytest.raises(DiagnosticInspectionError, match='duplicated'):
+        _register_feature_id({'id': 'repair_patch_01'}, existing)
 
 
 def test_coverage_summary_counts_each_native_pixel():

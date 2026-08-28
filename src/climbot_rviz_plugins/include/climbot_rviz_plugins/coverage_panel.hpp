@@ -189,6 +189,10 @@ private:
   // Qt-thread only: the mode the last refresh painted with, so renderStatus
   // can label the schedule without reaching for the guarded copy.
   QString rendered_tracking_mode_;
+  // Qt-thread only. The manager owns the resolved launch/env/home default;
+  // an operator edit is a per-request override and never mutates that default.
+  QString manager_archive_root_;
+  bool archive_root_overridden_{false};
   // Qt-thread only. Set from the manager's operation permission bits rather
   // than from a state comparison here, so a recovery lock also freezes task
   // planning even though there is no cancellable Goal handle.

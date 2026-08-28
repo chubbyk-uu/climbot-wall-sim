@@ -58,6 +58,10 @@ Start、Pause、Resume、Stop 四个常规控制常驻可见，不随详情一�
 操作员会去按 Stop。Stop 的语义没有因为 Pause 的加入而改变，它始终是取消本次任务；暂停中的
 任务仍然是任务，Replan 与 Clear points 在 `PAUSING`/`PAUSED`/`RESUMING` 期间同样保持禁用。
 
+Capture 页的数据根始终显示非空路径。连接管理器前先显示 RViz 进程的 `CLIMBOT_DATA_ROOT`，
+未设置则显示 `$HOME/climbot_data`；收到 `CoverageStatus` 后改为管理器解析出的 launch/env/home
+权威默认值。手动编辑只覆盖该面板发出的 Start 请求，不修改环境变量；Default 恢复管理器值。
+
 Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点击只显示“这不证明任务
 停止”的风险说明，5 秒内第二次点击才调用服务；管理器随后进入 `RECOVERY_LOCKED` 并
 持续请求 hold，Start 仍不可用。完成硬件急停、驱动失能或执行器终止确认后，操作员才

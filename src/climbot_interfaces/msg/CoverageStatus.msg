@@ -74,7 +74,10 @@ bool can_rearm
 
 # Task-level inspection/archive state, owned by the archive recorder and
 # mirrored by the manager so the RViz task panel has one authoritative task
-# status stream. inspection_enabled is frozen before the Action Goal is sent.
+# status stream. archive_default_root is the manager's resolved launch/env/home
+# default; a UI may display it or explicitly override it for one start request.
+# inspection_enabled is frozen before the Action Goal is sent.
+string archive_default_root
 bool inspection_enabled
 uint8 archive_state
 string archive_run_id
