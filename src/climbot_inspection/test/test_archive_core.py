@@ -19,6 +19,7 @@ from types import SimpleNamespace
 
 from climbot_inspection.archive_core import (
     ArchiveError,
+    atomic_write_bytes,
     atomic_write_json,
     capture_count_for_length,
     estimated_archive_bytes,
@@ -80,3 +81,13 @@ def test_atomic_json_rejects_nonfinite_values_without_creating_destination(tmp_p
     with pytest.raises(ValueError):
         atomic_write_json(destination, {'bad': float('inf')})
     assert not destination.exists()
+
+
+def test_non_durable_atomic_write_keeps_complete_visible_content(tmp_path, monkeypatch):
+    destination = Path(tmp_path) / 'frame.png'
+    fsync_calls = []
+    monkeypatch.setattr('climbot_inspection.archive_core.os.fsync', fsync_calls.append)
+    atomic_write_bytes(destination, b'first', durable=False)
+    atomic_write_bytes(destination, b'second', durable=False)
+    assert destination.read_bytes() == b'second'
+    assert not fsync_calls

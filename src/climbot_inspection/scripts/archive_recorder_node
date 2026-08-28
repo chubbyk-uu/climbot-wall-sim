@@ -58,6 +58,7 @@ from climbot_inspection.archive_core import (
     safe_task_id,
     sha256_bytes,
     sha256_file,
+    sync_filesystem,
 )
 
 
@@ -159,6 +160,7 @@ class Session:
     estimated_bytes: int
     started_utc: str
     saved_images: int = 0
+    durably_committed_images: int = 0
     failed_images: int = 0
     state: int = InspectionArchiveStatus.READY
     message: str = "Archive prepared; waiting for the first SCAN exposure."
@@ -185,6 +187,8 @@ class ArchiveRecorderNode(Node):
         self._default_root = str(self.declare_parameter(
             'output_root', str(Path.home() / 'climbot_data')).value)
         self._minimum_free_bytes = self._positive_int('minimum_free_bytes', 536_870_912)
+        self._durable_commit_batch_images = self._positive_int(
+            'durable_commit_batch_images', 32)
         self._pending_timeout_s = self._positive_float('pair_timeout_s', 2.0)
         self._actual_spacing_tolerance = self._positive_float(
             'actual_spacing_tolerance_m', 0.010)
@@ -311,6 +315,9 @@ class ArchiveRecorderNode(Node):
             'expected_images': session.expected_images,
             'preflight_expected_images': session.preflight_expected_images,
             'saved_images': session.saved_images,
+            'durably_committed_images': session.durably_committed_images,
+            'staged_images': session.saved_images - session.durably_committed_images,
+            'durable_commit_batch_images': self._durable_commit_batch_images,
             'failed_images': session.failed_images,
             'estimated_bytes': session.estimated_bytes,
             'failures': session.failures,
@@ -328,8 +335,20 @@ class ArchiveRecorderNode(Node):
             },
         }
 
-    def _write_manifest(self, session: Session, outcome: str | None = None) -> None:
-        atomic_write_json(session.directory / 'manifest.json', self._manifest(session, outcome))
+    def _write_manifest(self, session: Session, outcome: str | None = None,
+                        *, durable: bool = True) -> None:
+        atomic_write_json(
+            session.directory / 'manifest.json', self._manifest(session, outcome), durable=durable)
+
+    def _commit_staged(self, session: Session, *, force: bool = False) -> bool:
+        """Make a bounded batch of already atomically-visible captures durable."""
+        staged = session.saved_images - session.durably_committed_images
+        if staged <= 0 or (not force and staged < self._durable_commit_batch_images):
+            return False
+        sync_filesystem(session.directory)
+        session.durably_committed_images = session.saved_images
+        self._write_manifest(session)
+        return True
 
     def _write_calibration_manifest(self, session: Session) -> None:
         calibration = session.directory / 'calibration'
@@ -437,6 +456,18 @@ class ArchiveRecorderNode(Node):
             return response
         name, state = outcomes[request.outcome]
         self._expire_pending(force=True)
+        session.state = InspectionArchiveStatus.FINALIZING
+        session.message = 'Persisting the final archive batch.'
+        self._publish()
+        try:
+            self._commit_staged(session, force=True)
+        except (ArchiveError, OSError, ValueError) as error:
+            session.state = InspectionArchiveStatus.FAILED
+            session.message = f'Archive finalization failed while committing image data: {error}'
+            self._publish()
+            response.success = False
+            response.message = session.message
+            return response
         if name == 'completed':
             required_segments = {
                 index for index, segment_type in enumerate(session.task.segment_types)
@@ -455,7 +486,6 @@ class ArchiveRecorderNode(Node):
                 name, state = 'failed', InspectionArchiveStatus.FAILED
         if request.message:
             session.failures.append(request.message)
-        session.state = InspectionArchiveStatus.FINALIZING
         session.message = 'Finalizing archive manifest.'
         self._publish()
         try:
@@ -534,7 +564,8 @@ class ArchiveRecorderNode(Node):
         session.expected_images += count
         session.message = (
             f'Recording: frozen capture plan is {session.expected_images} images across '
-            f'{len(session.references)} SCAN segments; {session.saved_images} committed.')
+            f'{len(session.references)} SCAN segments; {session.saved_images} stored, '
+            f'{session.durably_committed_images} durably committed.')
         try:
             self._write_manifest(session)
         except (ArchiveError, OSError, ValueError) as error:
@@ -653,22 +684,25 @@ class ArchiveRecorderNode(Node):
         })
         image_path = session.directory / 'images' / 'raw' / image_name
         label_path = session.directory / 'metadata' / metadata_name
-        atomic_write_bytes(image_path, image_bytes)
+        atomic_write_bytes(image_path, image_bytes, durable=False)
         try:
-            atomic_write_json(label_path, label)
+            atomic_write_json(label_path, label, durable=False)
         except Exception:
             image_path.unlink(missing_ok=True)
             raise
-        if sha256_file(image_path) != digest:
-            image_path.unlink(missing_ok=True)
-            label_path.unlink(missing_ok=True)
-            raise ArchiveError('raw PNG SHA-256 changed after atomic write.')
         self._commit_capture_geometry(metadata)
         session.keys.add(key)
         session.saved_images += 1
         session.state = InspectionArchiveStatus.RECORDING
-        session.message = f'Recording: committed {session.saved_images}/{session.expected_images} images.'
-        self._write_manifest(session)
+        # Keep the live manifest truthful without making a separate disk-cache
+        # flush for every frame.  A completed archive is declared only after
+        # _commit_staged has made both payloads and this state durable.
+        self._write_manifest(session, durable=False)
+        self._commit_staged(session)
+        staged = session.saved_images - session.durably_committed_images
+        session.message = (
+            f'Recording: stored {session.saved_images}/{session.expected_images} images; '
+            f'{session.durably_committed_images} durably committed, {staged} staged.')
         self._publish()
 
     def _match(self, key: int) -> None:

@@ -83,6 +83,12 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 两次 G4 archive 必须保留并共同送进后续预处理和 hard-cut 流程。不要把横向单独作为“全覆盖”
 数据：预检已证明它在三个边缘 decal 上留有离散曝光缺口。
 
+G4 对高帧数任务采用每 32 张一次的耐久提交，避免逐图 `fsync` 造成宿主磁盘长时间满载；图像和
+标签本身仍是一对一原子可见。运行中 manifest 的 `staged_images` 是尚未耐久提交的尾批，任务通过
+完成、取消或失败的 finalization 结束时会强制提交。只把 `outcome=completed`、`staged_images=0`
+的 run 交给正式离线处理；如需调整批量，修改
+`archive_recorder_node.durable_commit_batch_images`（正整数）。
+
 带贴图运行时一律设 `wall_grid_spacing:=0`，避免参考网格线进入巡检图像。
 
 ## 运行纪律

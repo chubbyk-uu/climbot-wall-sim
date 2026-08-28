@@ -57,6 +57,7 @@ def generate_test_description():
             'effective_length_m': 0.25,
             'image_overlap_ratio': 0.20,
             'minimum_free_bytes': 1,
+            'durable_commit_batch_images': 2,
             'pair_timeout_s': 1.0,
             'output_root': str(ARCHIVE_ROOT),
         }],
@@ -231,6 +232,10 @@ class TestArchiveRecorderNode(unittest.TestCase):
         self.assertTrue(self.status, 'archive status was never published')
         self.assertEqual(self.status[-1].saved_images, 1)
         self.assertEqual(self.status[-1].failed_images, 0)
+        live_manifest = json.loads((directory / 'manifest.json').read_text(encoding='utf-8'))
+        self.assertEqual(live_manifest['saved_images'], 1)
+        self.assertEqual(live_manifest['durably_committed_images'], 0)
+        self.assertEqual(live_manifest['staged_images'], 1)
 
         self.assertTrue(self.finalize.wait_for_service(timeout_sec=3.0))
         finish = FinalizeInspectionArchive.Request()
@@ -245,6 +250,8 @@ class TestArchiveRecorderNode(unittest.TestCase):
         pixels = cv2.imread(str(directory / 'images' / 'raw' / '000000.png'), cv2.IMREAD_UNCHANGED)
         self.assertEqual(manifest['outcome'], 'completed')
         self.assertEqual(manifest['saved_images'], 1)
+        self.assertEqual(manifest['durably_committed_images'], 1)
+        self.assertEqual(manifest['staged_images'], 0)
         self.assertEqual(label['task_id'], 'g4-node-test')
         self.assertEqual(label['image_encoding'], 'mono8')
         self.assertEqual(pixels.shape, (6, 8))

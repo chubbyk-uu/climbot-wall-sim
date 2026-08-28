@@ -72,7 +72,11 @@ transient-local。协议要求 `active=false`——正常采图不允许调制�
 
 正式归档永远订阅 `image_raw`；`image_compensated` 是调试预览，不是数据产品。
 一个 run 必须有 manifest、原图 SHA-256、每图标签和相机快照，且
-`expected_images == saved_images`；封存后不可改写，后续处理一律写新目录。
+`expected_images == saved_images`；封存后不可改写，后续处理一律写新目录。为避免长任务把
+磁盘同步队列打满，原图和标签仍逐对原子写入，但默认每 32 张才做一次文件系统耐久提交；结束、
+取消或失败时会强制提交最后一批。进行中的 manifest 会分别写出 `saved_images`、
+`durably_committed_images` 和 `staged_images`，只有 `outcome=completed` 且 `staged_images=0`
+的 run 才是正式输入。可用 `durable_commit_batch_images` 调整批大小，必须为正整数。
 
 ## 边界
 

@@ -49,6 +49,10 @@ archive_recorder_node:
     # This is a reserve in addition to the conservative per-task estimate.
     # The root is injected by launch. A bare node derives $HOME/climbot_data.
     minimum_free_bytes: 536870912
+    # Keep image/label writes atomic, then make this many images durable in one
+    # filesystem commit. Completion, cancellation and failure force a final
+    # commit, so a successful archive always has zero staged images.
+    durable_commit_batch_images: 32
     pair_timeout_s: 2.0
     image_overlap_ratio: 0.20
     # Runtime guard for the actual, labelled camera positions. The nominal

@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import hashlib
 import json
 import math
@@ -143,8 +144,15 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def atomic_write_bytes(path: Path, payload: bytes) -> None:
-    """Write one complete file before making its destination name visible."""
+def atomic_write_bytes(path: Path, payload: bytes, *, durable: bool = True) -> None:
+    """
+    Write one complete file before making its destination name visible.
+
+    ``durable=False`` keeps the atomic-rename visibility guarantee but leaves
+    persistence to a later filesystem-wide commit.  It is for high-rate pairs
+    such as image plus label; callers must subsequently call
+    :func:`sync_filesystem` before declaring those files durable.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(
         prefix=f'.{path.name}.', suffix='.tmp', dir=path.parent)
@@ -153,21 +161,45 @@ def atomic_write_bytes(path: Path, payload: bytes) -> None:
         with os.fdopen(descriptor, 'wb') as stream:
             stream.write(payload)
             stream.flush()
-            os.fsync(stream.fileno())
+            if durable:
+                os.fsync(stream.fileno())
         os.replace(temporary_path, path)
-        directory_fd = os.open(path.parent, os.O_DIRECTORY)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        if durable:
+            directory_fd = os.open(path.parent, os.O_DIRECTORY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
     except Exception:
         temporary_path.unlink(missing_ok=True)
         raise
 
 
-def atomic_write_json(path: Path, document: dict) -> None:
+def atomic_write_json(path: Path, document: dict, *, durable: bool = True) -> None:
     """Serialize strict JSON: NaN and Infinity must never leak into labels."""
     encoded = json.dumps(
         document, ensure_ascii=False, allow_nan=False, indent=2,
         sort_keys=True).encode('utf-8') + b'\n'
-    atomic_write_bytes(path, encoded)
+    atomic_write_bytes(path, encoded, durable=durable)
+
+
+def sync_filesystem(path: Path) -> None:
+    """
+    Persist dirty data for ``path``'s Linux filesystem without global sync.
+
+    Linux exposes ``syncfs(2)`` but CPython does not wrap it.  Calling it once
+    for a batch flushes the image bytes and rename metadata together, avoiding
+    two expensive ``fsync`` calls for every individual file.
+    """
+    directory = path if path.is_dir() else path.parent
+    descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+        syncfs = libc.syncfs
+        syncfs.argtypes = [ctypes.c_int]
+        syncfs.restype = ctypes.c_int
+        if syncfs(descriptor) != 0:
+            error_number = ctypes.get_errno()
+            raise OSError(error_number, os.strerror(error_number), str(directory))
+    finally:
+        os.close(descriptor)
