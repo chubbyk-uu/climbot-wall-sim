@@ -80,6 +80,12 @@ if(BUILD_TESTING)
   # outliving its test is enough to make the next one latch the wrong data -
   # which has already been mistaken here for a regression in the planner.
   # Unique domains also let CTEST_PARALLEL_LEVEL be raised safely.
+  #
+  # The domain has to be unique across the whole workspace, not just this file,
+  # so the ranges are owned per package and must not be extended over another's:
+  #   climbot_control 40-60, climbot_coverage 61-68, climbot_inspection 91-94.
+  # Appending past the end of this block once put a two-waypoint stub task on
+  # climbot_coverage's domain 61 and made its planner test fail under -j8 only.
   add_launch_test(test/test_cmd_vel_watchdog_node.py TIMEOUT 30 ENV ROS_DOMAIN_ID=41)
   add_launch_test(test/test_line_tracker_alignment.py TIMEOUT 30 ENV ROS_DOMAIN_ID=42)
   add_launch_test(test/test_line_tracker_completion.py TIMEOUT 30 ENV ROS_DOMAIN_ID=43)
@@ -100,7 +106,7 @@ if(BUILD_TESTING)
   add_launch_test(test/test_coverage_executor_pause.py TIMEOUT 180 ENV ROS_DOMAIN_ID=58)
   add_launch_test(test/test_coverage_executor_pause_start.py TIMEOUT 90 ENV ROS_DOMAIN_ID=59)
   add_launch_test(test/test_coverage_manager_pause.py TIMEOUT 120 ENV ROS_DOMAIN_ID=60)
-  add_launch_test(test/test_coverage_manager_pause_loss.py TIMEOUT 120 ENV ROS_DOMAIN_ID=61)
+  add_launch_test(test/test_coverage_manager_pause_loss.py TIMEOUT 120 ENV ROS_DOMAIN_ID=40)
   ament_add_pytest_test(
     test_watchdog_rejects_bad_numbers test/test_watchdog_rejects_bad_numbers.py TIMEOUT 60)
 endif()

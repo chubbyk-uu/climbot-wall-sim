@@ -193,6 +193,13 @@ class TestAutomaticCapturePause(unittest.TestCase):
         # Paused. The robot is standing still in reality, but the odometry is
         # advanced past the next target anyway: the gate has to be what stops
         # the exposure, not the absence of motion.
+        # Let the pause land before anything is measured against it. The
+        # disabling reference and the jumped odometry travel on different
+        # topics, so the node may take the jumped sample while the reference
+        # still says enabled and fire one more trigger. That is an artefact of
+        # teleporting the robot past its target in one step; a real pause
+        # decelerates and never presents this ordering.
+        self._hold_paused(segment, 0.15)
         self.gates.clear()
         calls = self.capture_calls
         delivered = len(self.metadata)
