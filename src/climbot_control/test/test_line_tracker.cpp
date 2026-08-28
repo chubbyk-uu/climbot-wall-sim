@@ -464,15 +464,17 @@ TEST(CoverageExecution, HorizontalTransitionPreloadsTheSecondTurnDrop)
   expectSelfConsistentReserve(task, 1U, {1.0, -0.045}, 0.0005, limits);
 }
 
-TEST(CoverageExecution, VerticalTransitionPreloadsTheTurnOntoADownwardColumn)
+TEST(CoverageExecution, VerticalTransitionCapsTheTurnReserveAtTheMotionBoundary)
 {
-  // A drop at the start of a downward column is not along-track error the
-  // tracker recovers - it truncates the column. Measured on the 3.30 x 4.50 m
-  // vertical rectangle before this was reserved: every downward column
-  // stopped 46 mm below the region top, one turn's worth of drop.
+  // The reserve normally prevents a downward column being shortened by turn
+  // slip. At the top edge it points outside the declared safe region, so the
+  // controller must cap it rather than command an unsafe endpoint or reject a
+  // task whose nominal waypoints are valid.
   auto task = validTask();
   using Task = climbot_interfaces::msg::CoverageTask;
   task.sweep_direction = Task::SWEEP_VERTICAL;
+  task.motion_region.points[2].y = 1.0F;
+  task.motion_region.points[3].y = 1.0F;
   task.waypoints[1].position.x = 0.0;
   task.waypoints[1].position.y = 1.0;
   geometry_msgs::msg::Pose third = task.waypoints.back();
@@ -488,8 +490,8 @@ TEST(CoverageExecution, VerticalTransitionPreloadsTheTurnOntoADownwardColumn)
   const auto segment = dynamicTransitionSegment(
     task, 1U, {0.0, 0.955}, 0.0005, limits);
   EXPECT_DOUBLE_EQ(segment.start.y, 0.955);
-  EXPECT_GT(segment.end.y, 1.0);
-  expectSelfConsistentReserve(task, 1U, {0.0, 0.955}, 0.0005, limits);
+  EXPECT_LE(segment.end.y, 1.0 + 1e-6);
+  EXPECT_GE(segment.end.y, 1.0 - 1e-6);
 }
 
 TEST(CoverageExecution, ReserveUsesTheDrivenHeadingNotTheNominalOne)
@@ -535,6 +537,10 @@ TEST(CoverageExecution, ReserveFollowsTheTurnAngleNotThePreviousTurn)
   auto task = validTask();
   using Task = climbot_interfaces::msg::CoverageTask;
   task.sweep_direction = Task::SWEEP_VERTICAL;
+  task.motion_region.points[1].x = 4.0F;
+  task.motion_region.points[2].x = 4.0F;
+  task.motion_region.points[2].y = 5.0F;
+  task.motion_region.points[3].y = 5.0F;
   task.waypoints[0].position.x = 2.761;
   task.waypoints[0].position.y = 1.395;
   task.waypoints[1].position.x = 2.761;

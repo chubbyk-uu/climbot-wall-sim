@@ -45,6 +45,10 @@ G2_MAX_CAMERA_POSITION_ERROR_M=${G2_MAX_CAMERA_POSITION_ERROR_M:-0.005}
 # final segments. Keep the outer watchdog comfortably above evaluator time.
 G2_EVALUATOR_TIMEOUT_S=${G2_EVALUATOR_TIMEOUT_S:-1500}
 G2_EXTERNAL_TIMEOUT_S=${G2_EXTERNAL_TIMEOUT_S:-1800}
+# Acceptance normally runs headless.  A single GUI/RViz lane is useful before
+# long stability runs to verify the same workload remains visually healthy.
+G2_HEADLESS=${G2_HEADLESS:-true}
+G2_RVIZ=${G2_RVIZ:-false}
 INSPECTION_OUTPUT_ROOT=${INSPECTION_OUTPUT_ROOT:-}
 WALL_TEXTURE=${WALL_TEXTURE:-}
 PGIDS=()
@@ -196,7 +200,7 @@ run_case() {
 
   echo "[$case_name] starting (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, GZ_PARTITION=$GZ_PARTITION)"
   start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo climbot_wall.launch.py \
-    use_sim_time:=true headless:=true gpu_backend:=wsl_d3d12 wall_grid_spacing:=0 \
+    use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:=wsl_d3d12 wall_grid_spacing:=0 \
     localization_profile:="$LOCALIZATION_PROFILE" \
     prism_extrinsic_error_robot_m:="$PRISM_EXTRINSIC_ERROR_ROBOT_M" \
     wall_texture:="$WALL_TEXTURE" || return 1
@@ -206,7 +210,7 @@ run_case() {
   fi
 
   start_group "$case_dir/planner.log" ros2 launch climbot_coverage coverage_planner.launch.py \
-    use_sim_time:=true rviz:=false \
+    use_sim_time:=true rviz:="$G2_RVIZ" \
     config_file:="$WS/src/climbot_coverage/config/${CONFIG[$case_name]}" \
     input_mode:=parameters region_type:="${REGION[$case_name]}" \
     sweep_direction:="${SWEEP[$case_name]}" \

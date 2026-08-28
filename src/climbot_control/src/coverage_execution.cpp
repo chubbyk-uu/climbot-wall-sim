@@ -234,8 +234,32 @@ ExecutionSegment dynamicTransitionSegment(
   const double reserve = reservedTurnDrop(
     actual_start, {nominal_end.x, nominal_end.y}, nominal_transition_yaw,
     next_scan_yaw, turn_slip_per_degree, limits);
-  segment.end.x -= limits.gravity_direction.x / gravity_norm * reserve;
-  segment.end.y -= limits.gravity_direction.y / gravity_norm * reserve;
+  const Point2 lift_direction{
+    -limits.gravity_direction.x / gravity_norm,
+    -limits.gravity_direction.y / gravity_norm};
+  segment.end.x = nominal_end.x + lift_direction.x * reserve;
+  segment.end.y = nominal_end.y + lift_direction.y * reserve;
+  if (!pointInPolygon(segment.end.x, segment.end.y, task.motion_region, 1e-6)) {
+    // Nominal task waypoints are already proven inside motion_region.  A
+    // turning reserve may nevertheless point out through a boundary, which
+    // made a valid vertical top-edge transition impossible to execute. Keep
+    // every millimetre of reserve that remains safe instead of commanding an
+    // out-of-bounds endpoint or rejecting the whole task.
+    double lower = 0.0;
+    double upper = reserve;
+    for (int iteration = 0; iteration < 40; ++iteration) {
+      const double candidate = 0.5 * (lower + upper);
+      const double x = nominal_end.x + lift_direction.x * candidate;
+      const double y = nominal_end.y + lift_direction.y * candidate;
+      if (pointInPolygon(x, y, task.motion_region, 1e-6)) {
+        lower = candidate;
+      } else {
+        upper = candidate;
+      }
+    }
+    segment.end.x = nominal_end.x + lift_direction.x * lower;
+    segment.end.y = nominal_end.y + lift_direction.y * lower;
+  }
   return segment;
 }
 
