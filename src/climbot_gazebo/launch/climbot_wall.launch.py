@@ -604,7 +604,7 @@ def launch_setup(context, *args, **kwargs):
 
     actions.append(Node(
         package='climbot_gazebo',
-        executable='wall_wheel_odom_adapter.py',
+        executable='wall_wheel_odom_adapter_node',
         name='wall_wheel_odom_adapter',
         parameters=[{
             'use_sim_time': LaunchConfiguration('use_sim_time'),

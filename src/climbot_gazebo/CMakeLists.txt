@@ -3,6 +3,20 @@ project(climbot_gazebo)
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+
+add_library(wall_wheel_odom_adapter_core src/wall_wheel_odom_adapter.cpp)
+target_compile_features(wall_wheel_odom_adapter_core PUBLIC cxx_std_17)
+target_include_directories(wall_wheel_odom_adapter_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+ament_target_dependencies(wall_wheel_odom_adapter_core nav_msgs)
+
+add_executable(wall_wheel_odom_adapter_node src/wall_wheel_odom_adapter_node.cpp)
+target_compile_features(wall_wheel_odom_adapter_node PUBLIC cxx_std_17)
+target_link_libraries(wall_wheel_odom_adapter_node wall_wheel_odom_adapter_core)
+ament_target_dependencies(wall_wheel_odom_adapter_node nav_msgs rclcpp)
 
 ament_python_install_package(${PROJECT_NAME})
 
@@ -10,6 +24,12 @@ install(
   DIRECTORY config launch worlds
   DESTINATION share/${PROJECT_NAME}
 )
+
+install(TARGETS wall_wheel_odom_adapter_core wall_wheel_odom_adapter_node
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY include/ DESTINATION include)
 
 install(
   FILES
@@ -39,10 +59,14 @@ install(
 )
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  ament_add_gtest(test_wall_wheel_odom_adapter test/test_wall_wheel_odom_adapter.cpp)
+  target_link_libraries(test_wall_wheel_odom_adapter wall_wheel_odom_adapter_core)
+  target_include_directories(test_wall_wheel_odom_adapter PRIVATE include)
   ament_add_pytest_test(test_command_routing test/test_command_routing.py)
   ament_add_pytest_test(
     test_camera_distortion test/test_camera_distortion.py)
