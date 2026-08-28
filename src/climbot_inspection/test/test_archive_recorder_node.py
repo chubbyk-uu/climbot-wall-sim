@@ -14,6 +14,7 @@
 
 """Node-level G4 archive tests: pairing, labels, PNG bytes and final manifest."""
 
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -271,6 +272,13 @@ class TestArchiveRecorderNode(unittest.TestCase):
             manifest['durable_commit_max_ms'], manifest['durable_commit_last_ms'])
         self.assertEqual(label['task_id'], 'g4-node-test')
         self.assertEqual(label['image_encoding'], 'mono8')
+        # The label's digest is the archive's promise about the file next to
+        # it. It is computed from the encoder's bytes, so nothing but reading
+        # the file back proves the two agree.
+        self.assertEqual(
+            label['image_sha256'],
+            hashlib.sha256(
+                (directory / 'images' / 'raw' / '000000.png').read_bytes()).hexdigest())
         self.assertEqual(pixels.shape, (6, 8))
         self.assertEqual(int(pixels[5, 7]), 47)
 

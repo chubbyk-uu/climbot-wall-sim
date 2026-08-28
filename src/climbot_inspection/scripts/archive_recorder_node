@@ -738,6 +738,19 @@ class ArchiveRecorderNode(Node):
             image_path.unlink(missing_ok=True)
             raise
         files_written = time.monotonic()
+        # The label commits to this digest, so read the file back and confirm
+        # it. The batched durability commit made every payload page cache
+        # resident for longer, which widened rather than narrowed the window
+        # in which a bad write could go unnoticed. The read is served from
+        # that same cache, so it verifies the write and rename path, not the
+        # storage medium, and it is deliberately per image: folding it into
+        # the batch commit would add its whole cost to the one pause this
+        # recorder already takes.
+        if sha256_file(image_path) != digest:
+            image_path.unlink(missing_ok=True)
+            label_path.unlink(missing_ok=True)
+            raise ArchiveError('raw PNG SHA-256 changed after atomic write.')
+        verified = time.monotonic()
         self._commit_capture_geometry(metadata)
         session.keys.add(key)
         session.saved_images += 1
@@ -759,8 +772,9 @@ class ArchiveRecorderNode(Node):
                 f'Archive image {session.saved_images} timing: validate '
                 f'{1000.0 * (validated - started):.1f} ms, PNG/hash '
                 f'{1000.0 * (encoded_at - validated):.1f} ms, files '
-                f'{1000.0 * (files_written - encoded_at):.1f} ms, manifest/commit '
-                f'{1000.0 * (finished - files_written):.1f} ms, total '
+                f'{1000.0 * (files_written - encoded_at):.1f} ms, verify '
+                f'{1000.0 * (verified - files_written):.1f} ms, manifest/commit '
+                f'{1000.0 * (finished - verified):.1f} ms, total '
                 f'{1000.0 * elapsed:.1f} ms.')
             if elapsed > self._slow_archive_write_s:
                 self.get_logger().warning(message)
