@@ -7,6 +7,12 @@ These instructions apply to all work in this repository.
 - Run long Gazebo, ROS 2 launch, Action, and `colcon test` jobs in the background or
   in a persistent execution session so the agent can wait for completion without
   repeatedly streaming output.
+- Run the full suite with `--executor parallel --parallel-workers 4`. Most of it is
+  launch tests running real nodes, and at 8 workers they starve each other enough to
+  fail timing and tolerance assertions at random: about one full run in six, a
+  different test each time. Measured: 4 workers green six times in a row at ~31 s,
+  8 workers ~25 s. A failure at higher parallelism is not evidence of a regression
+  until it reproduces at 4.
 - Redirect complete stdout and stderr to a uniquely named log under `/tmp`, such as
   `/tmp/climbot_<case>_<timestamp>.log`. Temporary test logs must not be committed.
 - On success, read and report only the process exit code, the concise test/result

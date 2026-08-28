@@ -75,9 +75,14 @@ ros2 doctor --report | head -20
 ```bash
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-colcon test
+colcon test --executor parallel --parallel-workers 4
 colcon test-result --verbose
 ```
+
+并行度到 4 为止。套件里多数是启动真实节点的 launch test，`-j8` 会让这些进程互相抢 CPU，
+时间容差和调度相关的断言随机失败——观察到约每 6 次全量跑有 1 次，每次是不同的用例，都是
+超时或容差断言，不是回归。实测 `-j4` 连续 6 次全绿、每次约 31 s，`-j8` 约 25 s，用 6 秒换
+确定性。定位到某个失败后可以再用 `--packages-select` 单独跑，那时并行度无所谓。
 
 需要产品源码静态分析时：
 
