@@ -273,7 +273,7 @@ headless 链路测试；原始与适配 IMU 的 header 连续、适配延迟低�
 - [x] P1.1 将 wheel adapter 迁移到 C++；
 - [x] P1.2 将 IMU adapter 迁移到 C++；
 - [x] P1.3 优化 `ExecutionReference` 发布策略；
-- [ ] P1.4 按 P0 证据决定 Executor、`/clock` 和 CPU 调度改动；
+- [ ] P1.4 按 P0 证据决定 Executor、`/clock` 和 CPU 调度改动（`/clock` 已量化，见下）；
 - [ ] O2/S1 完成长时验证并形成正式摘要；
 - [ ] 根因关闭后更新 [STATUS](STATUS.md)、[ACCEPTANCE](ACCEPTANCE.md) 和结果索引。
 
@@ -327,3 +327,31 @@ S1 口径累计证据，不能把两者合并成同一个根因。
 该次验收期间系统采样约有 `84%` CPU idle，磁盘采样约 `16 KiB/s`；Gazebo GUI、server、RViz
 分别约占 `1.24`、`0.86`、`0.28` 个 CPU 核。软件渲染反而显著增加 CPU/内存，所以 WSL 的
 `gpu_backend:=auto` 保持解析到 D3D12；`software` 仅保留为显式诊断选项。
+
+## 2026-08-29：`/clock` 频率已量化，`total_station_sim` 空定时器已否决
+
+单变量台架：1000 Hz `/clock` 加 50 Hz 真值，`total_station_sim.py` 直接以脚本进程运行 15 s，
+按 `/proc/<pid>/stat` 的 utime+stime 计 CPU。
+
+| 配置 | 单个 Python 节点 CPU |
+| --- | ---: |
+| `/clock` 1000 Hz（当前） | 23.19% 一核 |
+| `/clock` 200 Hz | 7.59% |
+| `/clock` 100 Hz | 4.79% |
+| `use_sim_time=false`（不订阅 `/clock`） | 5.53% |
+| 1000 Hz，但删除 200 Hz 投递定时器 | 21.86% |
+
+两个结论：
+
+1. **`/clock` 是这个节点里唯一重要的开销**：1000 Hz 相对 100 Hz 多耗约 18 个百分点，而 100 Hz
+   已与完全不订阅 `/clock` 无法区分。当前有三个 Python 节点带 `use_sim_time`
+   （`total_station_sim`、`camera_distortion_adapter`、`archive_recorder_node`），加上产生它的
+   bridge 与各 C++ 节点，1 ms 物理步长带来的时钟广播是本仿真最大的一项确定性常驻负载。
+   下一步是量化降频对 50 Hz 控制定时和仿真一致性的影响，**不是**直接改 `max_step_size`：物理
+   步长与 `/clock` 发布率应当解耦后分别验证。
+2. **`total_station_sim` 的 200 Hz 投递定时器不值得改**：它只占 1.27 个百分点，是 `/clock`
+   开销的十四分之一。改成按到期时间调度需要管理一次性定时器，并会在 10 ms 固定延迟上引入新的
+   投递抖动风险，换来的收益在噪声量级。此项关闭，不再列入优化清单。
+
+台架脚本是一次性的，未纳入仓库；重跑只需一个 1000 Hz `/clock` 发布器和被测节点本身。
+
