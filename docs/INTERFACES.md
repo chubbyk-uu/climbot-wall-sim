@@ -74,6 +74,12 @@
 | `/inspection/archive/prepare`、`finalize` | service | 原子创建/封存 run；失败保留已提交证据且报告失败 |
 | `/inspection/archive/status` | `InspectionArchiveStatus` | 归档权威状态、计数、目录和错误 |
 
+`automatic_capture_node` 对执行参考和里程计的回调间隔做定量观测：超过阈值的告警按 5 s 限流，
+避免系统恶化时日志写入本身加剧问题；被限流掉的数字由 `AUTOMATIC_CAPTURE_TIMING summary` 按
+`gap_summary_period_s` 补出，含样本数、最大值和 50/100/200/250 ms 阈值计数（阈值与
+`climbot_control` 的 `kTimingThresholdNs` 一致，便于两侧对照）。统计是固定空间的，不保留逐条
+记录；某路没有新间隔时不输出。
+
 `/inspection/capture_once` 的响应携带成功曝光的 `Header`。它与调用方的 future 天然一一对应，
 因此不存在把上一次被放弃的请求的回执记到下一次 pending 上的可能；成功但 `stamp` 为零的响应视为
 故障并停掉该 SCAN。图像是否真的送达归档由 G4 的图像/metadata 配对和最终计数负责，不由触发侧推断。

@@ -49,6 +49,10 @@ automatic_capture_node:
     slow_capture_warning_s: 0.5
     pose_wait_timeout_s: 0.5
     pose_cache_duration_s: 3.0
+    # Callback-gap warnings are throttled, so the count, maximum and threshold
+    # counts reach the log on this period instead. Emitted only when a stream
+    # saw a new gap, so an idle node stays silent.
+    gap_summary_period_s: 10.0
 
 archive_recorder_node:
   ros__parameters:

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <deque>
@@ -34,6 +35,33 @@
 
 namespace
 {
+
+/// Count-and-max only: one callback gap must not cost memory that grows.
+///
+/// climbot_control has a richer version of this, but it lives in that package
+/// and inspection does not depend on it. Duplicating six lines is cheaper than
+/// creating that edge; the thresholds deliberately match its
+/// kTimingThresholdNs so a gap here can be read against a gap there.
+struct GapStatistics
+{
+  static constexpr std::array<double, 4> kThresholdsS{0.050, 0.100, 0.200, 0.250};
+
+  uint64_t samples{};
+  uint64_t reported{};
+  double max_s{};
+  std::array<uint64_t, kThresholdsS.size()> at_least{};
+
+  void add(double gap_s)
+  {
+    ++samples;
+    max_s = std::max(max_s, gap_s);
+    for (std::size_t index = 0; index < kThresholdsS.size(); ++index) {
+      if (gap_s >= kThresholdsS[index]) {
+        ++at_least[index];
+      }
+    }
+  }
+};
 
 double finitePositive(rclcpp::Node & node, const std::string & name, double fallback)
 {
@@ -133,7 +161,8 @@ public:
     capture_response_timeout_(finitePositive(*this, "capture_response_timeout_s", 6.0)),
     slow_capture_warning_(finitePositive(*this, "slow_capture_warning_s", 0.5)),
     pose_wait_timeout_(finitePositive(*this, "pose_wait_timeout_s", 0.5)),
-    cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0))
+    cache_duration_(finitePositive(*this, "pose_cache_duration_s", 3.0)),
+    gap_summary_period_(finitePositive(*this, "gap_summary_period_s", 10.0))
   {
     if (overlap_ < 0.0 || overlap_ >= 1.0) {
       throw std::invalid_argument("image_overlap_ratio must be within [0, 1).");
@@ -160,6 +189,13 @@ public:
       gate_topic, rclcpp::QoS(1).reliable().transient_local());
     timeout_timer_ = create_wall_timer(
       std::chrono::milliseconds(50), std::bind(&AutomaticCaptureNode::checkTimeouts, this));
+    // Gaps are measured on the steady clock, so their summary runs on a wall
+    // timer too: a stalled simulation clock must not also stop the reporting
+    // of the stall.
+    gap_summary_timer_ = create_wall_timer(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::duration<double>(gap_summary_period_)),
+      std::bind(&AutomaticCaptureNode::reportGaps, this));
     RCLCPP_INFO(
       get_logger(), "Automatic inspection spacing is %.4f m (length %.4f m, overlap %.1f%%).",
       spacing_, footprint_length_, overlap_ * 100.0);
@@ -192,9 +228,14 @@ private:
     if (last_reference_receipt_) {
       const double gap = std::chrono::duration<double>(
         receipt_time - *last_reference_receipt_).count();
+      reference_gaps_.add(gap);
       if (gap > 0.5) {
-        RCLCPP_WARN(
-          get_logger(), "Execution-reference callback gap was %.1f ms.", gap * 1000.0);
+        // Half of reference_timeout_s. Throttled because a degrading system
+        // produces these in bursts and the log write would join the problem;
+        // the periodic summary is what carries the count and the maximum.
+        RCLCPP_WARN_THROTTLE(
+          get_logger(), *get_clock(), 5000,
+          "Execution-reference callback gap was %.1f ms.", gap * 1000.0);
       }
     }
     last_reference_receipt_ = receipt_time;
@@ -269,9 +310,11 @@ private:
     if (last_odometry_receipt_) {
       const double gap = std::chrono::duration<double>(
         receipt_time - *last_odometry_receipt_).count();
+      odometry_gaps_.add(gap);
       if (gap > 0.25) {
-        RCLCPP_WARN(
-          get_logger(), "Odometry callback gap was %.1f ms.", gap * 1000.0);
+        RCLCPP_WARN_THROTTLE(
+          get_logger(), *get_clock(), 5000,
+          "Odometry callback gap was %.1f ms.", gap * 1000.0);
       }
     }
     last_odometry_receipt_ = receipt_time;
@@ -525,6 +568,28 @@ private:
     tryTrigger();
   }
 
+  /// Emit what the throttled warnings dropped, and only when it changed.
+  void reportGaps()
+  {
+    const auto report = [this](const char * stream, GapStatistics & gaps) {
+        if (gaps.samples == gaps.reported) {
+          return;
+        }
+        gaps.reported = gaps.samples;
+        RCLCPP_INFO(
+          get_logger(),
+          "AUTOMATIC_CAPTURE_TIMING summary stream=%s n=%lu max_ms=%.1f "
+          "ge_50=%lu ge_100=%lu ge_200=%lu ge_250=%lu",
+          stream, static_cast<unsigned long>(gaps.samples), gaps.max_s * 1000.0,
+          static_cast<unsigned long>(gaps.at_least[0]),
+          static_cast<unsigned long>(gaps.at_least[1]),
+          static_cast<unsigned long>(gaps.at_least[2]),
+          static_cast<unsigned long>(gaps.at_least[3]));
+      };
+    report("execution_reference", reference_gaps_);
+    report("odometry", odometry_gaps_);
+  }
+
   void checkTimeouts()
   {
     if (!pending_) {
@@ -600,6 +665,7 @@ private:
   const double mount_roll_, mount_pitch_, mount_yaw_;
   const double reference_timeout_, capture_response_timeout_;
   const double slow_capture_warning_, pose_wait_timeout_, cache_duration_;
+  const double gap_summary_period_;
   double spacing_{};
   std::optional<Key> key_, disabled_key_;
   std::optional<Reference> reference_;
@@ -612,6 +678,8 @@ private:
   std::optional<std::chrono::steady_clock::time_point> latest_reference_time_;
   std::optional<std::chrono::steady_clock::time_point> last_reference_receipt_;
   std::optional<std::chrono::steady_clock::time_point> last_odometry_receipt_;
+  GapStatistics reference_gaps_;
+  GapStatistics odometry_gaps_;
   std::deque<nav_msgs::msg::Odometry::SharedPtr> poses_;
   rclcpp::Subscription<Reference>::SharedPtr reference_subscription_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
@@ -619,6 +687,7 @@ private:
   rclcpp::Publisher<Metadata>::SharedPtr metadata_publisher_;
   rclcpp::Publisher<CaptureGate>::SharedPtr gate_publisher_;
   rclcpp::TimerBase::SharedPtr timeout_timer_;
+  rclcpp::TimerBase::SharedPtr gap_summary_timer_;
 };
 
 int main(int argc, char ** argv)

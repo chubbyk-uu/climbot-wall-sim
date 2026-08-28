@@ -43,8 +43,8 @@ def generate_test_description():
             'image_overlap_ratio': 0.20,
             'reference_timeout_s': 2.0,
             'capture_response_timeout_s': 1.0,
-            'image_wait_timeout_s': 0.25,
             'pose_wait_timeout_s': 1.0,
+            'gap_summary_period_s': 0.5,
         }],
     )
     return launch.LaunchDescription([
@@ -399,3 +399,21 @@ class TestProcessExitCodes(unittest.TestCase):
 
     def test_processes_exit_cleanly(self, proc_info):
         launch_testing.asserts.assertExitCodes(proc_info)
+
+    def test_gap_statistics_survive_the_throttled_warning(self, proc_output):
+        """
+        Throttling the warning text must not throttle the measurement.
+
+        A degrading system emits callback gaps in bursts, and writing a line
+        for each one joins the problem it is reporting. What matters
+        afterwards is the count and the maximum, so they have to reach the log
+        by a route the throttle does not gate. Asserted after shutdown against
+        the whole run: an active test would have to publish into the node this
+        file shares between its cases, and the pose cache it left behind broke
+        the next one.
+        """
+        for stream in ('execution_reference', 'odometry'):
+            launch_testing.asserts.assertInStderr(
+                proc_output,
+                'AUTOMATIC_CAPTURE_TIMING summary stream=' + stream,
+                'automatic_capture_node')
