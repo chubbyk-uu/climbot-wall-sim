@@ -28,7 +28,6 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.qos import QoSProfile, ReliabilityPolicy
-from std_msgs.msg import Header
 
 
 @pytest.mark.launch_test
@@ -64,8 +63,6 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             ExecutionReference, '/control/execution_reference', reliable)
         self.odometry = self.node.create_publisher(
             Odometry, '/odometry/filtered', 10)
-        self.receipts = self.node.create_publisher(
-            Header, '/inspection/capture_receipt', reliable)
         self.node.create_subscription(
             InspectionCapture, '/inspection/capture_metadata',
             self._metadata_callback, reliable)
@@ -75,7 +72,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             self._gate_callback, reliable)
         self.capture_calls = 0
         self.reject_next = False
-        self.drop_next_image = False
+        self.blank_header_next = False
         self.delay_next_capture_s = 0.0
         self.image_stamp = Time(sec=10, nanosec=500_000_000)
         self.node.create_service(
@@ -104,14 +101,18 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             response.reason = CaptureOnce.Response.BUSY
             response.message = 'camera is temporarily busy'
             return response
-        if self.drop_next_image:
-            self.drop_next_image = False
-        else:
-            if self.delay_next_capture_s:
-                time.sleep(self.delay_next_capture_s)
-                self.delay_next_capture_s = 0.0
-            self._publish_image()
+        if self.delay_next_capture_s:
+            time.sleep(self.delay_next_capture_s)
+            self.delay_next_capture_s = 0.0
         response.success = True
+        if self.blank_header_next:
+            # A reply that claims success without naming its exposure. The
+            # node cannot invent a stamp, so it must fail the segment rather
+            # than label an image it is unable to identify.
+            self.blank_header_next = False
+        else:
+            response.header.stamp = self.image_stamp
+            response.header.frame_id = 'inspection_camera_optical_frame'
         response.reason = CaptureOnce.Response.OK
         response.message = 'captured'
         return response
@@ -139,13 +140,6 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         message.detection_forward_offset = forward_offset
         message.inspection_enabled = enabled
         self.references.publish(message)
-
-    def _publish_image(self):
-        """Publish the configured completion receipt after DDS discovery."""
-        receipt = Header()
-        receipt.stamp = self.image_stamp
-        receipt.frame_id = 'inspection_camera_optical_frame'
-        self.receipts.publish(receipt)
 
     def _odom(self, seconds, base_x, base_z=0.052):
         message = Odometry()
@@ -263,7 +257,6 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         deadline = time.monotonic() + 2.0
         while not self.metadata and time.monotonic() < deadline:
             self._odom(10, 0.125)
-            self._publish_image()
             self._odom(11, 0.15)
             time.sleep(0.01)
         self._wait_count(1)
@@ -325,13 +318,13 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.assertEqual(self.gates, [])
         self.assertEqual(self.capture_calls, 3)
 
-    def test_z_missing_image_disables_the_segment(self):
-        """A successful trigger without an image must stop the active SCAN."""
+    def test_z_unidentified_exposure_disables_the_segment(self):
+        """A success reply that names no exposure must stop the active SCAN."""
         # Unlike the longer existing test this one starts immediately after
         # setup, so allow endpoint discovery to settle before publishing the
         # one transient reference it relies on.
         time.sleep(0.3)
-        self.drop_next_image = True
+        self.blank_header_next = True
         self.image_stamp = Time(sec=30, nanosec=500_000_000)
         self._odom(30, 0.125)
         self._reference(True, segment=9)
@@ -343,8 +336,8 @@ class TestAutomaticCaptureNode(unittest.TestCase):
             self._reference(True, segment=9)
             time.sleep(0.01)
         self.assertEqual(self.capture_calls, 1)
-        # The image timeout is wall-clock based. Let it disable the segment,
-        # then discard heartbeat samples emitted while it was still pending.
+        # The reply itself is the verdict now, so the segment is disabled as
+        # soon as it lands; settle, then discard heartbeats from before that.
         time.sleep(0.35)
         self.gates.clear()
         deadline = time.monotonic() + 1.0

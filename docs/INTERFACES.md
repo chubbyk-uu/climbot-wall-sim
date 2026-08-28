@@ -68,11 +68,15 @@
 | --- | --- | --- |
 | `/inspection/camera/image_raw` | `sensor_msgs/Image` | 每次成功曝光的原始 `mono8`；补偿图不能替代归档原图 |
 | `/inspection/camera/camera_info` | `sensor_msgs/CameraInfo` | reliable + transient-local 的会话级不可变标定；源相机侧仍逐次与图像同时间戳配对 |
-| `/inspection/capture_receipt` | `std_msgs/Header` | G1 在正式图像与标定交给 DDS 后发布的轻量完成回执；G2/评价器用它关联曝光，不重复复制全高清图像 |
+| `/inspection/capture_receipt` | `std_msgs/Header` | G1 在正式图像与标定交给 DDS 后发布的轻量完成回执，供离线评价器独立清点曝光；G2 触发链**不消费**它 |
 | `/inspection/capture_metadata` | `InspectionCapture` | 成功图的任务、触发、冻结参考和曝光 EKF 相机位姿 |
 | `/inspection/capture_gate` | `InspectionCaptureGate` | Reliable + transient-local 健康 heartbeat；失联受控停车 |
 | `/inspection/archive/prepare`、`finalize` | service | 原子创建/封存 run；失败保留已提交证据且报告失败 |
 | `/inspection/archive/status` | `InspectionArchiveStatus` | 归档权威状态、计数、目录和错误 |
+
+`/inspection/capture_once` 的响应携带成功曝光的 `Header`。它与调用方的 future 天然一一对应，
+因此不存在把上一次被放弃的请求的回执记到下一次 pending 上的可能；成功但 `stamp` 为零的响应视为
+故障并停掉该 SCAN。图像是否真的送达归档由 G4 的图像/metadata 配对和最终计数负责，不由触发侧推断。
 
 `/control/execution_reference` 是采集侧的唯一活性信号：几何、状态或段号一变立即可靠发布，其余
 时间按 `execution_reference_heartbeat_hz`（5 Hz）保活。它同时驱动两个监督计时器 ——

@@ -72,8 +72,9 @@ transient-local。协议要求 `active=false`——正常采图不允许调制�
 
 正式归档永远订阅 `image_raw`；`image_compensated` 是调试预览，不是数据产品。
 `CameraInfo` 是记录器进程内不可变的会话标定，以 reliable + transient-local 发布；每次曝光
-仍在 `capture_once_node` 内严格匹配同时间戳的源图和源标定，但 G2 与评价器只订阅轻量的
-`/inspection/capture_receipt`，G4 使用最新的会话标定匹配每一对图像／metadata。封存时仍逐项
+仍在 `capture_once_node` 内严格匹配同时间戳的源图和源标定，但 G2 直接从 `capture_once` 的服务
+响应里取回该次曝光的 `Header`（离线评价器另行订阅轻量的 `/inspection/capture_receipt` 清点曝光），
+G4 使用最新的会话标定匹配每一对图像／metadata。封存时仍逐项
 核对相机快照，运行中若标定内容变化会失败，不会静默混用。这样归档完整性不再依赖长任务中
 数百份完全相同的 `CameraInfo` 都被重复送达。
 

@@ -182,6 +182,11 @@ class TestCaptureOnceNode(unittest.TestCase):
                 self.output_images[0].header.stamp,
                 self.output_infos[0].header.stamp)
             self.assertEqual(self.output_images[0].header.stamp, self.receipts[0].stamp)
+            # The reply identifies the exposure it caused. This is what the
+            # trigger controller correlates on, so it must name the same frame
+            # as the published image rather than merely report success.
+            self.assertEqual(first.header.stamp, self.output_images[0].header.stamp)
+            self.assertEqual(first.header.frame_id, self.output_images[0].header.frame_id)
 
         with self.lock:
             self.mode = 'delay'

@@ -413,6 +413,7 @@ private:
     publishState();
     lock.unlock();
     response->success = true;
+    response->header = image->header;
     response->reason = CaptureOnce::Response::OK;
     response->message = "Published one matched inspection image and CameraInfo pair.";
     const auto total = publish_finished - capture_started;

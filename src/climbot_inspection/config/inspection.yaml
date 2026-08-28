@@ -27,7 +27,6 @@ automatic_capture_node:
   ros__parameters:
     execution_reference_topic: /control/execution_reference
     odometry_topic: /odometry/filtered
-    capture_receipt_topic: /inspection/capture_receipt
     capture_service: /inspection/capture_once
     metadata_topic: /inspection/capture_metadata
     capture_gate_topic: /inspection/capture_gate
@@ -45,9 +44,6 @@ automatic_capture_node:
     # capture_once may wait up to 5 s for Gazebo transport. Leave room for the
     # service response itself to be scheduled under a loaded GUI session.
     capture_response_timeout_s: 6.0
-    # Starts only after a successful service response. capture_once publishes
-    # the image before replying, so this is transport-delivery allowance.
-    image_wait_timeout_s: 1.0
     # Report a slow request without changing capture correctness. The archive
     # remains the authority for the image's labelled spatial lag.
     slow_capture_warning_s: 0.5

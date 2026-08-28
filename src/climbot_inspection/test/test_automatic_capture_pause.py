@@ -48,7 +48,6 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.qos import QoSProfile, ReliabilityPolicy
-from std_msgs.msg import Header
 
 
 # The exposure this file deliberately leaves in flight has to survive the pause
@@ -88,8 +87,6 @@ class TestAutomaticCapturePause(unittest.TestCase):
             ExecutionReference, '/control/execution_reference', reliable)
         self.odometry = self.node.create_publisher(
             Odometry, '/odometry/filtered', 10)
-        self.receipts = self.node.create_publisher(
-            Header, '/inspection/capture_receipt', reliable)
         self.node.create_subscription(
             InspectionCapture, '/inspection/capture_metadata',
             self.metadata_callback, reliable)
@@ -124,10 +121,13 @@ class TestAutomaticCapturePause(unittest.TestCase):
     def _capture_callback(self, _request, response):
         self.capture_calls += 1
         if self.hold_next_image:
+            # Keep this request outstanding across the pause. The reply is the
+            # completion now, so holding an exposure means delaying the reply.
             self.hold_next_image = False
-        else:
-            self._publish_image()
+            time.sleep(0.6)
         response.success = True
+        response.header.stamp = self.image_stamp
+        response.header.frame_id = 'inspection_camera_optical_frame'
         response.reason = CaptureOnce.Response.OK
         response.message = 'captured'
         return response
@@ -146,12 +146,6 @@ class TestAutomaticCapturePause(unittest.TestCase):
         message.detection_forward_offset = 0.340
         message.inspection_enabled = enabled
         self.references.publish(message)
-
-    def _publish_image(self):
-        receipt = Header()
-        receipt.stamp = self.image_stamp
-        receipt.frame_id = 'inspection_camera_optical_frame'
-        self.receipts.publish(receipt)
 
     def _odom(self, seconds, base_x):
         message = Odometry()
@@ -192,7 +186,7 @@ class TestAutomaticCapturePause(unittest.TestCase):
         self.assertTrue(self._pump(
             lambda: len(self.metadata) >= 1,
             lambda: (self._reference(True, segment), self._odom(10, 0.125),
-                     self._publish_image(), self._odom(11, 0.15))),
+                     self._odom(11, 0.15))),
             'the first exposure never arrived')
         self.assertEqual(self.metadata[0].trigger_index, 0)
 
@@ -216,7 +210,7 @@ class TestAutomaticCapturePause(unittest.TestCase):
         self.assertTrue(self._pump(
             lambda: len(self.metadata) >= 2,
             lambda: (self._reference(True, segment),
-                     self._odom(12, 0.20), self._publish_image(),
+                     self._odom(12, 0.20),
                      self._odom(13, 0.21))),
             'the exposure after the pause never arrived')
         second = self.metadata[1]
@@ -250,8 +244,8 @@ class TestAutomaticCapturePause(unittest.TestCase):
         self._hold_paused(segment, 0.2)
         self.assertTrue(self._pump(
             lambda: len(self.metadata) >= 1,
-            lambda: (self._odom(10, 0.125), self._publish_image(),
-                     self._odom(11, 0.15), self._reference(False, segment))),
+            lambda: (self._odom(10, 0.125), self._odom(11, 0.15),
+                     self._reference(False, segment))),
             'the exposure held across the pause was never delivered')
         self.assertEqual(len(self.metadata), 1)
         self.assertEqual(self.metadata[0].trigger_index, 0)
@@ -262,7 +256,7 @@ class TestAutomaticCapturePause(unittest.TestCase):
         self.assertTrue(self._pump(
             lambda: len(self.metadata) >= 2,
             lambda: (self._reference(True, segment),
-                     self._odom(12, 0.20), self._publish_image(),
+                     self._odom(12, 0.20),
                      self._odom(13, 0.21))),
             'the segment was disabled by the pause')
         self.assertEqual(

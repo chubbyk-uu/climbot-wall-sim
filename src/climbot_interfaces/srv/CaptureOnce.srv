@@ -2,6 +2,13 @@
 ---
 bool success
 
+# Identifies the exposure a successful request produced: the stamp and frame of
+# the image and CameraInfo pair published immediately before this reply. Left
+# empty when success is false. The caller's own future is the correlation, so
+# unlike a separate completion topic this can never be attributed to a later
+# request after an earlier one was abandoned.
+std_msgs/Header header
+
 # The request was accepted and one matched pair was published.
 uint8 OK=0
 # The source transport has not completed warm-up yet.
