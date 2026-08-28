@@ -161,6 +161,11 @@ class Session:
     started_utc: str
     saved_images: int = 0
     durably_committed_images: int = 0
+    durable_commits: int = 0
+    durable_commit_last_ms: float = 0.0
+    durable_commit_last_images: int = 0
+    durable_commit_max_ms: float = 0.0
+    durable_commit_max_images: int = 0
     failed_images: int = 0
     state: int = InspectionArchiveStatus.READY
     message: str = "Archive prepared; waiting for the first SCAN exposure."
@@ -323,6 +328,15 @@ class ArchiveRecorderNode(Node):
             'durably_committed_images': session.durably_committed_images,
             'staged_images': session.saved_images - session.durably_committed_images,
             'durable_commit_batch_images': self._durable_commit_batch_images,
+            # syncfs(2) flushes the whole filesystem, so the batch size bounds
+            # how often it runs but not how long one call takes. Carry the
+            # measurement into the archive itself: a long run's evidence must
+            # survive without depending on a temporary console log.
+            'durable_commits': session.durable_commits,
+            'durable_commit_last_ms': round(session.durable_commit_last_ms, 3),
+            'durable_commit_last_images': session.durable_commit_last_images,
+            'durable_commit_max_ms': round(session.durable_commit_max_ms, 3),
+            'durable_commit_max_images': session.durable_commit_max_images,
             'failed_images': session.failed_images,
             'estimated_bytes': session.estimated_bytes,
             'failures': session.failures,
@@ -350,9 +364,26 @@ class ArchiveRecorderNode(Node):
         staged = session.saved_images - session.durably_committed_images
         if staged <= 0 or (not force and staged < self._durable_commit_batch_images):
             return False
+        started = time.monotonic()
         sync_filesystem(session.directory)
+        elapsed_ms = 1000.0 * (time.monotonic() - started)
+        session.durable_commits += 1
+        session.durable_commit_last_ms = elapsed_ms
+        session.durable_commit_last_images = staged
+        if elapsed_ms > session.durable_commit_max_ms:
+            session.durable_commit_max_ms = elapsed_ms
+            session.durable_commit_max_images = staged
         session.durably_committed_images = session.saved_images
         self._write_manifest(session)
+        # Every commit is reported, not only slow ones. Commits land on
+        # multiples of durable_commit_batch_images and the periodic per-image
+        # sample lands on multiples of 50, so for any run shorter than their
+        # common multiple the two never coincide and no commit under
+        # slow_archive_write_ms would otherwise be observable at all.
+        self.get_logger().info(
+            f'Durable commit {session.durable_commits}: {staged} images, syncfs '
+            f'{elapsed_ms:.1f} ms, session maximum {session.durable_commit_max_ms:.1f} ms '
+            f'over {session.durable_commit_max_images} images.')
         return True
 
     def _write_calibration_manifest(self, session: Session) -> None:

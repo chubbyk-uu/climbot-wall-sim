@@ -97,6 +97,12 @@ G4 对高帧数任务采用每 32 张一次的耐久提交，避免逐图 `fsync
 的 run 交给正式离线处理；如需调整批量，修改
 `archive_recorder_node.durable_commit_batch_images`（正整数）。
 
+`syncfs(2)` 刷新的是整个文件系统，批大小只决定它多久调用一次，不能限制单次停顿多长。因此每
+次耐久提交都会输出一条 INFO，记录本批张数、本次 syncfs 毫秒数和本 run 的累计最大值；同样的
+数值也写入 manifest 的 `durable_commits`、`durable_commit_last_ms`、`durable_commit_last_images`、
+`durable_commit_max_ms` 和 `durable_commit_max_images`，长跑证据不依赖临时终端日志。判读时注意
+它只计 syncfs 本身，不含随后那次耐久 manifest 写入。
+
 带贴图运行时一律设 `wall_grid_spacing:=0`，避免参考网格线进入巡检图像。
 
 ## 运行纪律

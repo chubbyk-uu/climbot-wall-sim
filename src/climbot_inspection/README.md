@@ -84,6 +84,10 @@ transient-local。协议要求 `active=false`——正常采图不允许调制�
 `durably_committed_images` 和 `staged_images`，只有 `outcome=completed` 且 `staged_images=0`
 的 run 才是正式输入。可用 `durable_commit_batch_images` 调整批大小，必须为正整数。
 
+每次耐久提交单独计时并写入 manifest 的 `durable_commits`、`durable_commit_last_ms`、
+`durable_commit_last_images`、`durable_commit_max_ms` 和 `durable_commit_max_images`。批大小只
+决定 `syncfs(2)` 的调用频率，不限制单次耗时，所以这项统计要按最大值而不是平均值判读。
+
 ## 边界
 
 Gazebo 相机传感器、渲染噪声和畸变适配留在 `climbot_gazebo`。正常触发逻辑不得订阅
