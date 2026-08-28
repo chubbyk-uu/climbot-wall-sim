@@ -640,6 +640,21 @@ def launch_setup(context, *args, **kwargs):
         output='screen',
     ))
 
+    # This monitor is intentionally C++ and only observes the six small
+    # localization topics.  It keeps fixed-size in-memory timing statistics,
+    # emits threshold events and a ten-second wall-time summary, and never
+    # subscribes to images or writes a per-frame diagnostic file.
+    actions.append(Node(
+        package='climbot_control',
+        executable='localization_timing_monitor_node',
+        name='localization_timing_monitor',
+        parameters=[{
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'summary_period_s': 10.0,
+        }],
+        output='screen',
+    ))
+
     return actions
 
 

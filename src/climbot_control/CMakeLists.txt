@@ -8,6 +8,7 @@ find_package(nav_msgs REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
@@ -26,6 +27,12 @@ ament_target_dependencies(line_tracker_node
   climbot_interfaces geometry_msgs nav_msgs rcl_interfaces rclcpp rclcpp_action std_msgs
   std_srvs)
 
+add_executable(localization_timing_monitor_node src/localization_timing_monitor_node.cpp)
+target_compile_features(localization_timing_monitor_node PUBLIC cxx_std_17)
+target_include_directories(localization_timing_monitor_node PRIVATE include)
+ament_target_dependencies(localization_timing_monitor_node
+  geometry_msgs nav_msgs rclcpp sensor_msgs)
+
 add_executable(cmd_vel_watchdog_node src/cmd_vel_watchdog_node.cpp)
 target_compile_features(cmd_vel_watchdog_node PUBLIC cxx_std_17)
 target_link_libraries(cmd_vel_watchdog_node line_tracker)
@@ -37,7 +44,8 @@ target_link_libraries(coverage_manager_node line_tracker)
 ament_target_dependencies(coverage_manager_node
   climbot_interfaces geometry_msgs rclcpp rclcpp_action std_msgs std_srvs)
 
-install(TARGETS line_tracker line_tracker_node cmd_vel_watchdog_node coverage_manager_node ARCHIVE DESTINATION lib LIBRARY DESTINATION lib
+install(TARGETS line_tracker line_tracker_node localization_timing_monitor_node
+  cmd_vel_watchdog_node coverage_manager_node ARCHIVE DESTINATION lib LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
@@ -53,6 +61,8 @@ if(BUILD_TESTING)
   ament_add_gtest(test_control_clock test/test_control_clock.cpp)
   ament_target_dependencies(test_control_clock rclcpp)
   target_include_directories(test_control_clock PRIVATE include)
+  ament_add_gtest(test_timing_monitor test/test_timing_monitor.cpp)
+  target_include_directories(test_timing_monitor PRIVATE include)
   ament_add_gtest(test_segment_arrival test/test_segment_arrival.cpp)
   target_link_libraries(test_segment_arrival line_tracker)
   ament_add_gtest(test_scan_entry test/test_scan_entry.cpp)

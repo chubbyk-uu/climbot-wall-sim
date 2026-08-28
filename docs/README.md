@@ -26,6 +26,7 @@ OPERATION 面向已经跑通、要做实验或者出了问题的人。判据只�
 | [`OPERATION.md`](OPERATION.md) | **主线之外**的批量回归、评价工具、参数变体、诊断与故障处置 | 主线命令的第二份拷贝、架构解释、结果结论 |
 | [`ACCEPTANCE.md`](ACCEPTANCE.md) | 当前验收项、状态、正式证据和未关闭门禁 | 完整实验流水账 |
 | [`MOSAIC_PLAN.md`](MOSAIC_PLAN.md) | 离线拼接的当前设计、风险、阶段门禁和待办 | 已废弃试验的逐轮细节 |
+| [`LOCALIZATION_GAP_PLAN.md`](LOCALIZATION_GAP_PLAN.md) | 定位链路偶发断档的当前证据、根因调查、优化顺序与验收标准 | 未证实的根因结论、通用操作教程 |
 | [`STATUS.md`](STATUS.md) | 一页式当前阶段、风险、近期下一步 | 按日期追加的开发日记 |
 | [`../results/README.md`](../results/README.md) | 当前有效基线和归档结果的索引、重生成入口 | 长篇技术分析 |
 | [`DATA_RETENTION.md`](DATA_RETENTION.md) | 工作区外大数据的保留等级、清理前置条件和目录清单 | 删除命令或临时日志 |
@@ -40,6 +41,7 @@ docs/
   OPERATION.md             实验与故障处置手册
   ACCEPTANCE.md            当前验收矩阵
   MOSAIC_PLAN.md           当前离线拼接设计
+  LOCALIZATION_GAP_PLAN.md 定位断档调查与优化计划
   STATUS.md                当前状态快照
   DATA_RETENTION.md        数据保留与清理清单
   images/                  当前文档引用的截图

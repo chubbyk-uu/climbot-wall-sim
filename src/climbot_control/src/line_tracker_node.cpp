@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -29,6 +30,7 @@
 #include "climbot_control/segment_arrival.hpp"
 #include "climbot_control/schedule_estimate.hpp"
 #include "climbot_control/segment_duration.hpp"
+#include "climbot_control/timing_monitor.hpp"
 #include "climbot_control/travel_profile.hpp"
 #include "climbot_control/turn_profile.hpp"
 #include "climbot_interfaces/action/execute_coverage.hpp"
@@ -89,6 +91,7 @@ public:
     heading_gain_ = declare_parameter("heading_gain", 2.0);
     control_frequency_hz_ = declare_parameter("control_frequency_hz", 50.0);
     odometry_timeout_s_ = declare_parameter("odometry_timeout_s", 0.25);
+    timing_summary_period_s_ = declare_parameter("timing_summary_period_s", 10.0);
     frame_id_ = declare_parameter("frame_id", "odom");
     standalone_mode_ = declare_parameter("standalone_mode", true);
     segment_timeout_s_ = declare_parameter("segment_timeout_s", 120.0);
@@ -292,6 +295,9 @@ public:
     odometry_subscription_ = create_subscription<nav_msgs::msg::Odometry>(
       "/odometry/filtered", 10,
       [this](const nav_msgs::msg::Odometry::SharedPtr message) {
+        const auto receipt_ns = steadyNowNs();
+        recordTiming(odometry_callback_timing_, "odometry_callback", receipt_ns);
+        last_odometry_callback_steady_ns_ = receipt_ns;
         const auto & position = message->pose.pose.position;
         const auto & orientation = message->pose.pose.orientation;
         const auto yaw = climbot_control::yawFromQuaternion(
@@ -339,6 +345,10 @@ public:
       std::chrono::duration<double>(1.0 / control_frequency_hz_));
     timer_ = rclcpp::create_timer(this, control_clock_, period,
       std::bind(&LineTrackerNode::onTimer, this));
+    timing_summary_timer_ = create_wall_timer(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::duration<double>(timing_summary_period_s_)),
+      std::bind(&LineTrackerNode::publishTimingSummary, this));
   }
 
 private:
@@ -377,6 +387,55 @@ private:
   rclcpp::Time zeroInstant() const
   {
     return rclcpp::Time(0, 0, control_clock_->get_clock_type());
+  }
+
+  static int64_t steadyNowNs()
+  {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count();
+  }
+
+  static double milliseconds(int64_t nanoseconds)
+  {
+    return static_cast<double>(nanoseconds) / 1'000'000.0;
+  }
+
+  void recordTiming(
+    climbot_control::TimingSeries & series, const char * source, int64_t now_ns)
+  {
+    const auto record = series.record(now_ns);
+    if (record.regressed) {
+      RCLCPP_WARN(
+        get_logger(), "LINE_TRACKER_TIMING event=clock_rollback source=%s count=%lu",
+        source, series.rollbackCount());
+      return;
+    }
+    for (const bool crossed : record.observation.crossed) {
+      if (crossed) {
+        RCLCPP_WARN(
+          get_logger(), "LINE_TRACKER_TIMING event=gap source=%s duration_ms=%.3f",
+          source, milliseconds(record.observation.duration_ns));
+        return;
+      }
+    }
+  }
+
+  void publishTimingSummary()
+  {
+    const auto & odometry = odometry_callback_timing_.statistics();
+    const auto & timer = control_timer_timing_.statistics();
+    RCLCPP_INFO(
+      get_logger(),
+      "LINE_TRACKER_TIMING summary odom_n=%lu odom_max_ms=%.3f odom_p999_ms=%.3f "
+      "odom_ge_50=%lu odom_ge_100=%lu odom_ge_200=%lu odom_ge_250=%lu "
+      "timer_n=%lu timer_max_ms=%.3f timer_p999_ms=%.3f timer_ge_50=%lu "
+      "timer_ge_100=%lu timer_ge_200=%lu timer_ge_250=%lu",
+      odometry.sampleCount(), milliseconds(odometry.maxNs()),
+      milliseconds(odometry.quantileNs(0.999)), odometry.thresholdCount(0U),
+      odometry.thresholdCount(1U), odometry.thresholdCount(2U), odometry.thresholdCount(3U),
+      timer.sampleCount(), milliseconds(timer.maxNs()), milliseconds(timer.quantileNs(0.999)),
+      timer.thresholdCount(0U), timer.thresholdCount(1U), timer.thresholdCount(2U),
+      timer.thresholdCount(3U));
   }
 
   static void requireFinite(const std::string & name, double value)
@@ -432,6 +491,7 @@ private:
     requirePositive("heading_gain", heading_gain_);
     requirePositive("control_frequency_hz", control_frequency_hz_);
     requirePositive("odometry_timeout_s", odometry_timeout_s_);
+    requirePositive("timing_summary_period_s", timing_summary_period_s_);
     requirePositive("segment_timeout_s", segment_timeout_s_);
     requirePositive("pause_stop_timeout_s", pause_stop_timeout_s_);
     requirePositive("capture_gate_timeout_s", capture_gate_timeout_s_);
@@ -1551,6 +1611,8 @@ private:
 
   void onTimer()
   {
+    const auto timer_steady_ns = steadyNowNs();
+    recordTiming(control_timer_timing_, "control_timer", timer_steady_ns);
     // SIGINT invalidates Action publishers before a timer callback already in
     // flight necessarily returns. Publishing feedback or a result after that
     // point throws RCLError and used to turn an otherwise clean launch
@@ -1648,6 +1710,14 @@ private:
       RCLCPP_WARN_THROTTLE(
         get_logger(), *control_clock_, 2000,
         "Filtered odometry is unavailable or stale; stopping.");
+      if (last_odometry_callback_steady_ns_.has_value() &&
+        last_stale_timing_reported_callback_steady_ns_ != last_odometry_callback_steady_ns_)
+      {
+        RCLCPP_WARN(
+          get_logger(), "LINE_TRACKER_TIMING event=stale_pose callback_age_ms=%.3f",
+          milliseconds(timer_steady_ns - *last_odometry_callback_steady_ns_));
+        last_stale_timing_reported_callback_steady_ns_ = last_odometry_callback_steady_ns_;
+      }
       if (!standalone_mode_) {
         if (!have_pose_ &&
           (current_time - task_start_time_).seconds() <= odometry_timeout_s_)
@@ -2048,6 +2118,7 @@ private:
   double heading_gain_{2.0};
   double control_frequency_hz_{50.0};
   double odometry_timeout_s_{0.25};
+  double timing_summary_period_s_{10.0};
   double segment_timeout_s_{120.0};
   double pause_stop_timeout_s_{5.0};
   double capture_gate_timeout_s_{0.50};
@@ -2140,6 +2211,10 @@ private:
   std::optional<climbot_interfaces::msg::InspectionCaptureGate> capture_gate_;
   std::optional<std::chrono::steady_clock::time_point> capture_gate_received_at_;
   std::optional<std::chrono::steady_clock::time_point> capture_gate_wait_started_;
+  std::optional<int64_t> last_odometry_callback_steady_ns_;
+  std::optional<int64_t> last_stale_timing_reported_callback_steady_ns_;
+  climbot_control::TimingSeries odometry_callback_timing_;
+  climbot_control::TimingSeries control_timer_timing_;
   std::shared_ptr<GoalHandle> active_goal_;
   std::unique_ptr<climbot_control::CrossTrackOscillationMonitor> oscillation_monitor_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr command_publisher_;
@@ -2158,6 +2233,7 @@ private:
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr
     apply_parameters_callback_;
   rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::TimerBase::SharedPtr timing_summary_timer_;
 };
 
 int main(int argc, char ** argv)

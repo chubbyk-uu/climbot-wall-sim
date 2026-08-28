@@ -40,10 +40,19 @@ TERM_GRACE_S=${G2_TERM_GRACE_S:-20}
 LOCALIZATION_PROFILE=${LOCALIZATION_PROFILE:-precision}
 PRISM_EXTRINSIC_ERROR_ROBOT_M=${PRISM_EXTRINSIC_ERROR_ROBOT_M:-'[0.020, -0.010, 0.0]'}
 G2_MAX_CAMERA_POSITION_ERROR_M=${G2_MAX_CAMERA_POSITION_ERROR_M:-0.005}
+G2_EVALUATOR_TIMEOUT_S=${G2_EVALUATOR_TIMEOUT_S:-600}
+G2_EXTERNAL_TIMEOUT_S=${G2_EXTERNAL_TIMEOUT_S:-900}
 INSPECTION_OUTPUT_ROOT=${INSPECTION_OUTPUT_ROOT:-}
 WALL_TEXTURE=${WALL_TEXTURE:-}
 PGIDS=()
 ACTIVE_CASE=''
+
+# ROS 2 parameters are typed.  Shell environment variables commonly spell a
+# whole number without a decimal point, but evaluate_g2_inspection declares
+# timeout_s as DOUBLE and correctly rejects an INTEGER override.
+if [[ "$G2_EVALUATOR_TIMEOUT_S" != *.* ]]; then
+  G2_EVALUATOR_TIMEOUT_S="${G2_EVALUATOR_TIMEOUT_S}.0"
+fi
 
 declare -A CONFIG=(
   [horizontal]='coverage_g2_acceptance_horizontal.yaml'
@@ -51,6 +60,8 @@ declare -A CONFIG=(
   [trapezoid]='coverage_g2_acceptance_trapezoid.yaml'
   [p27b_horizontal]='coverage_p27b_diagnostic_realistic_horizontal.yaml'
   [p27b_vertical]='coverage_p27b_diagnostic_realistic_vertical.yaml'
+  [p206_horizontal]='coverage_p206_diagnostic_full_horizontal.yaml'
+  [p206_vertical]='coverage_p206_diagnostic_full_vertical.yaml'
 )
 declare -A REGION=(
   [horizontal]='rectangle'
@@ -58,6 +69,8 @@ declare -A REGION=(
   [trapezoid]='trapezoid'
   [p27b_horizontal]='rectangle'
   [p27b_vertical]='rectangle'
+  [p206_horizontal]='rectangle'
+  [p206_vertical]='rectangle'
 )
 declare -A SWEEP=(
   [horizontal]='horizontal'
@@ -65,6 +78,8 @@ declare -A SWEEP=(
   [trapezoid]='horizontal'
   [p27b_horizontal]='horizontal'
   [p27b_vertical]='vertical'
+  [p206_horizontal]='horizontal'
+  [p206_vertical]='vertical'
 )
 
 if [ "$#" -eq 0 ]; then
@@ -203,8 +218,9 @@ run_case() {
     return 1
   fi
 
-  setsid timeout 900 ros2 run climbot_gazebo evaluate_g2_inspection.py --ros-args \
+  setsid timeout "$G2_EXTERNAL_TIMEOUT_S" ros2 run climbot_gazebo evaluate_g2_inspection.py --ros-args \
     -p use_sim_time:=true -p summary_path:="$summary" \
+    -p timeout_s:="$G2_EVALUATOR_TIMEOUT_S" \
     -p nominal_overlap_ratio:=0.20 -p minimum_actual_overlap_ratio:=0.15 \
     -p maximum_camera_position_error_m:="$G2_MAX_CAMERA_POSITION_ERROR_M" \
     >"$case_dir/evaluator.log" 2>&1 &
