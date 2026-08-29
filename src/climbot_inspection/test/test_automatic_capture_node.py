@@ -83,6 +83,30 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         self.stop = Event()
         self.thread = Thread(target=self._spin)
         self.thread.start()
+        self._wait_for_discovery()
+
+    def _wait_for_discovery(self, timeout=10.0):
+        """
+        Block until automatic_capture_node can actually hear this fixture.
+
+        setUp builds a fresh node and fresh publishers for every test method,
+        so every method pays for a new round of DDS discovery. The per-test
+        time.sleep(0.3) that used to stand in for it is a guess, and under a
+        loaded machine it is the wrong guess: the references never arrive, the
+        node never triggers, and the test fails with capture_calls=0 rather
+        than with anything to do with what it was testing.
+        """
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if (self.references.get_subscription_count() > 0 and
+                    self.odometry.get_subscription_count() > 0):
+                return
+            time.sleep(0.02)
+        raise AssertionError(
+            'automatic_capture_node did not subscribe within %.1f s '
+            '(references=%d odometry=%d)' % (
+                timeout, self.references.get_subscription_count(),
+                self.odometry.get_subscription_count()))
 
     def tearDown(self):
         self.stop.set()
