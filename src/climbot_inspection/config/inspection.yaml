@@ -37,10 +37,11 @@ automatic_capture_node:
     # instant any field changes, so a segment boundary, a frozen geometry
     # update, a pause and a resume all arrive immediately; the 5 Hz beat in
     # between merely says the executor is alive. It must therefore outlast the
-    # tracker's own capture-gate supervision (2 x capture_gate_timeout_s),
-    # otherwise triggering stops while the robot is still driving and the next
-    # exposure lands past its target. See the contract test in climbot_gazebo.
-    reference_timeout_s: 1.0
+    # tracker's own capture-gate supervision (2 x capture_gate_timeout_s) by at
+    # least one reference heartbeat. The gate is published and received after
+    # its source reference, so equality would still let triggering stop a few
+    # callbacks before the robot. See the contract test in climbot_gazebo.
+    reference_timeout_s: 1.25
     # capture_once may wait up to 5 s for Gazebo transport. Leave room for the
     # service response itself to be scheduled under a loaded GUI session.
     capture_response_timeout_s: 6.0

@@ -52,7 +52,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy
 
 # The exposure this file deliberately leaves in flight has to survive the pause
 # that interrupts it, so neither wait may expire while the test arranges one.
-IMAGE_WAIT_TIMEOUT_S = 5.0
+POSE_WAIT_TIMEOUT_S = 5.0
 
 
 @pytest.mark.launch_test
@@ -66,8 +66,7 @@ def generate_test_description():
             'effective_length_m': 0.25,
             'image_overlap_ratio': 0.20,
             'reference_timeout_s': 5.0,
-            'image_wait_timeout_s': IMAGE_WAIT_TIMEOUT_S,
-            'pose_wait_timeout_s': IMAGE_WAIT_TIMEOUT_S,
+            'pose_wait_timeout_s': POSE_WAIT_TIMEOUT_S,
         }],
     )
     return launch.LaunchDescription([

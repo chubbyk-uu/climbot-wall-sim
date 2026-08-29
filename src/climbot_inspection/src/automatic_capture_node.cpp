@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
-#include <array>
 #include <cmath>
 #include <cstdint>
 #include <deque>
@@ -157,7 +156,7 @@ public:
     mount_roll_(finite(*this, "camera_mount_roll_rad", std::acos(-1.0))),
     mount_pitch_(finite(*this, "camera_mount_pitch_rad", 0.0)),
     mount_yaw_(finite(*this, "camera_mount_yaw_rad", -0.5 * std::acos(-1.0))),
-    reference_timeout_(finitePositive(*this, "reference_timeout_s", 0.5)),
+    reference_timeout_(finitePositive(*this, "reference_timeout_s", 1.25)),
     capture_response_timeout_(finitePositive(*this, "capture_response_timeout_s", 6.0)),
     slow_capture_warning_(finitePositive(*this, "slow_capture_warning_s", 0.5)),
     pose_wait_timeout_(finitePositive(*this, "pose_wait_timeout_s", 0.5)),
@@ -229,8 +228,8 @@ private:
       const double gap = std::chrono::duration<double>(
         receipt_time - *last_reference_receipt_).count();
       reference_gaps_.add(gap);
-      if (gap > 0.5) {
-        // Half of reference_timeout_s. Throttled because a degrading system
+      if (gap > 0.5 * reference_timeout_) {
+        // Warn at half of reference_timeout_s. Throttled because a degrading system
         // produces these in bursts and the log write would join the problem;
         // the periodic summary is what carries the count and the maximum.
         RCLCPP_WARN_THROTTLE(

@@ -13,6 +13,7 @@
 
 """Node-level G2 checks for gating, monotonic triggers and EKF interpolation."""
 
+import re
 from threading import Event, Thread
 import time
 import unittest
@@ -412,8 +413,26 @@ class TestProcessExitCodes(unittest.TestCase):
         file shares between its cases, and the pose cache it left behind broke
         the next one.
         """
+        output = b''.join(
+            event.text for event in proc_output
+            if event.from_stderr).decode(errors='replace')
+        pattern = re.compile(
+            r'AUTOMATIC_CAPTURE_TIMING summary stream=(\w+) n=(\d+) max_ms=([\d.]+) '
+            r'ge_50=(\d+) ge_100=(\d+) ge_200=(\d+) ge_250=(\d+)')
+        latest = {match.group(1): match.groups()[1:] for match in pattern.finditer(output)}
         for stream in ('execution_reference', 'odometry'):
             launch_testing.asserts.assertInStderr(
                 proc_output,
                 'AUTOMATIC_CAPTURE_TIMING summary stream=' + stream,
                 'automatic_capture_node')
+            self.assertIn(stream, latest)
+            samples = int(latest[stream][0])
+            maximum_ms = float(latest[stream][1])
+            thresholds = tuple(int(value) for value in latest[stream][2:])
+            self.assertGreater(samples, 0)
+            self.assertGreater(maximum_ms, 0.0)
+            self.assertGreater(thresholds[0], 0)
+            self.assertGreaterEqual(samples, thresholds[0])
+            self.assertGreaterEqual(thresholds[0], thresholds[1])
+            self.assertGreaterEqual(thresholds[1], thresholds[2])
+            self.assertGreaterEqual(thresholds[2], thresholds[3])

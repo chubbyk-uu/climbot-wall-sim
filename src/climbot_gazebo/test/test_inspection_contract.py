@@ -77,7 +77,11 @@ def test_capture_supervision_outlasts_the_execution_reference_heartbeat():
     gate_timeout = float(control['capture_gate_timeout_s'])
     reference_timeout = float(automatic['reference_timeout_s'])
     heartbeat_period = 1.0 / float(control['execution_reference_heartbeat_hz'])
-    assert reference_timeout >= 2.0 * gate_timeout
+    # The gate derived from a reference reaches the tracker later than that
+    # reference reaches automatic_capture. Reserve a complete heartbeat after
+    # the tracker's two-stage timeout so scheduling cannot reverse the intended
+    # order and stop the camera while the robot still drives.
+    assert reference_timeout >= 2.0 * gate_timeout + heartbeat_period
     # The heartbeat is what both timers are measured against, so it has to be
     # comfortably shorter than the tighter of them rather than merely shorter.
     assert heartbeat_period <= 0.5 * gate_timeout

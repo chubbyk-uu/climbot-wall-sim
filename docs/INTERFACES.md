@@ -87,9 +87,10 @@
 `/control/execution_reference` 是采集侧的唯一活性信号：几何、状态或段号一变立即可靠发布，其余
 时间按 `execution_reference_heartbeat_hz`（5 Hz）保活。它同时驱动两个监督计时器 ——
 `automatic_capture_node.reference_timeout_s` 决定何时停止触发，`line_tracker` 的采集门在
-`capture_gate_timeout_s` 判陈旧、再过同样时长判超时并停车。前者必须不短于后者的两倍，否则
-参考断流时会出现"已停止拍照、机器人仍在走"的窗口，恢复后的第一张必然越过目标位置被归档拒绝。
-采集完成不额外刷新采集门，两个计时器因此始终共用同一个时钟起点。该合同由
+`capture_gate_timeout_s` 判陈旧、再过同样时长判超时并停车。采集门由参考派生，送到跟踪器必然
+晚于原参考送到采集节点，因此前者必须至少覆盖后者的两倍再加一个参考心跳周期；否则参考断流时
+会出现"已停止拍照、机器人仍在走"的窗口，恢复后的第一张可能越过目标位置被归档拒绝。采集完成
+不额外刷新采集门，使两个监督始终由同一条参考驱动。该合同由
 `climbot_gazebo/test/test_inspection_contract.py` 跨包断言。
 
 G4 按时间戳配对每张原图和 `InspectionCapture`，同时使用 transient-local 的最新会话标定；
