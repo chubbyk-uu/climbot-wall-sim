@@ -128,6 +128,10 @@ if(BUILD_TESTING)
   ament_add_gtest(test_clock_throttle test/test_clock_throttle.cpp)
   target_link_libraries(test_clock_throttle clock_throttle_core)
   target_include_directories(test_clock_throttle PRIVATE include)
+  # climbot_gazebo owns domain 95 onward; see the range note in
+  # climbot_control/CMakeLists.txt and the uniqueness test in climbot_bringup.
+  find_package(launch_testing_ament_cmake REQUIRED)
+  add_launch_test(test/test_total_station_clock.py TIMEOUT 90 ENV ROS_DOMAIN_ID=95)
   ament_add_pytest_test(test_evaluation_tasks test/test_evaluation_tasks.py)
   ament_add_pytest_test(test_command_routing test/test_command_routing.py)
   ament_add_pytest_test(

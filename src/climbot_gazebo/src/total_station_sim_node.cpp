@@ -135,12 +135,18 @@ public:
       [this](const nav_msgs::msg::Odometry::SharedPtr message) {latest_truth_ = message;});
     publisher_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "/total_station/pose", 20);
-    sample_timer_ = create_wall_timer(
+    // create_timer, never create_wall_timer: both of these follow the
+    // simulation clock, as the rclpy node this replaces did. On wall time the
+    // station would keep sampling a frozen truth while the simulator is
+    // paused, would sample at 12 Hz of wall time rather than of simulation
+    // time whenever the real-time factor is not 1.0, and would stamp repeat
+    // observations with one frozen source time.
+    sample_timer_ = create_timer(
       std::chrono::duration<double>(1.0 / rate_), [this]() {sampleTruth();});
     // Delivery stays a 200 Hz poll of the pending queue, matching the node
     // this replaces. Scheduling each measurement on its own one-shot timer
     // would trade a known, uniform poll for per-measurement timer jitter.
-    delivery_timer_ = create_wall_timer(
+    delivery_timer_ = create_timer(
       std::chrono::milliseconds(5), [this]() {publishDueMeasurements();});
   }
 

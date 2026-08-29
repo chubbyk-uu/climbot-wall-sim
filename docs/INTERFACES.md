@@ -21,7 +21,7 @@
 
 ### `/clock` 发布率
 
-`clock_publish_hz` 默认 `0`，此时 bridge 直接把 Gazebo 每个物理步长发到 `/clock`。取正值时
+`clock_publish_hz` 默认 `500`。设为 `0` 时 bridge 直接把 Gazebo 每个物理步长发到 `/clock`；取正值时
 bridge 改发 `/clock_raw`，由 `clock_throttle_node` 抽稀后发布 `/clock`；**物理步长不受影响**，
 仿真本身一步不差。
 

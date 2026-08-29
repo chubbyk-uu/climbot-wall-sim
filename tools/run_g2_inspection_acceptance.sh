@@ -50,11 +50,13 @@ G2_EXTERNAL_TIMEOUT_S=${G2_EXTERNAL_TIMEOUT_S:-1800}
 # long stability runs to verify the same workload remains visually healthy.
 G2_HEADLESS=${G2_HEADLESS:-true}
 G2_RVIZ=${G2_RVIZ:-false}
-# ROS /clock rate for the lane; 0 keeps the 1000 Hz direct Gazebo bridge.
+# ROS /clock rate for the lane. Unset by default and then not passed at all,
+# so acceptance measures whatever the product launch defaults to. Pinning a
+# value here would silently accept a configuration nobody ships.
 # Only rates that divide the 1 ms physics step are reachable -- the throttle
 # node reports the rate it actually delivered, so check the simulator log
 # rather than assuming the request was honoured.
-G2_CLOCK_PUBLISH_HZ=${G2_CLOCK_PUBLISH_HZ:-0}
+G2_CLOCK_PUBLISH_HZ=${G2_CLOCK_PUBLISH_HZ:-}
 G2_GPU_BACKEND=${G2_GPU_BACKEND:-wsl_d3d12}
 G2_GUI_GPU_BACKEND=${G2_GUI_GPU_BACKEND:-auto}
 INSPECTION_OUTPUT_ROOT=${INSPECTION_OUTPUT_ROOT:-}
@@ -234,7 +236,7 @@ run_case() {
   echo "[$case_name] starting (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, GZ_PARTITION=$GZ_PARTITION)"
   start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo climbot_wall.launch.py \
     use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:="$G2_GPU_BACKEND" wall_grid_spacing:=0 \
-    clock_publish_hz:="$G2_CLOCK_PUBLISH_HZ" \
+    ${G2_CLOCK_PUBLISH_HZ:+clock_publish_hz:="$G2_CLOCK_PUBLISH_HZ"} \
     gui_gpu_backend:="$G2_GUI_GPU_BACKEND" \
     localization_profile:="$LOCALIZATION_PROFILE" \
     prism_extrinsic_error_robot_m:="$PRISM_EXTRINSIC_ERROR_ROBOT_M" \
