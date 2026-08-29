@@ -16,6 +16,7 @@
 
 import math
 from threading import Event
+import time
 import unittest
 
 from climbot_interfaces.msg import CoverageTask
@@ -115,10 +116,15 @@ class TestTopEdgeScan(unittest.TestCase):
         return callback
 
     def _task(self, name):
-        deadline = 30.0
-        while deadline > 0.0 and not self.events[name].is_set():
+        # A real wall-clock budget. Counting iterations of spin_once and
+        # calling that N seconds is wrong in both directions: when messages
+        # are arriving spin_once returns at once and the whole budget burns
+        # in milliseconds, and on a loaded machine each call outlasts its
+        # own timeout so the wait outlives the test's ctest limit and no
+        # result file is ever written.
+        deadline = time.monotonic() + 30.0
+        while time.monotonic() < deadline and not self.events[name].is_set():
             rclpy.spin_once(self.node, timeout_sec=0.1)
-            deadline -= 0.1
         self.assertTrue(
             self.events[name].is_set(), '%s published no task' % name)
         return self.tasks[name]

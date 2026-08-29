@@ -15,6 +15,7 @@
 """Verify /coverage/configure survives being driven out of order."""
 
 from threading import Event
+import time
 import unittest
 
 from climbot_interfaces.msg import CoverageConfig
@@ -82,10 +83,15 @@ class TestConfigure(unittest.TestCase):
         self.assertTrue(self.replan.wait_for_service(timeout_sec=15.0))
         # Each test builds a fresh node, so the click publisher has to find the
         # planner again. Publishing before the match silently drops the point.
-        deadline = 15.0
-        while deadline > 0.0 and self.clicker.get_subscription_count() == 0:
+        # A real wall-clock budget. Counting iterations of spin_once and
+        # calling that N seconds is wrong in both directions: when messages
+        # are arriving spin_once returns at once and the whole budget burns
+        # in milliseconds, and on a loaded machine each call outlasts its
+        # own timeout so the wait outlives the test's ctest limit and no
+        # result file is ever written.
+        deadline = time.monotonic() + 15.0
+        while time.monotonic() < deadline and self.clicker.get_subscription_count() == 0:
             rclpy.spin_once(self.node, timeout_sec=0.05)
-            deadline -= 0.05
         self.assertGreater(self.clicker.get_subscription_count(), 0)
 
     def tearDown(self):
@@ -118,10 +124,9 @@ class TestConfigure(unittest.TestCase):
         message.point.x = float(x)
         message.point.y = float(y)
         self.clicker.publish(message)
-        deadline = 8.0
-        while deadline > 0.0:
+        deadline = time.monotonic() + 8.0
+        while time.monotonic() < deadline:
             rclpy.spin_once(self.node, timeout_sec=0.05)
-            deadline -= 0.05
             if self.config is not None and self.config.selected_points == expect:
                 return
         self.fail(
@@ -129,21 +134,19 @@ class TestConfigure(unittest.TestCase):
             % (expect, None if self.config is None else self.config.selected_points))
 
     def _latest_config(self):
-        deadline = 5.0
-        while deadline > 0.0 and self.config is None:
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline and self.config is None:
             rclpy.spin_once(self.node, timeout_sec=0.05)
-            deadline -= 0.05
         self.assertIsNotNone(self.config)
         return self.config
 
     def _wait_for_preview(self):
         """Wait for the task topic, not only the earlier config callback."""
-        deadline = 5.0
-        while deadline > 0.0:
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline:
             if self.task is not None and len(self.task.waypoints) > 2:
                 return
             rclpy.spin_once(self.node, timeout_sec=0.05)
-            deadline -= 0.05
         self.fail('planned preview was not received')
 
     def _rectangle(self):
@@ -278,10 +281,9 @@ class TestConfigure(unittest.TestCase):
         self.assertTrue(self._latest_config().can_plan)
         self.config_event.clear()
         self._call(self.clear, Trigger.Request())
-        deadline = 5.0
-        while deadline > 0.0 and not self.config_event.is_set():
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline and not self.config_event.is_set():
             rclpy.spin_once(self.node, timeout_sec=0.05)
-            deadline -= 0.05
         config = self._latest_config()
         self.assertEqual(config.selected_points, 0)
         self.assertFalse(config.can_plan)
