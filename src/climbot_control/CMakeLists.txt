@@ -86,6 +86,8 @@ if(BUILD_TESTING)
   #   climbot_control 40-60, climbot_coverage 61-68, climbot_inspection 91-94.
   # Appending past the end of this block once put a two-waypoint stub task on
   # climbot_coverage's domain 61 and made its planner test fail under -j8 only.
+  ament_add_pytest_test(
+    test_goal_handle_retirement test/test_goal_handle_retirement.py)
   add_launch_test(test/test_cmd_vel_watchdog_node.py TIMEOUT 30 ENV ROS_DOMAIN_ID=41)
   add_launch_test(test/test_line_tracker_alignment.py TIMEOUT 30 ENV ROS_DOMAIN_ID=42)
   add_launch_test(test/test_line_tracker_completion.py TIMEOUT 30 ENV ROS_DOMAIN_ID=43)

@@ -1321,24 +1321,31 @@ private:
     return DynamicReferenceResult::REALIGN;
   }
 
-  void finishGoal(uint16_t code, const std::string & message)
+  /// Bring the active goal to a terminal state, then drop it.
+  ///
+  /// A goal handle released while still active cancels itself from
+  /// ~ServerGoalHandle, and that destructor publishes the result with no
+  /// try/catch of its own. Once shutdown has started the server has usually
+  /// retired the goal already, so that publish throws "Asked to publish result
+  /// for goal that does not exist" out of a destructor and terminates the
+  /// process with SIGABRT. Clearing the handle to dodge a publish failure was
+  /// the very thing that armed it.
+  ///
+  /// Terminating here is safe even when the publish fails, because succeed,
+  /// canceled and abort transition the goal's state before they publish: the
+  /// handle is already terminal by the time anything can throw, so the
+  /// destructor has nothing left to do.
+  void retireActiveGoal(uint16_t code, const std::string & message)
   {
     if (!active_goal_) {
       return;
     }
-    if (!rclcpp::ok()) {
-      clearActiveGoal();
-      return;
-    }
-    geometry_msgs::msg::Twist stop;
+    auto result = std::make_shared<ExecuteCoverage::Result>();
+    result->result_code = code;
+    result->message = message;
+    result->completed_segments = completed_segments_;
+    result->elapsed_time_s = std::max(0.0, (controlNow() - task_start_time_).seconds());
     try {
-      command_publisher_->publish(stop);
-      previous_command_ = {};
-      auto result = std::make_shared<ExecuteCoverage::Result>();
-      result->result_code = code;
-      result->message = message;
-      result->completed_segments = completed_segments_;
-      result->elapsed_time_s = std::max(0.0, (controlNow() - task_start_time_).seconds());
       if (code == ExecuteCoverage::Result::SUCCESS) {
         active_goal_->succeed(result);
       } else if (code == ExecuteCoverage::Result::CANCELED) {
@@ -1346,21 +1353,33 @@ private:
       } else {
         active_goal_->abort(result);
       }
-    } catch (const std::exception &) {
-      // std::exception, not RCLError: the goal handle can be retired from the
-      // server's own bookkeeping during shutdown as well, and terminating it
-      // then throws a plain std::runtime_error that the narrower catch let
-      // through - which aborted the process instead of ending the launch
-      // cleanly. The rethrow above still keeps any failure that happens while
-      // the node is genuinely running.
-      if (rclcpp::ok()) {
-        throw;
-      }
-      clearActiveGoal();
+    } catch (const std::exception & exception) {
+      // Never rethrown. A client that misses its result is a reportable
+      // problem; killing the controller mid-mission to report it is not.
+      RCLCPP_WARN(
+        get_logger(), "Could not publish the coverage result: %s", exception.what());
+    }
+    clearActiveGoal();
+  }
+
+  void finishGoal(uint16_t code, const std::string & message)
+  {
+    if (!active_goal_) {
       return;
     }
+    // Best effort, and deliberately outside the goal termination below: during
+    // shutdown this publisher may already be gone, and that must not be what
+    // leaves a live goal handle behind.
+    try {
+      geometry_msgs::msg::Twist stop;
+      command_publisher_->publish(stop);
+      previous_command_ = {};
+    } catch (const std::exception & exception) {
+      RCLCPP_WARN(
+        get_logger(), "Could not publish the stop command: %s", exception.what());
+    }
     RCLCPP_INFO(get_logger(), "Coverage execution stopped: %s", message.c_str());
-    clearActiveGoal();
+    retireActiveGoal(code, message);
   }
 
   void clearActiveGoal()
@@ -1491,13 +1510,14 @@ private:
     publishExecutionReference(*feedback);
     try {
       active_goal_->publish_feedback(feedback);
-    } catch (const std::exception &) {
+    } catch (const std::exception & exception) {
       // Same shutdown race as finishGoal(), and the same reason the catch is
-      // not narrowed to RCLError.
-      if (rclcpp::ok()) {
-        throw;
-      }
-      clearActiveGoal();
+      // not narrowed to RCLError. Retire the goal rather than clearing it: a
+      // handle dropped while still active throws from its own destructor.
+      RCLCPP_WARN(
+        get_logger(), "Could not publish coverage feedback: %s", exception.what());
+      retireActiveGoal(
+        ExecuteCoverage::Result::EXECUTOR_LOST, "Coverage feedback could not be published.");
     }
   }
 
@@ -1660,7 +1680,11 @@ private:
     // shutdown into exit 1. The wheel watchdog independently times out the
     // last command, so teardown only retires process-local task state here.
     if (!rclcpp::ok()) {
-      clearActiveGoal();
+      // Not merely process-local state: active_goal_ is a server goal handle,
+      // and releasing a live one publishes from its destructor. Terminate it
+      // instead, which is what makes that destructor a no-op.
+      retireActiveGoal(
+        ExecuteCoverage::Result::EXECUTOR_LOST, "Coverage executor is shutting down.");
       return;
     }
     const auto current_time = controlNow();
