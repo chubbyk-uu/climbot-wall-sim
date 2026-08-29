@@ -389,20 +389,23 @@ class CoverageExecutionEvaluator(Node):
         task.detection_width = 0.5
         task.detection_length = 0.1
 
-        # The strip the footprint sweeps, pulled in by half a footprint at each
-        # end. The footprint centre only ever reaches the endpoints, so the
-        # last half footprint of the nominal strip is outside what any correct
-        # run could cover; leaving it in would charge the tracker for geometry
-        # rather than for tracking.
-        inset = task.detection_length / 2.0
+        # The strip the footprint sweeps between the two waypoints. No
+        # along-track inset: the footprint is detection_length long, so a
+        # centre standing on either endpoint already covers half a footprint
+        # beyond it and the whole segment is reachable. An earlier version
+        # pulled each end in by half a footprint on the argument that the
+        # centre never passes the endpoints, which had the sign backwards --
+        # it put both waypoints outside the region and the executor rejects
+        # any task whose nominal waypoints do not lie inside coverage_region,
+        # so no straight_line case could run at all.
         half = task.detection_width / 2.0
         task.coverage_region.points = [
             make_point(
                 start[0] + along[0] * distance + normal[0] * half * side,
                 start[1] + along[1] * distance + normal[1] * half * side)
             for distance, side in (
-                (inset, 1.0), (length - inset, 1.0),
-                (length - inset, -1.0), (inset, -1.0))]
+                (0.0, 1.0), (length, 1.0),
+                (length, -1.0), (0.0, -1.0))]
         return task
 
     def _short_top_trapezoid(self, x, y):
