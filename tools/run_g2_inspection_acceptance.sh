@@ -22,6 +22,7 @@
 #
 # Usage:
 #   tools/run_g2_inspection_acceptance.sh [horizontal] [vertical] [trapezoid]
+#   G2_CLOCK_PUBLISH_HZ=500 \
 #   INSPECTION_OUTPUT_ROOT="$CLIMBOT_DATA_ROOT" \
 #     WALL_TEXTURE=textures/wall_diagnostic_025/wall_texture.json \
 #     LOCALIZATION_PROFILE=realistic G2_MAX_CAMERA_POSITION_ERROR_M=1.0 \
@@ -49,6 +50,11 @@ G2_EXTERNAL_TIMEOUT_S=${G2_EXTERNAL_TIMEOUT_S:-1800}
 # long stability runs to verify the same workload remains visually healthy.
 G2_HEADLESS=${G2_HEADLESS:-true}
 G2_RVIZ=${G2_RVIZ:-false}
+# ROS /clock rate for the lane; 0 keeps the 1000 Hz direct Gazebo bridge.
+# Only rates that divide the 1 ms physics step are reachable -- the throttle
+# node reports the rate it actually delivered, so check the simulator log
+# rather than assuming the request was honoured.
+G2_CLOCK_PUBLISH_HZ=${G2_CLOCK_PUBLISH_HZ:-0}
 G2_GPU_BACKEND=${G2_GPU_BACKEND:-wsl_d3d12}
 G2_GUI_GPU_BACKEND=${G2_GUI_GPU_BACKEND:-auto}
 INSPECTION_OUTPUT_ROOT=${INSPECTION_OUTPUT_ROOT:-}
@@ -125,10 +131,24 @@ source "$WS/install/setup.bash"
 set -u
 
 remember_group() {
-  local pid=$1 pgid
-  pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')
+  local pid=$1 pgid own attempt
+  own=$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')
+  # setsid() runs in the child, after the fork that `&` returns from, so the
+  # new group id is not visible the instant the shell hands back $!. Reading it
+  # too early yields THIS script's group; recording that makes teardown_case
+  # send SIGTERM to the harness itself and kill the run it is supervising.
+  for attempt in $(seq 1 50); do
+    pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')
+    [ -z "$pgid" ] && break
+    [ "$pgid" != "$own" ] && break
+    sleep 0.1
+  done
   if [ -z "$pgid" ]; then
     echo "Could not read process group for child $pid" >&2
+    return 1
+  fi
+  if [ "$pgid" = "$own" ]; then
+    echo "Child $pid never left this script's process group; refusing to record it" >&2
     return 1
   fi
   PGIDS+=("$pgid")
@@ -214,6 +234,7 @@ run_case() {
   echo "[$case_name] starting (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, GZ_PARTITION=$GZ_PARTITION)"
   start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo climbot_wall.launch.py \
     use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:="$G2_GPU_BACKEND" wall_grid_spacing:=0 \
+    clock_publish_hz:="$G2_CLOCK_PUBLISH_HZ" \
     gui_gpu_backend:="$G2_GUI_GPU_BACKEND" \
     localization_profile:="$LOCALIZATION_PROFILE" \
     prism_extrinsic_error_robot_m:="$PRISM_EXTRINSIC_ERROR_ROBOT_M" \
