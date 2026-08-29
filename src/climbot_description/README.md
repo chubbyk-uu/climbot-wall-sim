@@ -14,9 +14,21 @@
   网格，它是绘图辅助；放在这里是因为 Gazebo 墙面和 RViz 叠加层两个视图都要画它，
   各存一份默认值迟早会变成两套不同的网格；
 - `urdf/climbot.urdf.xacro`：`robot_state_publisher` 使用的 URDF；
-- `climbot_description/geometry.py`：四元数和角度通用函数；
-- `climbot_description/wall_frame.py`：世界坐标与墙面工作坐标转换，以及
-  `reference_grid_spacing()`——四个 launch 文件读同一个网格间距的唯一入口。
+- `include/climbot_description/geometry.hpp`、`src/geometry.cpp`：四元数和角度通用函数；
+- `include/climbot_description/wall_frame.hpp`、`src/wall_frame.cpp`：世界坐标与墙面工作
+  坐标转换。**这是唯一实现**，C++ 节点直接链接 `climbot_description_core`；
+- `src/bindings.cpp`：上述实现的 pybind11 绑定，导出为 `_climbot_description`；
+- `climbot_description/geometry.py`、`climbot_description/wall_frame.py`：绑定的薄封装。
+  Python 侧签名不变——四元数仍是 `(x, y, z, w)` 元组、向量仍是 `(x, y, z)` 元组、返回值
+  仍是元组，所以下游调用点无需改动。`quaternion_tuple()` 留在 Python，因为它适配的是 ROS
+  消息；`wall_description_path()` 和 `reference_grid_spacing()` 也留在 Python，它们是启动期
+  的 ament 索引查找，不在热路径上。
+
+## 为什么下沉到 C++
+
+定位与控制热路径上的 C++ 节点需要这个变换。此前它只有 Python 实现，C++ 侧要用就得再写一份
+——而同一约定的两份实现最终一定会漂移。`test/test_wall_frame.py` 是当初为 Python 实现写的，
+迁移时**一字未改**：它现在验证的是绑定，通过即等价性证据。
 
 ## 边界
 

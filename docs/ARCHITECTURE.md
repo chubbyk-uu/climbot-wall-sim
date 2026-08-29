@@ -77,7 +77,10 @@
   与支架的物理质量／质心／惯量；
 - `config/wall.yaml`：墙面工作坐标系、可作业表面尺寸及参考网格线间距；
 - `urdf/climbot.urdf.xacro`：`robot_state_publisher` 使用的机器人描述；
-- `climbot_description/`：墙面坐标变换和通用几何函数。
+- `include/climbot_description/` 与 `src/`：墙面坐标变换和通用几何函数的**唯一实现**（C++）；
+- `climbot_description/`：上述实现的 pybind11 绑定与薄封装。Python 侧 API 与下游调用点
+  保持不变，但两种语言共用同一份实现——热路径上的 C++ 节点需要这个变换，而一份约定分裂成
+  两份实现迟早会各自漂移。
 
 该包不得包含摩擦、WheelSlip、吸附施力、出生位姿、仿真传感器噪声或
 Gazebo 真值接口。

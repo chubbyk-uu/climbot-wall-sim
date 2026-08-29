@@ -374,6 +374,7 @@ dxg——相机离屏渲染仍走 D3D12。headless 与 GUI 的差别是速率与
 ## 2026-08-29：`/clock` 频率已量化，`total_station_sim` 空定时器已否决
 
 单变量台架：1000 Hz `/clock` 加 50 Hz 真值，`total_station_sim.py` 直接以脚本进程运行 15 s，
+（该 Python 节点此后已迁为 C++ `total_station_sim_node`，本节数字是迁移前的测量）
 按 `/proc/<pid>/stat` 的 utime+stime 计 CPU。
 
 | 配置 | 单个 Python 节点 CPU |
