@@ -447,6 +447,11 @@ def launch_setup(context, *args, **kwargs):
         ])),
     ]
 
+    clock_publish_hz = float(LaunchConfiguration('clock_publish_hz').perform(context))
+    if not math.isfinite(clock_publish_hz) or clock_publish_hz < 0.0:
+        raise ValueError('clock_publish_hz must be zero or positive and finite')
+    throttle_clock = clock_publish_hz > 0.0
+
     backend = LaunchConfiguration('gpu_backend').perform(context)
     if backend == 'auto':
         backend = 'wsl_d3d12' if running_on_wsl() else 'native'
@@ -493,6 +498,14 @@ def launch_setup(context, *args, **kwargs):
         )],
     ))
 
+    bridge_remappings = [
+        (CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
+        (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
+        (CONTACT_TOPIC_CASTER, '/contact/caster'),
+        (JOINT_STATE_TOPIC, '/joint_states'),
+    ]
+    if throttle_clock:
+        bridge_remappings.append(('/clock', '/clock_raw'))
     actions.append(Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -514,17 +527,30 @@ def launch_setup(context, *args, **kwargs):
             CONTACT_TOPIC_RIGHT + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
             CONTACT_TOPIC_CASTER + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
         ],
-        remappings=[
-            (CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
-            (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
-            (CONTACT_TOPIC_CASTER, '/contact/caster'),
-            (JOINT_STATE_TOPIC, '/joint_states'),
-        ],
+        remappings=bridge_remappings,
         parameters=[{
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
         }],
         output='screen',
     ))
+    if throttle_clock:
+        # Keep the 1 ms Gazebo physics step and its raw clock untouched. One
+        # small C++ subscriber absorbs that stream; every other ROS node sees
+        # only the selected rate, so the experiment changes no plant physics.
+        actions.append(Node(
+            package='climbot_gazebo',
+            executable='clock_throttle_node',
+            name='clock_throttle',
+            parameters=[{
+                'use_sim_time': False,
+                'publish_rate_hz': clock_publish_hz,
+            }],
+            output='screen',
+            # Every node ages on this clock, including each stall detector. If
+            # the throttle dies alone the whole system stops with nothing left
+            # running that could notice, so its exit takes the launch down.
+            on_exit=Shutdown(),
+        ))
     # A full-HD image and the reverse-direction exposure trigger must not
     # share one bridge executor. Under GUI/RViz load, serialization or DDS
     # flow control for the image can otherwise starve the tiny trigger long
@@ -700,6 +726,11 @@ def generate_launch_description():
             'use_sim_time',
             default_value='true',
             description='Use Gazebo simulation time.',
+        ),
+        DeclareLaunchArgument(
+            'clock_publish_hz',
+            default_value='0',
+            description='ROS /clock rate; 0 directly bridges every Gazebo physics step.',
         ),
         DeclareLaunchArgument(
             'headless',

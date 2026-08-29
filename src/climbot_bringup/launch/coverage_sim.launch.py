@@ -36,6 +36,7 @@ def generate_launch_description():
             os.path.join(gazebo_share, 'launch', 'climbot_wall.launch.py')),
         launch_arguments={
             'use_sim_time': 'true',
+            'clock_publish_hz': LaunchConfiguration('clock_publish_hz'),
             'headless': LaunchConfiguration('headless'),
             'gpu_backend': LaunchConfiguration('gpu_backend'),
             'gui_gpu_backend': LaunchConfiguration('gui_gpu_backend'),
@@ -90,6 +91,11 @@ def generate_launch_description():
             'headless',
             default_value='false',
             description='Run Gazebo without its GUI; RViz still opens.',
+        ),
+        DeclareLaunchArgument(
+            'clock_publish_hz',
+            default_value='0',
+            description='ROS /clock rate; 0 keeps the 1000 Hz direct Gazebo bridge.',
         ),
         DeclareLaunchArgument(
             'gpu_backend',

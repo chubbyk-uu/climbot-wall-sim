@@ -5,7 +5,19 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rosgraph_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+
+add_library(clock_throttle_core src/clock_throttle.cpp)
+target_compile_features(clock_throttle_core PUBLIC cxx_std_17)
+target_include_directories(clock_throttle_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+add_executable(clock_throttle_node src/clock_throttle_node.cpp)
+target_compile_features(clock_throttle_node PUBLIC cxx_std_17)
+target_link_libraries(clock_throttle_node clock_throttle_core)
+ament_target_dependencies(clock_throttle_node rclcpp rosgraph_msgs)
 
 add_library(wall_wheel_odom_adapter_core src/wall_wheel_odom_adapter.cpp)
 target_compile_features(wall_wheel_odom_adapter_core PUBLIC cxx_std_17)
@@ -39,6 +51,8 @@ install(
 )
 
 install(TARGETS
+  clock_throttle_core
+  clock_throttle_node
   wall_imu_adapter_core
   wall_imu_adapter_node
   wall_wheel_odom_adapter_core

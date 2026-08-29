@@ -91,6 +91,13 @@ WSL 默认用 D3D12 GPU 渲染。只有排查渲染后端时才加 `gpu_backend:
 会让 Gazebo、RViz 和传感器统一走 llvmpipe，通常更慢、CPU 和内存也更高。正常运行不要设置
 该参数；`auto` 会回到 D3D12。
 
+`clock_publish_hz` 默认 `0`，即按 Gazebo 每个 1 ms 物理步长直发 `/clock`。设为正值只抽稀
+ROS 侧的时钟广播，**物理步长不变，仿真一步不差**。可达速率只有 1000 的整除档
+（1000/500/333.3/250/200……），请求落在两档之间会静默降到下一档，因此启动约 5 s 后节点会打印
+`CLOCK_THROTTLE measured input=… delivered=… requested=…`；**以 delivered 为准**，
+不符时另有 WARN。实测 `clock_publish_hz:=500` 相对直连省约 0.4 核而最大调度滞后仅增加
+0.75 ms，是目前推荐的降频档；详见 `docs/LOCALIZATION_GAP_PLAN.md`。
+
 G4 对高帧数任务采用每 32 张一次的耐久提交，避免逐图 `fsync` 造成宿主磁盘长时间满载；图像和
 标签本身仍是一对一原子可见。运行中 manifest 的 `staged_images` 是尚未耐久提交的尾批，任务通过
 完成、取消或失败的 finalization 结束时会强制提交。只把 `outcome=completed`、`staged_images=0`

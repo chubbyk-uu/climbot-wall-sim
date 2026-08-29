@@ -28,6 +28,7 @@
   <exec_depend>rcl_interfaces</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <depend>rclcpp</depend>
+  <depend>rosgraph_msgs</depend>
   <depend>sensor_msgs</depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>std_srvs</exec_depend>
