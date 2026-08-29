@@ -94,7 +94,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'clock_publish_hz',
-            default_value='0',
+            default_value='500',
             description='ROS /clock rate; 0 keeps the 1000 Hz direct Gazebo bridge.',
         ),
         DeclareLaunchArgument(

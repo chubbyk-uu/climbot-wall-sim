@@ -574,7 +574,12 @@ def launch_setup(context, *args, **kwargs):
         executable='camera_distortion_adapter.py',
         name='camera_distortion_adapter',
         parameters=[{
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            # Deliberately wall time. This node never reads a clock: it stamps
+            # its output with the header of the frame it was handed. Under
+            # simulation time rclpy still subscribes to /clock for it, which
+            # cost it hundreds of messages a second to serve well under one
+            # frame a second.
+            'use_sim_time': False,
             'camera_config': os.path.join(
                 description_share, 'config', 'inspection_camera.yaml'),
             'render_focal_scale': float(
@@ -729,7 +734,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'clock_publish_hz',
-            default_value='0',
+            default_value='500',
             description='ROS /clock rate; 0 directly bridges every Gazebo physics step.',
         ),
         DeclareLaunchArgument(
