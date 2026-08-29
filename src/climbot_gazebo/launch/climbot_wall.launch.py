@@ -648,7 +648,7 @@ def launch_setup(context, *args, **kwargs):
 
     actions.append(Node(
         package='climbot_gazebo',
-        executable='total_station_sim.py',
+        executable='total_station_sim_node',
         name='total_station_sim',
         parameters=[{
             'use_sim_time': LaunchConfiguration('use_sim_time'),

@@ -29,7 +29,7 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 - `config/ekf_wall.yaml`：当前 `robot_localization` 配置；
 - `models/`、`worlds/`：运行时由共享 YAML 渲染的 SDF/Xacro；
 - `launch/climbot_wall.launch.py`：Gazebo、桥接、TF、适配器和 EKF；
-- `scripts/total_station_sim.py`：12 Hz 带噪声和延迟的绝对位置；
+- `src/total_station_sim_node.cpp`：12 Hz 带噪声和延迟的绝对位置；
 - `wall_wheel_odom_adapter_node` / `wall_imu_adapter_node`：轮式里程计和 IMU 协方差适配（C++）；
 - `scripts/calibrate_wall_slip.py`：静止、水平和上下行侧滑标定；
 - `scripts/measure_normal_loads.py`：三点法向载荷与接触率；

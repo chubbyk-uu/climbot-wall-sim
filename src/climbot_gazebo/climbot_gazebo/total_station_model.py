@@ -13,14 +13,12 @@
 # limitations under the License.
 
 """
-Deterministic pieces of the total-station measurement model.
+Profile resolution for the total-station measurement model.
 
-Kept free of ROS messages so the physical convention and timestamp arithmetic
-can be checked directly.  The simulator owns the ROS parameter plumbing and
-publication order.
+The measurement arithmetic moved to C++ with the simulator node
+(climbot_gazebo/total_station_model.hpp). What stays here is the part with a
+Python caller: launch files resolve profile components before any node exists.
 """
-
-import math
 
 
 LOCALIZATION_PROFILES = ('precision', 'realistic')
@@ -40,31 +38,3 @@ def resolve_component_enabled(profile, mode):
     if mode == 'auto':
         return profile == 'realistic'
     return mode == 'enabled'
-
-
-def rotate_robot_residual_to_wall(residual_robot_m, yaw_rad):
-    """
-    Rotate a robot-frame prism residual into wall work coordinates.
-
-    The robot and wall frames share +Z as the wall normal.  The residual's
-    first two components are therefore rotated by truth yaw in the wall plane;
-    this makes the position error reverse direction when the robot reverses.
-    """
-    forward, lateral, normal = residual_robot_m
-    cosine = math.cos(yaw_rad)
-    sine = math.sin(yaw_rad)
-    return (
-        cosine * forward - sine * lateral,
-        sine * forward + cosine * lateral,
-        normal,
-    )
-
-
-def timestamp_with_clock_error_ns(source_ns, bias_s, jitter_stddev_s, random_source):
-    """Return a header timestamp with clock bias and independent jitter only."""
-    correction_ns = int(round((bias_s + random_source.gauss(
-        0.0, jitter_stddev_s)) * 1e9))
-    # builtin_interfaces/Time cannot represent a negative nanosecond value.
-    # Clamping only affects the first moment of a negative-bias simulation;
-    # delivery scheduling continues to use source_ns, not this stamped value.
-    return max(0, source_ns + correction_ns)

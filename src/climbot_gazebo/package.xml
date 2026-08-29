@@ -13,13 +13,14 @@
   <exec_depend>ros_gz_sim</exec_depend>
   <exec_depend>climbot_control</exec_depend>
   <exec_depend>climbot_interfaces</exec_depend>
-  <exec_depend>climbot_description</exec_depend>
+  <depend>climbot_description</depend>
   <exec_depend>robot_localization</exec_depend>
   <exec_depend>teleop_twist_keyboard</exec_depend>
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
-  <exec_depend>geometry_msgs</exec_depend>
+  <depend>geometry_msgs</depend>
+  <depend>yaml-cpp</depend>
   <depend>nav_msgs</depend>
   <exec_depend>ros_gz_interfaces</exec_depend>
   <exec_depend>xacro</exec_depend>

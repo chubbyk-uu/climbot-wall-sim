@@ -8,6 +8,28 @@ find_package(rclcpp REQUIRED)
 find_package(rosgraph_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
+find_package(climbot_description REQUIRED)
+find_package(geometry_msgs REQUIRED)
+# Linked explicitly: the wall transform is a static library, so its yaml-cpp
+# symbols have to be resolved again by whoever links it.
+find_package(yaml-cpp REQUIRED)
+
+add_library(total_station_model_core src/total_station_model.cpp)
+target_compile_features(total_station_model_core PUBLIC cxx_std_17)
+target_include_directories(total_station_model_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+add_executable(total_station_sim_node src/total_station_sim_node.cpp)
+target_compile_features(total_station_sim_node PUBLIC cxx_std_17)
+target_link_libraries(total_station_sim_node total_station_model_core)
+ament_target_dependencies(total_station_sim_node
+  rclcpp nav_msgs geometry_msgs climbot_description)
+# After ament_target_dependencies, not before: the wall transform arrives as a
+# static library and the linker only resolves its yaml-cpp symbols against a
+# library that follows it on the command line.
+target_link_libraries(total_station_sim_node yaml-cpp::yaml-cpp)
+
 add_library(clock_throttle_core src/clock_throttle.cpp)
 target_compile_features(clock_throttle_core PUBLIC cxx_std_17)
 target_include_directories(clock_throttle_core PUBLIC
@@ -51,6 +73,8 @@ install(
 )
 
 install(TARGETS
+  total_station_model_core
+  total_station_sim_node
   clock_throttle_core
   clock_throttle_node
   wall_imu_adapter_core
@@ -83,7 +107,6 @@ install(
     scripts/measure_turn_band.py
     scripts/measure_turn_slip.py
     scripts/plot_wall_slip.py
-    scripts/total_station_sim.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -99,6 +122,9 @@ if(BUILD_TESTING)
   ament_add_gtest(test_wall_imu_adapter test/test_wall_imu_adapter.cpp)
   target_link_libraries(test_wall_imu_adapter wall_imu_adapter_core)
   target_include_directories(test_wall_imu_adapter PRIVATE include)
+  ament_add_gtest(test_total_station_model_cpp test/test_total_station_model.cpp)
+  target_link_libraries(test_total_station_model_cpp total_station_model_core)
+  target_include_directories(test_total_station_model_cpp PRIVATE include)
   ament_add_gtest(test_clock_throttle test/test_clock_throttle.cpp)
   target_link_libraries(test_clock_throttle clock_throttle_core)
   target_include_directories(test_clock_throttle PRIVATE include)

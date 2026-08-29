@@ -112,7 +112,9 @@ def test_gazebo_supervisor_does_not_extend_its_kill_deadline_on_a_second_signal(
 
 def test_simulation_adapters_exit_cleanly_after_launch_sigint():
     """Do not mask a required-process exit with duplicate rclpy shutdown errors."""
-    for name in ('total_station_sim.py', 'camera_distortion_adapter.py'):
+    # total_station_sim is a C++ node now; rclpy shutdown handling only has to
+    # be asserted for the Python adapters that remain.
+    for name in ('camera_distortion_adapter.py',):
         source = (PACKAGE_ROOT / 'scripts' / name).read_text()
         assert 'ExternalShutdownException' in source
         assert 'except (KeyboardInterrupt, ExternalShutdownException):' in source
@@ -129,9 +131,9 @@ def test_wall_launch_uses_the_current_total_station_delay_default():
 
 
 def test_total_station_node_uses_the_same_delay_when_run_standalone():
-    """Launching the adapter directly must not restore the retired 50 ms default."""
-    source = (PACKAGE_ROOT / 'scripts' / 'total_station_sim.py').read_text()
-    assert "self.declare_parameter('fixed_delay_s', 0.01)" in source
+    """Launching the node directly must not restore the retired 50 ms default."""
+    source = (PACKAGE_ROOT / 'src' / 'total_station_sim_node.cpp').read_text()
+    assert 'declare_parameter("fixed_delay_s", 0.01)' in source
 
 
 def test_rendered_launch_assets_are_removed_on_shutdown(tmp_path):
