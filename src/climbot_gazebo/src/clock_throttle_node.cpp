@@ -14,7 +14,9 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 
 #include "climbot_gazebo/clock_throttle.hpp"
@@ -48,9 +50,23 @@ public:
     publisher_ = create_publisher<rosgraph_msgs::msg::Clock>("/clock", qos);
     subscription_ = create_subscription<rosgraph_msgs::msg::Clock>(
       "/clock_raw", qos, [this](const rosgraph_msgs::msg::Clock::SharedPtr message) {
+        // Steady time, never simulation time: this measures whether the clock
+        // itself was late, so it cannot be derived from the clock.
+        const auto arrival = std::chrono::steady_clock::now();
+        if (last_input_) {
+          throttle_.recordInputGap(
+            std::chrono::duration<double>(arrival - *last_input_).count());
+        }
+        last_input_ = arrival;
         const int64_t stamp_ns = rclcpp::Time(message->clock).nanoseconds();
         if (throttle_.shouldPublish(stamp_ns)) {
           publisher_->publish(*message);
+          const auto sent = std::chrono::steady_clock::now();
+          if (last_output_) {
+            throttle_.recordOutputGap(
+              std::chrono::duration<double>(sent - *last_output_).count());
+          }
+          last_output_ = sent;
         }
       });
     // Deliberately reports the request, not a delivery. What is delivered is
@@ -61,6 +77,9 @@ public:
       throttle_.requestedRateHz(), static_cast<double>(throttle_.periodNs()) / 1.0e6);
     report_timer_ = create_wall_timer(
       std::chrono::duration<double>(report_delay_s_), [this]() {report();});
+    gap_timer_ = create_wall_timer(
+      std::chrono::duration<double>(
+        declare_parameter("gap_summary_period_s", 10.0)), [this]() {reportGaps();});
   }
 
 private:
@@ -95,6 +114,26 @@ private:
     }
   }
 
+  void reportGaps()
+  {
+    const auto & in = throttle_.inputGaps();
+    const auto & out = throttle_.outputGaps();
+    // Both sides in one line so a reader never has to align two timestamps:
+    // equal maxima mean the stall arrived from upstream, an output maximum
+    // above the input maximum means this node was the blockage.
+    RCLCPP_INFO(
+      get_logger(),
+      "CLOCK_THROTTLE gaps in_n=%lu in_max_ms=%.1f in_ge_50=%lu in_ge_100=%lu in_ge_200=%lu "
+      "in_ge_250=%lu out_n=%lu out_max_ms=%.1f out_ge_50=%lu out_ge_100=%lu out_ge_200=%lu "
+      "out_ge_250=%lu",
+      static_cast<unsigned long>(in.samples()), in.maxS() * 1000.0,
+      static_cast<unsigned long>(in.atLeast(0)), static_cast<unsigned long>(in.atLeast(1)),
+      static_cast<unsigned long>(in.atLeast(2)), static_cast<unsigned long>(in.atLeast(3)),
+      static_cast<unsigned long>(out.samples()), out.maxS() * 1000.0,
+      static_cast<unsigned long>(out.atLeast(0)), static_cast<unsigned long>(out.atLeast(1)),
+      static_cast<unsigned long>(out.atLeast(2)), static_cast<unsigned long>(out.atLeast(3)));
+  }
+
   static constexpr double kRateTolerance = 0.01;
 
   climbot_gazebo::ClockThrottle throttle_;
@@ -102,6 +141,9 @@ private:
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr publisher_;
   rclcpp::Subscription<rosgraph_msgs::msg::Clock>::SharedPtr subscription_;
   rclcpp::TimerBase::SharedPtr report_timer_;
+  rclcpp::TimerBase::SharedPtr gap_timer_;
+  std::optional<std::chrono::steady_clock::time_point> last_input_;
+  std::optional<std::chrono::steady_clock::time_point> last_output_;
 };
 
 }  // namespace

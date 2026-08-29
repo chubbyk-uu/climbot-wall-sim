@@ -126,3 +126,43 @@ TEST(ClockThrottle, RestartsTheMeasurementWindowAfterASimulatorReset)
   EXPECT_NEAR(throttle.measuredInputRateHz(), 1000.0, 0.01);
   EXPECT_EQ(throttle.inputs(), 2001U);
 }
+
+TEST(GapStatistics, CountsEachThresholdCumulatively)
+{
+  climbot_gazebo::GapStatistics gaps;
+  gaps.add(0.010);
+  gaps.add(0.060);
+  gaps.add(0.150);
+  gaps.add(0.300);
+  EXPECT_EQ(gaps.samples(), 4U);
+  EXPECT_NEAR(gaps.maxS(), 0.300, 1e-9);
+  EXPECT_EQ(gaps.atLeast(0), 3U);   // >= 50 ms
+  EXPECT_EQ(gaps.atLeast(1), 2U);   // >= 100 ms
+  EXPECT_EQ(gaps.atLeast(2), 1U);   // >= 200 ms
+  EXPECT_EQ(gaps.atLeast(3), 1U);   // >= 250 ms
+}
+
+TEST(GapStatistics, StartsEmptyAndStaysBoundedInSpace)
+{
+  climbot_gazebo::GapStatistics gaps;
+  EXPECT_EQ(gaps.samples(), 0U);
+  EXPECT_EQ(gaps.maxS(), 0.0);
+  for (int i = 0; i < 100000; ++i) {
+    gaps.add(0.001);
+  }
+  EXPECT_EQ(gaps.samples(), 100000U);
+  EXPECT_EQ(gaps.atLeast(0), 0U);
+  EXPECT_NEAR(gaps.maxS(), 0.001, 1e-9);
+}
+
+TEST(ClockThrottle, KeepsInputAndOutputGapsApart)
+{
+  climbot_gazebo::ClockThrottle throttle(500.0);
+  throttle.recordInputGap(0.001);
+  throttle.recordInputGap(0.001);
+  throttle.recordOutputGap(0.300);
+  EXPECT_EQ(throttle.inputGaps().samples(), 2U);
+  EXPECT_EQ(throttle.inputGaps().atLeast(3), 0U);
+  EXPECT_EQ(throttle.outputGaps().samples(), 1U);
+  EXPECT_EQ(throttle.outputGaps().atLeast(3), 1U);
+}

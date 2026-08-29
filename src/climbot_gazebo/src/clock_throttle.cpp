@@ -34,6 +34,21 @@ double rateHz(uint64_t count, int64_t first_ns, int64_t last_ns)
 
 }  // namespace
 
+constexpr std::array<double, 4> GapStatistics::kThresholdsS;
+
+void GapStatistics::add(double gap_s)
+{
+  ++samples_;
+  if (gap_s > max_s_) {
+    max_s_ = gap_s;
+  }
+  for (std::size_t index = 0; index < kThresholdsS.size(); ++index) {
+    if (gap_s >= kThresholdsS[index]) {
+      ++at_least_[index];
+    }
+  }
+}
+
 ClockThrottle::ClockThrottle(double publish_rate_hz)
 : requested_rate_hz_(publish_rate_hz)
 {

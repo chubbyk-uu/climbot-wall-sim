@@ -15,11 +15,36 @@
 #ifndef CLIMBOT_GAZEBO__CLOCK_THROTTLE_HPP_
 #define CLIMBOT_GAZEBO__CLOCK_THROTTLE_HPP_
 
+#include <array>
 #include <cstdint>
 #include <optional>
 
 namespace climbot_gazebo
 {
+
+/// Fixed-space wall-clock gap statistics for one side of the throttle.
+///
+/// The throttle sits on the critical path of simulation time: if it is not
+/// scheduled, /clock stops for every node. Measuring only the rate it delivers
+/// cannot show that -- a stall and a clean stream average out the same. These
+/// are kept for the input and the output separately, because equal gaps on
+/// both sides mean the stall was upstream, while an output gap without a
+/// matching input gap means the throttle itself was the blockage.
+class GapStatistics
+{
+public:
+  static constexpr std::array<double, 4> kThresholdsS{0.050, 0.100, 0.200, 0.250};
+
+  void add(double gap_s);
+  uint64_t samples() const {return samples_;}
+  double maxS() const {return max_s_;}
+  uint64_t atLeast(std::size_t index) const {return at_least_[index];}
+
+private:
+  uint64_t samples_{};
+  double max_s_{};
+  std::array<uint64_t, kThresholdsS.size()> at_least_{};
+};
 
 /// Select the newest input clock at no more than one configured simulation-time rate.
 ///
@@ -45,6 +70,13 @@ public:
   uint64_t inputs() const;
   uint64_t outputs() const;
 
+  /// Wall-clock spacing of arrivals and of publications. Fed by the node,
+  /// which owns the steady clock; this class stays free of ROS and of time.
+  void recordInputGap(double gap_s) {input_gaps_.add(gap_s);}
+  void recordOutputGap(double gap_s) {output_gaps_.add(gap_s);}
+  const GapStatistics & inputGaps() const {return input_gaps_;}
+  const GapStatistics & outputGaps() const {return output_gaps_;}
+
 private:
   void restartMeasurement(int64_t simulation_time_ns);
 
@@ -59,6 +91,9 @@ private:
   int64_t last_measured_input_ns_{};
   int64_t first_output_ns_{};
   int64_t last_measured_output_ns_{};
+
+  GapStatistics input_gaps_;
+  GapStatistics output_gaps_;
 };
 
 }  // namespace climbot_gazebo
