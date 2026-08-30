@@ -14,7 +14,7 @@
 | 覆盖任务与控制 | `coverage_{bigH,bigTH,bigTV,bigV,horizontal,trapezoid_horizontal,trapezoid_vertical,vertical}_2026-08-20_summary.json` | 默认 `time` 控制的八工况正式仿真基线 |
 | 距离控制对照 | 对应的 `*_2026-08-20d_summary.json` | 与默认控制律同口径的对照，不替代默认基线 |
 | 定位 | [localization_2026-08-19_summary.json](localization_2026-08-19_summary.json) | 融合定位与轮式里程计的四方向独立真值对照 |
-| 侧滑与转向 | `normal_loads_400N.csv`、`turn_slip.csv`、`turn_map.csv`、`wall_slip_trajectory.csv.gz` | 当前 400 N 几何与侧滑参考 |
+| 侧滑与转向 | `normal_loads_400N.csv`、`turn_slip_2026-08-30.csv`、`turn_map_2026-08-30.csv`（含 `_summary.json`）、`wall_slip_trajectory.csv.gz` | 当前 400 N 几何与侧滑参考；`turn_slip_per_degree_m` 由 24 次转向拟合为 `0.00046`，整圈 48 点 `0.4309--0.5018 mm/deg` 且圆平坦。旧的 `turn_slip.csv`、`turn_map.csv` 与 `turn_map_g1_camera_2026-08-24.*` 保留为历史对照 |
 | G1 相机 | `g1_camera_*`、`target_*`、`localization-g1-*` | 相机接口、轴向/畸变和运动投影中心证据 |
 | G2/G4 采集 | `g2_accept_{horizontal,vertical,trapezoid}_2026-08-26_summary.json` | 异步匀速位置触发、位姿绑定与原始归档正式结果 |
 | P2 相对拼接 | [mosaic_p2_baseline_2026-08-26_summary.json](mosaic_p2_baseline_2026-08-26_summary.json) | 0.25 mm 相对拼接基线；尚未冻结验收门槛 |

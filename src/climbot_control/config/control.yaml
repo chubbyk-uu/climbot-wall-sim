@@ -27,7 +27,7 @@ line_tracker:
     # first matching gate arrives. Once it does, the shorter heartbeat applies.
     capture_gate_start_timeout_s: 2.0
     motion_region_tolerance_m: 0.02
-    turn_slip_per_degree_m: 0.00041
+    turn_slip_per_degree_m: 0.00046
     parallel_scan_offset_m: 0.045
     maximum_scan_offset_m: 0.12
     # Bounds where a scan line entered by arc is frozen, so it has to sit

@@ -1,0 +1,542 @@
+{
+  "expected_record_count": 48,
+  "limits": {
+    "maximum_mm_per_deg": 0.55,
+    "maximum_range_mm_per_deg": 0.1,
+    "maximum_turn_error_deg": 2.0
+  },
+  "maximum_mm_per_deg": 0.5018,
+  "maximum_turn_error_deg": 0.8389999999999986,
+  "minimum_mm_per_deg": 0.4309,
+  "parameters": {
+    "angles_deg": [
+      30.0,
+      -30.0
+    ],
+    "angular_acceleration_rps2": 1.0,
+    "heading_tolerance_deg": 0.3,
+    "headings_deg": [
+      -180.0,
+      -165.0,
+      -150.0,
+      -135.0,
+      -120.0,
+      -105.0,
+      -90.0,
+      -75.0,
+      -60.0,
+      -45.0,
+      -30.0,
+      -15.0,
+      0.0,
+      15.0,
+      30.0,
+      45.0,
+      60.0,
+      75.0,
+      90.0,
+      105.0,
+      120.0,
+      135.0,
+      150.0,
+      165.0
+    ],
+    "max_rate_rps": 0.6,
+    "settle_duration_s": 1.5,
+    "turn_tolerance_deg": 1.0
+  },
+  "passed": true,
+  "provenance": {
+    "git": {
+      "branch": "main",
+      "commit": "1266f22e726f1abc1df01bf0740416754a475a2a",
+      "source_modified": false,
+      "traceable": true
+    }
+  },
+  "range_mm_per_deg": 0.07090000000000002,
+  "record_count": 48,
+  "records": [
+    {
+      "achieved_deg": 30.22,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.627,
+      "mm_per_deg": 0.5015,
+      "slide_mm": 15.046,
+      "start_heading_deg": 179.713,
+      "vertical_mm": -15.033,
+      "wall_height_m": 1.9018
+    },
+    {
+      "achieved_deg": -30.677,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.078,
+      "mm_per_deg": 0.4693,
+      "slide_mm": 14.078,
+      "start_heading_deg": 179.706,
+      "vertical_mm": -14.078,
+      "wall_height_m": 1.9335
+    },
+    {
+      "achieved_deg": 30.295,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.614,
+      "mm_per_deg": 0.4961,
+      "slide_mm": 14.882,
+      "start_heading_deg": -165.292,
+      "vertical_mm": -14.87,
+      "wall_height_m": 1.9249
+    },
+    {
+      "achieved_deg": -30.818,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.036,
+      "mm_per_deg": 0.4603,
+      "slide_mm": 13.81,
+      "start_heading_deg": -165.289,
+      "vertical_mm": -13.81,
+      "wall_height_m": 1.925
+    },
+    {
+      "achieved_deg": 30.334,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.148,
+      "mm_per_deg": 0.4775,
+      "slide_mm": 14.325,
+      "start_heading_deg": -150.288,
+      "vertical_mm": -14.324,
+      "wall_height_m": 1.9165
+    },
+    {
+      "achieved_deg": -30.797,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.118,
+      "mm_per_deg": 0.4738,
+      "slide_mm": 14.215,
+      "start_heading_deg": -150.293,
+      "vertical_mm": -14.214,
+      "wall_height_m": 1.9163
+    },
+    {
+      "achieved_deg": 30.381,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.446,
+      "mm_per_deg": 0.4552,
+      "slide_mm": 13.655,
+      "start_heading_deg": -135.287,
+      "vertical_mm": -13.648,
+      "wall_height_m": 1.9119
+    },
+    {
+      "achieved_deg": -30.685,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.333,
+      "mm_per_deg": 0.4822,
+      "slide_mm": 14.467,
+      "start_heading_deg": -135.291,
+      "vertical_mm": -14.463,
+      "wall_height_m": 1.909
+    },
+    {
+      "achieved_deg": 30.436,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.336,
+      "mm_per_deg": 0.4373,
+      "slide_mm": 13.118,
+      "start_heading_deg": -120.293,
+      "vertical_mm": -13.114,
+      "wall_height_m": 1.9059
+    },
+    {
+      "achieved_deg": -30.566,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.113,
+      "mm_per_deg": 0.4758,
+      "slide_mm": 14.275,
+      "start_heading_deg": -120.292,
+      "vertical_mm": -14.275,
+      "wall_height_m": 1.9039
+    },
+    {
+      "achieved_deg": 30.47,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.005,
+      "mm_per_deg": 0.4309,
+      "slide_mm": 12.927,
+      "start_heading_deg": -105.287,
+      "vertical_mm": -12.927,
+      "wall_height_m": 1.8986
+    },
+    {
+      "achieved_deg": -30.536,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.311,
+      "mm_per_deg": 0.4558,
+      "slide_mm": 13.673,
+      "start_heading_deg": -105.285,
+      "vertical_mm": -13.67,
+      "wall_height_m": 1.8971
+    },
+    {
+      "achieved_deg": 30.518,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.293,
+      "mm_per_deg": 0.4377,
+      "slide_mm": 13.131,
+      "start_heading_deg": -90.29,
+      "vertical_mm": -13.128,
+      "wall_height_m": 1.8924
+    },
+    {
+      "achieved_deg": -30.518,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.293,
+      "mm_per_deg": 0.4377,
+      "slide_mm": 13.131,
+      "start_heading_deg": -89.709,
+      "vertical_mm": -13.128,
+      "wall_height_m": 1.8921
+    },
+    {
+      "achieved_deg": 30.548,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.31,
+      "mm_per_deg": 0.4556,
+      "slide_mm": 13.668,
+      "start_heading_deg": -74.706,
+      "vertical_mm": -13.664,
+      "wall_height_m": 1.8971
+    },
+    {
+      "achieved_deg": -30.47,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.005,
+      "mm_per_deg": 0.4309,
+      "slide_mm": 12.927,
+      "start_heading_deg": -74.712,
+      "vertical_mm": -12.927,
+      "wall_height_m": 1.899
+    },
+    {
+      "achieved_deg": 30.566,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.113,
+      "mm_per_deg": 0.4758,
+      "slide_mm": 14.275,
+      "start_heading_deg": -59.708,
+      "vertical_mm": -14.275,
+      "wall_height_m": 1.9034
+    },
+    {
+      "achieved_deg": -30.436,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.336,
+      "mm_per_deg": 0.4373,
+      "slide_mm": 13.118,
+      "start_heading_deg": -59.706,
+      "vertical_mm": -13.114,
+      "wall_height_m": 1.9045
+    },
+    {
+      "achieved_deg": 30.669,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.333,
+      "mm_per_deg": 0.4825,
+      "slide_mm": 14.474,
+      "start_heading_deg": -44.712,
+      "vertical_mm": -14.47,
+      "wall_height_m": 1.9093
+    },
+    {
+      "achieved_deg": -30.381,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.446,
+      "mm_per_deg": 0.4552,
+      "slide_mm": 13.655,
+      "start_heading_deg": -44.711,
+      "vertical_mm": -13.648,
+      "wall_height_m": 1.9096
+    },
+    {
+      "achieved_deg": 30.778,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.123,
+      "mm_per_deg": 0.4742,
+      "slide_mm": 14.227,
+      "start_heading_deg": -29.714,
+      "vertical_mm": -14.227,
+      "wall_height_m": 1.9171
+    },
+    {
+      "achieved_deg": -30.334,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.148,
+      "mm_per_deg": 0.4775,
+      "slide_mm": 14.325,
+      "start_heading_deg": -29.71,
+      "vertical_mm": -14.324,
+      "wall_height_m": 1.9164
+    },
+    {
+      "achieved_deg": 30.839,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.038,
+      "mm_per_deg": 0.46,
+      "slide_mm": 13.799,
+      "start_heading_deg": -14.71,
+      "vertical_mm": -13.799,
+      "wall_height_m": 1.9241
+    },
+    {
+      "achieved_deg": -30.29,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.613,
+      "mm_per_deg": 0.4962,
+      "slide_mm": 14.885,
+      "start_heading_deg": -14.714,
+      "vertical_mm": -14.873,
+      "wall_height_m": 1.9254
+    },
+    {
+      "achieved_deg": 30.677,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.078,
+      "mm_per_deg": 0.4693,
+      "slide_mm": 14.078,
+      "start_heading_deg": 0.293,
+      "vertical_mm": -14.078,
+      "wall_height_m": 1.9327
+    },
+    {
+      "achieved_deg": -30.22,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.627,
+      "mm_per_deg": 0.5015,
+      "slide_mm": 15.046,
+      "start_heading_deg": 0.287,
+      "vertical_mm": -15.033,
+      "wall_height_m": 1.9313
+    },
+    {
+      "achieved_deg": 30.56,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.731,
+      "mm_per_deg": 0.4876,
+      "slide_mm": 14.629,
+      "start_heading_deg": 15.287,
+      "vertical_mm": -14.611,
+      "wall_height_m": 1.9385
+    },
+    {
+      "achieved_deg": -30.123,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.125,
+      "mm_per_deg": 0.4994,
+      "slide_mm": 14.981,
+      "start_heading_deg": 15.29,
+      "vertical_mm": -14.98,
+      "wall_height_m": 1.9403
+    },
+    {
+      "achieved_deg": 30.541,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.093,
+      "mm_per_deg": 0.475,
+      "slide_mm": 14.25,
+      "start_heading_deg": 30.287,
+      "vertical_mm": -14.25,
+      "wall_height_m": 1.9482
+    },
+    {
+      "achieved_deg": -30.142,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -1.038,
+      "mm_per_deg": 0.5018,
+      "slide_mm": 15.054,
+      "start_heading_deg": 30.288,
+      "vertical_mm": -15.018,
+      "wall_height_m": 1.9472
+    },
+    {
+      "achieved_deg": 30.515,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.301,
+      "mm_per_deg": 0.4548,
+      "slide_mm": 13.645,
+      "start_heading_deg": 45.287,
+      "vertical_mm": -13.642,
+      "wall_height_m": 1.9553
+    },
+    {
+      "achieved_deg": -30.264,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.621,
+      "mm_per_deg": 0.4962,
+      "slide_mm": 14.887,
+      "start_heading_deg": 45.287,
+      "vertical_mm": -14.874,
+      "wall_height_m": 1.954
+    },
+    {
+      "achieved_deg": 30.48,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.272,
+      "mm_per_deg": 0.4381,
+      "slide_mm": 13.142,
+      "start_heading_deg": 60.286,
+      "vertical_mm": -13.139,
+      "wall_height_m": 1.9616
+    },
+    {
+      "achieved_deg": -30.304,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.137,
+      "mm_per_deg": 0.4775,
+      "slide_mm": 14.326,
+      "start_heading_deg": 60.286,
+      "vertical_mm": -14.325,
+      "wall_height_m": 1.956
+    },
+    {
+      "achieved_deg": 30.439,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.022,
+      "mm_per_deg": 0.4316,
+      "slide_mm": 12.947,
+      "start_heading_deg": 75.286,
+      "vertical_mm": -12.947,
+      "wall_height_m": 1.9691
+    },
+    {
+      "achieved_deg": -30.349,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.434,
+      "mm_per_deg": 0.4554,
+      "slide_mm": 13.663,
+      "start_heading_deg": 75.286,
+      "vertical_mm": -13.656,
+      "wall_height_m": 1.9598
+    },
+    {
+      "achieved_deg": 30.403,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.33,
+      "mm_per_deg": 0.4378,
+      "slide_mm": 13.133,
+      "start_heading_deg": 89.708,
+      "vertical_mm": -13.128,
+      "wall_height_m": 1.9734
+    },
+    {
+      "achieved_deg": -30.403,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.33,
+      "mm_per_deg": 0.4378,
+      "slide_mm": 13.133,
+      "start_heading_deg": 90.291,
+      "vertical_mm": -13.128,
+      "wall_height_m": 1.9474
+    },
+    {
+      "achieved_deg": 30.355,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.434,
+      "mm_per_deg": 0.4553,
+      "slide_mm": 13.658,
+      "start_heading_deg": 104.706,
+      "vertical_mm": -13.651,
+      "wall_height_m": 1.9667
+    },
+    {
+      "achieved_deg": -30.439,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.022,
+      "mm_per_deg": 0.4316,
+      "slide_mm": 12.947,
+      "start_heading_deg": 104.712,
+      "vertical_mm": -12.947,
+      "wall_height_m": 1.9698
+    },
+    {
+      "achieved_deg": 30.304,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.137,
+      "mm_per_deg": 0.4775,
+      "slide_mm": 14.326,
+      "start_heading_deg": 119.711,
+      "vertical_mm": -14.325,
+      "wall_height_m": 1.9533
+    },
+    {
+      "achieved_deg": -30.48,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.272,
+      "mm_per_deg": 0.4381,
+      "slide_mm": 13.142,
+      "start_heading_deg": 119.714,
+      "vertical_mm": -13.139,
+      "wall_height_m": 1.9625
+    },
+    {
+      "achieved_deg": 30.268,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 0.62,
+      "mm_per_deg": 0.4961,
+      "slide_mm": 14.884,
+      "start_heading_deg": 134.707,
+      "vertical_mm": -14.871,
+      "wall_height_m": 1.9494
+    },
+    {
+      "achieved_deg": -30.526,
+      "commanded_deg": -30.0,
+      "horizontal_mm": -0.301,
+      "mm_per_deg": 0.4547,
+      "slide_mm": 13.64,
+      "start_heading_deg": 134.706,
+      "vertical_mm": -13.637,
+      "wall_height_m": 1.9554
+    },
+    {
+      "achieved_deg": 30.143,
+      "commanded_deg": 30.0,
+      "horizontal_mm": 1.036,
+      "mm_per_deg": 0.5018,
+      "slide_mm": 15.053,
+      "start_heading_deg": 149.706,
+      "vertical_mm": -15.018,
+      "wall_height_m": 1.9466
+    },
+    {
+      "achieved_deg": -30.553,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.093,
+      "mm_per_deg": 0.4748,
+      "slide_mm": 14.244,
+      "start_heading_deg": 149.706,
+      "vertical_mm": -14.244,
+      "wall_height_m": 1.9469
+    },
+    {
+      "achieved_deg": 30.123,
+      "commanded_deg": 30.0,
+      "horizontal_mm": -0.126,
+      "mm_per_deg": 0.4994,
+      "slide_mm": 14.981,
+      "start_heading_deg": 164.714,
+      "vertical_mm": -14.98,
+      "wall_height_m": 1.9384
+    },
+    {
+      "achieved_deg": -30.573,
+      "commanded_deg": -30.0,
+      "horizontal_mm": 0.732,
+      "mm_per_deg": 0.4875,
+      "slide_mm": 14.624,
+      "start_heading_deg": 164.706,
+      "vertical_mm": -14.606,
+      "wall_height_m": 1.9385
+    }
+  ],
+  "schema_version": 1
+}
