@@ -78,7 +78,7 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
 | --- | --- |
 | `mosaic_pose_only.tif` | 直接按曝光位姿拼出的母版 |
 | `mosaic_optimized.tif` | 经位姿图对齐后拼出的母版 |
-| `mosaic_difference.tif` | 两者差分 |
+| `mosaic_difference.tif` | 两者差分；由 optimized 那趟逐块相减得出，不重复渲染 |
 | `coverage_count.tif` | 每个像素被几张照片覆盖；**为零表示相机从未拍到** |
 | `uncertainty.tif` | 量化后验不确定度，`65535` 标记无覆盖 |
 | `mosaic_preview.jpg` | optimized 母版的 JPEG 预览 |
@@ -87,7 +87,9 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
 
 正式母版是 `0.25 mm/px` 的无损 tiled BigTIFF（`--resolution-mm-per-pixel`）。
 `--jobs` 和 `--memory-budget-gb` 只改变耗时：帧键、随机源、候选与边的排序、接受的边、
-优化问题和输出像素必须保持确定。
+优化问题和输出像素必须保持确定。渲染进程数取三者最小——显式 `--jobs`、内存预算能负担的
+数量、CPU 核数。预算先付一次运行的固定开销（渲染网格、帧表和 TIFF 写入器缓冲，实测
+`1.87 GB`），余下的按每 worker `96 MB` 分配；预算不足以覆盖固定开销时退化为单进程。
 
 `--preview-max-side-px` 只改变两份 JPEG 预览的尺寸，不会改变正式 BigTIFF 或位姿图。默认 `4096`
 便于查看接缝和局部细节；想减小文件可设为 `2048`，最小值为 `512`。
@@ -103,8 +105,13 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
   truth / pose-only / optimized 检查 tile（`--tile-size-px`、`--padding-m`），
   并把零覆盖区域显式写进摘要，而不是用填充图掩盖。
 
-原尺寸 tile 只能证明“已经导出”，不能证明相机拍到了它的每一个像素——这正是 P2-06 至今
-未关闭的原因。
+`--drive-region-m MIN_X MIN_Y MAX_X MAX_Y` 给出机器人被允许行驶的矩形，摘要据此把未覆盖
+像素拆成 `uncovered_inside_drive_region` 与 `uncovered_outside_drive_region`，并给出
+`all_reachable_feature_pixels_covered`。判定覆盖时必须给：declared 几何可以伸到机器人到
+不了的地方——这块诊断墙上就有按设计贯穿整墙的接缝——不裁剪可达范围的总数对这类墙面恒为
+假，没有判定价值。拆分由评价器输出而不是事后另算，缺口才不会无声增长。
+
+原尺寸 tile 只能证明“已经导出”，不能证明相机拍到了它的每一个像素。
 
 ## 失败即不发布
 

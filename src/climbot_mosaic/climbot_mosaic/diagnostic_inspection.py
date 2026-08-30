@@ -185,22 +185,55 @@ def _feature_mask(feature: dict[str, Any], grid: MosaicGrid, bounds: Bounds) -> 
     raise DiagnosticInspectionError(f'unsupported diagnostic feature kind: {kind!r}.')
 
 
+def _reachable_mask(grid: MosaicGrid, bounds: Bounds,
+                    drive_region_m: Bounds) -> np.ndarray:
+    """Mark crop pixels whose centre lies inside the robot's drive rectangle."""
+    resolution = grid.resolution_m_per_pixel
+    x0 = int(round((bounds[0] - grid.min_x_m) / resolution))
+    x1 = int(round((bounds[2] - grid.min_x_m) / resolution))
+    y0 = int(round((grid.max_y_m - bounds[3]) / resolution))
+    y1 = int(round((grid.max_y_m - bounds[1]) / resolution))
+    columns = grid.min_x_m + (np.arange(x0, x1, dtype=np.float64) + 0.5) * resolution
+    rows = grid.max_y_m - (np.arange(y0, y1, dtype=np.float64) + 0.5) * resolution
+    inside_x = (columns >= drive_region_m[0]) & (columns <= drive_region_m[2])
+    inside_y = (rows >= drive_region_m[1]) & (rows <= drive_region_m[3])
+    return inside_y[:, None] & inside_x[None, :]
+
+
 def _coverage_summary(coverage: np.ndarray, grid: MosaicGrid, bounds: Bounds,
-                      mask: np.ndarray | None = None) -> dict[str, int]:
+                      mask: np.ndarray | None = None,
+                      reachable: np.ndarray | None = None) -> dict[str, int]:
     values = _grid_crop(coverage, grid, bounds)
     if values.dtype != np.uint16:
         raise DiagnosticInspectionError('coverage raster must be uint16.')
+    keep = np.ones(values.shape, bool)
     if mask is not None:
         if mask.shape != values.shape:
             raise DiagnosticInspectionError('feature geometry mask does not match coverage crop.')
-        values = values[mask]
-    return {
-        'pixel_count': int(values.size),
-        'uncovered_pixel_count': int(np.count_nonzero(values == 0)),
-        'single_source_pixel_count': int(np.count_nonzero(values == 1)),
-        'overlap_pixel_count': int(np.count_nonzero(values >= 2)),
-        'maximum_source_count': int(values.max()) if values.size else 0,
+        keep = mask
+    selected = values[keep]
+    summary = {
+        'pixel_count': int(selected.size),
+        'uncovered_pixel_count': int(np.count_nonzero(selected == 0)),
+        'single_source_pixel_count': int(np.count_nonzero(selected == 1)),
+        'overlap_pixel_count': int(np.count_nonzero(selected >= 2)),
+        'maximum_source_count': int(selected.max()) if selected.size else 0,
     }
+    if reachable is not None:
+        # Declared feature geometry may extend past the rectangle the robot is
+        # allowed to drive, and three of this wall's seams span it end to end
+        # by design. Those pixels can never be photographed from inside the
+        # safe frame, so the gate is the reachable split rather than the total,
+        # and it is reported here instead of being derived afterwards.
+        if reachable.shape != values.shape:
+            raise DiagnosticInspectionError('drive-region mask does not match coverage crop.')
+        uncovered = (values == 0) & keep
+        summary['reachable_pixel_count'] = int(np.count_nonzero(keep & reachable))
+        summary['uncovered_inside_drive_region'] = int(
+            np.count_nonzero(uncovered & reachable))
+        summary['uncovered_outside_drive_region'] = int(
+            np.count_nonzero(uncovered & ~reachable))
+    return summary
 
 
 def _grid_crop(image: np.ndarray, grid: MosaicGrid, bounds: Bounds) -> np.ndarray:
@@ -233,7 +266,8 @@ def _validate_mosaic(manifest: dict[str, Any]) -> MosaicGrid:
 
 def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir: Path,
                               padding_m: float = 0.05,
-                              tile_size_px: int = 2048) -> dict[str, Any]:
+                              tile_size_px: int = 2048,
+                              drive_region_m: Bounds | None = None) -> dict[str, Any]:
     """
     Write 100%-scale visual evidence for every diagnostic feature intersecting a mosaic.
 
@@ -282,6 +316,8 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
             feature_specs = []
             feature_ids: set[str] = set()
             visible_core_pixels = 0
+            reachable_pixels = 0
+            uncovered_reachable = 0
             uncovered_core_pixels = 0
             for raw_feature in diagnostic['features']:
                 feature_id = _register_feature_id(raw_feature, feature_ids)
@@ -301,9 +337,14 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                     raise DiagnosticInspectionError('visible feature has no crop extent.')
                 coverage_result = _coverage_summary(
                     coverage, mosaic_grid, visible_core,
-                    _feature_mask(raw_feature, mosaic_grid, visible_core))
+                    _feature_mask(raw_feature, mosaic_grid, visible_core),
+                    None if drive_region_m is None else _reachable_mask(
+                        mosaic_grid, visible_core, drive_region_m))
                 visible_core_pixels += coverage_result['pixel_count']
                 uncovered_core_pixels += coverage_result['uncovered_pixel_count']
+                reachable_pixels += coverage_result.get('reachable_pixel_count', 0)
+                uncovered_reachable += coverage_result.get(
+                    'uncovered_inside_drive_region', 0)
                 record.update({
                     'visibility': ('fully_visible' if visible_core == core_bounds
                                    else 'partially_visible'),
@@ -330,8 +371,24 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                 records.append(record)
             visible = [record for record in records
                        if record['visibility'] != 'outside_mosaic_domain']
+            coverage_totals: dict[str, Any] = {
+                'pixel_count': visible_core_pixels,
+                'uncovered_pixel_count': uncovered_core_pixels,
+                'all_visible_feature_pixels_covered': uncovered_core_pixels == 0,
+            }
+            if drive_region_m is not None:
+                # The gate. Declared geometry outside the drive rectangle is
+                # unreachable by construction, so only this number can be zero
+                # for a wall whose seams run past the safe frame.
+                coverage_totals.update({
+                    'reachable_pixel_count': reachable_pixels,
+                    'uncovered_inside_drive_region': uncovered_reachable,
+                    'uncovered_outside_drive_region':
+                        uncovered_core_pixels - uncovered_reachable,
+                    'all_reachable_feature_pixels_covered': uncovered_reachable == 0,
+                })
             summary = {
-                'diagnostic_inspection_format_version': 1,
+                'diagnostic_inspection_format_version': 2,
                 'purpose': ('Post-mosaic 100%-scale visual inspection only; immutable diagnostic '
                             'wall truth is never available to candidate generation, matching, or '
                             'pose optimization.'),
@@ -356,11 +413,9 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                         record['visibility'] == 'partially_visible' for record in visible),
                     'outside_mosaic_domain': len(records) - len(visible),
                 },
-                'visible_feature_coverage': {
-                    'pixel_count': visible_core_pixels,
-                    'uncovered_pixel_count': uncovered_core_pixels,
-                    'all_visible_feature_pixels_covered': uncovered_core_pixels == 0,
-                },
+                'drive_region_m': (None if drive_region_m is None
+                                   else [float(value) for value in drive_region_m]),
+                'visible_feature_coverage': coverage_totals,
                 'features': records,
             }
             (temporary / 'diagnostic_inspection_summary.json').write_text(

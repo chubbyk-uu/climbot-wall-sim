@@ -22,22 +22,38 @@ def main() -> int:
     parser.add_argument('--output-dir', required=True, type=Path)
     parser.add_argument('--padding-m', type=float, default=0.05)
     parser.add_argument('--tile-size-px', type=int, default=2048)
+    # Declared feature geometry can extend past the rectangle the robot is
+    # allowed to drive, so without this the summary can only report a total
+    # that a wall with full-height seams can never drive to zero.
+    parser.add_argument('--drive-region-m', type=float, nargs=4,
+                        metavar=('MIN_X', 'MIN_Y', 'MAX_X', 'MAX_Y'))
     arguments = parser.parse_args()
+    drive_region = tuple(arguments.drive_region_m) if arguments.drive_region_m else None
+    if drive_region is not None and (
+            drive_region[0] >= drive_region[2] or drive_region[1] >= drive_region[3]):
+        print('drive region must be min_x min_y max_x max_y with a positive extent')
+        return 2
     try:
         summary = inspect_diagnostic_mosaic(
             arguments.mosaic_dir, arguments.wall_manifest, arguments.output_dir,
-            arguments.padding_m, arguments.tile_size_px)
+            arguments.padding_m, arguments.tile_size_px, drive_region)
     except (DiagnosticInspectionError, OSError, ValueError) as error:
         print(f'diagnostic mosaic inspection failed: {error}')
         return 2
-    print(json.dumps({
+    coverage = summary['visible_feature_coverage']
+    report = {
         'status': 'completed',
         'output_dir': str(arguments.output_dir),
-        'visible_feature_pixels_covered': summary['visible_feature_coverage'][
-            'all_visible_feature_pixels_covered'],
+        'visible_feature_pixels_covered': coverage['all_visible_feature_pixels_covered'],
         'intersecting_feature_count': summary['feature_counts'][
             'intersecting_mosaic_domain'],
-    }, ensure_ascii=False, sort_keys=True))
+    }
+    if 'all_reachable_feature_pixels_covered' in coverage:
+        report['reachable_feature_pixels_covered'] = coverage[
+            'all_reachable_feature_pixels_covered']
+        report['uncovered_inside_drive_region'] = coverage['uncovered_inside_drive_region']
+        report['uncovered_outside_drive_region'] = coverage['uncovered_outside_drive_region']
+    print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     return 0
 
 

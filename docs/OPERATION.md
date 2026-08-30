@@ -179,12 +179,19 @@ ros2 run climbot_mosaic evaluate_diagnostic_mosaic \
 ros2 run climbot_mosaic inspect_diagnostic_mosaic \
   --mosaic-dir "$MOSAIC_ROOT" \
   --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
-  --output-dir "$MOSAIC_ROOT-inspection-<new-id>"
+  --output-dir "$MOSAIC_ROOT-inspection-<new-id>" \
+  --drive-region-m 0.55 0.55 9.45 7.45
 ```
 
+`--drive-region-m` 是机器人被允许行驶的矩形，判定覆盖时必须给：诊断墙上有 feature 按设计
+贯穿整墙或伸出安全框，机器人拍不到它们伸出去的部分。给了这个矩形，摘要才会输出
+`all_reachable_feature_pixels_covered` 与逐 feature 的
+`uncovered_inside_drive_region` / `uncovered_outside_drive_region`；不给则只有一个恒为假
+的总数。矩形取任务 YAML 的 `lower_left`/`upper_right`，理由见
+[拼接计划](MOSAIC_PLAN.md)。
+
 重点看真值摘要里的共同锚点、局部残差、覆盖计数和未覆盖 feature。原尺寸 tile 只能证明
-**已经导出**，不能证明相机拍到了它的每一个像素——这正是 P2-06 至今未关闭的原因，
-当前缺口和关闭条件以 [STATUS](STATUS.md) 为准。
+**已经导出**，不能证明相机拍到了它的每一个像素。当前门禁状态以 [STATUS](STATUS.md) 为准。
 
 ## 墙面贴图
 

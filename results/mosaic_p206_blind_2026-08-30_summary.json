@@ -1,0 +1,77 @@
+{
+ "acquisition": {
+  "drive_region_m": [
+   0.55,
+   0.55,
+   9.45,
+   7.45
+  ],
+  "horizontal_frames": 680,
+  "localization_profile": "realistic",
+  "vertical_frames": 660
+ },
+ "evidence": {
+  "all_acquisition_runs_complete": true,
+  "native_resolution_tiles_resampled": false,
+  "optimized_not_worse_p95_anchor_offset": true,
+  "reachable_feature_pixels_all_covered": true,
+  "visible_feature_pixels_all_covered": false
+ },
+ "inspection": {
+  "feature_counts": {
+   "declared": 21,
+   "fully_visible": 18,
+   "intersecting_mosaic_domain": 21,
+   "outside_mosaic_domain": 0,
+   "partially_visible": 3
+  },
+  "inspection_summary_sha256": "3e8037235a3cd5e74353e60621a51d1fadd5e7849289c48a92561c19a7efd82a",
+  "pixel_scale_mm": 0.25,
+  "uncovered_outside_drive_region_by_feature": {
+   "construction_seam_01": 6116,
+   "construction_seam_02": 6512,
+   "construction_seam_03": 19876,
+   "crack_decal_08": 309018,
+   "graffiti_decal_04": 97594
+  },
+  "visible_feature_coverage": {
+   "all_reachable_feature_pixels_covered": true,
+   "pixel_count": 126770701,
+   "reachable_pixel_count": 123179188,
+   "uncovered_inside_drive_region": 0,
+   "uncovered_outside_drive_region": 439116
+  }
+ },
+ "joint": {
+  "accepted_anchor_count": 8,
+  "frame_count": 1340,
+  "mosaic_manifest_sha256": "4d453024a4b2ff9786da69542ab09dfed34813343b036044c48f831bd5910804",
+  "optimized_absolute_anchor_offset_median_mm": 1.26971,
+  "optimized_absolute_anchor_offset_p95_mm": 1.669731,
+  "optimized_local_residual_p95_mm": 0.225696,
+  "optimized_overlap_gray_std_mean": 2.491175,
+  "optimized_scale_error_ppm": 17.41,
+  "pose_graph_connected_component_sizes": [
+   1339,
+   1
+  ],
+  "pose_only_absolute_anchor_offset_p95_mm": 20.102963,
+  "pose_only_local_residual_p95_mm": 26.817536,
+  "pose_only_overlap_gray_std_mean": 4.798694,
+  "pose_only_scale_error_ppm": -230.587,
+  "truth_summary_sha256": "2a72268c66c689ac9c7aebf7fe6f497bb15d96b6458a22bd156dde50a0f8ec67"
+ },
+ "limitations": [
+  "One blind collection on one wall; the millimetre figures are a single sample, not a distribution, so no threshold is frozen.",
+  "Uncovered pixels outside the drive rectangle belong to features that span the wall by design and are unreachable from inside the safe frame; the gate is the reachable split.",
+  "Absolute values before commit 3f422f5 are not comparable: the photographed surface stood 1.25 mm proud of the drive plane and scaled every mosaic by +4566 ppm.",
+  "One horizontal frame carries no accepted match edge (SIFT finds no keypoints there); its pose comes from odometry. Measured effect on the nearest anchor is 0.022 mm."
+ ],
+ "provenance": {
+  "commit": "ec62a54",
+  "source_modified": false,
+  "wall_manifest": "textures/wall_diagnostic_025/wall_texture.json"
+ },
+ "schema_version": 1,
+ "status": "blind_validation_reachable_coverage_complete"
+}

@@ -19,6 +19,7 @@ from climbot_mosaic.diagnostic_inspection import (
     _feature_mask,
     _intersection,
     _pad_to_shape,
+    _reachable_mask,
     _register_feature_id,
     _safe_feature_id,
     DiagnosticInspectionError,
@@ -66,6 +67,61 @@ def test_coverage_summary_counts_each_native_pixel():
         'overlap_pixel_count': 7,
         'maximum_source_count': 3,
     }
+
+
+def test_reachable_mask_selects_pixel_centres_inside_the_drive_rectangle():
+    grid = MosaicGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4)
+    # Row 0 is the top of the raster, so y descends down the mask.
+    mask = _reachable_mask(grid, (0.0, 0.0, 0.004, 0.004), (0.001, 0.001, 0.003, 0.003))
+    assert mask.tolist() == [
+        [False, False, False, False],
+        [False, True, True, False],
+        [False, True, True, False],
+        [False, False, False, False],
+    ]
+
+
+def test_coverage_split_reports_what_the_robot_could_have_reached():
+    """A gap outside the drive rectangle is not a coverage failure."""
+    grid = MosaicGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4)
+    # Uncovered pixels sit in the outer ring only, which is what a feature
+    # running past the safe frame looks like.
+    coverage = np.asarray(((0, 0, 0, 0), (0, 2, 2, 0),
+                           (0, 2, 2, 0), (0, 0, 0, 0)), np.uint16)
+    bounds = (0.0, 0.0, 0.004, 0.004)
+    drive = (0.001, 0.001, 0.003, 0.003)
+    result = _coverage_summary(
+        coverage, grid, bounds, None, _reachable_mask(grid, bounds, drive))
+    assert result['uncovered_pixel_count'] == 12
+    assert result['uncovered_inside_drive_region'] == 0
+    assert result['uncovered_outside_drive_region'] == 12
+    assert result['reachable_pixel_count'] == 4
+    # And a gap the robot could have driven to is still counted against it.
+    coverage[1, 1] = 0
+    inside = _coverage_summary(
+        coverage, grid, bounds, None, _reachable_mask(grid, bounds, drive))
+    assert inside['uncovered_inside_drive_region'] == 1
+
+
+def test_coverage_split_is_absent_without_a_drive_rectangle():
+    grid = MosaicGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4)
+    coverage = np.zeros((4, 4), np.uint16)
+    result = _coverage_summary(coverage, grid, (0.0, 0.0, 0.004, 0.004))
+    assert 'uncovered_inside_drive_region' not in result
+
+
+def test_reachable_split_respects_the_feature_mask(tmp_path):
+    """Pixels outside the declared geometry belong to neither side."""
+    grid = MosaicGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4)
+    coverage = np.zeros((4, 4), np.uint16)
+    mask = np.zeros((4, 4), bool)
+    mask[1, 1] = True
+    result = _coverage_summary(
+        coverage, grid, (0.0, 0.0, 0.004, 0.004), mask,
+        _reachable_mask(grid, (0.0, 0.0, 0.004, 0.004), (0.001, 0.001, 0.003, 0.003)))
+    assert result['pixel_count'] == 1
+    assert result['uncovered_inside_drive_region'] == 1
+    assert result['uncovered_outside_drive_region'] == 0
 
 
 def test_decal_mask_respects_rotation_at_native_pixel_centres():
