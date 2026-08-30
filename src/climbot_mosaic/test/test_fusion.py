@@ -77,10 +77,14 @@ def test_hard_cut_prefers_interior_source_and_keeps_stable_ties():
 def test_resource_and_grid_contracts_reject_invalid_values():
     with pytest.raises(FusionError, match='resolution'):
         common_grid((_frame(0, (0.0, 0.0, 1.0, 1.0)),), (), 0.0)
-    # A budget smaller than the run's own fixed cost buys no workers at all,
-    # rather than the 1 a bare division would still hand out.
-    assert resolve_jobs(None, 0.1) == 1
-    assert resolve_jobs(None, FUSION_BASE_MEMORY_GB) == 1
+    # A budget that cannot cover the run's fixed cost plus one worker falls
+    # back to a single worker and says so. It does not refuse: the fixed cost
+    # was fitted on the largest mosaic here, so a small job would be turned
+    # away for memory it never uses. Nor does it pretend to have obeyed the
+    # budget, which is what returning 1 in silence amounted to.
+    for budget in (0.1, FUSION_BASE_MEMORY_GB):
+        with pytest.warns(RuntimeWarning, match='soft budget'):
+            assert resolve_jobs(None, budget) == 1
     # Beyond that the budget pays per worker, and the machine bounds the rest.
     processors = os.cpu_count() or 1
     assert resolve_jobs(64, 1024.0) == processors

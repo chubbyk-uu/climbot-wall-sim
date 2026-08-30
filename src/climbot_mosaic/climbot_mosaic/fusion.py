@@ -30,9 +30,12 @@ import threading
 import time
 from typing import Any
 from uuid import uuid4
+import warnings
 
 from climbot_mosaic.mosaic_inputs import FrameKey, input_summary, MosaicInputs
 from climbot_mosaic.projection import FrameProjection, project_inputs
+from climbot_mosaic.stage_provenance import artifact, processed_run_inputs
+from climbot_mosaic.stage_provenance import write_stage_provenance
 import cv2
 import numpy as np
 import tifffile
@@ -746,6 +749,18 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         (temporary / 'mosaic_manifest.json').write_text(json.dumps(
             manifest, allow_nan=False, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
             encoding='utf-8')
+        # The manifest already carries a digest for every raster it published,
+        # so hashing it is enough to pin gigabytes of output without reading
+        # them a second time.
+        write_stage_provenance(
+            temporary, 'wall_mosaic',
+            {'resolution_m_per_pixel': resolution_m, 'jobs': jobs,
+             'memory_budget_gb': memory_budget_gb,
+             'preview_max_side_px': preview_max_side_px},
+            {**processed_run_inputs(manifest['input_summary']),
+             'pose_graph': artifact(pose_graph_dir / 'pose_graph.json'),
+             'optimized_poses': artifact(pose_graph_dir / 'optimized_poses.json')},
+            ('mosaic_manifest.json',))
         temporary.replace(output_dir)
         return manifest
     except Exception:
@@ -765,16 +780,35 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
 
 
 def resolve_jobs(value: int | None, memory_budget_gb: float) -> int:
-    """Resolve bounded process parallelism from CPU and the memory budget."""
-    # The budget has to pay for the run before it pays for any worker. Dividing
-    # all of it by the per-worker cost ignored that and produced 42 workers for
-    # a 4 GB budget, which a hard cap of 8 then quietly corrected; the cap was
-    # doing the memory model's job with a number that fit one machine.
-    # Measured on the P2-06 joint mosaic (1340 frames, 38226 x 29079 px) by
-    # fitting peak process-tree PSS over 4, 8, 14 and 20 workers: 1.87 GB fixed
-    # plus 98 MB each, so the 96 MB below was right and only the base was
-    # missing. Fusion at 4 GB now runs 22 workers where it ran 8.
-    spare_mb = (memory_budget_gb - FUSION_BASE_MEMORY_GB) * 1024.0
-    cap = max(1, int(spare_mb / FUSION_WORKER_MEMORY_MB))
+    """
+    Resolve bounded process parallelism from CPU count and the memory budget.
+
+    The budget is a soft one: it decides how many workers to start, not how
+    much memory the process may use.  Nothing here can hold a run to a number
+    smaller than the run's own fixed cost, and refusing on that basis would be
+    worse than useless -- FUSION_BASE_MEMORY_GB was fitted on the largest
+    mosaic this repository builds, so a smaller job pays far less than it and
+    would be turned away for a cost it never incurs.  What can be done
+    honestly is to say so, which is what the warning below is for.
+
+    The budget has to pay for the run before it pays for any worker.  Dividing
+    all of it by the per-worker cost ignored that and produced 42 workers for
+    a 4 GB budget, which a hard cap of 8 then quietly corrected; the cap was
+    doing the memory model's job with a number that fit one machine.
+    Measured on the P2-06 joint mosaic (1340 frames, 38226 x 29079 px) by
+    fitting peak process-tree PSS over 4, 8, 14 and 20 workers: 1.87 GB fixed
+    plus 98 MB each, so the 96 MB below was right and only the base was
+    missing.  Fusion at 4 GB now runs 22 workers where it ran 8.
+    """
+    spare_mb = (memory_budget_gb - FUSION_WORKER_MEMORY_MB / 1024.0
+                - FUSION_BASE_MEMORY_GB) * 1024.0
+    if spare_mb < 0.0:
+        warnings.warn(
+            f'memory budget {memory_budget_gb:.3g} GB does not cover one worker beyond this '
+            f"run's fixed cost; falling back to a single worker. This parameter is a soft "
+            'budget for planning parallelism, not a hard limit on process memory, and what '
+            'the run actually uses depends on the size of the mosaic.',
+            RuntimeWarning, stacklevel=2)
+    cap = max(1, 1 + int(spare_mb / FUSION_WORKER_MEMORY_MB))
     processors = os.cpu_count() or 1
     return max(1, min(value or processors, cap, processors))

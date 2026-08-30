@@ -53,8 +53,14 @@
        in front of it so the decals never fight the collision surface. -->
   <xacro:property name="face_x" value="${centre_x + thickness / 2.0}"/>
   <xacro:property name="decal_x" value="${thickness / 2.0 + 0.003}"/>
-  <!-- How far wall_visual sits behind the collision face; see wall_visual. -->
-  <xacro:property name="wall_visual_recess" value="0.001"/>
+  <!-- How far wall_visual sits behind the collision face, and only when it
+       has to be: the recess exists to stop texture blocks z-fighting with a
+       coplanar wall face, so without those blocks it does nothing but move the
+       visible surface 1 mm off the plane the wheels ride on. That is the same
+       kind of error, in the opposite direction, as the one that scaled every
+       mosaic by +4566 ppm, so it is not left switched on by default. -->
+  <xacro:property name="wall_visual_recess"
+                 value="${0.001 if '$(arg inspection_target)' in ('true', 'True', '1') else 0.0}"/>
   <!-- Lines sit at whole multiples of the spacing measured from the work
        frame's origin, the wall's lower-left corner, so a line is a work
        coordinate an operator can read off the wall. Only the interior ones are

@@ -77,29 +77,65 @@ P2.1～P2.7e 均已实现。当前正式相对基线与洁净树盲测摘要见
 
 ## 唯一未关闭门禁：P2-06
 
-### 覆盖判据：机器人可达范围内零漏拍
+### 覆盖判据：冻结任务巡检域内 feature 零漏拍
 
-判据只看机器人被允许行驶的矩形之内。这块诊断墙上的三条 construction_seam 按设计贯穿
-整面墙（`0…8 m` 纵向两条、`0…10 m` 横向一条），`crack_decal_08` 与 `graffiti_decal_04`
-也伸到 `x = 9.766 / 9.754 m`，都在绿色安全框之外；无论执行多完美，机器人都拍不到它们
-伸出去的部分。要求“每个 declared 像素都被覆盖”对这块墙在物理上不可满足，把它当门禁只会
-逼出一个永远为假的判定。
+判据域是**冻结任务的 `coverage_region` 多边形**，也就是
+`coverage_p206_diagnostic_full_{horizontal,vertical}.yaml` 里声明、并由规划器随任务一起
+发布的那块区域。选它的理由不是“它是物理可达域”，而是它正好是规划器承诺过的域：
+`sampledCoverageRatio()` 就在这块区域内撒点，判断相机足迹盖没盖住。检查器验的因此是
+规划器已经承诺过的同一块地方，域的定义不由运行检查器的人决定。
 
-拆分由 `inspect_diagnostic_mosaic --drive-region-m` 直接输出，写在
+这块诊断墙上的三条 construction_seam 按设计贯穿整面墙（`0…8 m` 纵向两条、`0…10 m`
+横向一条），`crack_decal_08` 与 `graffiti_decal_04` 也伸到 `x = 9.766 / 9.754 m`，
+都在巡检域之外。域外像素不作要求。
+
+**域外不作要求，不等于拍不到。** 相机足迹沿行进方向伸出机器人中心
+`0.340 + 0.28125 / 2 = 0.481 m`、横向半宽 `0.250 m`，而巡检域四边距墙边 `0.55 m`，
+所以足迹最远可及墙边 `0.069 m` 处。这是上界——实际扫描路径受
+`maneuver_boundary_margin_m` 再内缩，包络比这略小。此前本页和验收矩阵写的
+“机器人不可达”是错的断言：域外未覆盖像素里有多少其实落在可观测包络之内，需要单独
+分类才知道。域外不作要求是**产品判据的选择**，不是物理不可能的结论。
+
+### 分层门禁
+
+三层各管各的，不能互相替代：
+
+| 层 | 判据 | 量测对象 | 由谁输出 |
+| --- | --- | --- | --- |
+| 规划可行性 | `minimum_nominal_coverage_ratio ≥ 0.95` | 巡检域**面积**的名义足迹覆盖率（`300×300` 采样） | `coverage_planner` |
+| 采集前预检 | `all_intersecting_feature_samples_covered = true` | 按实际规划离散曝光采样的每个 **feature 声明几何** | `preflight_diagnostic_coverage` |
+| 拼后验收 | 巡检域内 feature 像素零漏拍 | 实际 `coverage_count.tif` | `inspect_diagnostic_mosaic` |
+
+第一层量的是面积，后两层量的是 feature 像素，测量量不同，所以 `0.95` 与 `100%`
+不构成矛盾：规划允许边界上少量面积没被名义足迹盖到，并不等于允许漏掉 feature。
+把第一层硬提到 `1.0` 有两个害处——采样栅格与浮点边界误差会脆弱地否掉理论可行的方案，
+而“规划期就发现 feature 漏拍”这件事第二层已经在做，用的正是 100% 判据。
+
+拆分由 `inspect_diagnostic_mosaic` 直接输出，写在
 `diagnostic_inspection_summary.json` 里，**不是事后用脚本另算的**：门禁读
-`all_reachable_feature_pixels_covered`，同时 `uncovered_outside_drive_region` 逐 feature
-列明，这样矩形外的缺口不会随时间悄悄变大而无人察觉。
+`all_inspection_region_feature_pixels_covered`，同时 `uncovered_outside_inspection_region`
+逐 feature 列明，这样域外的缺口不会随时间悄悄变大而无人察觉。
+
+巡检域本身也不是命令行给的。检查器沿
+`mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结任务` 回溯，
+每一环用 SHA-256 校验，从 `task.coverage_region` 取多边形、从 `task.detection_*` 取足迹。
+这样“这次运行被拿什么来判”就不再是运行检查器的人能选的。
+
+域外的缺口再拆一次，分成
+`uncovered_outside_region_inside_envelope`（某个允许位姿本来拍得到，属于真实但非阻塞的
+缺口）与 `uncovered_outside_region_outside_envelope`（没有任何允许位姿拍得到）。只有后者
+支持“拍不到”的说法。这个拆分同样由评价器输出，不是事后另算的。
 
 ### 当前状态：覆盖已闭合，门限未冻结
 
-2026-08-30 的联合盲测（`3f422f5`，横 680 + 竖 660 = 1,340 帧，行驶矩形
+2026-08-30 的联合盲测（`3f422f5`，横 680 + 竖 660 = 1,340 帧，巡检域
 `0.55…9.45 × 0.55…7.45 m`）：
 
 | 项 | 值 |
 | --- | --- |
 | 与拼接域相交的 feature | 21 / 21，域外 0 |
-| 可达范围内未覆盖像素 | **0**（`all_reachable_feature_pixels_covered = true`）|
-| 可达范围外未覆盖像素 | `439,116`，分布在上述 5 个伸出安全框的 feature |
+| 巡检域内未覆盖像素 | **0**（`all_inspection_region_feature_pixels_covered = true`）|
+| 巡检域外未覆盖像素 | `439,116`，分布在上述 5 个伸出巡检域的 feature；不作要求，包络分类待补 |
 | 对照：历史 `bae86b9` | 相交几何内 `19,291,260 / 83,903,032`（`22.99%`）零覆盖 |
 
 摘要见 [mosaic_p206_blind_2026-08-30_summary.json](../results/mosaic_p206_blind_2026-08-30_summary.json)。
@@ -130,7 +166,7 @@ P2.1～P2.7e 均已实现。当前正式相对基线与洁净树盲测摘要见
    feature 为零漏采样。此为计划预测，**不是**实际 `coverage_count.tif` 证据；
 2. **已完成（采集与拼接）**：`3f422f5` 上采集横向 680、纵向 660 张 realistic 数据，
    完整重跑预处理、候选、匹配、位姿图、hard-cut、真值评价与原尺寸检查；
-3. **已完成（核对）**：可达范围内零漏拍；输入完整性由 `validate_mosaic_inputs` 通过；
+3. **已完成（核对）**：巡检域内零漏拍；输入完整性由 `validate_mosaic_inputs` 通过；
    图连通性见“一帧无法参与全局对齐”一节；资源预算峰值 `3.45 GB`，在 `4 GB` 之内；
 4. 用三组新数据的绝对/局部误差分布以及人工 100% 检查结果推导数值门限。**当前只有一组**：
    还需要重复采集，确认上表那些毫米级数字是可复现的分布而不是单次结果；

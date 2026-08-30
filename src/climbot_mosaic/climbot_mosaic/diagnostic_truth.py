@@ -25,6 +25,8 @@ import tempfile
 from typing import Any
 from uuid import uuid4
 
+from climbot_mosaic.stage_provenance import artifact
+from climbot_mosaic.stage_provenance import write_stage_provenance
 import cv2
 import numpy as np
 from PIL import Image
@@ -485,6 +487,13 @@ def evaluate_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path,
                 summary, ensure_ascii=False, allow_nan=False, indent=2,
                 sort_keys=True) + '\n',
             encoding='utf-8')
+        write_stage_provenance(
+            temporary, 'diagnostic_truth',
+            {'anchor_padding_m': anchor_padding_m,
+             'minimum_phase_response': minimum_phase_response},
+            {'mosaic_manifest': artifact(mosaic_dir / 'mosaic_manifest.json'),
+             'diagnostic_wall_manifest': artifact(wall_manifest)},
+            ('diagnostic_truth_summary.json',))
         temporary.replace(output_dir)
         return summary
     except Exception:

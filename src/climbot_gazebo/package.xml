@@ -11,6 +11,7 @@
 
   <exec_depend>ros_gz_bridge</exec_depend>
   <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>climbot_common</exec_depend>
   <exec_depend>climbot_control</exec_depend>
   <exec_depend>climbot_interfaces</exec_depend>
   <depend>climbot_description</depend>

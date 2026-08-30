@@ -6,12 +6,35 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 from climbot_mosaic.diagnostic_inspection import (
     DiagnosticInspectionError,
     inspect_diagnostic_mosaic,
 )
+from climbot_mosaic.evidence_chain import EvidenceChainError, resolve_frozen_tasks
+
+
+def _frozen_domain(mosaic_dir, input_runs, archive_root):
+    """
+    Take the acceptance domain out of the evidence rather than off the command line.
+
+    The region and the footprint used to be typed in, which let whoever ran the
+    checker choose what the run was judged against.  Both now come from the
+    frozen task snapshots the archives carry, every link verified by digest.
+    Tasks that disagree are refused by name: a joint mosaic judged against one
+    of two different regions would be judged against neither, and a union is
+    not written here because no task has yet needed one.
+    """
+    tasks = resolve_frozen_tasks(mosaic_dir, tuple(input_runs), archive_root)['tasks']
+    regions = {task['coverage_region_m'] for task in tasks}
+    footprints = {task['camera_footprint_m'] for task in tasks}
+    if len(regions) != 1 or len(footprints) != 1:
+        raise EvidenceChainError(
+            'frozen tasks disagree about the inspection region or camera footprint: '
+            + ', '.join(sorted(str(task['task_id']) for task in tasks)))
+    return regions.pop(), footprints.pop(), tasks
 
 
 def main() -> int:
@@ -22,21 +45,24 @@ def main() -> int:
     parser.add_argument('--output-dir', required=True, type=Path)
     parser.add_argument('--padding-m', type=float, default=0.05)
     parser.add_argument('--tile-size-px', type=int, default=2048)
-    # Declared feature geometry can extend past the rectangle the robot is
-    # allowed to drive, so without this the summary can only report a total
-    # that a wall with full-height seams can never drive to zero.
-    parser.add_argument('--drive-region-m', type=float, nargs=4,
-                        metavar=('MIN_X', 'MIN_Y', 'MAX_X', 'MAX_Y'))
+    # The processed runs this mosaic was built from. They are named rather than
+    # read out of the mosaic manifest because that manifest records run
+    # identity without host paths; naming the wrong one is caught by digest.
+    parser.add_argument('--input-run', action='append', required=True, type=Path)
+    parser.add_argument('--archive-root', type=Path,
+                        default=Path(os.environ.get('CLIMBOT_DATA_ROOT',
+                                                    Path.home() / 'climbot_data')))
     arguments = parser.parse_args()
-    drive_region = tuple(arguments.drive_region_m) if arguments.drive_region_m else None
-    if drive_region is not None and (
-            drive_region[0] >= drive_region[2] or drive_region[1] >= drive_region[3]):
-        print('drive region must be min_x min_y max_x max_y with a positive extent')
+    try:
+        region, footprint, tasks = _frozen_domain(
+            arguments.mosaic_dir, arguments.input_run, arguments.archive_root)
+    except EvidenceChainError as error:
+        print(f'inspection region could not be recovered from the evidence: {error}')
         return 2
     try:
         summary = inspect_diagnostic_mosaic(
             arguments.mosaic_dir, arguments.wall_manifest, arguments.output_dir,
-            arguments.padding_m, arguments.tile_size_px, drive_region)
+            arguments.padding_m, arguments.tile_size_px, region, footprint, tasks)
     except (DiagnosticInspectionError, OSError, ValueError) as error:
         print(f'diagnostic mosaic inspection failed: {error}')
         return 2
@@ -47,12 +73,18 @@ def main() -> int:
         'visible_feature_pixels_covered': coverage['all_visible_feature_pixels_covered'],
         'intersecting_feature_count': summary['feature_counts'][
             'intersecting_mosaic_domain'],
+        'frozen_task_ids': sorted(str(task['task_id']) for task in tasks),
+        'inspection_region_feature_pixels_covered': coverage[
+            'all_inspection_region_feature_pixels_covered'],
+        'feature_pixels_inside_inspection_region': coverage[
+            'feature_pixels_inside_inspection_region'],
+        'uncovered_inside_inspection_region': coverage['uncovered_inside_inspection_region'],
+        'uncovered_outside_inspection_region': coverage['uncovered_outside_inspection_region'],
+        'uncovered_outside_region_inside_envelope': coverage[
+            'uncovered_outside_region_inside_envelope'],
+        'uncovered_outside_region_outside_envelope': coverage[
+            'uncovered_outside_region_outside_envelope'],
     }
-    if 'all_reachable_feature_pixels_covered' in coverage:
-        report['reachable_feature_pixels_covered'] = coverage[
-            'all_reachable_feature_pixels_covered']
-        report['uncovered_inside_drive_region'] = coverage['uncovered_inside_drive_region']
-        report['uncovered_outside_drive_region'] = coverage['uncovered_outside_drive_region']
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     return 0
 

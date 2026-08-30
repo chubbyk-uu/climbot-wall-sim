@@ -32,6 +32,7 @@ from climbot_mosaic.match_pipeline import (
 from climbot_mosaic.matching import MatchConfig, MatchingError
 from climbot_mosaic.mosaic_inputs import MosaicInputError, input_summary, validate_processed_runs
 from climbot_mosaic.projection import ProjectionError, project_inputs
+from climbot_mosaic.stage_provenance import processed_run_inputs, write_stage_provenance
 
 
 def _jobs(value: str) -> int | None:
@@ -86,6 +87,14 @@ def main() -> int:
         (temporary / 'local_matches.json').write_text(json.dumps(
             document, allow_nan=False, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
             encoding='utf-8')
+        write_stage_provenance(
+            temporary, 'local_matches',
+            {'jobs': arguments.jobs, 'use_clahe': arguments.use_clahe,
+             'ratio_test': arguments.ratio_test,
+             'ransac_threshold_m': arguments.ransac_threshold_m,
+             'minimum_mutual_matches': arguments.minimum_mutual_matches},
+            processed_run_inputs(document['input_summary']),
+            ('local_matches.json',))
         temporary.replace(output)
     except (MosaicInputError, ProjectionError, CandidateError, MatchingError,
             MatchPipelineError, OSError) as error:

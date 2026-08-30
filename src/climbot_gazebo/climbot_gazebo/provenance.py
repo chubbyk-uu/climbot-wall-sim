@@ -22,15 +22,23 @@ that never started reads, in a summary, exactly like one that was used. So
 everything here is read back from the running system - git from the working
 tree, parameters from the nodes themselves - and the callers state the answer
 where somebody sees it rather than only in the file.
+
+The git half now lives in climbot_common.provenance and is re-exported here.
 """
 
-import os
-import subprocess
 import time
 
+from climbot_common.provenance import DEFAULT_PATHSPECS, git_state
 from rcl_interfaces.srv import GetParameters
 import rclpy
 from rclpy.parameter import parameter_value_to_python
+
+# git_state moved to climbot_common so the mosaic chain, which has no ROS
+# dependency, could call the same implementation instead of growing a second
+# one. It stays importable from here: six evaluators already ask this module
+# for it, and a re-export costs less than touching all of them.
+__all__ = ['CONTROL_SOURCES', 'DEFAULT_PATHSPECS', 'NOISE_SOURCES',
+           'git_state', 'parameter_groups', 'remote_parameters']
 
 #: The nodes whose randomness decides how much of a run repeats, and the
 #: parameters of each that decide it.
@@ -55,36 +63,6 @@ CONTROL_SOURCES = (
       'arc_entry_finish_offset_m', 'parallel_scan_offset_m',
       'maximum_scan_offset_m')),
 )
-
-
-def git_state(path=None):
-    """Describe the source revision, or nulls when git is unavailable."""
-    directory = path or os.path.dirname(os.path.abspath(__file__))
-
-    def capture(arguments):
-        return subprocess.run(
-            ['git'] + arguments, check=True, capture_output=True,
-            text=True, timeout=5.0, cwd=directory).stdout.strip()
-
-    try:
-        root = capture(['rev-parse', '--show-toplevel'])
-        # Restricted to src so untracked notes and build outputs do not mark an
-        # otherwise reproducible run as modified.
-        modified = bool(capture(['-C', root, 'status', '--porcelain', '--', 'src']))
-        return {
-            'commit': capture(['rev-parse', 'HEAD']),
-            'branch': capture(['rev-parse', '--abbrev-ref', 'HEAD']),
-            'source_modified': modified,
-            # The question source_modified was added to answer, stated as the
-            # answer rather than as its input. A field nobody reads cannot stop
-            # an untraceable run from being filed as a baseline.
-            'traceable': not modified,
-        }
-    except (OSError, subprocess.SubprocessError):
-        return {
-            'commit': None, 'branch': None, 'source_modified': None,
-            'traceable': False,
-        }
 
 
 def remote_parameters(node, node_name, names, timeout_s=2.0):

@@ -30,6 +30,8 @@ from climbot_mosaic.mosaic_inputs import (
     MosaicInputs,
     ProcessedFrame,
 )
+from climbot_mosaic.stage_provenance import processed_run_inputs
+from climbot_mosaic.stage_provenance import write_stage_provenance
 import cv2
 import numpy as np
 
@@ -254,6 +256,11 @@ def write_initial_projection(output_dir: Path, inputs: MosaicInputs,
         (temporary / 'initial_projection.json').write_text(text, encoding='utf-8')
         if not cv2.imwrite(str(temporary / 'initial_footprints_preview.png'), preview):
             raise ProjectionError('failed to write initial footprint preview.')
+        write_stage_provenance(
+            temporary, 'initial_projection',
+            {'wall_plane_z_m': wall_plane_z_m, 'preview_max_side_px': preview_max_side_px},
+            processed_run_inputs(manifest['input_summary']),
+            ('initial_projection.json', 'initial_footprints_preview.png'))
         temporary.replace(output_dir)
     except Exception:
         # A temporary diagnostic directory may remain after a filesystem fault, but it can never

@@ -32,6 +32,7 @@ from xml.etree import ElementTree
 
 from ament_index_python.packages import get_package_share_directory
 import pytest
+import xacro
 import yaml
 
 
@@ -85,6 +86,35 @@ def test_world_defaults_match_the_values_the_launch_injects():
     }
     for name, value in expected.items():
         assert defaults[name] == pytest.approx(float(value)), name
+
+
+def _wall_visual_size(inspection_target):
+    """Expand the world and read the box the camera would actually photograph."""
+    document = xacro.process_file(
+        str(PACKAGE_ROOT / 'worlds' / 'climbot_wall.sdf.xacro'),
+        mappings={'inspection_target': inspection_target})
+    root = ElementTree.fromstring(document.toxml())
+    size = root.find(".//visual[@name='wall_visual']/geometry/box/size")
+    assert size is not None, 'the world has no wall_visual box'
+    return [float(value) for value in size.text.split()]
+
+
+def test_the_plain_wall_face_sits_on_the_plane_the_wheels_ride_on():
+    """
+    Without texture blocks there is nothing to z-fight, so nothing to step back for.
+
+    A recess left switched on unconditionally puts the visible surface 1 mm
+    behind the collision face: the same class of error, in the opposite
+    direction, as the texture blocks that once stood 1.25 mm proud of it and
+    scaled every mosaic by +4566 ppm. Nothing measures this surface today,
+    which is exactly why an unconditional offset would sit here unnoticed.
+    """
+    _, simulation = _documents()
+    thickness = float(simulation['wall']['thickness_m'])
+    assert _wall_visual_size('false')[0] == pytest.approx(thickness)
+    # With the blocks loaded the face has to step back or it fights every one
+    # of them; 1 mm each side is what that costs.
+    assert _wall_visual_size('true')[0] == pytest.approx(thickness - 0.002)
 
 
 def test_optional_inspection_target_uses_shared_camera_geometry():

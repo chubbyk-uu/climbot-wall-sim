@@ -18,6 +18,8 @@ from climbot_mosaic.pose_graph import (
     read_local_matches,
 )
 from climbot_mosaic.projection import ProjectionError, project_inputs
+from climbot_mosaic.stage_provenance import artifact, processed_run_inputs
+from climbot_mosaic.stage_provenance import write_stage_provenance
 
 
 def main() -> int:
@@ -73,6 +75,12 @@ def main() -> int:
             (temporary / name).write_text(json.dumps(
                 document, allow_nan=False, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
                 encoding='utf-8')
+        write_stage_provenance(
+            temporary, 'pose_graph',
+            {'edge_recheck_floor_m': arguments.edge_recheck_floor_m},
+            {**processed_run_inputs(documents['pose_graph.json']['input_summary']),
+             'local_matches': artifact(arguments.local_matches)},
+            tuple(documents))
         temporary.replace(output)
     except (MosaicInputError, ProjectionError, PoseGraphError, OSError) as error:
         print(f'pose graph failed: {error}')

@@ -20,7 +20,6 @@ from datetime import timezone
 import json
 import math
 import os
-import subprocess
 import time
 
 from ament_index_python.packages import get_package_share_directory
@@ -30,6 +29,7 @@ from climbot_description.geometry import yaw_from_quaternion
 from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.execution_metrics import coefficient_of_variation
 from climbot_gazebo.execution_metrics import count_visible_reversals
+from climbot_gazebo.provenance import git_state
 from climbot_gazebo.safe_stop import install_stop_on_termination
 from climbot_gazebo.trajectory_io import write_trajectory
 from climbot_interfaces.action import ExecuteCoverage
@@ -513,30 +513,13 @@ class SlipCompensationEvaluator(Node):
 
     # -- provenance and output --------------------------------------------
 
-    @staticmethod
-    def _git_state():
-        """Describe the source revision, or nulls when git is unavailable."""
-        def capture(arguments):
-            return subprocess.run(
-                ['git'] + arguments, check=True, capture_output=True,
-                text=True, timeout=5.0,
-                cwd=os.path.dirname(os.path.abspath(__file__))).stdout.strip()
-
-        try:
-            root = capture(['rev-parse', '--show-toplevel'])
-            return {
-                'commit': capture(['rev-parse', 'HEAD']),
-                'branch': capture(['rev-parse', '--abbrev-ref', 'HEAD']),
-                'source_modified': bool(capture(
-                    ['-C', root, 'status', '--porcelain', '--', 'src'])),
-            }
-        except (OSError, subprocess.SubprocessError):
-            return {'commit': None, 'branch': None, 'source_modified': None}
-
     def _provenance(self):
         return {
             'recorded_utc': datetime.now(timezone.utc).isoformat(),
-            'git': self._git_state(),
+            # This used to carry its own copy of git_state, one field short and
+            # one pathspec narrow, so the same run could be traceable here and
+            # modified elsewhere.
+            'git': git_state(),
             'evaluator_parameters': {
                 name: self.get_parameter(name).value
                 for name, _ in self.PARAMETERS},

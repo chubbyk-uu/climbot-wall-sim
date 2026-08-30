@@ -180,15 +180,28 @@ ros2 run climbot_mosaic inspect_diagnostic_mosaic \
   --mosaic-dir "$MOSAIC_ROOT" \
   --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
   --output-dir "$MOSAIC_ROOT-inspection-<new-id>" \
-  --drive-region-m 0.55 0.55 9.45 7.45
+  --input-run "$CLIMBOT_DATA_ROOT/processed-<horizontal-id>" \
+  --input-run "$CLIMBOT_DATA_ROOT/processed-<vertical-id>"
 ```
 
-`--drive-region-m` 是机器人被允许行驶的矩形，判定覆盖时必须给：诊断墙上有 feature 按设计
-贯穿整墙或伸出安全框，机器人拍不到它们伸出去的部分。给了这个矩形，摘要才会输出
-`all_reachable_feature_pixels_covered` 与逐 feature 的
-`uncovered_inside_drive_region` / `uncovered_outside_drive_region`；不给则只有一个恒为假
-的总数。矩形取任务 YAML 的 `lower_left`/`upper_right`，理由见
-[拼接计划](MOSAIC_PLAN.md)。
+**巡检域不再由命令行给出。** `--input-run` 指出这幅拼接是由哪些 processed-run 建的，
+检查器沿
+
+```
+mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结任务
+```
+
+一路回溯，每一环都用 SHA-256 校验，然后从归档里的 `task.coverage_region` 取巡检域、
+从 `task.detection_*` 取相机足迹。指错 run 会因为摘要里的 digest 对不上而被拒绝，所以
+运行检查器的人不能再选择这次运行被拿什么来判。`--archive-root` 默认取
+`$CLIMBOT_DATA_ROOT`。
+
+摘要因此输出 `all_inspection_region_feature_pixels_covered`（门禁）、逐 feature 的
+`uncovered_inside_inspection_region` / `uncovered_outside_inspection_region`，以及把域外
+缺口再拆一层的 `uncovered_outside_region_inside_envelope` /
+`uncovered_outside_region_outside_envelope`。只有后者才配叫“拍不到”：足迹被前置偏移带出
+巡检域，域外相当一部分其实在可观测包络内。域内 feature 像素数为零时检查器直接报错，
+不会输出一个什么都没量到的 `true`。
 
 重点看真值摘要里的共同锚点、局部残差、覆盖计数和未覆盖 feature。原尺寸 tile 只能证明
 **已经导出**，不能证明相机拍到了它的每一个像素。当前门禁状态以 [STATUS](STATUS.md) 为准。

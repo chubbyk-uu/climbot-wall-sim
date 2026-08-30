@@ -39,6 +39,8 @@ from climbot_mosaic.diagnostic_truth import (
     MosaicGrid,
     TruthGrid,
 )
+from climbot_mosaic.stage_provenance import artifact
+from climbot_mosaic.stage_provenance import write_stage_provenance
 import cv2
 import numpy as np
 import tifffile
@@ -49,6 +51,8 @@ class DiagnosticInspectionError(ValueError):
 
 
 Bounds = tuple[float, float, float, float]
+#: A convex region in wall metres, as the frozen task publishes it.
+Polygon = tuple[tuple[float, float], ...]
 
 
 def _safe_feature_id(value: Any) -> str:
@@ -185,9 +189,37 @@ def _feature_mask(feature: dict[str, Any], grid: MosaicGrid, bounds: Bounds) -> 
     raise DiagnosticInspectionError(f'unsupported diagnostic feature kind: {kind!r}.')
 
 
-def _reachable_mask(grid: MosaicGrid, bounds: Bounds,
-                    drive_region_m: Bounds) -> np.ndarray:
-    """Mark crop pixels whose centre lies inside the robot's drive rectangle."""
+def _bounding_box(polygon: Polygon) -> Bounds:
+    """Return the axis-aligned extent of a polygon, for cheap overlap rejection."""
+    xs = [x for x, _ in polygon]
+    ys = [y for _, y in polygon]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _counter_clockwise(polygon: Polygon) -> Polygon:
+    """Return the polygon wound counter-clockwise, so "inside" has one sign."""
+    area = 0.0
+    for (first_x, first_y), (second_x, second_y) in zip(polygon, polygon[1:] + polygon[:1]):
+        area += first_x * second_y - second_x * first_y
+    # Scaled rather than compared to zero: three collinear vertices cancel to a
+    # rounding residue, not to 0.0, and a region with no area masks no pixels at
+    # all -- which the gate would then read as nothing uncovered.
+    box = _bounding_box(polygon)
+    reference = max(1.0, (box[2] - box[0]) * (box[3] - box[1]))
+    if abs(area) <= 1e-12 * reference:
+        raise DiagnosticInspectionError('inspection region has no area.')
+    return polygon if area > 0.0 else tuple(reversed(polygon))
+
+
+def _polygon_mask(grid: MosaicGrid, bounds: Bounds, polygon: Polygon) -> np.ndarray:
+    """
+    Mark crop pixels whose centre lies inside a convex polygon.
+
+    The region used to be four numbers, which cannot express the trapezoid
+    tasks this planner already accepts.  A polygon can, and the frozen task
+    publishes one, so nothing has to be flattened to a bounding box on the way
+    in -- a bounding box would silently accept ground the task excluded.
+    """
     resolution = grid.resolution_m_per_pixel
     x0 = int(round((bounds[0] - grid.min_x_m) / resolution))
     x1 = int(round((bounds[2] - grid.min_x_m) / resolution))
@@ -195,14 +227,87 @@ def _reachable_mask(grid: MosaicGrid, bounds: Bounds,
     y1 = int(round((grid.max_y_m - bounds[1]) / resolution))
     columns = grid.min_x_m + (np.arange(x0, x1, dtype=np.float64) + 0.5) * resolution
     rows = grid.max_y_m - (np.arange(y0, y1, dtype=np.float64) + 0.5) * resolution
-    inside_x = (columns >= drive_region_m[0]) & (columns <= drive_region_m[2])
-    inside_y = (rows >= drive_region_m[1]) & (rows <= drive_region_m[3])
-    return inside_y[:, None] & inside_x[None, :]
+    wound = _counter_clockwise(polygon)
+    inside = np.ones((rows.size, columns.size), bool)
+    for (ax, ay), (bx, by) in zip(wound, wound[1:] + wound[:1]):
+        # Left of every directed edge.  The boundary counts as inside, so a
+        # pixel centre sitting exactly on the region edge is judged rather than
+        # quietly excused.
+        inside &= ((bx - ax) * (rows[:, None] - ay)
+                   - (by - ay) * (columns[None, :] - ax)) >= 0.0
+    return inside
+
+
+def _union_mask(grid: MosaicGrid, bounds: Bounds, polygons: tuple[Polygon, ...]) -> np.ndarray:
+    """Mark crop pixels whose centre lies inside any of several convex polygons."""
+    mask = _polygon_mask(grid, bounds, polygons[0])
+    for polygon in polygons[1:]:
+        mask = mask | _polygon_mask(grid, bounds, polygon)
+    return mask
+
+
+def _convex_hull(points: tuple[tuple[float, float], ...]) -> Polygon:
+    """Return the counter-clockwise hull of a point set by monotone chain."""
+    ordered = sorted(set(points))
+    if len(ordered) < 3:
+        raise DiagnosticInspectionError('convex hull needs three distinct points.')
+
+    def half(sequence):
+        chain: list[tuple[float, float]] = []
+        for point in sequence:
+            while len(chain) >= 2:
+                (ax, ay), (bx, by) = chain[-2], chain[-1]
+                if (bx - ax) * (point[1] - ay) - (by - ay) * (point[0] - ax) > 0.0:
+                    break
+                chain.pop()
+            chain.append(point)
+        return chain[:-1]
+
+    return tuple(half(ordered) + half(list(reversed(ordered))))
+
+
+def _minkowski_rectangle(polygon: Polygon, minimum_x: float, minimum_y: float,
+                         maximum_x: float, maximum_y: float) -> Polygon:
+    """Grow a convex polygon by an axis-aligned rectangle of camera footprint."""
+    corners = ((minimum_x, minimum_y), (maximum_x, minimum_y),
+               (maximum_x, maximum_y), (minimum_x, maximum_y))
+    return _convex_hull(tuple((x + dx, y + dy) for x, y in polygon for dx, dy in corners))
+
+
+def observable_envelope(region_m: Polygon, detection_width_m: float,
+                        detection_length_m: float,
+                        detection_forward_offset_m: float) -> tuple[Polygon, Polygon]:
+    """
+    Bound what each sweep axis could photograph from anywhere inside the region.
+
+    A pixel outside the inspection region is not thereby beyond the camera's
+    reach.  The footprint is carried detection_forward_offset_m ahead of the
+    robot centre, so it leans past the boundary that centre may not cross, and
+    the difference is not small: 0.340 m of offset plus half of a 0.28125 m
+    footprint reaches 0.481 m past a region inset 0.550 m from the wall edge.
+    Reporting those pixels as unreachable, which this file once did, states as
+    physics what is only a choice of acceptance domain.
+
+    Forward and backward passes along one axis share a cross-track range and
+    overlap along track, so each axis contributes exactly one polygon.  Both
+    are upper bounds: the planned route is inset further by the maneuver
+    margin, and only the headings the frozen tasks actually sweep are counted.
+    """
+    for name, value in (('detection_width_m', detection_width_m),
+                        ('detection_length_m', detection_length_m),
+                        ('detection_forward_offset_m', detection_forward_offset_m)):
+        if not math.isfinite(value) or value <= 0.0:
+            raise DiagnosticInspectionError(f'{name} must be finite and positive.')
+    half_width = detection_width_m / 2.0
+    reach = detection_forward_offset_m + detection_length_m / 2.0
+    return (_minkowski_rectangle(region_m, -reach, -half_width, reach, half_width),
+            _minkowski_rectangle(region_m, -half_width, -reach, half_width, reach))
 
 
 def _coverage_summary(coverage: np.ndarray, grid: MosaicGrid, bounds: Bounds,
                       mask: np.ndarray | None = None,
-                      reachable: np.ndarray | None = None) -> dict[str, int]:
+                      inside_region: np.ndarray | None = None,
+                      observable: np.ndarray | None = None) -> dict[str, int]:
     values = _grid_crop(coverage, grid, bounds)
     if values.dtype != np.uint16:
         raise DiagnosticInspectionError('coverage raster must be uint16.')
@@ -219,20 +324,36 @@ def _coverage_summary(coverage: np.ndarray, grid: MosaicGrid, bounds: Bounds,
         'overlap_pixel_count': int(np.count_nonzero(selected >= 2)),
         'maximum_source_count': int(selected.max()) if selected.size else 0,
     }
-    if reachable is not None:
-        # Declared feature geometry may extend past the rectangle the robot is
-        # allowed to drive, and three of this wall's seams span it end to end
-        # by design. Those pixels can never be photographed from inside the
-        # safe frame, so the gate is the reachable split rather than the total,
-        # and it is reported here instead of being derived afterwards.
-        if reachable.shape != values.shape:
-            raise DiagnosticInspectionError('drive-region mask does not match coverage crop.')
+    if inside_region is not None:
+        # Declared feature geometry may extend past the inspection region,
+        # and three of this wall's seams span the wall end to end by design, so
+        # a total over all declared pixels is false for this wall however well
+        # the run went. The gate is the split, reported here rather than
+        # derived afterwards. What lies outside the region is not thereby
+        # unphotographable; observable_envelope is what settles that.
+        if inside_region.shape != values.shape:
+            raise DiagnosticInspectionError('inspection-region mask does not match coverage crop.')
         uncovered = (values == 0) & keep
-        summary['reachable_pixel_count'] = int(np.count_nonzero(keep & reachable))
-        summary['uncovered_inside_drive_region'] = int(
-            np.count_nonzero(uncovered & reachable))
-        summary['uncovered_outside_drive_region'] = int(
-            np.count_nonzero(uncovered & ~reachable))
+        summary['feature_pixels_inside_inspection_region'] = int(
+            np.count_nonzero(keep & inside_region))
+        summary['uncovered_inside_inspection_region'] = int(
+            np.count_nonzero(uncovered & inside_region))
+        summary['uncovered_outside_inspection_region'] = int(
+            np.count_nonzero(uncovered & ~inside_region))
+        if observable is not None:
+            # Splits the pixels the gate excuses into the ones a permitted pose
+            # could still have photographed and the ones none could.  Only the
+            # second kind supports the word "unreachable"; the first is a real
+            # if non-blocking gap, and counting it is what stops the excuse from
+            # growing quietly.
+            if observable.shape != values.shape:
+                raise DiagnosticInspectionError(
+                    'observable envelope mask does not match coverage crop.')
+            outside = uncovered & ~inside_region
+            summary['uncovered_outside_region_inside_envelope'] = int(
+                np.count_nonzero(outside & observable))
+            summary['uncovered_outside_region_outside_envelope'] = int(
+                np.count_nonzero(outside & ~observable))
     return summary
 
 
@@ -267,7 +388,10 @@ def _validate_mosaic(manifest: dict[str, Any]) -> MosaicGrid:
 def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir: Path,
                               padding_m: float = 0.05,
                               tile_size_px: int = 2048,
-                              drive_region_m: Bounds | None = None) -> dict[str, Any]:
+                              inspection_region_m: Polygon | None = None,
+                              camera_footprint_m: tuple[float, float, float] | None = None,
+                              frozen_tasks: tuple[dict[str, Any], ...] | None = None,
+                              ) -> dict[str, Any]:
     """
     Write 100%-scale visual evidence for every diagnostic feature intersecting a mosaic.
 
@@ -284,6 +408,24 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
         raise DiagnosticInspectionError('padding must be finite and non-negative.')
     if tile_size_px < 128 or tile_size_px % 16:
         raise DiagnosticInspectionError('tile size must be at least 128 and divisible by 16.')
+    if inspection_region_m is not None:
+        # A region is what the run is judged against, so every way of supplying
+        # one that measures nothing has to fail loudly. A NaN vertex compares
+        # false against every pixel and a degenerate ring encloses none, and
+        # both used to end in an empty mask -- which the gate then reported as
+        # a pass, because nothing uncovered had been found inside nothing.
+        if len(inspection_region_m) < 3:
+            raise DiagnosticInspectionError('inspection region needs at least three points.')
+        if not all(math.isfinite(value) for point in inspection_region_m for value in point):
+            raise DiagnosticInspectionError('inspection region has a non-finite vertex.')
+        _counter_clockwise(inspection_region_m)
+    envelope: tuple[Polygon, ...] | None = None
+    if camera_footprint_m is not None:
+        if inspection_region_m is None:
+            raise DiagnosticInspectionError(
+                'a camera footprint classifies pixels outside the inspection region, '
+                'so the region is required with it.')
+        envelope = observable_envelope(inspection_region_m, *camera_footprint_m)
     try:
         manifest = _document(mosaic_dir / 'mosaic_manifest.json', 'mosaic manifest')
         wall_document = _document(wall_manifest, 'diagnostic wall manifest')
@@ -313,11 +455,17 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
             if common_bounds is None:
                 raise DiagnosticInspectionError(
                     'diagnostic wall and mosaic have no common extent.')
+            if inspection_region_m is not None and _intersection(
+                    _bounding_box(inspection_region_m), common_bounds) is None:
+                raise DiagnosticInspectionError(
+                    'inspection region does not overlap the inspected mosaic.')
             feature_specs = []
             feature_ids: set[str] = set()
             visible_core_pixels = 0
-            reachable_pixels = 0
-            uncovered_reachable = 0
+            region_feature_pixels = 0
+            uncovered_inside_region = 0
+            uncovered_outside_inside_envelope = 0
+            uncovered_outside_outside_envelope = 0
             uncovered_core_pixels = 0
             for raw_feature in diagnostic['features']:
                 feature_id = _register_feature_id(raw_feature, feature_ids)
@@ -338,13 +486,20 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                 coverage_result = _coverage_summary(
                     coverage, mosaic_grid, visible_core,
                     _feature_mask(raw_feature, mosaic_grid, visible_core),
-                    None if drive_region_m is None else _reachable_mask(
-                        mosaic_grid, visible_core, drive_region_m))
+                    None if inspection_region_m is None else _polygon_mask(
+                        mosaic_grid, visible_core, inspection_region_m),
+                    None if envelope is None else _union_mask(
+                        mosaic_grid, visible_core, envelope))
                 visible_core_pixels += coverage_result['pixel_count']
                 uncovered_core_pixels += coverage_result['uncovered_pixel_count']
-                reachable_pixels += coverage_result.get('reachable_pixel_count', 0)
-                uncovered_reachable += coverage_result.get(
-                    'uncovered_inside_drive_region', 0)
+                region_feature_pixels += coverage_result.get(
+                    'feature_pixels_inside_inspection_region', 0)
+                uncovered_inside_region += coverage_result.get(
+                    'uncovered_inside_inspection_region', 0)
+                uncovered_outside_inside_envelope += coverage_result.get(
+                    'uncovered_outside_region_inside_envelope', 0)
+                uncovered_outside_outside_envelope += coverage_result.get(
+                    'uncovered_outside_region_outside_envelope', 0)
                 record.update({
                     'visibility': ('fully_visible' if visible_core == core_bounds
                                    else 'partially_visible'),
@@ -376,19 +531,33 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                 'uncovered_pixel_count': uncovered_core_pixels,
                 'all_visible_feature_pixels_covered': uncovered_core_pixels == 0,
             }
-            if drive_region_m is not None:
-                # The gate. Declared geometry outside the drive rectangle is
-                # unreachable by construction, so only this number can be zero
-                # for a wall whose seams run past the safe frame.
+            if inspection_region_m is not None:
+                if region_feature_pixels == 0:
+                    # Zero uncovered pixels inside a region holding no feature
+                    # pixels is not a pass, it is a measurement that never
+                    # happened. Saying so here is what stops a mistyped or
+                    # misplaced region from certifying a run by accident.
+                    raise DiagnosticInspectionError(
+                        'inspection region contains no declared feature pixels, '
+                        'so the coverage gate would pass without measuring anything.')
+                # The gate. Only this number can be zero for a wall whose
+                # seams run past the region by design; the total never can.
                 coverage_totals.update({
-                    'reachable_pixel_count': reachable_pixels,
-                    'uncovered_inside_drive_region': uncovered_reachable,
-                    'uncovered_outside_drive_region':
-                        uncovered_core_pixels - uncovered_reachable,
-                    'all_reachable_feature_pixels_covered': uncovered_reachable == 0,
+                    'feature_pixels_inside_inspection_region': region_feature_pixels,
+                    'uncovered_inside_inspection_region': uncovered_inside_region,
+                    'uncovered_outside_inspection_region':
+                        uncovered_core_pixels - uncovered_inside_region,
+                    'all_inspection_region_feature_pixels_covered': uncovered_inside_region == 0,
                 })
+                if envelope is not None:
+                    coverage_totals.update({
+                        'uncovered_outside_region_inside_envelope':
+                            uncovered_outside_inside_envelope,
+                        'uncovered_outside_region_outside_envelope':
+                            uncovered_outside_outside_envelope,
+                    })
             summary = {
-                'diagnostic_inspection_format_version': 2,
+                'diagnostic_inspection_format_version': 3,
                 'purpose': ('Post-mosaic 100%-scale visual inspection only; immutable diagnostic '
                             'wall truth is never available to candidate generation, matching, or '
                             'pose optimization.'),
@@ -413,14 +582,41 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                         record['visibility'] == 'partially_visible' for record in visible),
                     'outside_mosaic_domain': len(records) - len(visible),
                 },
-                'drive_region_m': (None if drive_region_m is None
-                                   else [float(value) for value in drive_region_m]),
+                'inspection_region_m': (
+                    None if inspection_region_m is None
+                    else [[float(x), float(y)] for x, y in inspection_region_m]),
+                'camera_footprint_m': (
+                    None if camera_footprint_m is None
+                    else {'detection_width_m': float(camera_footprint_m[0]),
+                          'detection_length_m': float(camera_footprint_m[1]),
+                          'detection_forward_offset_m': float(camera_footprint_m[2])}),
+                # Where the region and the footprint above came from, named
+                # with the digests that tie them to specific archives. Without
+                # this the summary states a domain but not its authority.
+                'frozen_tasks': [
+                    {'task_id': task.get('task_id'),
+                     'source_run_id': task.get('source_run_id'),
+                     'archive_manifest_sha256': task.get('archive_manifest_sha256'),
+                     'processing_manifest_sha256': task.get('processing_manifest_sha256')}
+                    for task in (frozen_tasks or ())],
+                'observable_envelope_m': (
+                    None if envelope is None
+                    else [[float(value) for value in rectangle] for rectangle in envelope]),
                 'visible_feature_coverage': coverage_totals,
                 'features': records,
             }
             (temporary / 'diagnostic_inspection_summary.json').write_text(
                 json.dumps(summary, ensure_ascii=False, allow_nan=False, indent=2,
                            sort_keys=True) + '\n', encoding='utf-8')
+            write_stage_provenance(
+                temporary, 'diagnostic_inspection',
+                {'padding_m': padding_m, 'tile_size_px': tile_size_px,
+                 'inspection_region_m': summary['inspection_region_m'],
+                 'camera_footprint_m': summary['camera_footprint_m']},
+                {'mosaic_manifest': artifact(mosaic_dir / 'mosaic_manifest.json'),
+                 'diagnostic_wall_manifest': artifact(wall_manifest),
+                 'frozen_tasks': list(frozen_tasks or ())},
+                ('diagnostic_inspection_summary.json',))
             temporary.replace(output_dir)
             return summary
         except Exception:

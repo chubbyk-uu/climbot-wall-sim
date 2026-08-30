@@ -111,7 +111,7 @@ WS=$(dirname "$SCRIPT_DIR")
 # that remains is reservedTurnDrop(), which lifts the approach endpoint by the
 # drop the coming turn is predicted to cause. So the error is set by running
 # this case with -o turn_slip_per_degree_m=..., away from its calibrated
-# 0.00041: the prediction is then wrong by a known amount and the turn leaves
+# 0.00046: the prediction is then wrong by a known amount and the turn leaves
 # the robot off the line by it. A horizontal line entered from behind puts the
 # whole drop across the line, which is the worst case and the measurable one.
 #

@@ -14,8 +14,8 @@
 - 离线校验归档、平场校正、去畸变、匹配、全局位姿优化和硬切墙面拼接；
 - 用诊断墙真值和原尺寸 tile 检查拼接的绝对偏差、接缝和缺陷细节。
 
-A～G4 的仿真链路和 P1 离线预处理都已完成；P2 拼接做到 P2.7e，大工作区盲测已经把机器人可达
-范围内的诊断目标覆盖补齐，最终门限尚未冻结。当前状态见 [STATUS](docs/STATUS.md)。
+A～G4 的仿真链路和 P1 离线预处理都已完成；P2 拼接做到 P2.7e，大工作区盲测已经把巡检域
+内的诊断目标覆盖补齐，最终门限尚未冻结。当前状态见 [STATUS](docs/STATUS.md)。
 
 ## 环境要求
 
@@ -266,6 +266,7 @@ ros2 run climbot_mosaic build_wall_mosaic \
 
 单个包的参数、边界和测试命令写在各自的 README：
 [bringup](src/climbot_bringup/README.md)、
+[common](src/climbot_common/README.md)、
 [control](src/climbot_control/README.md)、
 [coverage](src/climbot_coverage/README.md)、
 [description](src/climbot_description/README.md)、

@@ -105,11 +105,25 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
   truth / pose-only / optimized 检查 tile（`--tile-size-px`、`--padding-m`），
   并把零覆盖区域显式写进摘要，而不是用填充图掩盖。
 
-`--drive-region-m MIN_X MIN_Y MAX_X MAX_Y` 给出机器人被允许行驶的矩形，摘要据此把未覆盖
-像素拆成 `uncovered_inside_drive_region` 与 `uncovered_outside_drive_region`，并给出
-`all_reachable_feature_pixels_covered`。判定覆盖时必须给：declared 几何可以伸到机器人到
-不了的地方——这块诊断墙上就有按设计贯穿整墙的接缝——不裁剪可达范围的总数对这类墙面恒为
-假，没有判定价值。拆分由评价器输出而不是事后另算，缺口才不会无声增长。
+`--input-run` 指出这幅拼接由哪些 processed-run 建成。巡检域和相机足迹不再由命令行给出，
+而是沿 `mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结任务`
+回溯得到，每一环用 SHA-256 校验；指错 run 会被拒绝。判据域取归档里的
+`task.coverage_region` 多边形——不是包围盒，因为梯形任务的包围盒会把任务排除的地面
+一并接受。
+
+摘要据此把未覆盖像素拆成 `uncovered_inside_inspection_region` 与
+`uncovered_outside_inspection_region`，并给出门禁
+`all_inspection_region_feature_pixels_covered`。必须裁剪：declared 几何可以伸到巡检域
+之外——这块诊断墙上就有按设计贯穿整墙的接缝——不裁剪的总数对这类墙面恒为假，没有判定
+价值。域外不作要求是判据的选择，不是“拍不到”的结论。
+
+域外的缺口再拆一层：`uncovered_outside_region_inside_envelope` 与
+`uncovered_outside_region_outside_envelope`。相机足迹被前置偏移带出巡检域
+（`0.340 + 0.28125 / 2 = 0.481 m`），所以域外并不都拍不到；只有落在包络之外的像素才是
+真正拍不到的。包络按两条扫描轴各取一个多边形，是上界：实际路线还受机动裕量内缩。
+
+域内 feature 像素数为零、区域顶点非有限、区域与拼接域不相交，都直接报错，而不是输出一个
+什么都没量到的 `true`。拆分由评价器输出而不是事后另算，缺口才不会无声增长。
 
 原尺寸 tile 只能证明“已经导出”，不能证明相机拍到了它的每一个像素。
 
