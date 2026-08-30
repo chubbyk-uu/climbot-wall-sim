@@ -75,6 +75,15 @@ _WORKER_INTERIOR_DISTANCE: np.ndarray | None = None
 _WORKER_IMAGES: OrderedDict[str, np.ndarray] = OrderedDict()
 _WORKER_CACHE_SIZE = 4
 _WORKER_CACHE_HITS = 0
+#: Memory a fusion run costs before any worker starts: the render grid, the
+#: frame tables and the tiled-TIFF writer's own buffers. Measured at 1.87 GB;
+#: see resolve_jobs for the fit.
+FUSION_BASE_MEMORY_GB = 1.9
+
+#: Marginal resident cost of one render worker, measured at 98 MB on the same
+#: fit. Each holds its share of the decoded source frames.
+FUSION_WORKER_MEMORY_MB = 96.0
+
 _WORKER_CACHE_MISSES = 0
 UNCERTAINTY_SCALE_M = 1e-5
 UNCERTAINTY_NODATA = np.iinfo(np.uint16).max
@@ -756,6 +765,16 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
 
 
 def resolve_jobs(value: int | None, memory_budget_gb: float) -> int:
-    """Resolve bounded process parallelism from CPU, memory, and project cap."""
-    cap = max(1, int(memory_budget_gb * 1024.0 / 96.0))
-    return max(1, min(value or (os.cpu_count() or 1), cap, 8))
+    """Resolve bounded process parallelism from CPU and the memory budget."""
+    # The budget has to pay for the run before it pays for any worker. Dividing
+    # all of it by the per-worker cost ignored that and produced 42 workers for
+    # a 4 GB budget, which a hard cap of 8 then quietly corrected; the cap was
+    # doing the memory model's job with a number that fit one machine.
+    # Measured on the P2-06 joint mosaic (1340 frames, 38226 x 29079 px) by
+    # fitting peak process-tree PSS over 4, 8, 14 and 20 workers: 1.87 GB fixed
+    # plus 98 MB each, so the 96 MB below was right and only the base was
+    # missing. Fusion at 4 GB now runs 22 workers where it ran 8.
+    spare_mb = (memory_budget_gb - FUSION_BASE_MEMORY_GB) * 1024.0
+    cap = max(1, int(spare_mb / FUSION_WORKER_MEMORY_MB))
+    processors = os.cpu_count() or 1
+    return max(1, min(value or processors, cap, processors))

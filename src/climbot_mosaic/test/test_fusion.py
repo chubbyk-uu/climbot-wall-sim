@@ -25,6 +25,8 @@ from climbot_mosaic.fusion import (
     common_grid,
     encode_uncertainty,
     feather_map,
+    FUSION_BASE_MEMORY_GB,
+    FUSION_WORKER_MEMORY_MB,
     FusionError,
     hard_cut_ownership,
     interior_distance_map,
@@ -75,8 +77,16 @@ def test_hard_cut_prefers_interior_source_and_keeps_stable_ties():
 def test_resource_and_grid_contracts_reject_invalid_values():
     with pytest.raises(FusionError, match='resolution'):
         common_grid((_frame(0, (0.0, 0.0, 1.0, 1.0)),), (), 0.0)
+    # A budget smaller than the run's own fixed cost buys no workers at all,
+    # rather than the 1 a bare division would still hand out.
     assert resolve_jobs(None, 0.1) == 1
-    assert resolve_jobs(64, 32.0) == 8
+    assert resolve_jobs(None, FUSION_BASE_MEMORY_GB) == 1
+    # Beyond that the budget pays per worker, and the machine bounds the rest.
+    processors = os.cpu_count() or 1
+    assert resolve_jobs(64, 1024.0) == processors
+    assert resolve_jobs(2, 1024.0) == 2
+    generous = FUSION_BASE_MEMORY_GB + 10 * FUSION_WORKER_MEMORY_MB / 1024.0
+    assert resolve_jobs(None, generous) == min(10, processors)
 
 
 def test_preview_size_contract_rejects_too_small_panels(tmp_path):
