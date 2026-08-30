@@ -75,18 +75,14 @@ ros2 doctor --report | head -20
 ```bash
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-colcon test --executor parallel --parallel-workers 4
+colcon test --executor parallel --parallel-workers 8
 colcon test-result --verbose
 ```
 
-并行度到 4 为止，但**不要把 `-j8` 的失败当成噪声**——这段说明以前是这么写的，那是错的。
-逐个查下来，`-j8` 暴露的失败都是真实缺陷：域号冲突、`line_tracker_node` 目标句柄的 abort、
-用固定睡眠代替等待 DDS 发现的测试夹具、把 `spin_once` 迭代次数当秒数的等待循环。修掉这些
-之后实测：`-j4` 全绿约 31 s，`-j8` 12 次里 11 次全绿、约 25 s，仍有一次
-`test_coverage_manager_archive` 失败且尚未定位。
-
-所以 4 是当前用来换确定性的工程折中，不是"剩下那次失败无害"的结论。想找下一个缺陷，
-就把并行度调回 8 跑。定位到某个失败后可以再用 `--packages-select` 单独跑。
+不要把高并发失败当成噪声。此前 `-j8` 暴露的域号冲突、目标句柄 abort、DDS 发现等待、
+错误的等待期限和归档终态竞态都是真实缺陷。最后一项在修复前第 8 次完整运行复现；补上
+确定性回归后，完整 `-j8` 连续 20 次全绿（每次 1222 tests，约 43 s），因此恢复为默认测试
+并行度。若以后再次出现低频失败，仍按真实竞态定位，不以重跑通过作为关闭依据。
 
 需要产品源码静态分析时：
 

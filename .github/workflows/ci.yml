@@ -38,12 +38,12 @@ jobs:
           colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --event-handlers console_direct+
       - name: Static analysis
         run: bash tools/run_clang_tidy.sh --log clang-tidy.log
-      - name: Test serially
+      - name: Test with 8 workers
         run: |
           source install/setup.bash
-          # Launch tests use isolated DDS domains, but serial execution also
-          # keeps the CI host from becoming the timing variable under review.
-          CTEST_PARALLEL_LEVEL=1 colcon test --event-handlers console_direct+
+          # High-contention failures have exposed real races, so CI uses the
+          # same eight-worker default documented for local full-suite runs.
+          colcon test --executor parallel --parallel-workers 8 --event-handlers console_direct+
           colcon test-result --verbose
       - name: Upload failures
         if: failure()

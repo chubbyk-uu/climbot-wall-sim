@@ -7,16 +7,13 @@ These instructions apply to all work in this repository.
 - Run long Gazebo, ROS 2 launch, Action, and `colcon test` jobs in the background or
   in a persistent execution session so the agent can wait for completion without
   repeatedly streaming output.
-- Run the full suite with `--executor parallel --parallel-workers 4`. Eight workers
-  still fail roughly one run in six, a different test each time. Do not read that as
-  timing noise, which is what this note used to claim: every one of those failures
-  chased down so far was a real defect the contention exposed -- a domain-id
-  collision, an abort in line_tracker_node's goal handling, a fixture that slept
-  instead of waiting for discovery, and a wait that counted iterations of spin_once
-  and called them seconds. Measured after those fixes: 4 workers green, 8 workers
-  11 green out of 12 at ~25 s against ~31 s. The cap buys determinism today; it is
-  not a verdict that the remaining failure is harmless, and raising it again is the
-  way to find the next defect.
+- Run the full suite with `--executor parallel --parallel-workers 8`. Do not read a
+  high-contention failure as timing noise: every one chased down so far exposed a
+  real defect -- a domain-id collision, an abort in goal handling, discovery and
+  deadline bugs in fixtures, and finally a late archive-status topic that could
+  overwrite a finalization timeout after the service Future had been retired. The
+  last race reproduced on run 8 before its fix; its deterministic regression and
+  20 consecutive full `-j8` runs then passed (1222 tests, about 43 s per run).
 - Redirect complete stdout and stderr to a uniquely named log under `/tmp`, such as
   `/tmp/climbot_<case>_<timestamp>.log`. Temporary test logs must not be committed.
 - On success, read and report only the process exit code, the concise test/result
@@ -33,4 +30,3 @@ These instructions apply to all work in this repository.
   acceptance evidence. Routine diagnostic logs remain under `/tmp`.
 - Do not claim a background test has started until its process or persistent
   execution session has actually been created.
-

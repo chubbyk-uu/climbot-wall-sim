@@ -57,7 +57,14 @@ def generate_test_description():
             }]),
         launch_ros.actions.Node(
             package='climbot_control', executable='coverage_manager_node',
-            parameters=[{'archive_finalize_timeout_s': 0.30}]),
+            parameters=[{
+                'archive_finalize_timeout_s': 0.30,
+                # Make every accepted archive topic update observable. With
+                # the production feedback throttle, a bad late update can
+                # mutate internal state without publishing before this test
+                # ends, which is the race -j8 happened to expose.
+                'feedback_publish_period_s': 0.0,
+            }]),
         launch_testing.actions.ReadyToTest(),
     ])
 
@@ -130,6 +137,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self.finalize_release = None
         self.prepare_entered = Event()
         self.finalize_entered = Event()
+        self.finalize_completed = Event()
         self.prepare_requests = []
         self.finalize_requests = []
         self.stop = Event()
@@ -185,6 +193,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
         state = InspectionArchiveStatus.CANCELED if request.outcome == \
             FinalizeInspectionArchive.Request.CANCELED else InspectionArchiveStatus.FAILED
         self._publish_archive(state, active, request.run_id)
+        self.finalize_completed.set()
         return response
 
     def _publish_archive(self, state, coverage_task, run_id, expected_images=2):
@@ -425,11 +434,27 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self.assertIn('timed out', timed_out.message)
         count = len(self.statuses)
         self.finalize_release.set()
-        time.sleep(0.30)
-        self.assertFalse(any(
-            item.archive_state != InspectionArchiveStatus.FAILED
-            for item in self.statuses[count:]),
-            'late finalize response rewrote the timed-out archive result')
+        self.assertTrue(self.finalize_completed.wait(timeout=2.0),
+                        'late finalize service did not complete')
+        # The recorder publishes its terminal topic before returning the late
+        # service response. Repeat that latched state after the manager's
+        # feedback throttle has elapsed: without a topic-side retirement guard
+        # the first delivery can mutate the manager silently and this one then
+        # exposes the mutation. A delayed pre-timeout status is not a rewrite,
+        # so compare publication stamps as well as local arrival order.
+        time.sleep(0.25)
+        self._publish_archive(
+            InspectionArchiveStatus.CANCELED, self.prepare_requests[-1].task, 'run-25')
+        time.sleep(0.50)
+        timed_out_stamp = (timed_out.header.stamp.sec, timed_out.header.stamp.nanosec)
+        rewrites = [
+            item for item in self.statuses[count:]
+            if (item.header.stamp.sec, item.header.stamp.nanosec) >= timed_out_stamp and
+            item.archive_state != InspectionArchiveStatus.FAILED]
+        self.assertEqual(
+            rewrites, [],
+            'late finalize status rewrote the timed-out archive result: %r' %
+            [(item.archive_state, item.message) for item in rewrites])
 
 
 @launch_testing.post_shutdown_test()
