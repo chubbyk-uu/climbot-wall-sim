@@ -25,7 +25,8 @@ TOOLS = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'
 sys.path.insert(0, TOOLS)
 import bake_wall_texture  # noqa: E402
 from climbot_gazebo.wall_texture import (  # noqa: E402
-    block_extent, load_manifest, sampled_block_extent, texture_visuals)
+    block_extent, BLOCK_THICKNESS_M, load_manifest, sampled_block_extent,
+    texture_visuals)
 import create_diagnostic_wall  # noqa: E402
 import numpy as np  # noqa: E402
 from PIL import Image  # noqa: E402
@@ -284,7 +285,13 @@ def test_visuals_are_flat_coplanar_and_carry_the_baked_map():
         assert len(visuals) == len(manifest['maps']['albedo']['blocks'])
         depths = {entry.split('<pose>')[1].split()[0] for entry in visuals}
         assert len(depths) == 1
-        assert float(depths.pop()) > 0.05
+        # The outer face, not the centre, is what the camera photographs and
+        # what the mosaic projects onto, and it has to be the collision face
+        # the wheels ride on. A standoff here scales the whole mosaic by
+        # standoff/camera_distance: the 1.25 mm this once was measured
+        # +4566 ppm, or 43 mm across a 9.5 m wall.
+        assert (float(depths.pop()) + BLOCK_THICKNESS_M / 2.0 ==
+                pytest.approx(0.10 / 2.0, abs=1e-9))
         # The base colour multiplies the albedo map, and its default is dark
         # enough to render the textured blocks pure black while the untextured
         # wall beside them lights normally. Nothing in the load reports it, so

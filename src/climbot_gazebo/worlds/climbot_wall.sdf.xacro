@@ -53,6 +53,8 @@
        in front of it so the decals never fight the collision surface. -->
   <xacro:property name="face_x" value="${centre_x + thickness / 2.0}"/>
   <xacro:property name="decal_x" value="${thickness / 2.0 + 0.003}"/>
+  <!-- How far wall_visual sits behind the collision face; see wall_visual. -->
+  <xacro:property name="wall_visual_recess" value="0.001"/>
   <!-- Lines sit at whole multiples of the spacing measured from the work
        frame's origin, the wall's lower-left corner, so a line is a work
        coordinate an operator can read off the wall. Only the interior ones are
@@ -225,10 +227,16 @@
             </friction>
           </surface>
         </collision>
+        <!-- Recessed behind the collision face. Texture blocks put their
+             outer face exactly on that face, because the camera must
+             photograph the plane the wheels ride on; a coplanar wall_visual
+             would then z-fight with every block. Nothing measures this
+             surface, so moving it back costs only a 1 mm step visible at the
+             texture border under grazing light. -->
         <visual name="wall_visual">
           <geometry>
             <box>
-              <size>${thickness} ${width} ${height}</size>
+              <size>${thickness - 2.0 * wall_visual_recess} ${width} ${height}</size>
             </box>
           </geometry>
           <material>

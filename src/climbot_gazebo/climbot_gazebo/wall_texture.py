@@ -33,12 +33,20 @@ import math
 import os
 from xml.sax.saxutils import quoteattr
 
-#: How far the texture blocks stand off the wall face, in metres. Large enough
-#: that the renderer does not have to choose between two surfaces at one depth,
-#: small enough to stay far inside the 3 mm the reference grid used, so the
-#: photographed plane and the collision plane remain the same plane to the
-#: tolerances anything here is measured at.
-SURFACE_OFFSET_M = 0.001
+#: Thickness of a texture block, in metres. Only its outer face is ever seen.
+BLOCK_THICKNESS_M = 0.0005
+
+#: How far a block's outer face stands off the wall's collision face, in
+#: metres. This is zero, and changing it is expensive: the wheels ride on the
+#: collision face while the camera photographs the outer face, so any standoff
+#: makes the true object distance differ from the modelled one and scales the
+#: whole mosaic by standoff/camera_distance. The 1.25 mm this used to be
+#: measured +4566 ppm at the 0.275 m camera distance -- 43 mm across a 9.5 m
+#: wall -- and arrived as an absolute anchor offset that no pose-graph
+#: optimisation can remove, because the images agree with each other perfectly
+#: at the wrong scale. Nothing here is coplanar with the blocks to z-fight
+#: against: wall_visual in climbot_wall.sdf.xacro is recessed to leave room.
+SURFACE_OFFSET_M = 0.0
 
 
 def load_manifest(path, wall_size=None):
@@ -285,7 +293,9 @@ def texture_visuals(manifest, directory, thickness, wall_origin, link_centre,
     if 'albedo' not in manifest['maps']:
         raise KeyError('the bake has no albedo map')
 
-    depth = thickness / 2.0 + offset_m
+    # offset_m places the block's *outer face*, which is the surface the
+    # camera sees and the plane the mosaic projects onto.
+    depth = thickness / 2.0 + offset_m - BLOCK_THICKNESS_M / 2.0
     elements = []
     for block in manifest['maps']['albedo']['blocks']:
         work_x, work_y, width, height = sampled_block_extent(manifest, block)
@@ -298,7 +308,7 @@ def texture_visuals(manifest, directory, thickness, wall_origin, link_centre,
             '          <cast_shadows>false</cast_shadows>\n'
             '          <geometry>\n'
             '            <box>\n'
-            '              <size>0.0005 %.6f %.6f</size>\n'
+            '              <size>%.6f %.6f %.6f</size>\n'
             '            </box>\n'
             '          </geometry>\n'
             '          <material>\n'
@@ -322,7 +332,7 @@ def texture_visuals(manifest, directory, thickness, wall_origin, link_centre,
                 depth,
                 wall_origin[1] + work_x - link_centre[1],
                 wall_origin[2] + work_y - link_centre[2],
-                width, height,
+                BLOCK_THICKNESS_M, width, height,
                 # Escaped, because this text is parsed as XML by the caller.
                 # A directory with an ampersand or an angle bracket in it - a
                 # checkout under a path somebody named, a Windows share seen
