@@ -349,10 +349,6 @@ def _render_task(task: tuple[str, int, int, tuple[int, ...], tuple[int, ...]]):
         products = _hard_cut(_WORKER_INITIAL, row, column, initial_candidates, False, True)
     elif mode == 'optimized':
         products = _hard_cut(_WORKER_OPTIMIZED, row, column, optimized_candidates, True, True)
-    elif mode == 'difference':
-        first = _hard_cut(_WORKER_INITIAL, row, column, initial_candidates, False)[0]
-        second = _hard_cut(_WORKER_OPTIMIZED, row, column, optimized_candidates, False)[0]
-        products = (cv2.absdiff(first, second),)
     else:
         raise FusionError(f'unknown render mode: {mode}.')
     return (row, column, *products,
@@ -398,6 +394,19 @@ def _write_raw_tile(file_descriptor: int, values: np.ndarray, grid: RenderGrid,
         raise FusionError('failed to write a complete raw auxiliary tile.')
 
 
+def _read_raw_tile(file_descriptor: int, dtype: np.dtype, grid: RenderGrid,
+                   row: int, column: int) -> np.ndarray:
+    """Read back one padded tile written by _write_raw_tile."""
+    size = grid.tile_size_px
+    columns = math.ceil(grid.width_px / size)
+    tile_index = (row // size) * columns + column // size
+    expected = size * size * dtype.itemsize
+    data = os.pread(file_descriptor, expected, tile_index * expected)
+    if len(data) != expected:
+        raise FusionError('raw auxiliary tile cache is truncated.')
+    return np.frombuffer(data, dtype=dtype).reshape(size, size)
+
+
 def _tiles_from_raw(path: Path, dtype: np.dtype, grid: RenderGrid):
     size = grid.tile_size_px
     tile_bytes = size * size * dtype.itemsize
@@ -421,7 +430,10 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                       initial: tuple[RenderFrame, ...], optimized: tuple[RenderFrame, ...],
                       camera_width: int, camera_height: int, jobs: int,
                       coverage_fd: int | None = None,
-                      uncertainty_fd: int | None = None) -> dict[str, Any]:
+                      uncertainty_fd: int | None = None,
+                      image_raw_fd: int | None = None,
+                      difference_fd: int | None = None,
+                      previous_raw_fd: int | None = None) -> dict[str, Any]:
     started = time.perf_counter()
     task_values = _tasks(mode, grid, initial, optimized)
     with ProcessPoolExecutor(
@@ -440,6 +452,18 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                 cache_hits += int(result[-2])
                 cache_misses += int(result[-1])
                 row, column, image = result[:3]
+                # The difference raster used to be a third full render of both
+                # variants. Both tiles already exist by the time the second
+                # pass runs: the first pass keeps its own, and this one
+                # subtracts against it, so the same bytes come out of one
+                # read instead of a whole render pass.
+                if image_raw_fd is not None:
+                    _write_raw_tile(image_raw_fd, image, grid, row, column)
+                if difference_fd is not None and previous_raw_fd is not None:
+                    previous = _read_raw_tile(
+                        previous_raw_fd, np.dtype(np.uint8), grid, row, column)
+                    _write_raw_tile(
+                        difference_fd, cv2.absdiff(previous, image), grid, row, column)
                 if coverage_fd is not None and uncertainty_fd is not None:
                     coverage, uncertainty = result[3:5]
                     _write_raw_tile(coverage_fd, coverage, grid, row, column)
@@ -598,31 +622,53 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
     cache = Path(tempfile.mkdtemp(prefix='fusion-', dir=work_dir))
     coverage_fd = None
     uncertainty_fd = None
+    pose_only_fd = None
+    difference_fd = None
     resource_monitor = _ProcessTreePssMonitor()
     resource_monitor.start()
     try:
         coverage_path = cache / 'coverage.dat'
         uncertainty_path = cache / 'uncertainty.dat'
-        raw_bytes = _tile_count(grid) * grid.tile_size_px ** 2 * np.dtype(np.uint16).itemsize
+        pose_only_path = cache / 'pose_only.dat'
+        difference_path = cache / 'difference.dat'
+        tiles = _tile_count(grid) * grid.tile_size_px ** 2
+        raw_bytes = tiles * np.dtype(np.uint16).itemsize
+        image_bytes = tiles * np.dtype(np.uint8).itemsize
         coverage_fd = os.open(coverage_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
         uncertainty_fd = os.open(
             uncertainty_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
+        pose_only_fd = os.open(pose_only_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
+        difference_fd = os.open(difference_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
         os.ftruncate(coverage_fd, raw_bytes)
         os.ftruncate(uncertainty_fd, raw_bytes)
+        os.ftruncate(pose_only_fd, image_bytes)
+        os.ftruncate(difference_fd, image_bytes)
         initial_pass = _write_image_pass(
             temporary / 'mosaic_pose_only.tif', 'initial', grid,
-            initial, optimized, inputs.camera.width, inputs.camera.height, jobs)
+            initial, optimized, inputs.camera.width, inputs.camera.height, jobs,
+            image_raw_fd=pose_only_fd)
         optimized_pass = _write_image_pass(
             temporary / 'mosaic_optimized.tif', 'optimized', grid,
             initial, optimized, inputs.camera.width, inputs.camera.height, jobs,
-            coverage_fd, uncertainty_fd)
+            coverage_fd, uncertainty_fd,
+            difference_fd=difference_fd, previous_raw_fd=pose_only_fd)
         os.close(coverage_fd)
         coverage_fd = None
         os.close(uncertainty_fd)
         uncertainty_fd = None
-        difference_pass = _write_image_pass(
-            temporary / 'mosaic_difference.tif', 'difference', grid,
-            initial, optimized, inputs.camera.width, inputs.camera.height, jobs)
+        os.close(pose_only_fd)
+        pose_only_fd = None
+        os.close(difference_fd)
+        difference_fd = None
+        difference_started = time.perf_counter()
+        _write_raw_tiles(temporary / 'mosaic_difference.tif', difference_path,
+                         np.dtype(np.uint8), grid, 'difference', True)
+        difference_pass = {
+            'elapsed_s': time.perf_counter() - difference_started,
+            'image_cache': None,
+            'source': ('absolute difference of the two rendered variants, taken '
+                       'tile by tile inside the optimized pass'),
+        }
         _write_raw_tiles(temporary / 'coverage_count.tif', coverage_path,
                          np.dtype(np.uint16), grid, 'coverage_count', True)
         _write_raw_tiles(temporary / 'uncertainty.tif', uncertainty_path,
@@ -702,6 +748,10 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             os.close(coverage_fd)
         if uncertainty_fd is not None:
             os.close(uncertainty_fd)
+        if pose_only_fd is not None:
+            os.close(pose_only_fd)
+        if difference_fd is not None:
+            os.close(difference_fd)
         shutil.rmtree(cache, ignore_errors=True)
 
 
