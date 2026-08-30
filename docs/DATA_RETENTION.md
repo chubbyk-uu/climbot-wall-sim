@@ -1,12 +1,12 @@
 # 数据保留与清理清单
 
-更新：2026-08-28。此清单记录当前保留边界和已经执行的清理；**本文本身不授权未来删除**。
+更新：2026-08-30。此清单记录当前保留边界和已经执行的清理；**本文本身不授权未来删除**。
 
 ## 当前占用
 
 | 位置 | 大小 | 说明 |
 | --- | ---: | --- |
-| `${CLIMBOT_DATA_ROOT}` | 约 6.0 GB | 原始归档、处理结果、拼接产品与开发中间产物 |
+| `${CLIMBOT_DATA_ROOT}` | 约 9.8 GB | 原始归档、处理结果、拼接产品与开发中间产物 |
 | `textures/` | 约 1.9 GB | 忽略的 DDS 墙面贴图；可由脚本重建，但重建成本高 |
 | `results/` | 约 47 MB | Git 跟踪的正式摘要和轨迹证据 |
 | `log/` | 约 301 MB | 可再生的本机构建/测试日志 |
@@ -27,6 +27,17 @@
 - `results/` 的已跟踪文件；
 - 2026-08-26 当前正式相对基线的原始/processed 输入及
   `mosaic-horizontal-vertical-camera-zfix-traceable-final-025mm-20260826`。
+
+当前 P2-06 严格证据链还必须保留：
+
+- `inspection-diagnostic-full-{horizontal,vertical}-025mm-20260828` 下摘要记录的两份原始归档；
+- `processed-p206-{horizontal,vertical}-20260830b`；后缀虽为 `b`，它们仍是当前链的输入；
+- `mosaic-p206-joint-20260830c-{candidates,matches,pose-graph,hardcut,hardcut-truth}`；其中
+  candidates 是独立诊断，另外四项构成正式测量链；
+- `mosaic-p206-joint-20260830d-hardcut-inspection`；这是带严格几何分类和 170 个逐文件哈希
+  原尺寸 tile 的当前检查产物；
+- 旧 `20260830b` 的 `mosaic_manifest.json`、truth/inspection summary 以及 matches JSON，和旧
+  `20260830c-hardcut-inspection` 的 summary/provenance，作为撤销与逐位复现审计材料。
 
 ## 已清理：第一批重复与缓存
 
@@ -63,3 +74,13 @@ processed-run 引用的失败归档移入系统废纸篓，共约 `866 MB`。当
 目录及 21 个 `/tmp/climbot_g2_*` 临时归档，合计约 `6.4 GB`。逐项确认它们未被当前 P2.7d、
 8 月 26 日相对基线或 `results/` 正式证据引用后，已移入系统废纸篓；本轮诊断日志保留。
 上述“必须保留”目录均未移动。清空系统废纸篓前这些测试图片仍可恢复，也仍占用宿主磁盘空间。
+
+## 已清理：2026-08-30 P2-06 重复产物
+
+严格证据发布后逐文件确认：`20260830b` 与当前 `20260830c` 的七个拼接产物哈希完全相同，
+旧 `b/c` inspection 的 170 个原尺寸 tile 也与当前 `20260830d` 逐文件相同。随后永久删除旧
+`b` 拼接大图、`b/c` 旧 inspection tiles、重复的 `b` candidates/pose-graph，以及 `b/c`
+work 缓存，共 `2,425,317,078 bytes`（约 2.26 GiB）。旧 manifest、truth/inspection summary、
+`b` matches 和 `c` inspection provenance 按上面的审计边界保留；当前 raw、processed、
+`20260830c` 正式链及 `20260830d` inspection 均未删除。本次使用精确路径永久删除，不在废纸篓，
+不能恢复；可由保留的输入重新计算。

@@ -66,6 +66,8 @@
     "all_inspection_region_feature_pixels_covered": true,
     "all_visible_feature_pixels_covered": false,
     "every_stage_published_its_own_provenance": true,
+    "inspection_tiles_rehashed": 170,
+    "mosaic_products_rehashed": 7,
     "optimized_not_worse_p95_anchor_offset": true,
     "stage_links_verified": 5
   },
@@ -95,46 +97,786 @@
         7.449999809265137
       ]
     ],
-    "inspection_summary_sha256": "e8d93ffaa6bdd2949f549ebb9aff78aa36e8421928e9388b6752275468c42fdc",
-    "observable_envelope_m": [
+    "inspection_summary_sha256": "8371c8c9c2750c812a6e33ec320a29bf9dbce7fd1275f8f68c831a3c400f1535",
+    "pixel_scale_mm": 0.25,
+    "planned_scan_footprints_m": [
       [
         [
-          0.06937501192092893,
-          0.30000001192092896
+          0.7493750000000001,
+          0.6481141037726879
         ],
         [
-          9.930624809265137,
-          0.30000001192092896
+          9.930625,
+          0.6481141037726879
         ],
         [
-          9.930624809265137,
-          7.699999809265137
+          9.930625,
+          1.1481141037726879
         ],
         [
-          0.06937501192092893,
-          7.699999809265137
+          0.7493750000000001,
+          1.1481141037726879
         ]
       ],
       [
         [
-          0.30000001192092896,
-          0.06937501192092893
+          0.06937500000000002,
+          1.0358498408011019
         ],
         [
-          9.699999809265137,
-          0.06937501192092893
+          9.250625,
+          1.0358498408011019
         ],
         [
-          9.699999809265137,
-          7.930624809265137
+          9.250625,
+          1.5358498408011019
         ],
         [
-          0.30000001192092896,
-          7.930624809265137
+          0.06937500000000002,
+          1.5358498408011019
+        ]
+      ],
+      [
+        [
+          0.7493750000000001,
+          1.423585577829516
+        ],
+        [
+          9.930625,
+          1.423585577829516
+        ],
+        [
+          9.930625,
+          1.923585577829516
+        ],
+        [
+          0.7493750000000001,
+          1.923585577829516
+        ]
+      ],
+      [
+        [
+          0.06937500000000002,
+          1.81132131485793
+        ],
+        [
+          9.250625,
+          1.81132131485793
+        ],
+        [
+          9.250625,
+          2.31132131485793
+        ],
+        [
+          0.06937500000000002,
+          2.31132131485793
+        ]
+      ],
+      [
+        [
+          0.7493750000000001,
+          2.199057051886344
+        ],
+        [
+          9.930625,
+          2.199057051886344
+        ],
+        [
+          9.930625,
+          2.699057051886344
+        ],
+        [
+          0.7493750000000001,
+          2.699057051886344
+        ]
+      ],
+      [
+        [
+          0.06937500000000002,
+          2.586792788914758
+        ],
+        [
+          9.250625,
+          2.586792788914758
+        ],
+        [
+          9.250625,
+          3.086792788914758
+        ],
+        [
+          0.06937500000000002,
+          3.086792788914758
+        ]
+      ],
+      [
+        [
+          0.7493750000000001,
+          2.974528525943172
+        ],
+        [
+          9.930625,
+          2.974528525943172
+        ],
+        [
+          9.930625,
+          3.474528525943172
+        ],
+        [
+          0.7493750000000001,
+          3.474528525943172
+        ]
+      ],
+      [
+        [
+          0.06937500000000002,
+          3.362264262971586
+        ],
+        [
+          9.250625,
+          3.362264262971586
+        ],
+        [
+          9.250625,
+          3.862264262971586
+        ],
+        [
+          0.06937500000000002,
+          3.862264262971586
+        ]
+      ],
+      [
+        [
+          0.7493750000000001,
+          3.75
+        ],
+        [
+          9.930625,
+          3.75
+        ],
+        [
+          9.930625,
+          4.25
+        ],
+        [
+          0.7493750000000001,
+          4.25
+        ]
+      ],
+      [
+        [
+          0.06937500000000002,
+          4.1377357370284145
+        ],
+        [
+          9.250625,
+          4.1377357370284145
+        ],
+        [
+          9.250625,
+          4.6377357370284145
+        ],
+        [
+          0.06937500000000002,
+          4.6377357370284145
+        ]
+      ],
+      [
+        [
+          0.7493750000000001,
+          4.525471474056828
+        ],
+        [
+          9.930625,
+          4.525471474056828
+        ],
+        [
+          9.930625,
+          5.025471474056828
+        ],
+        [
+          0.7493750000000001,
+          5.025471474056828
+        ]
+      ],
+      [
+        [
+          0.06937500000000002,
+          4.913207211085242
+        ],
+        [
+          9.250625,
+          4.913207211085242
+        ],
+        [
+          9.250625,
+          5.413207211085242
+        ],
+        [
+          0.06937500000000002,
+          5.413207211085242
+        ]
+      ],
+      [
+        [
+          0.7493750000000001,
+          5.300942948113656
+        ],
+        [
+          9.930625,
+          5.300942948113656
+        ],
+        [
+          9.930625,
+          5.800942948113656
+        ],
+        [
+          0.7493750000000001,
+          5.800942948113656
+        ]
+      ],
+      [
+        [
+          0.06937500000000002,
+          5.6886786851420705
+        ],
+        [
+          9.250625,
+          5.6886786851420705
+        ],
+        [
+          9.250625,
+          6.1886786851420705
+        ],
+        [
+          0.06937500000000002,
+          6.1886786851420705
+        ]
+      ],
+      [
+        [
+          0.7493750000000001,
+          6.076414422170484
+        ],
+        [
+          9.930625,
+          6.076414422170484
+        ],
+        [
+          9.930625,
+          6.576414422170484
+        ],
+        [
+          0.7493750000000001,
+          6.576414422170484
+        ]
+      ],
+      [
+        [
+          0.06937500000000002,
+          6.464150159198898
+        ],
+        [
+          9.250625,
+          6.464150159198898
+        ],
+        [
+          9.250625,
+          6.964150159198898
+        ],
+        [
+          0.06937500000000002,
+          6.964150159198898
+        ]
+      ],
+      [
+        [
+          0.7493750000000001,
+          6.851885896227312
+        ],
+        [
+          9.930625,
+          6.851885896227312
+        ],
+        [
+          9.930625,
+          7.351885896227312
+        ],
+        [
+          0.7493750000000001,
+          7.351885896227312
+        ]
+      ],
+      [
+        [
+          0.55,
+          0.8474891037726879
+        ],
+        [
+          1.05,
+          0.8474891037726879
+        ],
+        [
+          1.05,
+          7.832510896227312
+        ],
+        [
+          0.55,
+          7.832510896227312
+        ]
+      ],
+      [
+        [
+          0.95,
+          0.16748910377268794
+        ],
+        [
+          1.45,
+          0.16748910377268794
+        ],
+        [
+          1.45,
+          7.152510896227312
+        ],
+        [
+          0.95,
+          7.152510896227312
+        ]
+      ],
+      [
+        [
+          1.3499999999999999,
+          0.8474891037726879
+        ],
+        [
+          1.8499999999999999,
+          0.8474891037726879
+        ],
+        [
+          1.8499999999999999,
+          7.832510896227312
+        ],
+        [
+          1.3499999999999999,
+          7.832510896227312
+        ]
+      ],
+      [
+        [
+          1.7499999999999998,
+          0.16748910377268794
+        ],
+        [
+          2.25,
+          0.16748910377268794
+        ],
+        [
+          2.25,
+          7.152510896227312
+        ],
+        [
+          1.7499999999999998,
+          7.152510896227312
+        ]
+      ],
+      [
+        [
+          2.1499999999999995,
+          0.8474891037726879
+        ],
+        [
+          2.6499999999999995,
+          0.8474891037726879
+        ],
+        [
+          2.6499999999999995,
+          7.832510896227312
+        ],
+        [
+          2.1499999999999995,
+          7.832510896227312
+        ]
+      ],
+      [
+        [
+          2.55,
+          0.16748910377268805
+        ],
+        [
+          3.05,
+          0.16748910377268805
+        ],
+        [
+          3.05,
+          7.152510896227312
+        ],
+        [
+          2.55,
+          7.152510896227312
+        ]
+      ],
+      [
+        [
+          2.9499999999999993,
+          0.8474891037726882
+        ],
+        [
+          3.4499999999999993,
+          0.8474891037726882
+        ],
+        [
+          3.4499999999999993,
+          7.832510896227312
+        ],
+        [
+          2.9499999999999993,
+          7.832510896227312
+        ]
+      ],
+      [
+        [
+          3.3499999999999996,
+          0.16748910377268805
+        ],
+        [
+          3.8499999999999996,
+          0.16748910377268805
+        ],
+        [
+          3.8499999999999996,
+          7.152510896227312
+        ],
+        [
+          3.3499999999999996,
+          7.152510896227312
+        ]
+      ],
+      [
+        [
+          3.749999999999999,
+          0.8474891037726882
+        ],
+        [
+          4.249999999999999,
+          0.8474891037726882
+        ],
+        [
+          4.249999999999999,
+          7.832510896227312
+        ],
+        [
+          3.749999999999999,
+          7.832510896227312
+        ]
+      ],
+      [
+        [
+          4.1499999999999995,
+          0.16748910377268816
+        ],
+        [
+          4.6499999999999995,
+          0.16748910377268816
+        ],
+        [
+          4.6499999999999995,
+          7.152510896227312
+        ],
+        [
+          4.1499999999999995,
+          7.152510896227312
+        ]
+      ],
+      [
+        [
+          4.549999999999999,
+          0.8474891037726882
+        ],
+        [
+          5.049999999999999,
+          0.8474891037726882
+        ],
+        [
+          5.049999999999999,
+          7.832510896227312
+        ],
+        [
+          4.549999999999999,
+          7.832510896227312
+        ]
+      ],
+      [
+        [
+          4.949999999999998,
+          0.16748910377268827
+        ],
+        [
+          5.449999999999998,
+          0.16748910377268827
+        ],
+        [
+          5.449999999999998,
+          7.152510896227311
+        ],
+        [
+          4.949999999999998,
+          7.152510896227311
+        ]
+      ],
+      [
+        [
+          5.349999999999999,
+          0.8474891037726884
+        ],
+        [
+          5.849999999999999,
+          0.8474891037726884
+        ],
+        [
+          5.849999999999999,
+          7.832510896227311
+        ],
+        [
+          5.349999999999999,
+          7.832510896227311
+        ]
+      ],
+      [
+        [
+          5.749999999999999,
+          0.16748910377268827
+        ],
+        [
+          6.249999999999999,
+          0.16748910377268827
+        ],
+        [
+          6.249999999999999,
+          7.152510896227311
+        ],
+        [
+          5.749999999999999,
+          7.152510896227311
+        ]
+      ],
+      [
+        [
+          6.149999999999999,
+          0.8474891037726884
+        ],
+        [
+          6.649999999999999,
+          0.8474891037726884
+        ],
+        [
+          6.649999999999999,
+          7.832510896227311
+        ],
+        [
+          6.149999999999999,
+          7.832510896227311
+        ]
+      ],
+      [
+        [
+          6.549999999999998,
+          0.16748910377268839
+        ],
+        [
+          7.049999999999998,
+          0.16748910377268839
+        ],
+        [
+          7.049999999999998,
+          7.152510896227311
+        ],
+        [
+          6.549999999999998,
+          7.152510896227311
+        ]
+      ],
+      [
+        [
+          6.949999999999998,
+          0.8474891037726884
+        ],
+        [
+          7.449999999999998,
+          0.8474891037726884
+        ],
+        [
+          7.449999999999998,
+          7.832510896227311
+        ],
+        [
+          6.949999999999998,
+          7.832510896227311
+        ]
+      ],
+      [
+        [
+          7.349999999999999,
+          0.1674891037726885
+        ],
+        [
+          7.849999999999999,
+          0.1674891037726885
+        ],
+        [
+          7.849999999999999,
+          7.152510896227311
+        ],
+        [
+          7.349999999999999,
+          7.152510896227311
+        ]
+      ],
+      [
+        [
+          7.749999999999998,
+          0.8474891037726886
+        ],
+        [
+          8.249999999999998,
+          0.8474891037726886
+        ],
+        [
+          8.249999999999998,
+          7.832510896227311
+        ],
+        [
+          7.749999999999998,
+          7.832510896227311
+        ]
+      ],
+      [
+        [
+          8.149999999999999,
+          0.1674891037726885
+        ],
+        [
+          8.649999999999999,
+          0.1674891037726885
+        ],
+        [
+          8.649999999999999,
+          7.152510896227311
+        ],
+        [
+          8.149999999999999,
+          7.152510896227311
+        ]
+      ],
+      [
+        [
+          8.549999999999999,
+          0.8474891037726886
+        ],
+        [
+          9.049999999999999,
+          0.8474891037726886
+        ],
+        [
+          9.049999999999999,
+          7.832510896227311
+        ],
+        [
+          8.549999999999999,
+          7.832510896227311
+        ]
+      ],
+      [
+        [
+          8.95,
+          0.1674891037726886
+        ],
+        [
+          9.45,
+          0.1674891037726886
+        ],
+        [
+          9.45,
+          7.152510896227311
+        ],
+        [
+          8.95,
+          7.152510896227311
         ]
       ]
     ],
-    "pixel_scale_mm": 0.25,
+    "safe_pose_camera_envelopes_m": [
+      [
+        [
+          0.06748912096023557,
+          0.2981141209602356
+        ],
+        [
+          9.252511177062988,
+          0.2981141209602356
+        ],
+        [
+          9.252511177062988,
+          7.70188570022583
+        ],
+        [
+          0.06748912096023557,
+          7.70188570022583
+        ]
+      ],
+      [
+        [
+          0.7474891209602357,
+          0.2981141209602356
+        ],
+        [
+          9.932511177062988,
+          0.2981141209602356
+        ],
+        [
+          9.932511177062988,
+          7.70188570022583
+        ],
+        [
+          0.7474891209602357,
+          7.70188570022583
+        ]
+      ],
+      [
+        [
+          0.2981141209602356,
+          0.06748912096023557
+        ],
+        [
+          9.701886177062988,
+          0.06748912096023557
+        ],
+        [
+          9.701886177062988,
+          7.25251070022583
+        ],
+        [
+          0.2981141209602356,
+          7.25251070022583
+        ]
+      ],
+      [
+        [
+          0.2981141209602356,
+          0.7474891209602357
+        ],
+        [
+          9.701886177062988,
+          0.7474891209602357
+        ],
+        [
+          9.701886177062988,
+          7.93251070022583
+        ],
+        [
+          0.2981141209602356,
+          7.93251070022583
+        ]
+      ]
+    ],
     "visible_feature_coverage": {
       "all_inspection_region_feature_pixels_covered": true,
       "all_visible_feature_pixels_covered": false,
@@ -142,8 +884,10 @@
       "pixel_count": 126770701,
       "uncovered_inside_inspection_region": 0,
       "uncovered_outside_inspection_region": 439116,
-      "uncovered_outside_region_inside_envelope": 439116,
-      "uncovered_outside_region_outside_envelope": 0,
+      "uncovered_outside_region_inside_planned_scan_footprint": 32504,
+      "uncovered_outside_region_inside_safe_pose_envelope": 439116,
+      "uncovered_outside_region_outside_planned_scan_footprint": 406612,
+      "uncovered_outside_region_outside_safe_pose_envelope": 0,
       "uncovered_pixel_count": 439116
     }
   },
@@ -175,12 +919,11 @@
   },
   "limitations": [
     "One blind collection on one wall; the millimetre figures are a single sample, not a distribution, so no threshold is frozen.",
-    "Pixels outside the inspection region are not required to be covered. That is a choice of acceptance domain, not a claim that they could not be photographed; the envelope split says how many of them a permitted pose could still have reached.",
-    "The observable envelope is an upper bound: it grows the frozen coverage_region rather than the maneuver-inset route the planner actually drives, and it counts both sweep axes for both tasks.",
-    "The envelope split is bounded by construction on this data. The mosaic domain (x 0.2286..9.7709, y 0.3634..7.6347 m) lies wholly inside the sweep envelope, because it is the union of the frames actually taken and those came from poses the task permitted, so the outside-envelope count can only be zero here. What the split does establish is that not one of the 439,116 excused pixels is excused by reach: every one is a pixel some permitted pose could have photographed, and the excuse rests entirely on the choice of acceptance domain. The count becomes informative only for a run whose mosaic domain reaches past the envelope.",
-    "Absolute values from before commit 3f422f5 are not comparable: the photographed surface stood 1.25 mm proud of the drive plane and scaled every mosaic by +4566 ppm.",
-    "One horizontal frame carries no accepted match edge because SIFT finds no keypoints on it, so its pose comes from odometry. The measured effect on the nearest anchor is 0.022 mm.",
-    "The inspection stage ran at commit 9c89dda and the stages before it at 7f8b875; both trees were clean and the difference is recorded per stage rather than averaged into one claim."
+    "Pixels outside the frozen coverage_region are not required by the acceptance gate; their planned-SCAN and safe-pose classifications are explanatory, not additional pass criteria.",
+    "The planned-SCAN footprint is the continuous geometric sweep of the frozen task, not proof that every planned point produced a stored image; coverage_count.tif remains the authority for actual capture.",
+    "The safe-pose envelope proves geometric existence of a base_link centre in the frozen motion_region at an allowed scan-axis heading; it does not claim the frozen plan visited that pose.",
+    "Absolute values from before commit 3f422f5 are not comparable because the photographed surface stood 1.25 mm proud of the drive plane.",
+    "One horizontal frame carries no accepted match edge because SIFT finds no keypoints on it; its pose comes from odometry, with a measured 0.022 mm effect on the nearest anchor."
   ],
   "provenance": {
     "links": [
@@ -223,7 +966,7 @@
             "src",
             "tools"
           ],
-          "commit": "9c89ddad6d266a252dbdd3506ba1974ff845c541",
+          "commit": "b07e861eb0129713e6a68489fb588205e27f1181",
           "source_modified": false,
           "traceable": true
         },
@@ -258,9 +1001,201 @@
                   7.449999809265137
                 ]
               ],
+              "motion_region_m": [
+                [
+                  0.5481141209602356,
+                  0.5481141209602356
+                ],
+                [
+                  9.451886177062988,
+                  0.5481141209602356
+                ],
+                [
+                  9.451886177062988,
+                  7.45188570022583
+                ],
+                [
+                  0.5481141209602356,
+                  7.45188570022583
+                ]
+              ],
               "processing_manifest_sha256": "8c99ffbdfa23e6e981546c0de19d5fca78cd09831caa6c3074f970050269331c",
+              "segment_types": [
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1
+              ],
               "source_run_id": "37ca70ff63034712841ada2d5aa96af2",
-              "task_id": "inspection-diagnostic-full-horizontal-025mm-20260828"
+              "sweep_direction": 1,
+              "task_id": "inspection-diagnostic-full-horizontal-025mm-20260828",
+              "waypoints_m": [
+                [
+                  0.55,
+                  0.8981141037726879
+                ],
+                [
+                  9.45,
+                  0.8981141037726879
+                ],
+                [
+                  9.45,
+                  1.2858498408011019
+                ],
+                [
+                  0.55,
+                  1.2858498408011019
+                ],
+                [
+                  0.55,
+                  1.673585577829516
+                ],
+                [
+                  9.45,
+                  1.673585577829516
+                ],
+                [
+                  9.45,
+                  2.06132131485793
+                ],
+                [
+                  0.55,
+                  2.06132131485793
+                ],
+                [
+                  0.55,
+                  2.449057051886344
+                ],
+                [
+                  9.45,
+                  2.449057051886344
+                ],
+                [
+                  9.45,
+                  2.836792788914758
+                ],
+                [
+                  0.55,
+                  2.836792788914758
+                ],
+                [
+                  0.55,
+                  3.224528525943172
+                ],
+                [
+                  9.45,
+                  3.224528525943172
+                ],
+                [
+                  9.45,
+                  3.612264262971586
+                ],
+                [
+                  0.55,
+                  3.612264262971586
+                ],
+                [
+                  0.55,
+                  4.0
+                ],
+                [
+                  9.45,
+                  4.0
+                ],
+                [
+                  9.45,
+                  4.3877357370284145
+                ],
+                [
+                  0.55,
+                  4.3877357370284145
+                ],
+                [
+                  0.55,
+                  4.775471474056828
+                ],
+                [
+                  9.45,
+                  4.775471474056828
+                ],
+                [
+                  9.45,
+                  5.163207211085242
+                ],
+                [
+                  0.55,
+                  5.163207211085242
+                ],
+                [
+                  0.55,
+                  5.550942948113656
+                ],
+                [
+                  9.45,
+                  5.550942948113656
+                ],
+                [
+                  9.45,
+                  5.9386786851420705
+                ],
+                [
+                  0.55,
+                  5.9386786851420705
+                ],
+                [
+                  0.55,
+                  6.326414422170484
+                ],
+                [
+                  9.45,
+                  6.326414422170484
+                ],
+                [
+                  9.45,
+                  6.714150159198898
+                ],
+                [
+                  0.55,
+                  6.714150159198898
+                ],
+                [
+                  0.55,
+                  7.101885896227312
+                ],
+                [
+                  9.45,
+                  7.101885896227312
+                ]
+              ]
             },
             {
               "archive_manifest_sha256": "f4473ed8419938d9cf5dd86ec12a1a01c97bce32052c9bd3d818cc854f30f302",
@@ -287,9 +1222,251 @@
                   7.449999809265137
                 ]
               ],
+              "motion_region_m": [
+                [
+                  0.5481141209602356,
+                  0.5481141209602356
+                ],
+                [
+                  9.451886177062988,
+                  0.5481141209602356
+                ],
+                [
+                  9.451886177062988,
+                  7.45188570022583
+                ],
+                [
+                  0.5481141209602356,
+                  7.45188570022583
+                ]
+              ],
               "processing_manifest_sha256": "663f1aa073900804f637e3ad736241b0f92e6cd5a51577de5ea78a061c9c06c4",
+              "segment_types": [
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1,
+                2,
+                1
+              ],
               "source_run_id": "1d291001dc8c4ba984faa9625f44b15a",
-              "task_id": "inspection-diagnostic-full-vertical-025mm-20260828"
+              "sweep_direction": 2,
+              "task_id": "inspection-diagnostic-full-vertical-025mm-20260828",
+              "waypoints_m": [
+                [
+                  0.8,
+                  0.6481141037726879
+                ],
+                [
+                  0.8,
+                  7.351885896227312
+                ],
+                [
+                  1.2,
+                  7.351885896227312
+                ],
+                [
+                  1.2,
+                  0.648114103772688
+                ],
+                [
+                  1.5999999999999999,
+                  0.648114103772688
+                ],
+                [
+                  1.5999999999999999,
+                  7.351885896227312
+                ],
+                [
+                  1.9999999999999998,
+                  7.351885896227312
+                ],
+                [
+                  1.9999999999999998,
+                  0.648114103772688
+                ],
+                [
+                  2.3999999999999995,
+                  0.648114103772688
+                ],
+                [
+                  2.3999999999999995,
+                  7.351885896227312
+                ],
+                [
+                  2.8,
+                  7.351885896227312
+                ],
+                [
+                  2.8,
+                  0.6481141037726881
+                ],
+                [
+                  3.1999999999999993,
+                  0.6481141037726881
+                ],
+                [
+                  3.1999999999999993,
+                  7.351885896227312
+                ],
+                [
+                  3.5999999999999996,
+                  7.351885896227312
+                ],
+                [
+                  3.5999999999999996,
+                  0.6481141037726881
+                ],
+                [
+                  3.999999999999999,
+                  0.6481141037726882
+                ],
+                [
+                  3.999999999999999,
+                  7.351885896227312
+                ],
+                [
+                  4.3999999999999995,
+                  7.351885896227312
+                ],
+                [
+                  4.3999999999999995,
+                  0.6481141037726882
+                ],
+                [
+                  4.799999999999999,
+                  0.6481141037726882
+                ],
+                [
+                  4.799999999999999,
+                  7.351885896227312
+                ],
+                [
+                  5.199999999999998,
+                  7.351885896227311
+                ],
+                [
+                  5.199999999999998,
+                  0.6481141037726883
+                ],
+                [
+                  5.599999999999999,
+                  0.6481141037726883
+                ],
+                [
+                  5.599999999999999,
+                  7.351885896227311
+                ],
+                [
+                  5.999999999999999,
+                  7.351885896227311
+                ],
+                [
+                  5.999999999999999,
+                  0.6481141037726883
+                ],
+                [
+                  6.399999999999999,
+                  0.6481141037726884
+                ],
+                [
+                  6.399999999999999,
+                  7.351885896227311
+                ],
+                [
+                  6.799999999999998,
+                  7.351885896227311
+                ],
+                [
+                  6.799999999999998,
+                  0.6481141037726884
+                ],
+                [
+                  7.199999999999998,
+                  0.6481141037726884
+                ],
+                [
+                  7.199999999999998,
+                  7.351885896227311
+                ],
+                [
+                  7.599999999999999,
+                  7.351885896227311
+                ],
+                [
+                  7.599999999999999,
+                  0.6481141037726885
+                ],
+                [
+                  7.999999999999998,
+                  0.6481141037726885
+                ],
+                [
+                  7.999999999999998,
+                  7.351885896227311
+                ],
+                [
+                  8.399999999999999,
+                  7.351885896227311
+                ],
+                [
+                  8.399999999999999,
+                  0.6481141037726885
+                ],
+                [
+                  8.799999999999999,
+                  0.6481141037726885
+                ],
+                [
+                  8.799999999999999,
+                  7.351885896227311
+                ],
+                [
+                  9.2,
+                  7.351885896227311
+                ],
+                [
+                  9.2,
+                  0.6481141037726886
+                ]
+              ]
             }
           ],
           "mosaic_manifest": {
@@ -300,7 +1477,7 @@
         "outputs": {
           "diagnostic_inspection_summary.json": {
             "name": "diagnostic_inspection_summary.json",
-            "sha256": "e8d93ffaa6bdd2949f549ebb9aff78aa36e8421928e9388b6752275468c42fdc"
+            "sha256": "8371c8c9c2750c812a6e33ec320a29bf9dbce7fd1275f8f68c831a3c400f1535"
           }
         },
         "parameters": {
@@ -330,7 +1507,7 @@
           "padding_m": 0.05,
           "tile_size_px": 2048
         },
-        "recorded_utc": "2026-08-30T13:03:47Z",
+        "recorded_utc": "2026-08-30T13:44:18Z",
         "stage": "diagnostic_inspection",
         "stage_provenance_format_version": 1
       },
@@ -407,42 +1584,6 @@
         },
         "recorded_utc": "2026-08-30T12:51:02Z",
         "stage": "local_matches",
-        "stage_provenance_format_version": 1
-      },
-      "overlap_candidates": {
-        "git": {
-          "branch": "main",
-          "checked_pathspecs": [
-            "src",
-            "tools"
-          ],
-          "commit": "7f8b875b87bc74bd455435ba11a4e52bfc7bb5f7",
-          "source_modified": false,
-          "traceable": true
-        },
-        "inputs": {
-          "processed_runs": [
-            {
-              "processing_manifest_sha256": "663f1aa073900804f637e3ad736241b0f92e6cd5a51577de5ea78a061c9c06c4",
-              "source_run_id": "1d291001dc8c4ba984faa9625f44b15a"
-            },
-            {
-              "processing_manifest_sha256": "8c99ffbdfa23e6e981546c0de19d5fca78cd09831caa6c3074f970050269331c",
-              "source_run_id": "37ca70ff63034712841ada2d5aa96af2"
-            }
-          ]
-        },
-        "outputs": {
-          "overlap_candidates.json": {
-            "name": "overlap_candidates.json",
-            "sha256": "df5ba9971cc703f139705397fe87ce2fb43de88de7df8e4b8cf46cc92e45024b"
-          }
-        },
-        "parameters": {
-          "min_overlap_area_m2": 0.0
-        },
-        "recorded_utc": "2026-08-30T12:50:05Z",
-        "stage": "overlap_candidates",
         "stage_provenance_format_version": 1
       },
       "pose_graph": {
@@ -540,8 +1681,144 @@
         "stage": "wall_mosaic",
         "stage_provenance_format_version": 1
       }
+    },
+    "standalone_diagnostics": {
+      "overlap_candidates": {
+        "git": {
+          "branch": "main",
+          "checked_pathspecs": [
+            "src",
+            "tools"
+          ],
+          "commit": "7f8b875b87bc74bd455435ba11a4e52bfc7bb5f7",
+          "source_modified": false,
+          "traceable": true
+        },
+        "inputs": {
+          "processed_runs": [
+            {
+              "processing_manifest_sha256": "663f1aa073900804f637e3ad736241b0f92e6cd5a51577de5ea78a061c9c06c4",
+              "source_run_id": "1d291001dc8c4ba984faa9625f44b15a"
+            },
+            {
+              "processing_manifest_sha256": "8c99ffbdfa23e6e981546c0de19d5fca78cd09831caa6c3074f970050269331c",
+              "source_run_id": "37ca70ff63034712841ada2d5aa96af2"
+            }
+          ]
+        },
+        "outputs": {
+          "overlap_candidates.json": {
+            "name": "overlap_candidates.json",
+            "sha256": "df5ba9971cc703f139705397fe87ce2fb43de88de7df8e4b8cf46cc92e45024b"
+          }
+        },
+        "parameters": {
+          "min_overlap_area_m2": 0.0
+        },
+        "recorded_utc": "2026-08-30T12:50:05Z",
+        "stage": "overlap_candidates",
+        "stage_provenance_format_version": 1
+      }
+    },
+    "summary_generation": {
+      "git": {
+        "branch": "main",
+        "checked_pathspecs": [
+          "src",
+          "tools"
+        ],
+        "commit": "b07e861eb0129713e6a68489fb588205e27f1181",
+        "source_modified": false,
+        "traceable": true
+      },
+      "inputs": {
+        "inspection_summary": {
+          "name": "diagnostic_inspection_summary.json",
+          "sha256": "8371c8c9c2750c812a6e33ec320a29bf9dbce7fd1275f8f68c831a3c400f1535"
+        },
+        "mosaic_manifest": {
+          "name": "mosaic_manifest.json",
+          "sha256": "799452f4629e1a9bdc33faef6492354c085dab7381da5e0e3fac906519a5bb6c"
+        },
+        "stage_provenance": {
+          "diagnostic_inspection": {
+            "name": "stage_provenance.json",
+            "sha256": "4b440bdba490da6f012ba30af3f6b7f5415b66544f373cdaa4977da36085913b"
+          },
+          "diagnostic_truth": {
+            "name": "stage_provenance.json",
+            "sha256": "c6e43018bb928f40f5d7a0881fa96480d62a18135f35ca115d8faa8a53d5f2f4"
+          },
+          "local_matches": {
+            "name": "stage_provenance.json",
+            "sha256": "c625e78bc9284e365b701f3302f7042ed982c9f4083b98333adf5f44e926beb5"
+          },
+          "pose_graph": {
+            "name": "stage_provenance.json",
+            "sha256": "55fcf283e0026f5e24f9984a45fd41f09d67e089441a6a301ba16b39559e39d3"
+          },
+          "wall_mosaic": {
+            "name": "stage_provenance.json",
+            "sha256": "99ee01017fed675577511658528f037329e7bf570d31632d9a5d3319b8fc2270"
+          }
+        },
+        "truth_summary": {
+          "name": "diagnostic_truth_summary.json",
+          "sha256": "6732ff64964db533df617981f5b2e0b08ef5165744847b4f0f045e429d1c4513"
+        }
+      },
+      "outputs": {},
+      "parameters": {
+        "formal_links": [
+          [
+            "local_matches",
+            "pose_graph",
+            "local_matches.json"
+          ],
+          [
+            "pose_graph",
+            "wall_mosaic",
+            "optimized_poses.json"
+          ],
+          [
+            "pose_graph",
+            "wall_mosaic",
+            "pose_graph.json"
+          ],
+          [
+            "wall_mosaic",
+            "diagnostic_inspection",
+            "mosaic_manifest.json"
+          ],
+          [
+            "wall_mosaic",
+            "diagnostic_truth",
+            "mosaic_manifest.json"
+          ]
+        ],
+        "formal_stages": [
+          "local_matches",
+          "pose_graph",
+          "wall_mosaic",
+          "diagnostic_truth",
+          "diagnostic_inspection"
+        ],
+        "limitations": [
+          "One blind collection on one wall; the millimetre figures are a single sample, not a distribution, so no threshold is frozen.",
+          "Pixels outside the frozen coverage_region are not required by the acceptance gate; their planned-SCAN and safe-pose classifications are explanatory, not additional pass criteria.",
+          "The planned-SCAN footprint is the continuous geometric sweep of the frozen task, not proof that every planned point produced a stored image; coverage_count.tif remains the authority for actual capture.",
+          "The safe-pose envelope proves geometric existence of a base_link centre in the frozen motion_region at an allowed scan-axis heading; it does not claim the frozen plan visited that pose.",
+          "Absolute values from before commit 3f422f5 are not comparable because the photographed surface stood 1.25 mm proud of the drive plane.",
+          "One horizontal frame carries no accepted match edge because SIFT finds no keypoints on it; its pose comes from odometry, with a measured 0.022 mm effect on the nearest anchor."
+        ],
+        "schema_version": 3,
+        "status": "blind_validation_inspection_region_coverage_complete"
+      },
+      "recorded_utc": "2026-08-30T13:45:27Z",
+      "stage": "evidence_summary",
+      "stage_provenance_format_version": 1
     }
   },
-  "schema_version": 2,
+  "schema_version": 3,
   "status": "blind_validation_inspection_region_coverage_complete"
 }
