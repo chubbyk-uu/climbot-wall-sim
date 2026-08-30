@@ -189,6 +189,11 @@ def _feature_mask(feature: dict[str, Any], grid: MosaicGrid, bounds: Bounds) -> 
     raise DiagnosticInspectionError(f'unsupported diagnostic feature kind: {kind!r}.')
 
 
+def _polygon_json(polygon: Polygon) -> list[list[float]]:
+    """Render a polygon as plain JSON numbers, whatever it is made of."""
+    return [[float(x), float(y)] for x, y in polygon]
+
+
 def _bounding_box(polygon: Polygon) -> Bounds:
     """Return the axis-aligned extent of a polygon, for cheap overlap rejection."""
     xs = [x for x, _ in polygon]
@@ -584,7 +589,7 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                 },
                 'inspection_region_m': (
                     None if inspection_region_m is None
-                    else [[float(x), float(y)] for x, y in inspection_region_m]),
+                    else _polygon_json(inspection_region_m)),
                 'camera_footprint_m': (
                     None if camera_footprint_m is None
                     else {'detection_width_m': float(camera_footprint_m[0]),
@@ -601,7 +606,7 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                     for task in (frozen_tasks or ())],
                 'observable_envelope_m': (
                     None if envelope is None
-                    else [[float(value) for value in rectangle] for rectangle in envelope]),
+                    else [_polygon_json(polygon) for polygon in envelope]),
                 'visible_feature_coverage': coverage_totals,
                 'features': records,
             }

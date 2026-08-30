@@ -14,11 +14,14 @@
 
 """Small, deterministic contracts for native diagnostic inspection output."""
 
+import json
+
 from climbot_mosaic.diagnostic_inspection import (
     _coverage_summary,
     _feature_mask,
     _intersection,
     _pad_to_shape,
+    _polygon_json,
     _polygon_mask,
     _register_feature_id,
     _safe_feature_id,
@@ -212,6 +215,21 @@ def test_envelope_split_separates_a_missed_pixel_from_an_unphotographable_one():
     # unreachable would have overstated the excuse threefold.
     assert result['uncovered_outside_region_inside_envelope'] == 8
     assert result['uncovered_outside_region_outside_envelope'] == 4
+
+
+def test_the_summary_renders_regions_as_plain_json_numbers():
+    """
+    The envelope became a tuple of polygons and the summary still wrote rectangles.
+
+    Nothing caught it until a full run had spent nine minutes writing tiles and
+    then failed on the last line, because the tests reached the geometry and
+    the coverage split but never the summary that has to survive json.dumps.
+    """
+    region = _rect(0.55, 0.55, 9.45, 7.45)
+    rendered = [_polygon_json(polygon)
+                for polygon in observable_envelope(region, 0.50, 0.28125, 0.340)]
+    assert json.loads(json.dumps(rendered)) == rendered
+    assert _polygon_json(region)[0] == [0.55, 0.55]
 
 
 def test_envelope_split_is_absent_without_a_footprint():
