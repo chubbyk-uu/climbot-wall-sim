@@ -36,19 +36,30 @@ from climbot_common.hashing import sha256_file
 from climbot_mosaic.evidence_chain import (
     EvidenceChainError,
     resolve_frozen_tasks,
+    verify_inspection_tiles,
+    verify_manifest_outputs,
     verify_stage_chain,
 )
+from climbot_mosaic.stage_provenance import artifact, stage_record
 
-#: Stage directories in pipeline order.  The first three are required because
-#: the summary quotes their numbers; the rest are optional only so a partial
-#: rerun can still be summarised, and every one given is checked.
+#: The stages that actually produced the measurements quoted by a formal P2-06
+#: summary. overlap_candidates is intentionally absent: its JSON is a parallel
+#: human-readable diagnostic, while local_matches rederives candidates itself.
 STAGE_ARGUMENTS = (
-    ('candidates_dir', 'overlap_candidates'),
     ('matches_dir', 'local_matches'),
     ('pose_graph_dir', 'pose_graph'),
     ('mosaic_dir', 'wall_mosaic'),
     ('truth_dir', 'diagnostic_truth'),
     ('inspection_dir', 'diagnostic_inspection'),
+)
+
+FORMAL_STAGES = tuple(stage for _, stage in STAGE_ARGUMENTS)
+FORMAL_LINKS = (
+    ('local_matches', 'pose_graph', 'local_matches.json'),
+    ('pose_graph', 'wall_mosaic', 'optimized_poses.json'),
+    ('pose_graph', 'wall_mosaic', 'pose_graph.json'),
+    ('wall_mosaic', 'diagnostic_inspection', 'mosaic_manifest.json'),
+    ('wall_mosaic', 'diagnostic_truth', 'mosaic_manifest.json'),
 )
 
 
@@ -76,7 +87,9 @@ def main() -> int:
     parser.add_argument('--mosaic-dir', required=True, type=Path)
     parser.add_argument('--truth-dir', required=True, type=Path)
     parser.add_argument('--inspection-dir', required=True, type=Path)
-    parser.add_argument('--candidates-dir', type=Path)
+    parser.add_argument(
+        '--candidates-dir', type=Path,
+        help='optional standalone diagnostic; verified but not represented as a pipeline link')
     parser.add_argument('--matches-dir', type=Path)
     parser.add_argument('--pose-graph-dir', type=Path)
     parser.add_argument('--input-run', action='append', required=True, type=Path)
@@ -90,7 +103,19 @@ def main() -> int:
     stages = {stage: getattr(arguments, name)
               for name, stage in STAGE_ARGUMENTS if getattr(arguments, name) is not None}
     try:
-        chain = verify_stage_chain(stages)
+        chain = verify_stage_chain(
+            stages, required_stages=FORMAL_STAGES, required_links=FORMAL_LINKS,
+            require_traceable=True)
+        mosaic_products = verify_manifest_outputs(
+            arguments.mosaic_dir / 'mosaic_manifest.json')
+        inspection_tiles = verify_inspection_tiles(
+            arguments.inspection_dir / 'diagnostic_inspection_summary.json')
+        candidate_diagnostic = None
+        if arguments.candidates_dir is not None:
+            candidate_diagnostic = verify_stage_chain(
+                {'overlap_candidates': arguments.candidates_dir},
+                required_stages=('overlap_candidates',), required_links=(),
+                require_traceable=True)['stages']['overlap_candidates']
         frozen = resolve_frozen_tasks(
             arguments.mosaic_dir, tuple(arguments.input_run), arguments.archive_root)
     except EvidenceChainError as error:
@@ -102,8 +127,28 @@ def main() -> int:
     inspection = _document(arguments.inspection_dir / 'diagnostic_inspection_summary.json')
     coverage = inspection['visible_feature_coverage']
 
+    assembly = stage_record(
+        'evidence_summary',
+        {'schema_version': 3, 'status': arguments.status,
+         'limitations': list(arguments.limitation),
+         'formal_stages': list(FORMAL_STAGES),
+         'formal_links': [list(link) for link in FORMAL_LINKS]},
+        {'stage_provenance': {
+            stage: artifact(Path(stages[stage]) / 'stage_provenance.json')
+            for stage in FORMAL_STAGES},
+         'mosaic_manifest': artifact(arguments.mosaic_dir / 'mosaic_manifest.json'),
+         'truth_summary': artifact(
+             arguments.truth_dir / 'diagnostic_truth_summary.json'),
+         'inspection_summary': artifact(
+             arguments.inspection_dir / 'diagnostic_inspection_summary.json')},
+        {})
+    if assembly['git'].get('traceable') is not True:
+        print('evidence chain refused: summary generator source tree is not traceable.',
+              file=sys.stderr)
+        return 2
+
     summary = {
-        'schema_version': 2,
+        'schema_version': 3,
         'status': arguments.status,
         'acquisition': {
             'frozen_tasks': [
@@ -136,7 +181,8 @@ def main() -> int:
             'pixel_scale_mm': inspection['pixel_scale_m_per_pixel'] * 1000.0,
             'feature_counts': inspection['feature_counts'],
             'inspection_region_m': inspection['inspection_region_m'],
-            'observable_envelope_m': inspection['observable_envelope_m'],
+            'planned_scan_footprints_m': inspection['planned_scan_footprints_m'],
+            'safe_pose_camera_envelopes_m': inspection['safe_pose_camera_envelopes_m'],
             'visible_feature_coverage': coverage,
         },
         'evidence': {
@@ -148,10 +194,16 @@ def main() -> int:
                 truth['optimized_not_worse_p95_anchor_offset'],
             'every_stage_published_its_own_provenance': True,
             'stage_links_verified': len(chain['links']),
+            'mosaic_products_rehashed': len(mosaic_products),
+            'inspection_tiles_rehashed': inspection_tiles,
         },
         'provenance': {
             'stages': {stage: chain['stages'][stage] for stage in sorted(chain['stages'])},
             'links': chain['links'],
+            'summary_generation': assembly,
+            'standalone_diagnostics': ({
+                'overlap_candidates': candidate_diagnostic,
+            } if candidate_diagnostic is not None else {}),
         },
         'limitations': list(arguments.limitation),
     }

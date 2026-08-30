@@ -27,7 +27,8 @@ from climbot_mosaic.diagnostic_inspection import (
     _safe_feature_id,
     _union_mask,
     DiagnosticInspectionError,
-    observable_envelope,
+    motion_region_camera_envelopes,
+    planned_scan_footprints,
 )
 from climbot_mosaic.diagnostic_truth import MosaicGrid
 import numpy as np
@@ -169,21 +170,43 @@ def test_the_region_split_respects_the_feature_mask(tmp_path):
     assert result['uncovered_outside_inspection_region'] == 0
 
 
-def test_observable_envelope_leans_past_the_region_by_the_forward_offset():
-    """The footprint is carried ahead of the centre, so it clears the boundary."""
-    horizontal, vertical = observable_envelope(
-        _rect(0.55, 0.55, 9.45, 7.45), 0.50, 0.28125, 0.340)
-    # 0.340 + 0.28125 / 2 = 0.480625 along track, 0.50 / 2 across it.
-    assert _flat(horizontal) == pytest.approx(_flat(_rect(0.069375, 0.30, 9.930625, 7.70)))
-    assert _flat(vertical) == pytest.approx(_flat(_rect(0.30, 0.069375, 9.70, 7.930625)))
+def _task(sweep=1, offset=0.340):
+    return {
+        'motion_region_m': _rect(0.55, 0.55, 9.45, 7.45),
+        'camera_footprint_m': (0.50, 0.28125, offset),
+        'sweep_direction': sweep,
+        'waypoints_m': ((0.8, 1.0), (9.2, 1.0)),
+        'segment_types': (1,),
+    }
 
 
-def test_observable_envelope_rejects_a_footprint_that_cannot_photograph_anything():
-    region = _rect(0.55, 0.55, 9.45, 7.45)
-    for footprint in ((0.0, 0.28125, 0.340), (0.50, -1.0, 0.340),
-                      (0.50, 0.28125, float('nan'))):
+def test_planned_scan_footprint_uses_the_directed_route_and_camera_offset():
+    polygon, = planned_scan_footprints((_task(),))
+    assert _flat(polygon) == pytest.approx(_flat(_rect(0.999375, 0.75, 9.680625, 1.25)))
+
+
+def test_safe_pose_envelope_uses_motion_region_and_the_task_sweep_axis():
+    negative, positive = motion_region_camera_envelopes((_task(),))
+    assert _flat(negative) == pytest.approx(_flat(_rect(0.069375, 0.30, 9.250625, 7.70)))
+    assert _flat(positive) == pytest.approx(_flat(_rect(0.749375, 0.30, 9.930625, 7.70)))
+
+
+def test_camera_footprint_rejects_invalid_dimensions_but_accepts_zero_offset():
+    for footprint in ((0.0, 0.28125, 0.340), (0.50, -1.0, 0.340)):
+        task = _task()
+        task['camera_footprint_m'] = footprint
         with pytest.raises(DiagnosticInspectionError, match='finite and positive'):
-            observable_envelope(region, *footprint)
+            motion_region_camera_envelopes((task,))
+    task = _task(offset=float('nan'))
+    with pytest.raises(DiagnosticInspectionError, match='offset.*finite'):
+        motion_region_camera_envelopes((task,))
+    assert len(motion_region_camera_envelopes((_task(offset=0.0),))) == 2
+
+
+def test_negative_camera_offset_is_applied_behind_the_directed_scan():
+    task = _task(offset=-0.340)
+    polygon, = planned_scan_footprints((task,))
+    assert _flat(polygon) == pytest.approx(_flat(_rect(0.319375, 0.75, 9.000625, 1.25)))
 
 
 def test_union_mask_takes_every_polygon():
@@ -199,22 +222,21 @@ def test_union_mask_takes_every_polygon():
     ]
 
 
-def test_envelope_split_separates_a_missed_pixel_from_an_unphotographable_one():
-    """Outside the region is an excuse only where no permitted pose could look."""
+def test_reach_splits_distinguish_the_frozen_plan_from_any_safe_pose():
     grid = MosaicGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4)
     coverage = np.zeros((4, 4), np.uint16)
     bounds = (0.0, 0.0, 0.004, 0.004)
     region = _rect(0.001, 0.001, 0.003, 0.003)
-    envelope = observable_envelope(region, 0.0005, 0.0005, 0.00025)
+    planned = _union_mask(grid, bounds, (_rect(0.001, 0.001, 0.003, 0.003),))
+    safe = _union_mask(grid, bounds, (_rect(0.0, 0.001, 0.004, 0.003),))
     result = _coverage_summary(
         coverage, grid, bounds, None, _polygon_mask(grid, bounds, region),
-        _union_mask(grid, bounds, envelope))
+        planned, safe)
     assert result['uncovered_outside_inspection_region'] == 12
-    # Only the four corners lie beyond both sweep axes; the rest of the ring is
-    # reachable by a footprint leaning out of the region, so calling all twelve
-    # unreachable would have overstated the excuse threefold.
-    assert result['uncovered_outside_region_inside_envelope'] == 8
-    assert result['uncovered_outside_region_outside_envelope'] == 4
+    assert result['uncovered_outside_region_inside_planned_scan_footprint'] == 0
+    assert result['uncovered_outside_region_outside_planned_scan_footprint'] == 12
+    assert result['uncovered_outside_region_inside_safe_pose_envelope'] == 4
+    assert result['uncovered_outside_region_outside_safe_pose_envelope'] == 8
 
 
 def test_the_summary_renders_regions_as_plain_json_numbers():
@@ -227,19 +249,20 @@ def test_the_summary_renders_regions_as_plain_json_numbers():
     """
     region = _rect(0.55, 0.55, 9.45, 7.45)
     rendered = [_polygon_json(polygon)
-                for polygon in observable_envelope(region, 0.50, 0.28125, 0.340)]
+                for polygon in motion_region_camera_envelopes((_task(),))]
     assert json.loads(json.dumps(rendered)) == rendered
     assert _polygon_json(region)[0] == [0.55, 0.55]
 
 
-def test_envelope_split_is_absent_without_a_footprint():
+def test_reach_splits_are_absent_without_task_geometry():
     grid = MosaicGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4)
     coverage = np.zeros((4, 4), np.uint16)
     bounds = (0.0, 0.0, 0.004, 0.004)
     result = _coverage_summary(
         coverage, grid, bounds, None,
         _polygon_mask(grid, bounds, _rect(0.001, 0.001, 0.003, 0.003)))
-    assert 'uncovered_outside_region_inside_envelope' not in result
+    assert 'uncovered_outside_region_inside_planned_scan_footprint' not in result
+    assert 'uncovered_outside_region_inside_safe_pose_envelope' not in result
 
 
 def test_decal_mask_respects_rotation_at_native_pixel_centres():

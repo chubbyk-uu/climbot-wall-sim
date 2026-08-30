@@ -122,6 +122,8 @@ def _write_native_tiles(output_dir: Path, feature_id: str, reference: np.ndarray
                 raise DiagnosticInspectionError(f'cannot write native inspection tile: {path}')
             tiles.append({
                 'file': str(path.relative_to(output_dir)),
+                'bytes': path.stat().st_size,
+                'sha256': _sha256(path),
                 'row_px': row,
                 'column_px': column,
                 'height_px': int(tile.shape[0]),
@@ -279,40 +281,92 @@ def _minkowski_rectangle(polygon: Polygon, minimum_x: float, minimum_y: float,
     return _convex_hull(tuple((x + dx, y + dy) for x, y in polygon for dx, dy in corners))
 
 
-def observable_envelope(region_m: Polygon, detection_width_m: float,
-                        detection_length_m: float,
-                        detection_forward_offset_m: float) -> tuple[Polygon, Polygon]:
-    """
-    Bound what each sweep axis could photograph from anywhere inside the region.
-
-    A pixel outside the inspection region is not thereby beyond the camera's
-    reach.  The footprint is carried detection_forward_offset_m ahead of the
-    robot centre, so it leans past the boundary that centre may not cross, and
-    the difference is not small: 0.340 m of offset plus half of a 0.28125 m
-    footprint reaches 0.481 m past a region inset 0.550 m from the wall edge.
-    Reporting those pixels as unreachable, which this file once did, states as
-    physics what is only a choice of acceptance domain.
-
-    Forward and backward passes along one axis share a cross-track range and
-    overlap along track, so each axis contributes exactly one polygon.  Both
-    are upper bounds: the planned route is inset further by the maneuver
-    margin, and only the headings the frozen tasks actually sweep are counted.
-    """
-    for name, value in (('detection_width_m', detection_width_m),
-                        ('detection_length_m', detection_length_m),
-                        ('detection_forward_offset_m', detection_forward_offset_m)):
+def _camera_footprint(camera_footprint_m: tuple[float, float, float]
+                      ) -> tuple[float, float, float]:
+    width, length, offset = camera_footprint_m
+    for name, value in (('detection_width_m', width), ('detection_length_m', length)):
         if not math.isfinite(value) or value <= 0.0:
             raise DiagnosticInspectionError(f'{name} must be finite and positive.')
-    half_width = detection_width_m / 2.0
-    reach = detection_forward_offset_m + detection_length_m / 2.0
-    return (_minkowski_rectangle(region_m, -reach, -half_width, reach, half_width),
-            _minkowski_rectangle(region_m, -half_width, -reach, half_width, reach))
+    # Zero is explicitly valid for centred/contact tools. A negative offset is
+    # also meaningful for a camera mounted behind base_link.
+    if not math.isfinite(offset):
+        raise DiagnosticInspectionError('detection_forward_offset_m must be finite.')
+    return width, length, offset
+
+
+def _swept_footprint(first: tuple[float, float], second: tuple[float, float],
+                     camera_footprint_m: tuple[float, float, float]) -> Polygon:
+    """Exact continuous camera-footprint sweep along one directed SCAN segment."""
+    width, length, offset = _camera_footprint(camera_footprint_m)
+    dx, dy = second[0] - first[0], second[1] - first[1]
+    distance = math.hypot(dx, dy)
+    if not math.isfinite(distance) or distance <= 0.0:
+        raise DiagnosticInspectionError('planned SCAN segment must have positive finite length.')
+    ux, uy = dx / distance, dy / distance
+    nx, ny = -uy, ux
+    start = (first[0] + offset * ux, first[1] + offset * uy)
+    end = (second[0] + offset * ux, second[1] + offset * uy)
+    half_length, half_width = length / 2.0, width / 2.0
+    return _convex_hull(tuple(
+        (point[0] + along * ux + across * nx,
+         point[1] + along * uy + across * ny)
+        for point, along in ((start, -half_length), (end, half_length))
+        for across in (-half_width, half_width)))
+
+
+def planned_scan_footprints(frozen_tasks: tuple[dict[str, Any], ...]) -> tuple[Polygon, ...]:
+    """Return the exact footprint union components of the frozen planned SCANs."""
+    polygons = []
+    for task in frozen_tasks:
+        waypoints = task.get('waypoints_m', ())
+        segment_types = task.get('segment_types', ())
+        if len(waypoints) != len(segment_types) + 1:
+            raise DiagnosticInspectionError('frozen task SCAN geometry is incomplete.')
+        for index, kind in enumerate(segment_types):
+            if kind == 1:
+                polygons.append(_swept_footprint(
+                    waypoints[index], waypoints[index + 1], task['camera_footprint_m']))
+    if not polygons:
+        raise DiagnosticInspectionError('frozen tasks contain no planned SCAN footprint.')
+    return tuple(polygons)
+
+
+def motion_region_camera_envelopes(
+        frozen_tasks: tuple[dict[str, Any], ...]) -> tuple[Polygon, ...]:
+    """
+    Cover camera pixels reachable from a safe centre pose at a task SCAN heading.
+
+    Unlike the former upper bound grown from coverage_region, membership here
+    constructs a witness: a base_link centre in the frozen motion_region and a
+    forward or reverse heading on that task's sweep axis.
+    """
+    polygons = []
+    for task in frozen_tasks:
+        width, length, offset = _camera_footprint(task['camera_footprint_m'])
+        half_width, half_length = width / 2.0, length / 2.0
+        region = task['motion_region_m']
+        sweep = task['sweep_direction']
+        for direction in (-1.0, 1.0):
+            centre = direction * offset
+            if sweep == 1:  # Horizontal SCAN heading.
+                rectangle = (centre - half_length, -half_width,
+                             centre + half_length, half_width)
+            elif sweep == 2:  # Vertical SCAN heading.
+                rectangle = (-half_width, centre - half_length,
+                             half_width, centre + half_length)
+            else:
+                raise DiagnosticInspectionError('frozen task has an unsupported sweep direction.')
+            polygons.append(_minkowski_rectangle(region, *rectangle))
+    if not polygons:
+        raise DiagnosticInspectionError('frozen tasks define no safe camera-pose envelope.')
+    return tuple(polygons)
 
 
 def _coverage_summary(coverage: np.ndarray, grid: MosaicGrid, bounds: Bounds,
                       mask: np.ndarray | None = None,
                       inside_region: np.ndarray | None = None,
-                      observable: np.ndarray | None = None) -> dict[str, int]:
+                      planned_observable: np.ndarray | None = None,
+                      safe_pose_observable: np.ndarray | None = None) -> dict[str, int]:
     values = _grid_crop(coverage, grid, bounds)
     if values.dtype != np.uint16:
         raise DiagnosticInspectionError('coverage raster must be uint16.')
@@ -335,7 +389,7 @@ def _coverage_summary(coverage: np.ndarray, grid: MosaicGrid, bounds: Bounds,
         # a total over all declared pixels is false for this wall however well
         # the run went. The gate is the split, reported here rather than
         # derived afterwards. What lies outside the region is not thereby
-        # unphotographable; observable_envelope is what settles that.
+        # unphotographable; frozen SCAN and safe-pose geometry classify it.
         if inside_region.shape != values.shape:
             raise DiagnosticInspectionError('inspection-region mask does not match coverage crop.')
         uncovered = (values == 0) & keep
@@ -345,20 +399,24 @@ def _coverage_summary(coverage: np.ndarray, grid: MosaicGrid, bounds: Bounds,
             np.count_nonzero(uncovered & inside_region))
         summary['uncovered_outside_inspection_region'] = int(
             np.count_nonzero(uncovered & ~inside_region))
-        if observable is not None:
-            # Splits the pixels the gate excuses into the ones a permitted pose
-            # could still have photographed and the ones none could.  Only the
-            # second kind supports the word "unreachable"; the first is a real
-            # if non-blocking gap, and counting it is what stops the excuse from
-            # growing quietly.
-            if observable.shape != values.shape:
+        if planned_observable is not None:
+            if planned_observable.shape != values.shape:
                 raise DiagnosticInspectionError(
-                    'observable envelope mask does not match coverage crop.')
+                    'planned SCAN footprint mask does not match coverage crop.')
             outside = uncovered & ~inside_region
-            summary['uncovered_outside_region_inside_envelope'] = int(
-                np.count_nonzero(outside & observable))
-            summary['uncovered_outside_region_outside_envelope'] = int(
-                np.count_nonzero(outside & ~observable))
+            summary['uncovered_outside_region_inside_planned_scan_footprint'] = int(
+                np.count_nonzero(outside & planned_observable))
+            summary['uncovered_outside_region_outside_planned_scan_footprint'] = int(
+                np.count_nonzero(outside & ~planned_observable))
+        if safe_pose_observable is not None:
+            if safe_pose_observable.shape != values.shape:
+                raise DiagnosticInspectionError(
+                    'safe-pose camera envelope mask does not match coverage crop.')
+            outside = uncovered & ~inside_region
+            summary['uncovered_outside_region_inside_safe_pose_envelope'] = int(
+                np.count_nonzero(outside & safe_pose_observable))
+            summary['uncovered_outside_region_outside_safe_pose_envelope'] = int(
+                np.count_nonzero(outside & ~safe_pose_observable))
     return summary
 
 
@@ -424,13 +482,19 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
         if not all(math.isfinite(value) for point in inspection_region_m for value in point):
             raise DiagnosticInspectionError('inspection region has a non-finite vertex.')
         _counter_clockwise(inspection_region_m)
-    envelope: tuple[Polygon, ...] | None = None
+    planned_footprints: tuple[Polygon, ...] | None = None
+    safe_pose_envelopes: tuple[Polygon, ...] | None = None
     if camera_footprint_m is not None:
         if inspection_region_m is None:
             raise DiagnosticInspectionError(
                 'a camera footprint classifies pixels outside the inspection region, '
                 'so the region is required with it.')
-        envelope = observable_envelope(inspection_region_m, *camera_footprint_m)
+        _camera_footprint(camera_footprint_m)
+        if not frozen_tasks:
+            raise DiagnosticInspectionError(
+                'camera reach classification requires the frozen task geometry.')
+        planned_footprints = planned_scan_footprints(frozen_tasks)
+        safe_pose_envelopes = motion_region_camera_envelopes(frozen_tasks)
     try:
         manifest = _document(mosaic_dir / 'mosaic_manifest.json', 'mosaic manifest')
         wall_document = _document(wall_manifest, 'diagnostic wall manifest')
@@ -469,8 +533,10 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
             visible_core_pixels = 0
             region_feature_pixels = 0
             uncovered_inside_region = 0
-            uncovered_outside_inside_envelope = 0
-            uncovered_outside_outside_envelope = 0
+            uncovered_outside_inside_planned = 0
+            uncovered_outside_outside_planned = 0
+            uncovered_outside_inside_safe_pose = 0
+            uncovered_outside_outside_safe_pose = 0
             uncovered_core_pixels = 0
             for raw_feature in diagnostic['features']:
                 feature_id = _register_feature_id(raw_feature, feature_ids)
@@ -493,18 +559,24 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                     _feature_mask(raw_feature, mosaic_grid, visible_core),
                     None if inspection_region_m is None else _polygon_mask(
                         mosaic_grid, visible_core, inspection_region_m),
-                    None if envelope is None else _union_mask(
-                        mosaic_grid, visible_core, envelope))
+                    None if planned_footprints is None else _union_mask(
+                        mosaic_grid, visible_core, planned_footprints),
+                    None if safe_pose_envelopes is None else _union_mask(
+                        mosaic_grid, visible_core, safe_pose_envelopes))
                 visible_core_pixels += coverage_result['pixel_count']
                 uncovered_core_pixels += coverage_result['uncovered_pixel_count']
                 region_feature_pixels += coverage_result.get(
                     'feature_pixels_inside_inspection_region', 0)
                 uncovered_inside_region += coverage_result.get(
                     'uncovered_inside_inspection_region', 0)
-                uncovered_outside_inside_envelope += coverage_result.get(
-                    'uncovered_outside_region_inside_envelope', 0)
-                uncovered_outside_outside_envelope += coverage_result.get(
-                    'uncovered_outside_region_outside_envelope', 0)
+                uncovered_outside_inside_planned += coverage_result.get(
+                    'uncovered_outside_region_inside_planned_scan_footprint', 0)
+                uncovered_outside_outside_planned += coverage_result.get(
+                    'uncovered_outside_region_outside_planned_scan_footprint', 0)
+                uncovered_outside_inside_safe_pose += coverage_result.get(
+                    'uncovered_outside_region_inside_safe_pose_envelope', 0)
+                uncovered_outside_outside_safe_pose += coverage_result.get(
+                    'uncovered_outside_region_outside_safe_pose_envelope', 0)
                 record.update({
                     'visibility': ('fully_visible' if visible_core == core_bounds
                                    else 'partially_visible'),
@@ -554,15 +626,19 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                         uncovered_core_pixels - uncovered_inside_region,
                     'all_inspection_region_feature_pixels_covered': uncovered_inside_region == 0,
                 })
-                if envelope is not None:
+                if planned_footprints is not None and safe_pose_envelopes is not None:
                     coverage_totals.update({
-                        'uncovered_outside_region_inside_envelope':
-                            uncovered_outside_inside_envelope,
-                        'uncovered_outside_region_outside_envelope':
-                            uncovered_outside_outside_envelope,
+                        'uncovered_outside_region_inside_planned_scan_footprint':
+                            uncovered_outside_inside_planned,
+                        'uncovered_outside_region_outside_planned_scan_footprint':
+                            uncovered_outside_outside_planned,
+                        'uncovered_outside_region_inside_safe_pose_envelope':
+                            uncovered_outside_inside_safe_pose,
+                        'uncovered_outside_region_outside_safe_pose_envelope':
+                            uncovered_outside_outside_safe_pose,
                     })
             summary = {
-                'diagnostic_inspection_format_version': 3,
+                'diagnostic_inspection_format_version': 4,
                 'purpose': ('Post-mosaic 100%-scale visual inspection only; immutable diagnostic '
                             'wall truth is never available to candidate generation, matching, or '
                             'pose optimization.'),
@@ -604,9 +680,12 @@ def inspect_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path, output_dir:
                      'archive_manifest_sha256': task.get('archive_manifest_sha256'),
                      'processing_manifest_sha256': task.get('processing_manifest_sha256')}
                     for task in (frozen_tasks or ())],
-                'observable_envelope_m': (
-                    None if envelope is None
-                    else [_polygon_json(polygon) for polygon in envelope]),
+                'planned_scan_footprints_m': (
+                    None if planned_footprints is None
+                    else [_polygon_json(polygon) for polygon in planned_footprints]),
+                'safe_pose_camera_envelopes_m': (
+                    None if safe_pose_envelopes is None
+                    else [_polygon_json(polygon) for polygon in safe_pose_envelopes]),
                 'visible_feature_coverage': coverage_totals,
                 'features': records,
             }

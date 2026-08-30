@@ -35,7 +35,10 @@ from pathlib import Path
 from typing import Any
 
 from climbot_common.hashing import sha256_file
-from climbot_mosaic.stage_provenance import STAGE_PROVENANCE_FILENAME
+from climbot_mosaic.stage_provenance import (
+    STAGE_PROVENANCE_FILENAME,
+    STAGE_PROVENANCE_FORMAT_VERSION,
+)
 
 
 class EvidenceChainError(Exception):
@@ -70,6 +73,24 @@ def _polygon(points: Any, description: str) -> tuple[tuple[float, float], ...]:
             raise EvidenceChainError(f'{description} has a non-finite point.')
         polygon.append((x, y))
     return tuple(polygon)
+
+
+def _waypoints(points: Any, description: str) -> tuple[tuple[float, float], ...]:
+    if not isinstance(points, list) or len(points) < 2:
+        raise EvidenceChainError(f'{description} needs at least two poses.')
+    result = []
+    for pose in points:
+        position = pose.get('position') if isinstance(pose, dict) else None
+        if not isinstance(position, dict):
+            raise EvidenceChainError(f'{description} contains a pose without a position.')
+        try:
+            x, y = float(position['x']), float(position['y'])
+        except (KeyError, TypeError, ValueError) as error:
+            raise EvidenceChainError(f'{description} contains an invalid position.') from error
+        if not math.isfinite(x) or not math.isfinite(y):
+            raise EvidenceChainError(f'{description} contains a non-finite position.')
+        result.append((x, y))
+    return tuple(result)
 
 
 def _archive_for_run(archive_root: Path, run_id: str) -> Path:
@@ -130,13 +151,25 @@ def resolve_frozen_tasks(mosaic_dir: Path, input_runs: tuple[Path, ...],
         except (KeyError, TypeError, ValueError) as error:
             raise EvidenceChainError(
                 f'archive {run_id} task snapshot has no camera footprint.') from error
+        waypoints = _waypoints(task.get('waypoints'), 'frozen task waypoints')
+        segment_types = task.get('segment_types')
+        if not isinstance(segment_types, list) or len(segment_types) + 1 != len(waypoints) or \
+                any(not isinstance(kind, int) for kind in segment_types):
+            raise EvidenceChainError('frozen task segment types do not match its waypoints.')
+        sweep_direction = task.get('sweep_direction')
+        if sweep_direction not in (1, 2):
+            raise EvidenceChainError('frozen task has an unsupported sweep direction.')
         tasks.append({
             'task_id': task.get('task_id'),
             'source_run_id': run_id,
             'archive_manifest_sha256': expected,
             'processing_manifest_sha256': digest,
             'coverage_region_m': _polygon(task.get('coverage_region'), 'frozen coverage region'),
+            'motion_region_m': _polygon(task.get('motion_region'), 'frozen motion region'),
             'camera_footprint_m': footprint,
+            'sweep_direction': sweep_direction,
+            'waypoints_m': waypoints,
+            'segment_types': tuple(segment_types),
         })
 
     if sorted(seen) != sorted(recorded):
@@ -163,16 +196,100 @@ def _artifacts(section: Any) -> list[tuple[str, str]]:
     return found
 
 
-def verify_stage_chain(stage_directories: dict[str, Path]) -> dict[str, Any]:
+def _verify_published_outputs(stage: str, directory: Path,
+                              record: dict[str, Any]) -> list[tuple[str, str]]:
+    """Rehash a stage's declared products instead of trusting its JSON record."""
+    outputs = _artifacts(record.get('outputs'))
+    if not outputs:
+        raise EvidenceChainError(f'stage {stage} declares no output artifacts.')
+    seen: set[str] = set()
+    for name, expected in outputs:
+        if name in seen:
+            raise EvidenceChainError(f'stage {stage} declares duplicate output {name}.')
+        seen.add(name)
+        if Path(name).name != name:
+            raise EvidenceChainError(f'stage {stage} declares an unsafe output name {name}.')
+        path = directory / name
+        if not path.is_file():
+            raise EvidenceChainError(f'stage {stage} output {name} is absent.')
+        if sha256_file(path) != expected:
+            raise EvidenceChainError(
+                f'stage {stage} output {name} no longer matches its provenance record.')
+    return outputs
+
+
+def verify_manifest_outputs(manifest_path: Path) -> dict[str, Any]:
+    """Verify every byte count and digest recorded by a mosaic manifest."""
+    manifest_path = Path(manifest_path)
+    manifest = _document(manifest_path, 'mosaic manifest')
+    outputs = manifest.get('outputs')
+    if not isinstance(outputs, dict) or not outputs:
+        raise EvidenceChainError('mosaic manifest records no output products.')
+    verified = {}
+    for name, declaration in outputs.items():
+        if not isinstance(name, str) or Path(name).name != name or \
+                not isinstance(declaration, dict):
+            raise EvidenceChainError('mosaic manifest has an invalid output declaration.')
+        expected_digest, expected_bytes = declaration.get('sha256'), declaration.get('bytes')
+        if not isinstance(expected_digest, str) or not isinstance(expected_bytes, int):
+            raise EvidenceChainError(f'mosaic output {name} has no digest and byte count.')
+        path = manifest_path.parent / name
+        if not path.is_file():
+            raise EvidenceChainError(f'mosaic output {name} is absent.')
+        if path.stat().st_size != expected_bytes or sha256_file(path) != expected_digest:
+            raise EvidenceChainError(
+                f'mosaic output {name} no longer matches the mosaic manifest.')
+        verified[name] = {'bytes': expected_bytes, 'sha256': expected_digest}
+    return verified
+
+
+def verify_inspection_tiles(summary_path: Path) -> int:
+    """Rehash every native inspection tile pinned by an inspection summary."""
+    summary_path = Path(summary_path)
+    summary = _document(summary_path, 'diagnostic inspection summary')
+    features = summary.get('features')
+    if not isinstance(features, list):
+        raise EvidenceChainError('diagnostic inspection summary records no feature list.')
+    verified = 0
+    seen: set[str] = set()
+    for feature in features:
+        if not isinstance(feature, dict):
+            raise EvidenceChainError('diagnostic inspection summary has a malformed feature.')
+        tiles = feature.get('native_tiles', [])
+        if not isinstance(tiles, list):
+            raise EvidenceChainError('diagnostic inspection summary has malformed native tiles.')
+        for tile in tiles:
+            if not isinstance(tile, dict):
+                raise EvidenceChainError('diagnostic inspection summary has a malformed tile.')
+            name, expected_bytes, expected_digest = (
+                tile.get('file'), tile.get('bytes'), tile.get('sha256'))
+            if not isinstance(name, str) or Path(name).is_absolute() or '..' in Path(name).parts:
+                raise EvidenceChainError('diagnostic inspection summary has an unsafe tile path.')
+            if name in seen:
+                raise EvidenceChainError(f'diagnostic inspection tile {name} is duplicated.')
+            seen.add(name)
+            path = summary_path.parent / name
+            if not path.is_file() or not isinstance(expected_bytes, int) or \
+                    not isinstance(expected_digest, str):
+                raise EvidenceChainError(f'diagnostic inspection tile {name} is incomplete.')
+            if path.stat().st_size != expected_bytes or sha256_file(path) != expected_digest:
+                raise EvidenceChainError(
+                    f'diagnostic inspection tile {name} no longer matches its summary.')
+            verified += 1
+    return verified
+
+
+def verify_stage_chain(stage_directories: dict[str, Path], *,
+                       required_stages: tuple[str, ...] | None = None,
+                       required_links: tuple[tuple[str, str, str], ...] | None = None,
+                       require_traceable: bool = False) -> dict[str, Any]:
     """
     Read each stage's own provenance and check that the links between them hold.
 
-    Nothing here is told what should match what.  A stage records the digest of
-    every artifact it read and every artifact it wrote, so a link is simply a
-    name that one stage produced and another consumed, and the check is that
-    the two digests agree.  A file replaced between stages breaks that equality
-    and is reported rather than summarised over -- which is the whole reason a
-    chain gets its own record per stage instead of one block at the end.
+    The optional required topology turns the generic checker into a formal
+    evidence gate.  In both modes, declared products are rehashed from disk;
+    comparing two declarations that happen to repeat the same stale digest is
+    not evidence that either file still contains those bytes.
     """
     records: dict[str, dict[str, Any]] = {}
     for stage, directory in stage_directories.items():
@@ -181,16 +298,40 @@ def verify_stage_chain(stage_directories: dict[str, Path]) -> dict[str, Any]:
             raise EvidenceChainError(
                 f'stage {stage} published no provenance record; it predates the chain '
                 'and cannot be cited.')
-        records[stage] = _document(path, f'{stage} provenance')
+        record = _document(path, f'{stage} provenance')
+        if record.get('stage_provenance_format_version') != STAGE_PROVENANCE_FORMAT_VERSION:
+            raise EvidenceChainError(f'stage {stage} has an unsupported provenance format.')
+        if record.get('stage') != stage:
+            raise EvidenceChainError(
+                f'stage directory named {stage} contains provenance for {record.get("stage")}.')
+        if require_traceable and record.get('git', {}).get('traceable') is not True:
+            raise EvidenceChainError(
+                f'stage {stage} was not produced from a traceable source tree.')
+        records[stage] = record
+
+    if required_stages is not None and set(records) != set(required_stages):
+        missing = sorted(set(required_stages) - set(records))
+        extra = sorted(set(records) - set(required_stages))
+        raise EvidenceChainError(
+            f'formal stage set is incomplete or unexpected; missing={missing}, extra={extra}.')
 
     produced: dict[str, tuple[str, str]] = {}
     for stage, record in records.items():
-        for name, digest in _artifacts(record.get('outputs')):
+        directory = Path(stage_directories[stage])
+        for name, digest in _verify_published_outputs(stage, directory, record):
+            if name in produced:
+                other = produced[name][0]
+                raise EvidenceChainError(
+                    f'output artifact {name} is ambiguously produced by {other} and {stage}.')
             produced[name] = (stage, digest)
 
     links = []
     for stage, record in records.items():
-        for name, digest in _artifacts(record.get('inputs')):
+        inputs = _artifacts(record.get('inputs'))
+        input_names = [name for name, _ in inputs]
+        if len(input_names) != len(set(input_names)):
+            raise EvidenceChainError(f'stage {stage} declares a duplicate input artifact name.')
+        for name, digest in inputs:
             if name not in produced:
                 continue
             upstream, expected = produced[name]
@@ -199,5 +340,12 @@ def verify_stage_chain(stage_directories: dict[str, Path]) -> dict[str, Any]:
                     f'{stage} read a different {name} than {upstream} published; '
                     'the chain is broken between them.')
             links.append({'artifact': name, 'from': upstream, 'to': stage, 'sha256': digest})
-    return {'stages': records, 'links': sorted(
-        links, key=lambda link: (link['from'], link['to'], link['artifact']))}
+    links = sorted(links, key=lambda link: (link['from'], link['to'], link['artifact']))
+    if required_links is not None:
+        actual = {(link['from'], link['to'], link['artifact']) for link in links}
+        expected = set(required_links)
+        if actual != expected or len(actual) != len(links):
+            raise EvidenceChainError(
+                'formal stage links are incomplete or unexpected; '
+                f'missing={sorted(expected - actual)}, extra={sorted(actual - expected)}.')
+    return {'stages': records, 'links': links}

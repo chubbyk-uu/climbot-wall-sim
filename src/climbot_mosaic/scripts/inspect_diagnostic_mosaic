@@ -80,10 +80,14 @@ def main() -> int:
             'feature_pixels_inside_inspection_region'],
         'uncovered_inside_inspection_region': coverage['uncovered_inside_inspection_region'],
         'uncovered_outside_inspection_region': coverage['uncovered_outside_inspection_region'],
-        'uncovered_outside_region_inside_envelope': coverage[
-            'uncovered_outside_region_inside_envelope'],
-        'uncovered_outside_region_outside_envelope': coverage[
-            'uncovered_outside_region_outside_envelope'],
+        'uncovered_outside_region_inside_planned_scan_footprint': coverage[
+            'uncovered_outside_region_inside_planned_scan_footprint'],
+        'uncovered_outside_region_outside_planned_scan_footprint': coverage[
+            'uncovered_outside_region_outside_planned_scan_footprint'],
+        'uncovered_outside_region_inside_safe_pose_envelope': coverage[
+            'uncovered_outside_region_inside_safe_pose_envelope'],
+        'uncovered_outside_region_outside_safe_pose_envelope': coverage[
+            'uncovered_outside_region_outside_safe_pose_envelope'],
     }
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     return 0

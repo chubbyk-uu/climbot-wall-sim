@@ -196,11 +196,10 @@ mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结
 运行检查器的人不能再选择这次运行被拿什么来判。`--archive-root` 默认取
 `$CLIMBOT_DATA_ROOT`。
 
-摘要因此输出 `all_inspection_region_feature_pixels_covered`（门禁）、逐 feature 的
-`uncovered_inside_inspection_region` / `uncovered_outside_inspection_region`，以及把域外
-缺口再拆一层的 `uncovered_outside_region_inside_envelope` /
-`uncovered_outside_region_outside_envelope`。只有后者才配叫“拍不到”：足迹被前置偏移带出
-巡检域，域外相当一部分其实在可观测包络内。域内 feature 像素数为零时检查器直接报错，
+摘要因此输出 `all_inspection_region_feature_pixels_covered`（门禁）和逐 feature 的域内／域外
+缺口。域外再按两套冻结几何拆分：任务实际连续 SCAN 足迹，以及 `motion_region` 内正反扫描
+方向的安全位姿相机包络。前者回答计划是否本应扫到，后者回答是否存在安全中心位姿可拍；
+不能再从保守上包络的成员关系推断位姿存在。域内 feature 像素数为零时检查器直接报错，
 不会输出一个什么都没量到的 `true`。
 
 重点看真值摘要里的共同锚点、局部残差、覆盖计数和未覆盖 feature。原尺寸 tile 只能证明
