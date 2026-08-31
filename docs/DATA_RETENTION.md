@@ -1,12 +1,12 @@
 # 数据保留与清理清单
 
-更新：2026-08-31。此清单记录当前保留边界和已经执行的清理；**本文本身不授权未来删除**。
+更新：2026-08-31（第二次）。此清单记录当前保留边界和已经执行的清理；**本文本身不授权未来删除**。
 
 ## 当前占用
 
 | 位置 | 大小 | 说明 |
 | --- | ---: | --- |
-| `${CLIMBOT_DATA_ROOT}` | 约 14 GB | 原始归档、处理结果、拼接产品与开发中间产物；2026-08-31 实测 |
+| `${CLIMBOT_DATA_ROOT}` | 约 21 GB | 原始归档、处理结果、拼接产品与开发中间产物；2026-08-31 实测，含新增的第 2、3 组 |
 | `textures/` | 约 1.9 GB | 忽略的 DDS 墙面贴图；可由脚本重建，但重建成本高 |
 | `results/` | 约 47 MB | Git 跟踪的正式摘要和轨迹证据 |
 | `log/` | 约 301 MB | 可再生的本机构建/测试日志 |
@@ -42,11 +42,23 @@
   `20260830d-hardcut-inspection`（约 492 MB），作为新增接缝记录前的逐位复现审计材料；
 - 完整的 `20260831a-{hardcut,hardcut-truth,hardcut-inspection}` 与
   `20260831b-hardcut-truth`，作为 schema 2 证据和现行 schema 3 流式真值评价之间的审计材料；
+- P2-06 门限推导所依据的第 2、3 组重复采集，每组约 3.4 GB：
+  `inspection-diagnostic-full-{horizontal,vertical}-025mm-20260828` 下 `20260831T0721`、
+  `20260831T0746`（第 2 组）与 `20260831T0807`、`20260831T0838`（第 3 组）四个 run；
+  `processed-p206-{horizontal,vertical}-20260831{g2,g3}`；
+  `mosaic-p206-joint-20260831{g2,g3}-{matches,pose-graph,hardcut,hardcut-truth,hardcut-inspection}`。
+  门限由这三组共同推导，任何一组删除都会使推导无法复核；
 - 旧 `20260830b` 的 `mosaic_manifest.json`、truth/inspection summary 以及 matches JSON，和旧
   `20260830c-hardcut-inspection` 的 summary/provenance，作为撤销与逐位复现审计材料。
 
 `mosaic-p206-joint-20260831a-work-fusion` 是空目录，已在本次核对中移除；其余上述完整目录均为
 有意保留，不能从“只在正式摘要中引用 summary/provenance”推断为可删除。
+`mosaic-p206-joint-20260831{g2,g3}-work-{matches,fusion}` 是可随时重建的缓存，共约 98 MB。
+
+2026-08-31 另有一次作废清理：第一次重采的两组（四个 raw 归档、两套 processed、匹配缓存，
+共约 5.0 GB）因 `wall_visual` 与贴图块共面导致整幅图 z-fighting 而不可用，已移入系统废纸篓
+（可恢复）。同批还有一个因仿真渲染卡顿被采集守卫拒收的残缺 run（341/660，280 MB）一并移入。
+根因与修复见提交 `f849af1`。
 
 ## 已清理：第一批重复与缓存
 
