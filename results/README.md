@@ -12,6 +12,7 @@
 | 证据 | 撤销原因 |
 | --- | --- |
 | `mosaic_p206_blind_2026-08-30_summary.json` | **provenance 不成立，不可引用。** 它声明 `commit=ec62a54`、`source_modified=false`，但产生它自身覆盖字段的代码直到 `139a21e` 才存在——那个 provenance 块是手填的，没有任何程序算过。文件保留在原处以便对照，测量本身没有问题（同一批数据在 `20260830c` 上逐位复现），可引用的版本是 `mosaic_p206_blind_2026-08-30b_summary.json`。 |
+| `mosaic_p206_blind_2026-08-31_summary.json` | 已由 `2026-08-31c` 取代：旧摘要缺少 off-seam 分母，并包含在本墙面数据上不具判别力的结构边位移代理；其余测量并未被否定。 |
 
 ## 当前正式证据
 
@@ -26,7 +27,7 @@
 | P2 相对拼接 | [mosaic_p2_baseline_2026-08-26_summary.json](mosaic_p2_baseline_2026-08-26_summary.json) | 0.25 mm 相对拼接基线；尚未冻结验收门槛 |
 | P2 clean blind | [mosaic_p27d_blind_2026-08-27_summary.json](mosaic_p27d_blind_2026-08-27_summary.json) | 诊断墙绝对真值与检查切片；仍有覆盖缺口 |
 | P2-06 采集前预检 | [p206_diagnostic_coverage_preflight_2026-08-28.json](p206_diagnostic_coverage_preflight_2026-08-28.json) | 含 100 mm 机动裕量的横 680／竖 660 张离散曝光联合预测；不是实际拼接验收 |
-| P2-06 联合盲测与接缝诊断 | [mosaic_p206_blind_2026-08-31_summary.json](mosaic_p206_blind_2026-08-31_summary.json) | `3f422f5` 采集 1,340 帧；五阶段／5 链接严格校验，生成器 provenance 为干净 `6361300`，回读 9 个拼接产物和 170 个原尺寸 tile；巡检域内零漏拍，绝对锚点 P95 1.67 mm，接缝真值扣除跳变 P95 16→7 灰度/像素；门限未冻结 |
+| P2-06 联合盲测与接缝诊断 | [mosaic_p206_blind_2026-08-31c_summary.json](mosaic_p206_blind_2026-08-31c_summary.json) | `3f422f5` 采集 1,340 帧；五阶段／5 链接严格校验，生成器 provenance 为干净 `2dfaf22`，回读 10 个拼接产物和 170 个原尺寸 tile；巡检域内零漏拍，接缝真值扣除跳变 P95 `16→7`，相对 off-seam 基线 `8×→3.5×`；门限未冻结 |
 
 完整的验收要求、证据路径和缺口请看 [验收矩阵](../docs/ACCEPTANCE.md)。
 
@@ -34,9 +35,9 @@
 
 - 正式覆盖与控制结论仅适用于表中的仿真工况；它们不是实机验收结果。
 - P2-06 的覆盖已闭合：巡检域内零漏拍，绝对锚点 P95 1.67 mm。全局 hard-cut 接缝的
-  真值扣除灰度跳变 P95 为 pose-only `16`、optimized `7` 灰度/像素；结构边位移代理 P95
-  为 `6.75 / 7.50 mm`，未显示改善。两项都是一组数据，门限仍未冻结。判据口径见
-  [拼接计划](../docs/MOSAIC_PLAN.md)。
+  真值扣除跳变 P95 为 pose-only `16`、optimized `7` 灰度/像素；同图 off-seam 基线均为
+  `2`，即接缝额外不连续从 `8×` 降至 `3.5×`。此前结构边位移代理不具判别力，已撤回。
+  数据仅一组，门限仍未冻结。判据口径见 [拼接计划](../docs/MOSAIC_PLAN.md)。
 - 巡检域外有 `439,116` 个未覆盖像素，不作门禁要求；其中当前计划 SCAN 足迹内／外为
   `32,504 / 406,612`，冻结 `motion_region` 安全位姿相机包络内／外为 `439,116 / 0`。
 - P2.7d 及更早的绝对毫米数（三锚点 P95 19.48 → 10.40 mm）受一处墙面几何缺陷影响：

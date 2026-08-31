@@ -6,7 +6,7 @@
 
 | 位置 | 大小 | 说明 |
 | --- | ---: | --- |
-| `${CLIMBOT_DATA_ROOT}` | 约 9.8 GB | 原始归档、处理结果、拼接产品与开发中间产物 |
+| `${CLIMBOT_DATA_ROOT}` | 约 14 GB | 原始归档、处理结果、拼接产品与开发中间产物；2026-08-31 实测 |
 | `textures/` | 约 1.9 GB | 忽略的 DDS 墙面贴图；可由脚本重建，但重建成本高 |
 | `results/` | 约 47 MB | Git 跟踪的正式摘要和轨迹证据 |
 | `log/` | 约 301 MB | 可再生的本机构建/测试日志 |
@@ -34,12 +34,19 @@
 - `processed-p206-{horizontal,vertical}-20260830b`；后缀虽为 `b`，它们仍是当前链的输入；
 - `mosaic-p206-joint-20260830c-{candidates,matches,pose-graph}`；其中 candidates 是独立诊断，
   matches 与 pose-graph 是当前链的冻结上游；
-- `mosaic-p206-joint-20260831a-{hardcut,hardcut-truth,hardcut-inspection}`；这是当前正式测量链，
-  hardcut 新增稀疏硬切接缝，inspection 含严格几何分类和 170 个逐文件哈希原尺寸 tile；
-- `20260830c` 的 hardcut/truth 和 `20260830d` 的 inspection summary/provenance，作为新增接缝
-  记录前的逐位复现审计材料；
+- 当前正式链的 `mosaic-p206-joint-20260831b-hardcut`、
+  `mosaic-p206-joint-20260831c-hardcut-truth` 与
+  `mosaic-p206-joint-20260831b-hardcut-inspection`；hardcut 含两份稀疏硬切接缝和两份覆盖图，
+  inspection 含严格几何分类和 170 个逐文件哈希原尺寸 tile；
+- 完整的 `20260830c-hardcut`（约 1.3 GB）、`20260830c-hardcut-truth` 和
+  `20260830d-hardcut-inspection`（约 492 MB），作为新增接缝记录前的逐位复现审计材料；
+- 完整的 `20260831a-{hardcut,hardcut-truth,hardcut-inspection}` 与
+  `20260831b-hardcut-truth`，作为 schema 2 证据和现行 schema 3 流式真值评价之间的审计材料；
 - 旧 `20260830b` 的 `mosaic_manifest.json`、truth/inspection summary 以及 matches JSON，和旧
   `20260830c-hardcut-inspection` 的 summary/provenance，作为撤销与逐位复现审计材料。
+
+`mosaic-p206-joint-20260831a-work-fusion` 是空目录，已在本次核对中移除；其余上述完整目录均为
+有意保留，不能从“只在正式摘要中引用 summary/provenance”推断为可删除。
 
 ## 已清理：第一批重复与缓存
 

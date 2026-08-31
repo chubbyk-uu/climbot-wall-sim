@@ -79,7 +79,7 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
 | `mosaic_pose_only.tif` | 直接按曝光位姿拼出的母版 |
 | `mosaic_optimized.tif` | 经位姿图对齐后拼出的母版 |
 | `mosaic_difference.tif` | 两者差分；由 optimized 那趟逐块相减得出，不重复渲染 |
-| `coverage_count.tif` | 每个像素被几张照片覆盖；**为零表示相机从未拍到** |
+| `coverage_pose_only_count.tif` / `coverage_count.tif` | pose-only / optimized 各自的覆盖次数；**为零表示相机从未拍到** |
 | `uncertainty.tif` | 量化后验不确定度，`65535` 标记无覆盖 |
 | `seams_{pose_only,optimized}.npz` | 稀疏 hard-cut 源图切换邻接；用于后验接缝指标，不是整幅 owner 图 |
 | `mosaic_preview.jpg` | optimized 母版的 JPEG 预览 |
@@ -100,10 +100,10 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
 `evaluate_diagnostic_mosaic` 和 `inspect_diagnostic_mosaic` 是**渲染完成之后**才运行的
 独立评价器，不参与候选生成、匹配、优化或渲染决策。只有它们可以读诊断墙 DDS 与 feature 真值。
 
-- `evaluate_diagnostic_mosaic`：量测绝对锚点位置、尺度、航向、局部残差，以及仅在硬切
-  源图切换处统计的灰度跳变（扣除同位置墙面真值梯度）和法向结构边位移代理；
-  `--anchor-padding-m`、`--minimum-phase-response` 控制锚点提取，
-  `--seam-normal-radius-px`、`--seam-minimum-truth-gradient` 控制后两项诊断。
+- `evaluate_diagnostic_mosaic`：量测绝对锚点位置、尺度、航向、局部残差，以及仅在 hard-cut
+  源图切换处统计的真值扣除灰度跳变；同一母版、同一方向的 covered 非接缝邻接是确定性基线。
+  评价器按 TIFF tile 流式读取，不保留整墙 truth 或母版；`--anchor-padding-m` 与
+  `--minimum-phase-response` 控制锚点提取。
 - `inspect_diagnostic_mosaic`：为每个与拼接域相交的 feature 导出**不缩放的**原尺寸
   truth / pose-only / optimized 检查 tile（`--tile-size-px`、`--padding-m`），
   并把零覆盖区域显式写进摘要，而不是用填充图掩盖。
