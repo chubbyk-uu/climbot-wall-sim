@@ -628,23 +628,43 @@ class _AnchorCropCollector:
         return self._crops
 
 
-def _tile_segments(path: Path, grid: MosaicGrid, dtype: np.dtype = np.dtype(np.uint8)):
-    """Yield valid, unpadded mono8 TIFF tiles in deterministic raster order."""
+def _tile_segments(path: Path, grid: MosaicGrid, tile_size_px: int,
+                   dtype: np.dtype = np.dtype(np.uint8)):
+    """
+    Yield valid, unpadded mono8 TIFF tiles in deterministic raster order.
+
+    ``segments`` sorts by file offset, which is raster order only because the
+    writer emits tiles that way.  The seam accumulator carries a single edge
+    vector between neighbouring tiles and assigns seams by manifest tile size,
+    so both invariants are checked here rather than assumed: a different order
+    or tile size would silently mispair tile borders instead of failing.
+    """
     try:
         with tifffile.TiffFile(path) as document:
             page = document.pages[0]
             if page.shape != (grid.height_px, grid.width_px) or page.dtype != dtype:
                 raise DiagnosticTruthError('mosaic master dimensions disagree with its manifest.')
+            expected_row, expected_column = 0, 0
             for values, index, _ in page.segments(
                     maxworkers=1, sort=True, buffersize=1024 * 1024):
                 if values is None or values.dtype != dtype or values.ndim != 4:
                     raise DiagnosticTruthError('mosaic TIFF has an invalid tile segment.')
-                row, column = int(index[2]), int(index[3])
-                height = min(values.shape[1], grid.height_px - row)
-                width = min(values.shape[2], grid.width_px - column)
-                if row < 0 or column < 0 or height <= 0 or width <= 0:
+                if values.shape[1] != tile_size_px or values.shape[2] != tile_size_px:
+                    raise DiagnosticTruthError(
+                        'mosaic TIFF tile size disagrees with its manifest.')
+                if (int(index[2]), int(index[3])) != (expected_row, expected_column):
+                    raise DiagnosticTruthError('mosaic TIFF tiles are not in raster order.')
+                row, column = expected_row, expected_column
+                height = min(tile_size_px, grid.height_px - row)
+                width = min(tile_size_px, grid.width_px - column)
+                if height <= 0 or width <= 0:
                     raise DiagnosticTruthError('mosaic TIFF tile is outside its manifest grid.')
                 yield row, column, values[0, :height, :width, 0]
+                expected_column += tile_size_px
+                if expected_column >= grid.width_px:
+                    expected_column, expected_row = 0, expected_row + tile_size_px
+            if expected_row < grid.height_px or expected_column:
+                raise DiagnosticTruthError('mosaic TIFF stops before its last manifest tile.')
     except (OSError, tifffile.TiffFileError) as error:
         raise DiagnosticTruthError(f'cannot read mosaic TIFF tiles: {error}') from error
 
@@ -696,8 +716,8 @@ def _stream_variant(path: Path, coverage_path: Path, anchors: list[dict[str, Any
     previous_bottom: dict[int, np.ndarray] = {}
     previous_reference_bottom: dict[int, np.ndarray] = {}
     previous_coverage_bottom: dict[int, np.ndarray] = {}
-    coverage_tiles = _tile_segments(coverage_path, grid, np.dtype(np.uint16))
-    for row, column, image in _tile_segments(path, grid):
+    coverage_tiles = _tile_segments(coverage_path, grid, tile_size_px, np.dtype(np.uint16))
+    for row, column, image in _tile_segments(path, grid, tile_size_px):
         try:
             coverage_row, coverage_column, coverage = next(coverage_tiles)
         except StopIteration as error:
@@ -898,12 +918,12 @@ def evaluate_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path,
     blocks = _blocks(wall_document)
     reference = _ReferenceTileReader(
         wall_manifest.parent, blocks, truth_grid, mosaic_grid)
+    monitor = _PssMonitor()
     temporary = Path(tempfile.mkdtemp(prefix=f'.{output_dir.name}.tmp-{uuid4().hex}-',
                                       dir=output_dir.parent))
     try:
         raw_matches = {}
         seam_quality = {}
-        monitor = _PssMonitor()
         monitor.start()
         for name, path in paths.items():
             if not path.is_file():
