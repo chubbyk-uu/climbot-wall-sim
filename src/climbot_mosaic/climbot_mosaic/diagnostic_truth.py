@@ -635,7 +635,8 @@ def _tile_segments(path: Path, grid: MosaicGrid, dtype: np.dtype = np.dtype(np.u
             page = document.pages[0]
             if page.shape != (grid.height_px, grid.width_px) or page.dtype != dtype:
                 raise DiagnosticTruthError('mosaic master dimensions disagree with its manifest.')
-            for values, index, _ in page.segments(maxworkers=1, sort=True):
+            for values, index, _ in page.segments(
+                    maxworkers=1, sort=True, buffersize=1024 * 1024):
                 if values is None or values.dtype != dtype or values.ndim != 4:
                     raise DiagnosticTruthError('mosaic TIFF has an invalid tile segment.')
                 row, column = int(index[2]), int(index[3])
