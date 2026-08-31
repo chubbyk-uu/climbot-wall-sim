@@ -186,13 +186,17 @@ def render_world(gazebo_share, description_share, grid_spacing,
         'moonlight_cast_shadows': str(bool(
             simulation['lighting']['moonlight']['cast_shadows'])).lower(),
     }
+    # A launch argument beats the configured default, so the wall can be looked
+    # at with the texture on without editing a file every other run reads. The
+    # world needs the answer before it expands, because the recess behind
+    # wall_visual exists only to keep the texture blocks from z-fighting it.
+    configured = simulated_wall.get('texture_manifest', '')
+    resolved_texture = configured if texture_manifest is None else texture_manifest
+    mappings['wall_textured'] = str(bool(resolved_texture)).lower()
     source = os.path.join(gazebo_share, 'worlds', 'climbot_wall.sdf.xacro')
     document = xacro.process_file(source, mappings=mappings)
-    # A launch argument beats the configured default, so the wall can be looked
-    # at with the texture on without editing a file every other run reads.
-    configured = simulated_wall.get('texture_manifest', '')
     apply_wall_texture(
-        document, configured if texture_manifest is None else texture_manifest,
+        document, resolved_texture,
         float(simulated_wall['thickness_m']),
         [float(value) for value in wall['origin_xyz']],
         [float(value) for value in centre],

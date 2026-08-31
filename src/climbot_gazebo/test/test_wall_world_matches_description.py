@@ -57,7 +57,7 @@ def _world_defaults():
         for element in root.findall(f'{{{XACRO_NAMESPACE}}}arg')
         if element.attrib['name'] not in {
             'inspection_target', 'inspection_flat_field_target',
-            'moonlight_cast_shadows'}
+            'wall_textured', 'moonlight_cast_shadows'}
     }
 
 
@@ -88,11 +88,11 @@ def test_world_defaults_match_the_values_the_launch_injects():
         assert defaults[name] == pytest.approx(float(value)), name
 
 
-def _wall_visual_size(inspection_target):
+def _wall_visual_size(wall_textured):
     """Expand the world and read the box the camera would actually photograph."""
     document = xacro.process_file(
         str(PACKAGE_ROOT / 'worlds' / 'climbot_wall.sdf.xacro'),
-        mappings={'inspection_target': inspection_target})
+        mappings={'wall_textured': wall_textured})
     root = ElementTree.fromstring(document.toxml())
     size = root.find(".//visual[@name='wall_visual']/geometry/box/size")
     assert size is not None, 'the world has no wall_visual box'
@@ -108,6 +108,10 @@ def test_the_plain_wall_face_sits_on_the_plane_the_wheels_ride_on():
     direction, as the texture blocks that once stood 1.25 mm proud of it and
     scaled every mosaic by +4566 ppm. Nothing measures this surface today,
     which is exactly why an unconditional offset would sit here unnoticed.
+
+    The condition is the texture and only the texture. Asserting it against
+    inspection_target instead is what let two whole acquisitions come back
+    striped with z-fighting while this file stayed green.
     """
     _, simulation = _documents()
     thickness = float(simulation['wall']['thickness_m'])
@@ -115,6 +119,18 @@ def test_the_plain_wall_face_sits_on_the_plane_the_wheels_ride_on():
     # With the blocks loaded the face has to step back or it fights every one
     # of them; 1 mm each side is what that costs.
     assert _wall_visual_size('true')[0] == pytest.approx(thickness - 0.002)
+
+
+def test_a_textured_wall_recesses_no_matter_what_the_calibration_target_does():
+    """The G1 target flag must not decide whether the photographed face z-fights."""
+    document = xacro.process_file(
+        str(PACKAGE_ROOT / 'worlds' / 'climbot_wall.sdf.xacro'),
+        mappings={'wall_textured': 'true', 'inspection_target': 'false'})
+    root = ElementTree.fromstring(document.toxml())
+    size = root.find(".//visual[@name='wall_visual']/geometry/box/size")
+    _, simulation = _documents()
+    thickness = float(simulation['wall']['thickness_m'])
+    assert float(size.text.split()[0]) == pytest.approx(thickness - 0.002)
 
 
 def test_optional_inspection_target_uses_shared_camera_geometry():

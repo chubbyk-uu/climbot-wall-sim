@@ -21,6 +21,8 @@
   <xacro:arg name="spawn_pitch" default="0.0"/>
   <xacro:arg name="spawn_yaw" default="1.5707963267948966"/>
   <xacro:arg name="inspection_target" default="false"/>
+  <!-- Set by the launch when a wall texture manifest will be applied. -->
+  <xacro:arg name="wall_textured" default="false"/>
   <xacro:arg name="inspection_flat_field_target" default="false"/>
   <xacro:arg name="target_lateral" default="0.34"/>
   <xacro:arg name="target_height" default="2.0"/>
@@ -58,9 +60,15 @@
        coplanar wall face, so without those blocks it does nothing but move the
        visible surface 1 mm off the plane the wheels ride on. That is the same
        kind of error, in the opposite direction, as the one that scaled every
-       mosaic by +4566 ppm, so it is not left switched on by default. -->
+       mosaic by +4566 ppm, so it is not left switched on by default.
+
+       It is the texture that decides this, and nothing else. Tying it to
+       inspection_target once looked equivalent and was not: that flag is the
+       G1 calibration target, which is off for every inspection acquisition,
+       so a textured wall rendered coplanar and every frame came back striped
+       with z-fighting. -->
   <xacro:property name="wall_visual_recess"
-                 value="${0.001 if '$(arg inspection_target)' in ('true', 'True', '1') else 0.0}"/>
+                 value="${0.001 if '$(arg wall_textured)' in ('true', 'True', '1') else 0.0}"/>
   <!-- Lines sit at whole multiples of the spacing measured from the work
        frame's origin, the wall's lower-left corner, so a line is a work
        coordinate an operator can read off the wall. Only the interior ones are
