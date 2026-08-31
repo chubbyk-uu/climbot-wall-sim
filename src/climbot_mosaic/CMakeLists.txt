@@ -16,6 +16,7 @@ install(PROGRAMS
   scripts/inspect_diagnostic_mosaic
   scripts/preflight_diagnostic_coverage
   scripts/validate_mosaic_inputs
+  scripts/summarize_archive_content
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

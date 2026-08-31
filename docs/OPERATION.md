@@ -145,6 +145,21 @@ ros2 run climbot_gazebo evaluate_localization.py --ros-args \
 并保留输出 provenance；不要改写现有正式结果。长时间作业按 [AGENTS.md](../AGENTS.md) 后台运行
 并把完整日志留在 `/tmp`。
 
+## 采集内容核对
+
+计数守卫（`expected == saved`、`failed=0`、`staged=0`）不看像素。把新采集与一次已知良好的
+同计划采集比对，产出可引用的记录：
+
+```bash
+ros2 run climbot_mosaic summarize_archive_content \
+  --input-run "$CLIMBOT_DATA_ROOT/<新采集 run 目录>" \
+  --reference-run "$CLIMBOT_DATA_ROOT/<基准 run 目录>" \
+  --output-dir "$CLIMBOT_DATA_ROOT/archive-content-<id>"
+```
+
+横向只能对横向、纵向只能对纵向；比对的是同一计划的同序帧。判定不通过时退出码为 `3`，
+不要把它当成可以忽略的告警——两整组 z-fighting 数据就是在计数全绿的情况下走到拼接阶段的。
+
 ## 预处理与拼接的前置检查
 
 逐步命令见 [README 的离线图像处理](../README.md#4-离线图像处理)和

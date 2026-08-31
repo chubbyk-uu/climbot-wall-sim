@@ -116,10 +116,19 @@ G4 按时间戳配对每张原图和 `InspectionCapture`，同时使用 transien
 且 `expected_images == saved_images`。
 P1 仅接收完整 run，输出新的 processed-run；处理顺序固定为暗场、平场、可选去噪、去畸变。
 
+归档内容记录 `summarize_archive_content` 是独立诊断，不在正式五阶段链内：它读一个或多个
+归档 run 的原图，发布带 `stage_provenance.json` 的目录，内含 `archive_content.npz`（逐帧
+16×16 块降采样、32 段行/列均值剖面、mean/std/laplacian variance）和 `archive_content_summary.json`
+（分布、对参考 run 的比值与偏差、判定）。**受闸的只有行、列剖面和标量**；块降采样只记录不判，
+因为 34 mm 的块对两次采集之间毫米级的位姿差敏感。它存在的理由是：两组数据"内容一致"这句话
+必须是可复核的产物，而不是文档里的结论——曾有两整组数据在计数守卫全绿的情况下整幅 z-fighting。
+
 归档 manifest 的 `archive_format_version` 现为 `2`，新增 `render_environment`：`declared`
 是 launch 传入的 `headless` / `gpu_backend` / `gui_gpu_backend`，`observed_environment` 是
 记录器进程实测的 `GALLIUM_DRIVER`、`MESA_D3D12_DEFAULT_ADAPTER_NAME` 和 `DISPLAY`
-（`gpu_backend:=auto` 在仿真 launch 内解析，所以环境才是权威值）。渲染条件在图像里看不出来，
+（`gpu_backend:=auto` 在仿真 launch 内解析，所以环境才是权威值），外加 `observed_gazebo_gui_process`：
+写每次 manifest 时扫本机是否存在活着的 `gz sim -g` 客户端。它是**观测**，不是声明——`headless:=false`
+只说明请求启动 GUI，而 `DISPLAY` 在无头采集下同样存在，两者都不能证明 GUI 真的活着。渲染条件在图像里看不出来，
 却决定两次采集是否可比，冻结门限必须能查到它。脱离仿真 launch 单独起记录器时 `declared`
 为 `unknown`。P1 同时接受 `1` 和 `2`：已冻结进 P2-06 链的归档是 `1`，必须保持可处理。
 

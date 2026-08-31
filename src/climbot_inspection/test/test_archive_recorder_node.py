@@ -268,6 +268,8 @@ class TestArchiveRecorderNode(unittest.TestCase):
         self.assertEqual(render['declared']['gpu_backend'], 'wsl_d3d12')
         self.assertEqual(render['declared']['gui_gpu_backend'], 'unknown')
         self.assertIn('gallium_driver', render['observed_environment'])
+        # Observed, not declared: this run has no Gazebo GUI to find.
+        self.assertIs(render['observed_gazebo_gui_process'], False)
         self.assertEqual(manifest['saved_images'], 1)
         self.assertEqual(manifest['durably_committed_images'], 1)
         self.assertEqual(manifest['staged_images'], 0)

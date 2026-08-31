@@ -316,6 +316,34 @@ class ArchiveRecorderNode(Node):
             pass
         return 'unavailable'
 
+    @staticmethod
+    def _gazebo_gui_process() -> bool:
+        """
+        Report whether a Gazebo GUI client is running on this host right now.
+
+        ``render_headless`` only records what the launch was asked for, and
+        DISPLAY is set even for a headless acquisition, so neither shows
+        whether a GUI actually existed.  This looks for the client itself.
+        It is an observation of this host at this instant, not a claim about
+        the whole run; the manifest samples it again at finalization.
+        """
+        try:
+            entries = os.listdir('/proc')
+        except OSError:
+            return False
+        for entry in entries:
+            if not entry.isdigit():
+                continue
+            try:
+                with open(f'/proc/{entry}/cmdline', 'rb') as handle:
+                    parts = handle.read().split(b'\0')
+            except OSError:
+                continue
+            if len(parts) > 2 and parts[0].endswith(b'gz') and parts[1] == b'sim' \
+                    and b'-g' in parts[2:]:
+                return True
+        return False
+
     def _render_provenance(self) -> dict[str, Any]:
         """
         Record how this run was rendered, both as declared and as observed.
@@ -374,7 +402,12 @@ class ArchiveRecorderNode(Node):
             'frozen_scan_references': [
                 session.references[index] for index in sorted(session.references)],
             'software_git_commit': self._software_git_commit,
-            'render_environment': self._render_environment,
+            'render_environment': {
+                **self._render_environment,
+                # Sampled per write, so the value stored with a completed run
+                # is the observation made at finalization.
+                'observed_gazebo_gui_process': self._gazebo_gui_process(),
+            },
             'canonical_image': {
                 'encoding': 'mono8', 'format': 'png', 'distorted': True,
                 'illumination_compensated': False,
