@@ -71,6 +71,10 @@ def _variant(truth, name):
     """Quote one mosaic variant's independently measured geometry."""
     variant = truth['variants'][name]
     similarity = variant['similarity']
+    seam = variant['seam_quality']
+    gradient = seam['gradient_excess_gray_per_pixel']
+    on_excess = gradient['on_hard_cut']['excess_over_truth']
+    off_excess = gradient['off_hard_cut_baseline']['excess_over_truth']
     result = {
         'accepted_anchor_count': variant['accepted_anchor_count'],
         'absolute_anchor_offset_median_mm': variant['absolute_anchor_offset_m']['median'] * 1000.0,
@@ -78,21 +82,33 @@ def _variant(truth, name):
         'local_residual_p95_mm': similarity['local_residual_p95'] * 1000.0,
         'scale_error_ppm': similarity['scale_error_ppm'],
         'yaw_error_deg': similarity['yaw_error_deg'],
-    }
-    if 'seam_quality' in variant:
-        seam = variant['seam_quality']
-        edge = seam['double_image_edge_displacement_proxy'][
-            'dominant_normal_edge_displacement_m']
-        result['seam_quality'] = {
+        'seam_quality': {
             'seam_adjacency_count': seam['seam_adjacency_count'],
-            'gradient_excess_p95_gray_per_pixel': seam['gradient_jump_gray_per_pixel'][
-                'excess_over_truth']['p95'],
-            'double_image_edge_displacement_p95_mm': (
-                edge['p95'] * 1000.0 if edge is not None else None),
-            'eligible_structural_edge_count': seam['double_image_edge_displacement_proxy'][
-                'eligible_structural_edge_count'],
-        }
+            'gradient_excess_p95_gray_per_pixel': on_excess['p95'],
+            'off_seam_gradient_excess_p95_gray_per_pixel': off_excess['p95'],
+            'on_to_off_gradient_excess_p95_ratio': gradient[
+                'on_to_off_excess_p95_ratio'],
+        },
+    }
     return result
+
+
+def _require_current_seam_contract(mosaic, truth):
+    """Refuse old evidence that lacks the required, interpretable seam measurements."""
+    if mosaic.get('mosaic_format_version') != 3:
+        raise ValueError('mosaic is not format version 3 with per-variant hard-cut coverage')
+    if truth.get('diagnostic_truth_format_version') != 3:
+        raise ValueError('truth summary is not format version 3 with the seam baseline')
+    for name in ('pose_only', 'optimized'):
+        try:
+            seam = truth['variants'][name]['seam_quality']
+            gradient = seam['gradient_excess_gray_per_pixel']
+            on = gradient['on_hard_cut']['excess_over_truth']
+            off = gradient['off_hard_cut_baseline']['excess_over_truth']
+            if seam['seam_adjacency_count'] <= 0 or on['count'] <= 0 or off['count'] <= 0:
+                raise ValueError('empty seam or off-seam gradient distribution')
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError(f'{name} lacks the required seam gradient contract: {error}') from error
 
 
 def main() -> int:
@@ -139,11 +155,16 @@ def main() -> int:
     mosaic = _document(arguments.mosaic_dir / 'mosaic_manifest.json')
     truth = _document(arguments.truth_dir / 'diagnostic_truth_summary.json')
     inspection = _document(arguments.inspection_dir / 'diagnostic_inspection_summary.json')
+    try:
+        _require_current_seam_contract(mosaic, truth)
+    except ValueError as error:
+        print(f'evidence chain refused: {error}', file=sys.stderr)
+        return 2
     coverage = inspection['visible_feature_coverage']
 
     assembly = stage_record(
         'evidence_summary',
-        {'schema_version': 3, 'status': arguments.status,
+        {'schema_version': 4, 'status': arguments.status,
          'limitations': list(arguments.limitation),
          'formal_stages': list(FORMAL_STAGES),
          'formal_links': [list(link) for link in FORMAL_LINKS]},
@@ -162,7 +183,7 @@ def main() -> int:
         return 2
 
     summary = {
-        'schema_version': 3,
+        'schema_version': 4,
         'status': arguments.status,
         'acquisition': {
             'frozen_tasks': [

@@ -86,6 +86,7 @@ def test_formal_summary_records_its_generator_and_only_the_causal_chain(
     mosaic.mkdir()
     product = _write(mosaic / 'tiny_product.json', {'pixels': [1]})
     manifest = _write(mosaic / 'mosaic_manifest.json', {
+        'mosaic_format_version': 3,
         'input_summary': {'frame_count': 1,
                           'processing_manifest_sha256': [processed_digest]},
         'outputs': {product.name: {'bytes': product.stat().st_size,
@@ -103,10 +104,18 @@ def test_formal_summary_records_its_generator_and_only_the_causal_chain(
     variant = {'accepted_anchor_count': 1,
                'absolute_anchor_offset_m': {'median': 0.001, 'p95': 0.002},
                'similarity': {'local_residual_p95': 0.0002, 'scale_error_ppm': 1.0,
-                              'yaw_error_deg': 0.01}}
+                              'yaw_error_deg': 0.01},
+               'seam_quality': {
+                   'seam_adjacency_count': 1,
+                   'gradient_excess_gray_per_pixel': {
+                       'on_hard_cut': {'excess_over_truth': {'count': 1, 'p95': 3.0}},
+                       'off_hard_cut_baseline': {
+                           'excess_over_truth': {'count': 2, 'p95': 1.0}},
+                       'on_to_off_excess_p95_ratio': 3.0}}}
     truth = _stage(tmp_path / 'truth', 'diagnostic_truth',
                    {'mosaic_manifest': _artifact(manifest)}, {
                        'diagnostic_truth_summary.json': {
+                           'diagnostic_truth_format_version': 3,
                            'variants': {'optimized': variant, 'pose_only': variant},
                            'optimized_not_worse_p95_anchor_offset': True}})
     inspection = _stage(tmp_path / 'inspection', 'diagnostic_inspection',
@@ -138,9 +147,11 @@ def test_formal_summary_records_its_generator_and_only_the_causal_chain(
         '--output', str(output), '--status', 'test-pass'])
     assert tool.main() == 0
     summary = json.loads(output.read_text(encoding='utf-8'))
-    assert summary['schema_version'] == 3
+    assert summary['schema_version'] == 4
     assert summary['provenance']['summary_generation']['git']['traceable'] is True
     assert set(summary['provenance']['stages']) == set(tool.FORMAL_STAGES)
     assert 'overlap_candidates' not in summary['provenance']['stages']
     assert summary['evidence']['mosaic_products_rehashed'] == 1
     assert summary['evidence']['inspection_tiles_rehashed'] == 0
+    assert summary['joint']['optimized']['seam_quality'][
+        'off_seam_gradient_excess_p95_gray_per_pixel'] == 1.0

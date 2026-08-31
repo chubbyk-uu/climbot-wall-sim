@@ -17,11 +17,12 @@
 import math
 
 from climbot_mosaic.diagnostic_truth import (
-    _seam_quality,
+    _SeamGradientAccumulator,
     _summarize_variant,
     DiagnosticTruthError,
     estimate_translation,
     fit_similarity,
+    MosaicGrid,
 )
 import cv2
 import numpy as np
@@ -80,21 +81,20 @@ def test_two_anchors_cannot_claim_a_local_deformation_measurement():
     assert summary['similarity']['local_residual_p95'] is None
 
 
-def test_seam_quality_subtracts_real_wall_edges_and_measures_shifted_edges():
-    reference = np.zeros((40, 40), np.uint8)
-    reference[:, 20:] = 180
+def test_seam_gradient_uses_same_raster_off_seam_baseline():
+    grid = MosaicGrid(0.0, 0.0, 0.005, 0.005, 0.001, 5, 5)
+    accumulator = _SeamGradientAccumulator(
+        np.arange(5, dtype=np.uint32), np.full(5, 1, np.uint32),
+        np.zeros(5, np.uint8), grid, 8)
+    reference = np.zeros((5, 5), np.uint8)
     observed = reference.copy()
-    # The upper seam falls on a real wall edge and therefore has no excess.
-    # The lower one has its observed structural edge displaced by two pixels.
-    observed[20:, :] = 0
-    observed[20:, 22:] = 180
-    rows = np.asarray((8, 28), np.uint32)
-    columns = np.asarray((19, 19), np.uint32)
-    axes = np.asarray((0, 0), np.uint8)
-    quality = _seam_quality(observed, reference, rows, columns, axes, 0.001,
-                            normal_radius_px=4, minimum_truth_gradient=16.0)
-    assert quality['gradient_jump_gray_per_pixel']['excess_over_truth']['p95'] == 0.0
-    displacement = quality['double_image_edge_displacement_proxy'][
-        'dominant_normal_edge_displacement_m']
-    assert displacement['count'] == 2
-    assert displacement['p95'] == pytest.approx(0.002)
+    observed[:, 2:] = 10
+    accumulator.add_tile(0, 0, observed, reference, np.ones((5, 5), np.uint16),
+                         None, None, None, None, None, None)
+    summary = accumulator.summary()
+    gradient = summary['gradient_excess_gray_per_pixel']
+    assert summary['seam_adjacency_count'] == 5
+    assert gradient['on_hard_cut']['excess_over_truth']['p95'] == 10.0
+    assert gradient['off_hard_cut_baseline']['excess_over_truth']['count'] == 35
+    assert gradient['off_hard_cut_baseline']['excess_over_truth']['p95'] == 0.0
+    assert gradient['on_to_off_excess_p95_ratio'] is None

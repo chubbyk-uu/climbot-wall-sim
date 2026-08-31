@@ -291,7 +291,7 @@ def _tile_transform(grid: RenderGrid, tile_row: int, tile_column: int) -> np.nda
 
 def _hard_cut(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
               candidates: tuple[int, ...], auxiliary: bool,
-              quality: bool = False) -> tuple[np.ndarray, ...]:
+              quality: bool = False, coverage_output: bool = False) -> tuple[np.ndarray, ...]:
     if _WORKER_GRID is None or _WORKER_INTERIOR_DISTANCE is None:
         raise FusionError('render worker is not initialized.')
     size = _WORKER_GRID.tile_size_px
@@ -302,7 +302,8 @@ def _hard_cut(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
     # Persisting every owner pixel would add a multi-gigabyte raster; the sparse
     # seam adjacencies are the actual input to the post-mosaic diagnostics.
     owner = np.zeros((size, size), np.uint16)
-    coverage = np.zeros((size, size), np.uint16) if auxiliary or quality else None
+    coverage = np.zeros((size, size), np.uint16) \
+        if auxiliary or quality or coverage_output else None
     uncertainty = np.full((size, size), np.nan, np.float32) if auxiliary else None
     value_sum = np.zeros((size, size), np.float32) if quality else None
     value_square_sum = np.zeros((size, size), np.float32) if quality else None
@@ -347,6 +348,8 @@ def _hard_cut(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
     if auxiliary and coverage is not None and uncertainty is not None:
         uncertainty[~valid] = np.nan
         products.extend((coverage, uncertainty))
+    elif coverage_output and coverage is not None:
+        products.append(coverage)
     if quality and coverage is not None and value_sum is not None and value_square_sum is not None:
         disagreement = np.full((size, size), np.nan, np.float32)
         overlap = coverage >= 2
@@ -364,7 +367,8 @@ def _render_task(task: tuple[str, int, int, tuple[int, ...], tuple[int, ...]]):
     hits_before, misses_before = _WORKER_CACHE_HITS, _WORKER_CACHE_MISSES
     mode, row, column, initial_candidates, optimized_candidates = task
     if mode == 'initial':
-        products = _hard_cut(_WORKER_INITIAL, row, column, initial_candidates, False, True)
+        products = _hard_cut(
+            _WORKER_INITIAL, row, column, initial_candidates, False, True, True)
     elif mode == 'optimized':
         products = _hard_cut(_WORKER_OPTIMIZED, row, column, optimized_candidates, True, True)
     else:
@@ -528,6 +532,7 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                       camera_width: int, camera_height: int, jobs: int,
                       seam_path: Path,
                       coverage_fd: int | None = None,
+                      coverage_only_fd: int | None = None,
                       uncertainty_fd: int | None = None,
                       image_raw_fd: int | None = None,
                       difference_fd: int | None = None,
@@ -575,7 +580,11 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                         previous_raw_fd, np.dtype(np.uint8), grid, row, column)
                     _write_raw_tile(
                         difference_fd, cv2.absdiff(previous, image), grid, row, column)
-                if coverage_fd is not None and uncertainty_fd is not None:
+                if coverage_only_fd is not None:
+                    coverage = result[4]
+                    _write_raw_tile(coverage_only_fd, coverage, grid, row, column)
+                    quality = result[5]
+                elif coverage_fd is not None and uncertainty_fd is not None:
                     coverage, uncertainty = result[4:6]
                     _write_raw_tile(coverage_fd, coverage, grid, row, column)
                     _write_raw_tile(
@@ -736,6 +745,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         prefix=f'.{output_dir.name}.tmp-{uuid4().hex}-', dir=output_dir.parent))
     cache = Path(tempfile.mkdtemp(prefix='fusion-', dir=work_dir))
     coverage_fd = None
+    pose_coverage_fd = None
     uncertainty_fd = None
     pose_only_fd = None
     difference_fd = None
@@ -743,6 +753,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
     resource_monitor.start()
     try:
         coverage_path = cache / 'coverage.dat'
+        pose_coverage_path = cache / 'pose_coverage.dat'
         uncertainty_path = cache / 'uncertainty.dat'
         pose_only_path = cache / 'pose_only.dat'
         difference_path = cache / 'difference.dat'
@@ -750,11 +761,14 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         raw_bytes = tiles * np.dtype(np.uint16).itemsize
         image_bytes = tiles * np.dtype(np.uint8).itemsize
         coverage_fd = os.open(coverage_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
+        pose_coverage_fd = os.open(
+            pose_coverage_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
         uncertainty_fd = os.open(
             uncertainty_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
         pose_only_fd = os.open(pose_only_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
         difference_fd = os.open(difference_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600)
         os.ftruncate(coverage_fd, raw_bytes)
+        os.ftruncate(pose_coverage_fd, raw_bytes)
         os.ftruncate(uncertainty_fd, raw_bytes)
         os.ftruncate(pose_only_fd, image_bytes)
         os.ftruncate(difference_fd, image_bytes)
@@ -762,6 +776,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             temporary / 'mosaic_pose_only.tif', 'initial', grid,
             initial, optimized, inputs.camera.width, inputs.camera.height, jobs,
             temporary / 'seams_pose_only.npz',
+            coverage_only_fd=pose_coverage_fd,
             image_raw_fd=pose_only_fd)
         optimized_pass = _write_image_pass(
             temporary / 'mosaic_optimized.tif', 'optimized', grid,
@@ -771,6 +786,8 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             difference_fd=difference_fd, previous_raw_fd=pose_only_fd)
         os.close(coverage_fd)
         coverage_fd = None
+        os.close(pose_coverage_fd)
+        pose_coverage_fd = None
         os.close(uncertainty_fd)
         uncertainty_fd = None
         os.close(pose_only_fd)
@@ -788,6 +805,8 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         }
         _write_raw_tiles(temporary / 'coverage_count.tif', coverage_path,
                          np.dtype(np.uint16), grid, 'coverage_count', True)
+        _write_raw_tiles(temporary / 'coverage_pose_only_count.tif', pose_coverage_path,
+                         np.dtype(np.uint16), grid, 'coverage_pose_only_count', True)
         _write_raw_tiles(temporary / 'uncertainty.tif', uncertainty_path,
                          np.dtype(np.uint16), grid, 'position_std_uint16', True)
         pose_preview, optimized_preview = _render_preview(
@@ -813,7 +832,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                 outputs[path.name] = {'bytes': path.stat().st_size, 'sha256': _sha256(path)}
         resource_monitor.stop()
         manifest = {
-            'mosaic_format_version': 2,
+            'mosaic_format_version': 3,
             'input_summary': input_summary(inputs),
             'grid': {'frame': 'wall', 'min_x_m': grid.min_x_m, 'min_y_m': grid.min_y_m,
                      'max_x_m': grid.max_x_m, 'max_y_m': grid.max_y_m,
@@ -884,6 +903,8 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         resource_monitor.stop()
         if coverage_fd is not None:
             os.close(coverage_fd)
+        if pose_coverage_fd is not None:
+            os.close(pose_coverage_fd)
         if uncertainty_fd is not None:
             os.close(uncertainty_fd)
         if pose_only_fd is not None:
