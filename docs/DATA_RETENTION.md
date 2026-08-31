@@ -1,6 +1,6 @@
 # 数据保留与清理清单
 
-更新：2026-08-30。此清单记录当前保留边界和已经执行的清理；**本文本身不授权未来删除**。
+更新：2026-08-31。此清单记录当前保留边界和已经执行的清理；**本文本身不授权未来删除**。
 
 ## 当前占用
 
@@ -32,10 +32,12 @@
 
 - `inspection-diagnostic-full-{horizontal,vertical}-025mm-20260828` 下摘要记录的两份原始归档；
 - `processed-p206-{horizontal,vertical}-20260830b`；后缀虽为 `b`，它们仍是当前链的输入；
-- `mosaic-p206-joint-20260830c-{candidates,matches,pose-graph,hardcut,hardcut-truth}`；其中
-  candidates 是独立诊断，另外四项构成正式测量链；
-- `mosaic-p206-joint-20260830d-hardcut-inspection`；这是带严格几何分类和 170 个逐文件哈希
-  原尺寸 tile 的当前检查产物；
+- `mosaic-p206-joint-20260830c-{candidates,matches,pose-graph}`；其中 candidates 是独立诊断，
+  matches 与 pose-graph 是当前链的冻结上游；
+- `mosaic-p206-joint-20260831a-{hardcut,hardcut-truth,hardcut-inspection}`；这是当前正式测量链，
+  hardcut 新增稀疏硬切接缝，inspection 含严格几何分类和 170 个逐文件哈希原尺寸 tile；
+- `20260830c` 的 hardcut/truth 和 `20260830d` 的 inspection summary/provenance，作为新增接缝
+  记录前的逐位复现审计材料；
 - 旧 `20260830b` 的 `mosaic_manifest.json`、truth/inspection summary 以及 matches JSON，和旧
   `20260830c-hardcut-inspection` 的 summary/provenance，作为撤销与逐位复现审计材料。
 

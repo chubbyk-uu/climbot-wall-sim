@@ -44,9 +44,10 @@
 
 可复查证据：
 
-- [P2-06 联合盲测摘要](../results/mosaic_p206_blind_2026-08-30b_summary.json)：固定五阶段拓扑、
-  `5` 条链接、磁盘实物哈希、traceable 强制条件和生成器自身 provenance 均通过；回读了
-  `7` 个拼接产物与 `170` 个原尺寸 tile；上一版手填 provenance 的摘要已撤销；
+- [P2-06 联合盲测与接缝诊断摘要](../results/mosaic_p206_blind_2026-08-31_summary.json)：固定五阶段
+  拓扑、`5` 条链接、磁盘实物哈希、traceable 强制条件和生成器自身 provenance 均通过；回读了
+  `9` 个拼接产物与 `170` 个原尺寸 tile；硬切接缝真值扣除跳变 P95 为 `16 → 7`
+  灰度/像素，结构边位移代理 P95 `6.75 → 7.50 mm` 未显示改善；上一版手填 provenance 的摘要已撤销；
 - [P2 验收项](ACCEPTANCE.md)；
 - [拼接设计与验收门禁](MOSAIC_PLAN.md)；
 - 历史对照 [P2.7d/P2.7e 摘要](../results/mosaic_p27d_blind_2026-08-27_summary.json)，
