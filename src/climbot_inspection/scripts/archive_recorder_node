@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
 import math
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -209,6 +210,7 @@ class ArchiveRecorderNode(Node):
         # Resolving it per image used to perform a potentially slow upward git
         # search on the single-threaded recording executor.
         self._software_git_commit = self._git_commit()
+        self._render_environment = self._render_provenance()
 
         image_topic = str(self.declare_parameter(
             'image_topic', '/inspection/camera/image_raw').value)
@@ -314,9 +316,33 @@ class ArchiveRecorderNode(Node):
             pass
         return 'unavailable'
 
+    def _render_provenance(self) -> dict[str, Any]:
+        """
+        Record how this run was rendered, both as declared and as observed.
+
+        Whether Gazebo showed a GUI and which GPU path it took are launch
+        topology, invisible in the images, and were the difference between a
+        completed acquisition and one that lost frames.  Freezing thresholds
+        across repeated acquisitions needs that condition on file.  The
+        declared values arrive as parameters; ``gpu_backend:=auto`` resolves
+        inside the simulation launch, so the environment it set is the
+        authoritative record and is read from this process directly.
+        """
+        declared = {
+            name: str(self.declare_parameter(f'render_{name}', 'unknown').value)
+            for name in ('headless', 'gpu_backend', 'gui_gpu_backend')
+        }
+        return {
+            'declared': declared,
+            'observed_environment': {
+                variable.lower(): os.environ.get(variable)
+                for variable in ('GALLIUM_DRIVER', 'MESA_D3D12_DEFAULT_ADAPTER_NAME', 'DISPLAY')
+            },
+        }
+
     def _manifest(self, session: Session, outcome: str | None = None) -> dict[str, Any]:
         return {
-            'archive_format_version': 1,
+            'archive_format_version': 2,
             'task': session.task_snapshot,
             'run_id': session.run_id,
             'started_utc': session.started_utc,
@@ -348,6 +374,7 @@ class ArchiveRecorderNode(Node):
             'frozen_scan_references': [
                 session.references[index] for index in sorted(session.references)],
             'software_git_commit': self._software_git_commit,
+            'render_environment': self._render_environment,
             'canonical_image': {
                 'encoding': 'mono8', 'format': 'png', 'distorted': True,
                 'illumination_compensated': False,

@@ -116,6 +116,13 @@ G4 按时间戳配对每张原图和 `InspectionCapture`，同时使用 transien
 且 `expected_images == saved_images`。
 P1 仅接收完整 run，输出新的 processed-run；处理顺序固定为暗场、平场、可选去噪、去畸变。
 
+归档 manifest 的 `archive_format_version` 现为 `2`，新增 `render_environment`：`declared`
+是 launch 传入的 `headless` / `gpu_backend` / `gui_gpu_backend`，`observed_environment` 是
+记录器进程实测的 `GALLIUM_DRIVER`、`MESA_D3D12_DEFAULT_ADAPTER_NAME` 和 `DISPLAY`
+（`gpu_backend:=auto` 在仿真 launch 内解析，所以环境才是权威值）。渲染条件在图像里看不出来，
+却决定两次采集是否可比，冻结门限必须能查到它。脱离仿真 launch 单独起记录器时 `declared`
+为 `unknown`。P1 同时接受 `1` 和 `2`：已冻结进 P2-06 链的归档是 `1`，必须保持可处理。
+
 ## 离线拼接
 
 `climbot_mosaic` 依次提供 `validate_mosaic_inputs`、`build_initial_projection`、

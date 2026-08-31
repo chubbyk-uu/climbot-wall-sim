@@ -98,6 +98,9 @@ def generate_launch_description():
             'use_sim_time': 'true',
             'inspection_output_root': LaunchConfiguration('inspection_output_root'),
             'flat_field_file': LaunchConfiguration('flat_field_file'),
+            'render_headless': LaunchConfiguration('headless'),
+            'render_gpu_backend': LaunchConfiguration('gpu_backend'),
+            'render_gui_gpu_backend': LaunchConfiguration('gui_gpu_backend'),
         }.items(),
     )
 

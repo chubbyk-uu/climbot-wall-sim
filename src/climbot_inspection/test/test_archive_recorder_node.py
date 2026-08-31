@@ -61,6 +61,8 @@ def generate_test_description():
             'durable_commit_batch_images': 2,
             'pair_timeout_s': 1.0,
             'output_root': str(ARCHIVE_ROOT),
+            'render_headless': 'true',
+            'render_gpu_backend': 'wsl_d3d12',
         }],
     )
     return launch.LaunchDescription([recorder, launch_testing.actions.ReadyToTest()])
@@ -258,6 +260,14 @@ class TestArchiveRecorderNode(unittest.TestCase):
         label = json.loads((directory / 'metadata' / '000000.json').read_text(encoding='utf-8'))
         pixels = cv2.imread(str(directory / 'images' / 'raw' / '000000.png'), cv2.IMREAD_UNCHANGED)
         self.assertEqual(manifest['outcome'], 'completed')
+        self.assertEqual(manifest['archive_format_version'], 2)
+        # Two acquisitions are only comparable if they were rendered the same
+        # way, and that condition leaves no trace in the images themselves.
+        render = manifest['render_environment']
+        self.assertEqual(render['declared']['headless'], 'true')
+        self.assertEqual(render['declared']['gpu_backend'], 'wsl_d3d12')
+        self.assertEqual(render['declared']['gui_gpu_backend'], 'unknown')
+        self.assertIn('gallium_driver', render['observed_environment'])
         self.assertEqual(manifest['saved_images'], 1)
         self.assertEqual(manifest['durably_committed_images'], 1)
         self.assertEqual(manifest['staged_images'], 0)

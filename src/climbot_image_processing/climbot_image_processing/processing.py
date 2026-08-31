@@ -189,7 +189,9 @@ def _load_camera_info(root: Path) -> tuple[np.ndarray, np.ndarray, int, int,
 
 def _load_manifest(root: Path, allow_incomplete: bool) -> dict[str, Any]:
     manifest = _read_json(root / 'manifest.json', 'manifest.json')
-    if manifest.get('archive_format_version') != 1:
+    # Version 2 only adds the render-environment record. Archives already
+    # frozen into the P2-06 chain are version 1 and must stay processable.
+    if manifest.get('archive_format_version') not in (1, 2):
         raise ProcessingError('unsupported or missing archive_format_version.')
     if not allow_incomplete and manifest.get('outcome') != 'completed':
         raise ProcessingError(

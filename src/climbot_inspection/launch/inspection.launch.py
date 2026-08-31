@@ -85,6 +85,12 @@ def generate_launch_description():
         OpaqueFunction(function=_validate_inspection_contract),
         DeclareLaunchArgument('flat_field_file', default_value=''),
         DeclareLaunchArgument('archive_recorder', default_value='true'),
+        # How the run was rendered is not visible in the images but decides
+        # whether two acquisitions are comparable. 'unknown' is honest for a
+        # recorder started outside the simulation launch.
+        DeclareLaunchArgument('render_headless', default_value='unknown'),
+        DeclareLaunchArgument('render_gpu_backend', default_value='unknown'),
+        DeclareLaunchArgument('render_gui_gpu_backend', default_value='unknown'),
         DeclareLaunchArgument(
             'inspection_output_root',
             default_value=EnvironmentVariable(
@@ -129,6 +135,9 @@ def generate_launch_description():
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'output_root': LaunchConfiguration('inspection_output_root'),
                 'flat_field_file': LaunchConfiguration('flat_field_file'),
+                'render_headless': LaunchConfiguration('render_headless'),
+                'render_gpu_backend': LaunchConfiguration('render_gpu_backend'),
+                'render_gui_gpu_backend': LaunchConfiguration('render_gui_gpu_backend'),
             }],
             condition=IfCondition(LaunchConfiguration('archive_recorder')),
             output='screen',
