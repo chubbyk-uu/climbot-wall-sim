@@ -520,10 +520,6 @@ def launch_setup(context, *args, **kwargs):
             '/model/climbot/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/model/climbot/ground_truth@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-            CAMERA_IDEAL_IMAGE_TOPIC +
-            '@sensor_msgs/msg/Image[gz.msgs.Image',
-            CAMERA_IDEAL_INFO_TOPIC +
-            '@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
             JOINT_STATE_TOPIC + '@sensor_msgs/msg/JointState[gz.msgs.Model',
             # Contact sensors ignore their <topic> tag, so the fully qualified
             # Gazebo names are bridged and remapped to short ROS topics below.
@@ -535,6 +531,23 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{
             'qos_overrides./cmd_vel.subscriber.reliability': 'reliable',
         }],
+        output='screen',
+    ))
+    # A full-HD camera message can make a bridge executor wait on conversion
+    # or reliable DDS flow control.  It must therefore not share an executor
+    # with /clock, odometry, IMU, or actuator traffic: delaying those small
+    # streams makes an otherwise local image delay look like a simulator-wide
+    # stall and lets motion outrun an exposure target.
+    actions.append(Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='inspection_camera_bridge',
+        arguments=[
+            CAMERA_IDEAL_IMAGE_TOPIC +
+            '@sensor_msgs/msg/Image[gz.msgs.Image',
+            CAMERA_IDEAL_INFO_TOPIC +
+            '@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+        ],
         output='screen',
     ))
     if throttle_clock:

@@ -18,10 +18,10 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 排查渲染后端差异，显式传 `gpu_backend:=software` 即可；它会让 Gazebo、RViz 和传感器
 渲染统一走 llvmpipe，资源占用明显高于默认 GPU 路径，不作为正常运行配置。
 
-巡检相机的反向触发使用独立 `inspection_trigger_bridge`，图像、标定和其他仿真数据使用
-`simulation_data_bridge`。不要把触发重新并回全高清图像所在的 bridge：GUI/RViz 负载下，
-大图序列化或 DDS 流控会阻塞同一 executor 中的小触发消息，机器人可能在相机真正曝光前
-已经驶离目标位置。
+巡检传输分成三条独立 bridge：`simulation_data_bridge` 只承载 `/clock`、控制和小型状态话题；
+`inspection_camera_bridge` 只承载全高清 image/CameraInfo；`inspection_trigger_bridge` 只承载
+反向触发。不要把任一相机方向并回主 bridge：大图转换或可靠 DDS 流控会阻塞其中的实时小消息，
+机器人可能在相机真正曝光前已经驶离目标位置。
 
 ## 内容
 

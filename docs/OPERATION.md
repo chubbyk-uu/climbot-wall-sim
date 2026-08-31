@@ -238,7 +238,7 @@ mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结
 | 拼接预检拒绝 | 不要修补输入；按 JSON 修复原始归档或标定问题后，重新生成一个独立的 processed-run |
 | 真值 tile 有黑边或零覆盖 | 这是实际足迹缺口，须扩大或调整任务重新采集，不可用后处理填充 |
 | Gazebo 无画面 | 加 `headless:=true` 走非 GUI 流程，或检查 WSLg/GPU 后端 |
-| GUI 下曝光明显晚于目标或长任务少图 | 查 `Slow capture`、`Capture trigger ... late` 和 archive manifest；确认 launch 中存在独立的 `inspection_trigger_bridge`，不要把触发与全高清图像并回同一个 bridge。`gpu_backend:=software` 只能用于 A/B，不能代替桥接隔离。 |
+| 曝光明显晚于目标或长任务少图 | 查 `Slow capture`、`Capture trigger ... late` 和 archive manifest；确认 launch 同时存在独立的 `inspection_camera_bridge` 与 `inspection_trigger_bridge`，不要把全高清图像/内参或触发并回承载 `/clock`、里程计和 IMU 的 `simulation_data_bridge`。`gpu_backend:=software` 只能用于 A/B，不能代替桥接隔离。 |
 | Pause 之后一直停在 `Pausing` | 机器人没能在 `pause_stop_timeout_s`（`5.0 s`）内停稳，执行器按控制超时中止任务。查看是否有第二个上游控制源在同时发 `/control/cmd_vel` |
 | Pause 被拒绝且提示服务不可用 | 执行器没有提供 `/coverage/executor_pause`。任务原样继续，不是停了；检查 `line_tracker_node` 是否以 `standalone_mode:=false` 启动 |
 | Pause 之后状态变成 `Stopping` | 执行器接了暂停请求却在 `pause_response_timeout_s`（`2.0 s`）内没有应答。管理器无从判断机器人是在减速还是仍在全速，按失联处理：请求 hold 并取消任务 |

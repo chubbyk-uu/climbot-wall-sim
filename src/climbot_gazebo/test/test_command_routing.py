@@ -54,13 +54,22 @@ def test_wall_launch_starts_watchdog():
     assert "'/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist'" not in source
 
 
-def test_camera_trigger_has_a_dedicated_bridge_executor():
-    """A full-HD image callback must not starve the reverse trigger route."""
+def test_camera_transport_has_dedicated_bridge_executors():
+    """Full-HD camera traffic cannot delay control or its reverse trigger."""
     source = LAUNCH_PATH.read_text()
     assert "name='simulation_data_bridge'" in source
+    assert "name='inspection_camera_bridge'" in source
     assert "name='inspection_trigger_bridge'" in source
     trigger_route = "CAMERA_TRIGGER_TOPIC + '@std_msgs/msg/Bool]gz.msgs.Boolean'"
     assert source.count(trigger_route) == 1
+    image_route = (
+        'CAMERA_IDEAL_IMAGE_TOPIC +\n'
+        "            '@sensor_msgs/msg/Image[gz.msgs.Image'")
+    info_route = (
+        'CAMERA_IDEAL_INFO_TOPIC +\n'
+        "            '@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo'")
+    assert source.count(image_route) == 1
+    assert source.count(info_route) == 1
 
 
 def test_gui_exit_cannot_terminate_the_required_simulation_server():
