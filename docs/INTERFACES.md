@@ -119,8 +119,14 @@ P1 仅接收完整 run，输出新的 processed-run；处理顺序固定为暗�
 归档内容记录 `summarize_archive_content` 是独立诊断，不在正式五阶段链内：它读一个或多个
 归档 run 的原图，发布带 `stage_provenance.json` 的目录，内含 `archive_content.npz`（逐帧
 16×16 块降采样、32 段行/列均值剖面、mean/std/laplacian variance）和 `archive_content_summary.json`
-（分布、对参考 run 的比值与偏差、判定）。**受闸的只有行、列剖面和标量**；块降采样只记录不判，
-因为 34 mm 的块对两次采集之间毫米级的位姿差敏感。它存在的理由是：两组数据"内容一致"这句话
+（分布、对参考 run 的比值与偏差、判定）。闸门有三层：run 级标量中位比值、run 级行列剖面偏差，
+以及**按同序帧对齐的逐帧偏差**（单帧 max 与 p95 两道，容差由 5340 帧实测定出）。逐帧这一层是
+必需的——run 级统计看不见单张坏帧（一张全黑帧只把 680 帧的中位数挪动可忽略的量）也看不见帧序
+互换。块降采样只记录不判，因为 34 mm 的块对两次采集之间毫米级的位姿差敏感。帧数与参考不一致
+直接拒绝，不截断对齐。记录格式版本为 `2`，输入里的归档哈希带 run 名，便于按身份而非列表顺序
+绑定。**`build_mosaic_evidence_summary.py` 强制要求这些记录**：校验其 provenance、traceable、
+输出回读哈希和"全部匹配"判定，并要求每个冻结任务的归档 manifest 哈希出现在某份记录里——
+作为通过闸门的输入，或作为该记录自身的参考基准。它存在的理由是：两组数据"内容一致"这句话
 必须是可复核的产物，而不是文档里的结论——曾有两整组数据在计数守卫全绿的情况下整幅 z-fighting。
 
 归档 manifest 的 `archive_format_version` 现为 `2`，新增 `render_environment`：`declared`

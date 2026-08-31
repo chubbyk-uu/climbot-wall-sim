@@ -157,8 +157,10 @@ ros2 run climbot_mosaic summarize_archive_content \
   --output-dir "$CLIMBOT_DATA_ROOT/archive-content-<id>"
 ```
 
-横向只能对横向、纵向只能对纵向；比对的是同一计划的同序帧。判定不通过时退出码为 `3`，
-不要把它当成可以忽略的告警——两整组 z-fighting 数据就是在计数全绿的情况下走到拼接阶段的。
+横向只能对横向、纵向只能对纵向；比对按同序帧对齐，所以帧数必须与参考一致，不一致直接拒绝。
+判定不通过时退出码为 `3`，不要把它当成可以忽略的告警——两整组 z-fighting 数据就是在计数全绿的
+情况下走到拼接阶段的。这些记录是正式摘要的强制输入：`build_mosaic_evidence_summary.py` 要求
+每个冻结任务的归档都被某份记录覆盖并通过，缺一份就拒绝出摘要。
 
 ## 预处理与拼接的前置检查
 

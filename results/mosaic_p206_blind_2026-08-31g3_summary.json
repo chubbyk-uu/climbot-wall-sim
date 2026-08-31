@@ -940,6 +940,172 @@
     "One horizontal frame carries no accepted match edge because SIFT finds no keypoints on it; its pose comes from odometry."
   ],
   "provenance": {
+    "archive_content": {
+      "frozen_archives": {
+        "inspection-diagnostic-full-horizontal-025mm-20260828": {
+          "passed": true,
+          "role": "gated",
+          "run": "r000001_20260831T080706Z_bd6f4bc6e6964abc8fe18772cfe056bc"
+        },
+        "inspection-diagnostic-full-vertical-025mm-20260828": {
+          "passed": true,
+          "role": "gated",
+          "run": "r000001_20260831T083818Z_a6766484e3dd4e149088b7aa9dc5983b"
+        }
+      },
+      "records": {
+        "archive-content-p206-horizontal-20260831": {
+          "all_runs_match_reference": true,
+          "stage_provenance": {
+            "git": {
+              "branch": "main",
+              "checked_pathspecs": [
+                "src",
+                "tools"
+              ],
+              "commit": "734c995e6661922e647ee1c348586b5ce0679105",
+              "source_modified": false,
+              "traceable": true
+            },
+            "inputs": {
+              "archive_manifests": [
+                {
+                  "manifest": {
+                    "name": "manifest.json",
+                    "sha256": "8e653eb6e7d6513a693b080faad9110b90a581ef2522d88fd414379b9be2da6d"
+                  },
+                  "run": "r000001_20260831T072125Z_8dfc0a9422f6453aacf884e4976c219e"
+                },
+                {
+                  "manifest": {
+                    "name": "manifest.json",
+                    "sha256": "3bbf026fc2cbc364e9259db28e711fdf2e5b0b565bb211dd4b4e075b83330079"
+                  },
+                  "run": "r000001_20260831T080706Z_bd6f4bc6e6964abc8fe18772cfe056bc"
+                },
+                {
+                  "manifest": {
+                    "name": "manifest.json",
+                    "sha256": "f70d38dcbc4741002b31f9a758d4a4aae81293ef6e03b6934f0262b251ebcfbb"
+                  },
+                  "run": "r000001_20260831T121508Z_69ea91d02b9f4d4ab4bf148ca6d18365"
+                },
+                {
+                  "manifest": {
+                    "name": "manifest.json",
+                    "sha256": "f23c81dfd29f03a606a63c6bcf85e248dd88bac17503ecac32ebc7d265338390"
+                  },
+                  "run": "r000001_20260831T130959Z_5b95f5e1097546099c2aa4165419014f"
+                }
+              ],
+              "reference_manifest": {
+                "manifest": {
+                  "name": "manifest.json",
+                  "sha256": "c1d7ea349c1f9669cd13ba4a2bfcd4875b6591ac89ad3bd4546458e3292e1c83"
+                },
+                "run": "r000001_20260830T092504Z_37ca70ff63034712841ada2d5aa96af2"
+              }
+            },
+            "outputs": {
+              "archive_content.npz": {
+                "name": "archive_content.npz",
+                "sha256": "3694472247d7fb82ce8882e3a7e980fa47ae0ed283c2f9dbb1509d90e521b9cd"
+              },
+              "archive_content_summary.json": {
+                "name": "archive_content_summary.json",
+                "sha256": "ae3263274ee380a172a424d0d9a2907d680e7d65cace6bb92e3206dd4f59ab8f"
+              }
+            },
+            "parameters": {
+              "block_grid": 16,
+              "frame_p95_tolerance": 0.1,
+              "frame_tolerance": 0.3,
+              "profile_bins": 32,
+              "profile_tolerance": 0.02,
+              "scalar_tolerance": 0.05
+            },
+            "recorded_utc": "2026-08-31T15:01:22Z",
+            "stage": "archive_content",
+            "stage_provenance_format_version": 1
+          }
+        },
+        "archive-content-p206-vertical-20260831": {
+          "all_runs_match_reference": true,
+          "stage_provenance": {
+            "git": {
+              "branch": "main",
+              "checked_pathspecs": [
+                "src",
+                "tools"
+              ],
+              "commit": "734c995e6661922e647ee1c348586b5ce0679105",
+              "source_modified": false,
+              "traceable": true
+            },
+            "inputs": {
+              "archive_manifests": [
+                {
+                  "manifest": {
+                    "name": "manifest.json",
+                    "sha256": "ab18c4268151af1378eaf03ffba51c0120ada024f5454dfaafdeeda2ca27afc6"
+                  },
+                  "run": "r000001_20260831T074618Z_42b6225cff9443538e6dfccc07d23581"
+                },
+                {
+                  "manifest": {
+                    "name": "manifest.json",
+                    "sha256": "3cb08e302ddd28fc2b11c0ac07c1c8af1fc0ae7fd502a69d3283ce2867224f51"
+                  },
+                  "run": "r000001_20260831T083818Z_a6766484e3dd4e149088b7aa9dc5983b"
+                },
+                {
+                  "manifest": {
+                    "name": "manifest.json",
+                    "sha256": "2179b47961ddefe8281ef1fca3903094a1134f69fdcd8e68400ca3cb53f93a94"
+                  },
+                  "run": "r000001_20260831T123428Z_fafd663948d8424ab79de245fc106fb5"
+                },
+                {
+                  "manifest": {
+                    "name": "manifest.json",
+                    "sha256": "6679f8188bdbfe465b5e021651f0512369f4b98cb4e5cfa37b204393d79e158f"
+                  },
+                  "run": "r000001_20260831T135452Z_f69d821803c6475e82045023566bf902"
+                }
+              ],
+              "reference_manifest": {
+                "manifest": {
+                  "name": "manifest.json",
+                  "sha256": "f4473ed8419938d9cf5dd86ec12a1a01c97bce32052c9bd3d818cc854f30f302"
+                },
+                "run": "r000001_20260830T094315Z_1d291001dc8c4ba984faa9625f44b15a"
+              }
+            },
+            "outputs": {
+              "archive_content.npz": {
+                "name": "archive_content.npz",
+                "sha256": "24b3d83e25d0a16d2f22ae095d5092ae0b05f2c49cadc1705461c5a7c1abd635"
+              },
+              "archive_content_summary.json": {
+                "name": "archive_content_summary.json",
+                "sha256": "c221bc480b193f5291d2e320b4241a69b22629fb53d28856c81b3d86fa8ee996"
+              }
+            },
+            "parameters": {
+              "block_grid": 16,
+              "frame_p95_tolerance": 0.1,
+              "frame_tolerance": 0.3,
+              "profile_bins": 32,
+              "profile_tolerance": 0.02,
+              "scalar_tolerance": 0.05
+            },
+            "recorded_utc": "2026-08-31T15:02:48Z",
+            "stage": "archive_content",
+            "stage_provenance_format_version": 1
+          }
+        }
+      }
+    },
     "links": [
       {
         "artifact": "local_matches.json",
@@ -1704,7 +1870,7 @@
           "src",
           "tools"
         ],
-        "commit": "f849af1bb869278d4a9f2f31972f542dae7e3e5e",
+        "commit": "155d9925e53eda514261d88f06ca835d96415e32",
         "source_modified": false,
         "traceable": true
       },
@@ -1793,7 +1959,7 @@
         "schema_version": 4,
         "status": "blind_validation_inspection_region_coverage_complete"
       },
-      "recorded_utc": "2026-08-31T10:47:25Z",
+      "recorded_utc": "2026-08-31T15:05:24Z",
       "stage": "evidence_summary",
       "stage_provenance_format_version": 1
     }
