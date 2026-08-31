@@ -62,7 +62,12 @@
 
 `mosaic-p206-joint-20260831a-work-fusion` 是空目录，已在本次核对中移除；其余上述完整目录均为
 有意保留，不能从“只在正式摘要中引用 summary/provenance”推断为可删除。
-`mosaic-p206-joint-20260831{g2,g3}-work-{matches,fusion}` 是可随时重建的缓存，共约 98 MB。
+`mosaic-p206-joint-20260831{g2,g3,g4,g5}-work-{matches,fusion}` 是可随时重建的缓存；已于
+2026-08-31 移入系统废纸篓，共约 196 MB。同批移入的还有 `processed_inspection_horizontal_20260826`
+（179 MB），它不被任何已发布结果或文档引用，是 P2.7d 之前的早期处理产物。
+
+`20260830c-hardcut`、`20260830d-hardcut-inspection`、`20260831a-*` 等审计材料**未删**，见上方
+"必须保留"清单；它们的保留理由仍然成立，删除需要单独决定。
 
 2026-08-31 另有一次作废清理：第一次重采的两组（四个 raw 归档、两套 processed、匹配缓存，
 共约 5.0 GB）因 `wall_visual` 与贴图块共面导致整幅图 z-fighting 而不可用，已移入系统废纸篓
