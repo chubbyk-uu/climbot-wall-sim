@@ -23,6 +23,7 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 import yaml
 
 
@@ -135,9 +136,16 @@ def generate_launch_description():
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'output_root': LaunchConfiguration('inspection_output_root'),
                 'flat_field_file': LaunchConfiguration('flat_field_file'),
-                'render_headless': LaunchConfiguration('render_headless'),
-                'render_gpu_backend': LaunchConfiguration('render_gpu_backend'),
-                'render_gui_gpu_backend': LaunchConfiguration('render_gui_gpu_backend'),
+                # launch_ros infers a type from the resolved text, so an
+                # unwrapped 'true' would arrive as BOOL and fail the node's
+                # string declaration. These stay text because 'unknown' is a
+                # legitimate value for all three.
+                'render_headless': ParameterValue(
+                    LaunchConfiguration('render_headless'), value_type=str),
+                'render_gpu_backend': ParameterValue(
+                    LaunchConfiguration('render_gpu_backend'), value_type=str),
+                'render_gui_gpu_backend': ParameterValue(
+                    LaunchConfiguration('render_gui_gpu_backend'), value_type=str),
             }],
             condition=IfCondition(LaunchConfiguration('archive_recorder')),
             output='screen',
