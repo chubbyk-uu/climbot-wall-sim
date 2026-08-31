@@ -31,6 +31,7 @@
 | P2-06 联合盲测与接缝诊断 第 2 组 | [mosaic_p206_blind_2026-08-31g2_summary.json](mosaic_p206_blind_2026-08-31g2_summary.json) | `f849af1` 无头采集 1,340 帧；巡检域内零漏拍，锚点 P95 `0.630 mm`，接缝跳变 P95 `16→7`、比值 `3.50×` |
 | P2-06 联合盲测与接缝诊断 第 3 组 | [mosaic_p206_blind_2026-08-31g3_summary.json](mosaic_p206_blind_2026-08-31g3_summary.json) | `f849af1` 无头采集 1,340 帧；巡检域内零漏拍，锚点 P95 `1.360 mm`，接缝跳变 P95 `16→7`、比值 `3.50×` |
 | P2-06 联合盲测与接缝诊断 第 4 组 | [mosaic_p206_blind_2026-08-31g4_summary.json](mosaic_p206_blind_2026-08-31g4_summary.json) | `ac2b244` 无头采集 1,340 帧，GUI 实测不存在；巡检域内零漏拍，锚点 P95 `1.787 mm`，接缝跳变 P95 `16→7`、比值 `3.50×` |
+| P2-06 门限独立检验 第 5 组 | [mosaic_p206_blind_2026-08-31g5_summary.json](mosaic_p206_blind_2026-08-31g5_summary.json) | 门限冻结（`1b1a0c7`）之后采集，不参与推导；七项全过：域内零漏拍、锚点 P95 `1.130 mm`、残差 P95 `0.143 mm`、尺度 `16.2 ppm`、航向 `0.0002°`、接缝比 `3.50` |
 
 完整的验收要求、证据路径和缺口请看 [验收矩阵](../docs/ACCEPTANCE.md)。
 
