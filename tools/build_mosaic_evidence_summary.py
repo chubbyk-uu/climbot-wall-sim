@@ -111,6 +111,56 @@ def _require_current_seam_contract(mosaic, truth):
             raise ValueError(f'{name} lacks the required seam gradient contract: {error}') from error
 
 
+def _verify_archive_content(directories, frozen):
+    """
+    Bind the acquisition content records to the archives this summary rests on.
+
+    The content gate is not one of the five measurement stages, but P2-06 leans
+    on it: it is the only checkable basis for saying two collections photograph
+    the same wall. A record nobody verifies against the chain is the same kind
+    of claim as a hand-typed provenance block, so every frozen task's archive
+    manifest must appear in a supplied record -- either as a gated input, in
+    which case that run has to have passed, or as the record's own reference,
+    in which case it is the baseline the others were judged against.
+    """
+    if not directories:
+        raise EvidenceChainError('at least one archive content record is required')
+    wanted = {task['archive_manifest_sha256']: task['task_id'] for task in frozen['tasks']}
+    seen = {}
+    records = {}
+    for directory in directories:
+        record = verify_stage_chain(
+            {'archive_content': directory}, required_stages=('archive_content',),
+            required_links=(), require_traceable=True)['stages']['archive_content']
+        summary = _document(Path(directory) / 'archive_content_summary.json')
+        if summary.get('archive_content_format_version') != 2:
+            raise EvidenceChainError(
+                f'{directory} is not an archive content record of format version 2')
+        inputs = record['inputs']
+        for entry in inputs['archive_manifests']:
+            digest = entry['manifest']['sha256']
+            if digest not in wanted:
+                continue
+            verdict = summary['runs'][entry['run']]['against_reference']
+            if not verdict['passed']:
+                raise EvidenceChainError(
+                    f"archive {entry['run']} failed its content gate: {verdict['failures']}")
+            seen[digest] = {'run': entry['run'], 'role': 'gated', 'passed': True}
+        reference = inputs.get('reference_manifest')
+        if reference and reference['manifest']['sha256'] in wanted:
+            seen.setdefault(reference['manifest']['sha256'],
+                            {'run': reference['run'], 'role': 'reference'})
+        records[Path(directory).name] = {
+            'stage_provenance': record, 'all_runs_match_reference':
+            summary.get('all_runs_match_reference')}
+    missing = sorted(task for digest, task in wanted.items() if digest not in seen)
+    if missing:
+        raise EvidenceChainError(
+            'no archive content record covers the frozen archives for: ' + ', '.join(missing))
+    return {'records': records,
+            'frozen_archives': {wanted[digest]: value for digest, value in seen.items()}}
+
+
 def main() -> int:
     """Write one formal summary whose every number came out of the chain."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -123,6 +173,9 @@ def main() -> int:
     parser.add_argument('--matches-dir', type=Path)
     parser.add_argument('--pose-graph-dir', type=Path)
     parser.add_argument('--input-run', action='append', required=True, type=Path)
+    parser.add_argument(
+        '--archive-content-dir', action='append', required=True, type=Path,
+        help='published summarize_archive_content record covering the frozen archives')
     parser.add_argument('--archive-root', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--status', required=True)
@@ -148,6 +201,7 @@ def main() -> int:
                 require_traceable=True)['stages']['overlap_candidates']
         frozen = resolve_frozen_tasks(
             arguments.mosaic_dir, tuple(arguments.input_run), arguments.archive_root)
+        archive_content = _verify_archive_content(arguments.archive_content_dir, frozen)
     except EvidenceChainError as error:
         print(f'evidence chain refused: {error}', file=sys.stderr)
         return 2
@@ -236,6 +290,7 @@ def main() -> int:
             'stages': {stage: chain['stages'][stage] for stage in sorted(chain['stages'])},
             'links': chain['links'],
             'summary_generation': assembly,
+            'archive_content': archive_content,
             'standalone_diagnostics': ({
                 'overlap_candidates': candidate_diagnostic,
             } if candidate_diagnostic is not None else {}),

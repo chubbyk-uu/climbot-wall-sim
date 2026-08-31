@@ -31,8 +31,11 @@ RNG = np.random.default_rng(11)
 
 #: Two collections of the same plan photograph the same wall from poses that
 #: differ by millimetres, so their frames share content and differ by noise.
-WALL = [cv2.GaussianBlur(np.random.default_rng(5 + index).integers(
-    40, 120, (240, 320), dtype=np.uint8), (0, 0), 1.2) for index in range(6)]
+#: Brightness climbs along the sweep, as it does on a real wall under a moving
+#: light, so swapping two frames is a real change rather than a relabelling.
+WALL = [cv2.GaussianBlur(np.clip(np.random.default_rng(5 + index).integers(
+    40, 120, (240, 320)) + 22 * index, 0, 255).astype(np.uint8), (0, 0), 1.2)
+    for index in range(6)]
 
 
 def _run(root, name, transform=None):
@@ -93,3 +96,48 @@ def test_a_run_without_raw_frames_is_refused(tmp_path):
     (empty / 'images' / 'raw').mkdir(parents=True)
     with pytest.raises(ArchiveContentError, match='no raw images'):
         summarize_archive_content([empty], tmp_path / 'out')
+
+
+def test_one_ruined_frame_in_a_run_is_refused(tmp_path):
+    """
+    Run-level statistics cannot see this, which is the whole point.
+
+    A single black frame moves a six-frame median a little and a six-frame mean
+    profile by a sixth; in a 680-frame collection it moves neither measurably.
+    The per-frame comparison is what refuses it.
+    """
+    reference = _run(tmp_path, 'reference')
+    observed = _run(tmp_path, 'one_black')
+    black = observed / 'images' / 'raw' / '000003.png'
+    cv2.imwrite(str(black), np.zeros((240, 320), np.uint8))
+    a, b = measure_run(observed), measure_run(reference)
+    verdict = compare(a, b, scalar_tolerance=0.05, profile_tolerance=0.02)
+    assert verdict['per_frame_deviation']['worst_frame_index'] == 3
+    assert verdict['passed'] is False
+    assert any('frame 3' in reason for reason in verdict['failures'])
+
+
+def test_two_swapped_frames_are_refused(tmp_path):
+    """Order matters: averaged statistics are blind to it, indexed frames are not."""
+    reference = _run(tmp_path, 'reference')
+    observed = _run(tmp_path, 'swapped')
+    first = observed / 'images' / 'raw' / '000001.png'
+    second = observed / 'images' / 'raw' / '000004.png'
+    one, two = cv2.imread(str(first), 0), cv2.imread(str(second), 0)
+    cv2.imwrite(str(first), two)
+    cv2.imwrite(str(second), one)
+    a, b = measure_run(observed), measure_run(reference)
+    run_level = compare(a, b, 0.05, 0.02, frame_tolerance=0.99,
+                        frame_p95_tolerance=0.99)
+    assert run_level['passed'] is True, 'averaged statistics should not notice a swap'
+    verdict = compare(a, b, scalar_tolerance=0.05, profile_tolerance=0.02)
+    assert verdict['passed'] is False
+    assert verdict['per_frame_deviation']['frames_over_tolerance'] >= 2
+
+
+def test_a_different_frame_count_is_refused_rather_than_truncated(tmp_path):
+    reference = _run(tmp_path, 'reference')
+    observed = _run(tmp_path, 'short')
+    (observed / 'images' / 'raw' / '000005.png').unlink()
+    with pytest.raises(ArchiveContentError, match='different frame counts'):
+        compare(measure_run(observed), measure_run(reference), 0.05, 0.02)
