@@ -6,7 +6,7 @@
 
 | 位置 | 大小 | 说明 |
 | --- | ---: | --- |
-| `${CLIMBOT_DATA_ROOT}` | 约 21 GB | 原始归档、处理结果、拼接产品与开发中间产物；2026-08-31 实测，含新增的第 2、3 组 |
+| `${CLIMBOT_DATA_ROOT}` | 约 25 GB | 原始归档、处理结果、拼接产品与开发中间产物；2026-08-31 实测，含新增的第 2、3、4 组 |
 | `textures/` | 约 1.9 GB | 忽略的 DDS 墙面贴图；可由脚本重建，但重建成本高 |
 | `results/` | 约 48 MB | Git 跟踪的正式摘要和轨迹证据 |
 | `log/` | 约 834 MB | 可再生的本机构建/测试日志 |
@@ -48,8 +48,12 @@
   `processed-p206-{horizontal,vertical}-20260831{g2,g3}`；
   `mosaic-p206-joint-20260831{g2,g3}-{matches,pose-graph,hardcut,hardcut-truth,hardcut-inspection}`。
   门限由这三组共同推导，任何一组删除都会使推导无法复核；
-- `archive-content-p206-{horizontal,vertical}-20260831`（共约 770 KB）：三组采集的图像内容
-  记录与判定，是"三组内容一致"这一说法的唯一可复核依据；
+- `archive-content-p206-{horizontal,vertical}-20260831` 与
+  `archive-content-p206-{horizontal,vertical}-20260831g4`（共约 1.2 MB）：四组采集的图像内容
+  记录与判定，是"各组内容一致"这一说法的唯一可复核依据；
+- 第 4 组（`20260831T1215`、`20260831T1234` 两个 run，以及 `processed-p206-*-20260831g4` 和
+  `mosaic-p206-joint-20260831g4-*`，约 3.4 GB）：它带完整渲染记录并通过内容闸门，是门限推导的
+  三组之一，删除会使推导无法复核；
 - 旧 `20260830b` 的 `mosaic_manifest.json`、truth/inspection summary 以及 matches JSON，和旧
   `20260830c-hardcut-inspection` 的 summary/provenance，作为撤销与逐位复现审计材料。
 
