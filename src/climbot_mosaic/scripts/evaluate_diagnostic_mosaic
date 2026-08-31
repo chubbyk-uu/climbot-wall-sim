@@ -19,11 +19,14 @@ def main() -> int:
     parser.add_argument('--output-dir', required=True, type=Path)
     parser.add_argument('--anchor-padding-m', type=float, default=0.10)
     parser.add_argument('--minimum-phase-response', type=float, default=0.10)
+    parser.add_argument('--seam-normal-radius-px', type=int, default=20)
+    parser.add_argument('--seam-minimum-truth-gradient', type=float, default=16.0)
     arguments = parser.parse_args()
     try:
         summary = evaluate_diagnostic_mosaic(
             arguments.mosaic_dir, arguments.wall_manifest, arguments.output_dir,
-            arguments.anchor_padding_m, arguments.minimum_phase_response)
+            arguments.anchor_padding_m, arguments.minimum_phase_response,
+            arguments.seam_normal_radius_px, arguments.seam_minimum_truth_gradient)
     except (DiagnosticTruthError, OSError, ValueError) as error:
         print(f'diagnostic mosaic evaluation failed: {error}')
         return 2

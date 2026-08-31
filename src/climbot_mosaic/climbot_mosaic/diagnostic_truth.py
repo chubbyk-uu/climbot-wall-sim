@@ -316,6 +316,138 @@ def _percentile(values: list[float], fraction: float) -> float | None:
     return values[max(0, math.ceil(fraction * len(values)) - 1)]
 
 
+def _histogram_summary(histogram: np.ndarray, value_scale: float = 1.0) -> dict[str, Any] | None:
+    """Summarize a bounded non-negative integer distribution without retaining samples."""
+    count = int(histogram.sum())
+    if not count:
+        return None
+    cumulative = np.cumsum(histogram)
+
+    def percentile(fraction: float) -> float:
+        return float(np.searchsorted(cumulative, math.ceil(fraction * count)) * value_scale)
+
+    values = np.arange(len(histogram), dtype=np.float64)
+    return {
+        'count': count,
+        'mean': float((values * histogram).sum() / count * value_scale),
+        'median': percentile(0.50), 'p95': percentile(0.95),
+        'p99': percentile(0.99),
+        'maximum': float(np.flatnonzero(histogram)[-1] * value_scale),
+    }
+
+
+def _seam_adjacencies(path: Path, grid: MosaicGrid) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Load and validate the sparse hard-cut source transitions from fusion."""
+    try:
+        with np.load(path, allow_pickle=False) as values:
+            version = int(values['seam_format_version'])
+            rows = np.asarray(values['row_px'], np.uint32)
+            columns = np.asarray(values['column_px'], np.uint32)
+            axes = np.asarray(values['axis'], np.uint8)
+            width = int(values['grid_width_px'])
+            height = int(values['grid_height_px'])
+    except (OSError, KeyError, TypeError, ValueError) as error:
+        raise DiagnosticTruthError(f'seam adjacency product is invalid: {error}') from error
+    if version != 1 or width != grid.width_px or height != grid.height_px:
+        raise DiagnosticTruthError('seam adjacency product does not match the mosaic grid.')
+    if rows.ndim != 1 or columns.ndim != 1 or axes.ndim != 1 or \
+            not (len(rows) == len(columns) == len(axes)):
+        raise DiagnosticTruthError('seam adjacency arrays must be equally-sized vectors.')
+    valid = ((axes <= 1) & (rows < grid.height_px) & (columns < grid.width_px) &
+             ~((axes == 0) & (columns + 1 >= grid.width_px)) &
+             ~((axes == 1) & (rows + 1 >= grid.height_px)))
+    if not bool(valid.all()):
+        raise DiagnosticTruthError('seam adjacency contains an out-of-grid neighbour.')
+    return rows, columns, axes
+
+
+def _seam_quality(image: np.ndarray, reference: np.ndarray,
+                  rows: np.ndarray, columns: np.ndarray, axes: np.ndarray,
+                  resolution_m: float, normal_radius_px: int = 20,
+                  minimum_truth_gradient: float = 16.0) -> dict[str, Any]:
+    """Measure hard-cut discontinuity and a local structural-edge displacement proxy."""
+    if image.dtype != np.uint8 or reference.dtype != np.uint8 or image.shape != reference.shape:
+        raise DiagnosticTruthError(
+            'seam quality requires same-size mono8 mosaic and truth images.')
+    if normal_radius_px < 1 or not math.isfinite(minimum_truth_gradient) or \
+            minimum_truth_gradient <= 0.0:
+        raise DiagnosticTruthError('seam quality parameters are invalid.')
+    observed_hist = np.zeros(256, np.int64)
+    truth_hist = np.zeros(256, np.int64)
+    excess_hist = np.zeros(256, np.int64)
+    displacement_hist = np.zeros(2 * normal_radius_px + 1, np.int64)
+    profile_candidate_count = 0
+    eligible_count = 0
+    axis_counts = {'rightward': 0, 'downward': 0}
+    batch_size = 16384
+    for axis, label in ((0, 'rightward'), (1, 'downward')):
+        selected = np.flatnonzero(axes == axis)
+        axis_counts[label] = int(selected.size)
+        for offset in range(0, len(selected), batch_size):
+            indices = selected[offset:offset + batch_size]
+            row, column = rows[indices].astype(np.intp), columns[indices].astype(np.intp)
+            if axis == 0:
+                observed_jump = np.abs(image[row, column].astype(np.int16) -
+                                       image[row, column + 1].astype(np.int16))
+                truth_jump = np.abs(reference[row, column].astype(np.int16) -
+                                    reference[row, column + 1].astype(np.int16))
+                valid_profile = ((column >= normal_radius_px) &
+                                 (column + normal_radius_px + 1 < image.shape[1]))
+            else:
+                observed_jump = np.abs(image[row, column].astype(np.int16) -
+                                       image[row + 1, column].astype(np.int16))
+                truth_jump = np.abs(reference[row, column].astype(np.int16) -
+                                    reference[row + 1, column].astype(np.int16))
+                valid_profile = ((row >= normal_radius_px) &
+                                 (row + normal_radius_px + 1 < image.shape[0]))
+            observed_hist += np.bincount(observed_jump, minlength=256)
+            truth_hist += np.bincount(truth_jump, minlength=256)
+            excess_hist += np.bincount(np.maximum(0, observed_jump - truth_jump), minlength=256)
+            if not np.any(valid_profile):
+                continue
+            row, column = row[valid_profile], column[valid_profile]
+            profile_candidate_count += len(row)
+            positions = np.arange(-normal_radius_px, normal_radius_px + 2, dtype=np.intp)
+            if axis == 0:
+                observed_profile = image[row[:, None], column[:, None] + positions]
+                truth_profile = reference[row[:, None], column[:, None] + positions]
+            else:
+                observed_profile = image[row[:, None] + positions, column[:, None]]
+                truth_profile = reference[row[:, None] + positions, column[:, None]]
+            observed_peak = np.argmax(
+                np.abs(np.diff(observed_profile.astype(np.int16), axis=1)), axis=1)
+            truth_gradient = np.abs(np.diff(truth_profile.astype(np.int16), axis=1))
+            truth_peak = np.argmax(truth_gradient, axis=1)
+            eligible = truth_gradient[np.arange(len(row)), truth_peak] >= minimum_truth_gradient
+            if np.any(eligible):
+                displacement = np.abs(observed_peak[eligible] - truth_peak[eligible])
+                displacement_hist += np.bincount(
+                    displacement, minlength=len(displacement_hist))
+                eligible_count += int(eligible.sum())
+    seam_count = int(len(rows))
+    return {
+        'seam_adjacency_count': seam_count,
+        'axis_counts': axis_counts,
+        'gradient_jump_gray_per_pixel': {
+            'observed': _histogram_summary(observed_hist),
+            'immutable_truth': _histogram_summary(truth_hist),
+            'excess_over_truth': _histogram_summary(excess_hist),
+        },
+        'double_image_edge_displacement_proxy': {
+            'definition': ('at each hard-cut adjacency, the absolute displacement of the '
+                           'strongest normal grayscale edge from immutable truth; only truth '
+                           'profiles with a structural edge are eligible'),
+            'normal_search_radius_px': normal_radius_px,
+            'normal_search_radius_m': normal_radius_px * resolution_m,
+            'minimum_truth_gradient_gray_per_pixel': minimum_truth_gradient,
+            'profile_candidate_count': profile_candidate_count,
+            'eligible_structural_edge_count': eligible_count,
+            'dominant_normal_edge_displacement_m': _histogram_summary(
+                displacement_hist, resolution_m),
+        },
+    }
+
+
 def _anchors(features: list[dict[str, Any]], truth_grid: TruthGrid, mosaic_grid: MosaicGrid,
              padding_m: float) -> list[dict[str, Any]]:
     result = []
@@ -415,7 +547,9 @@ def _summarize_variant(matches: list[dict[str, Any]], accepted_ids: set[str]) ->
 
 def evaluate_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path,
                                output_dir: Path, anchor_padding_m: float = 0.10,
-                               minimum_phase_response: float = 0.10) -> dict[str, Any]:
+                               minimum_phase_response: float = 0.10,
+                               seam_normal_radius_px: int = 20,
+                               seam_minimum_truth_gradient: float = 16.0) -> dict[str, Any]:
     """Write independent metric evidence for pose-only and optimized mosaics."""
     mosaic_dir = mosaic_dir.resolve()
     wall_manifest = wall_manifest.resolve()
@@ -426,6 +560,9 @@ def evaluate_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path,
         raise DiagnosticTruthError('anchor padding must be positive and finite.')
     if not math.isfinite(minimum_phase_response) or not 0.0 < minimum_phase_response <= 1.0:
         raise DiagnosticTruthError('minimum phase response must be within (0, 1].')
+    if (isinstance(seam_normal_radius_px, bool) or seam_normal_radius_px < 1 or
+            not math.isfinite(seam_minimum_truth_gradient) or seam_minimum_truth_gradient <= 0.0):
+        raise DiagnosticTruthError('seam quality parameters are invalid.')
     mosaic_document = _document(mosaic_dir / 'mosaic_manifest.json', 'mosaic manifest')
     wall_document = _document(wall_manifest, 'diagnostic wall manifest')
     diagnostic = wall_document.get('diagnostic_wall')
@@ -440,17 +577,35 @@ def evaluate_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path,
         'pose_only': mosaic_dir / 'mosaic_pose_only.tif',
         'optimized': mosaic_dir / 'mosaic_optimized.tif',
     }
+    seam_paths = {
+        'pose_only': mosaic_dir / 'seams_pose_only.npz',
+        'optimized': mosaic_dir / 'seams_optimized.npz',
+    }
+    full_bounds = (mosaic_grid.min_x_m, mosaic_grid.min_y_m,
+                   mosaic_grid.max_x_m, mosaic_grid.max_y_m)
+    reference = _reference_crop(wall_manifest.parent, _blocks(wall_document), truth_grid,
+                                full_bounds)
+    if reference.shape != (mosaic_grid.height_px, mosaic_grid.width_px):
+        raise DiagnosticTruthError('full mosaic and immutable truth grids do not align exactly.')
     temporary = Path(tempfile.mkdtemp(prefix=f'.{output_dir.name}.tmp-{uuid4().hex}-',
                                       dir=output_dir.parent))
     try:
         raw_matches = {}
+        seam_quality = {}
         for name, path in paths.items():
             if not path.is_file():
                 raise DiagnosticTruthError(f'mosaic product is absent: {path.name}')
+            if not seam_paths[name].is_file():
+                raise DiagnosticTruthError(
+                    f'hard-cut seam product is absent: {seam_paths[name].name}')
             image = tifffile.imread(path)
             raw_matches[name] = _variant_matches(
                 image, anchors, wall_manifest.parent, _blocks(wall_document),
                 truth_grid, mosaic_grid)
+            seam_quality[name] = _seam_quality(
+                image, reference, *_seam_adjacencies(seam_paths[name], mosaic_grid),
+                mosaic_grid.resolution_m_per_pixel, seam_normal_radius_px,
+                seam_minimum_truth_gradient)
             del image
         accepted_ids = set.intersection(*(
             {match['id'] for match in matches
@@ -460,13 +615,14 @@ def evaluate_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path,
             raise DiagnosticTruthError(
                 'fewer than two common anchors meet the truth-response contract.')
         variants = {
-            name: _summarize_variant(matches, accepted_ids)
+            name: {**_summarize_variant(matches, accepted_ids),
+                   'seam_quality': seam_quality[name]}
             for name, matches in raw_matches.items()
         }
         pose_p95 = variants['pose_only']['absolute_anchor_offset_m']['p95']
         optimized_p95 = variants['optimized']['absolute_anchor_offset_m']['p95']
         summary = {
-            'diagnostic_truth_format_version': 1,
+            'diagnostic_truth_format_version': 2,
             'purpose': ('Post-mosaic visual truth evaluation only; diagnostic wall truth is never '
                         'available to candidate generation, matching, or pose optimization.'),
             'mosaic_dir': str(mosaic_dir),
@@ -477,6 +633,9 @@ def evaluate_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path,
                             'each comparison crop adds %.3f m padding' % anchor_padding_m),
             'candidate_anchor_count': len(anchors),
             'minimum_phase_response': minimum_phase_response,
+            'seam_quality_rule': ('hard-cut source-owner adjacencies are compared with the '
+                                  'immutable wall at the same metric-grid pixels; this is a '
+                                  'post-mosaic diagnostic and never feeds fusion'),
             'common_accepted_anchor_ids': sorted(accepted_ids),
             'variants': variants,
             'optimized_minus_pose_only_p95_anchor_offset_m': optimized_p95 - pose_p95,
@@ -490,7 +649,9 @@ def evaluate_diagnostic_mosaic(mosaic_dir: Path, wall_manifest: Path,
         write_stage_provenance(
             temporary, 'diagnostic_truth',
             {'anchor_padding_m': anchor_padding_m,
-             'minimum_phase_response': minimum_phase_response},
+             'minimum_phase_response': minimum_phase_response,
+             'seam_normal_radius_px': seam_normal_radius_px,
+             'seam_minimum_truth_gradient': seam_minimum_truth_gradient},
             {'mosaic_manifest': artifact(mosaic_dir / 'mosaic_manifest.json'),
              'diagnostic_wall_manifest': artifact(wall_manifest)},
             ('diagnostic_truth_summary.json',))

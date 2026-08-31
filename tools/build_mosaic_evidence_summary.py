@@ -71,7 +71,7 @@ def _variant(truth, name):
     """Quote one mosaic variant's independently measured geometry."""
     variant = truth['variants'][name]
     similarity = variant['similarity']
-    return {
+    result = {
         'accepted_anchor_count': variant['accepted_anchor_count'],
         'absolute_anchor_offset_median_mm': variant['absolute_anchor_offset_m']['median'] * 1000.0,
         'absolute_anchor_offset_p95_mm': variant['absolute_anchor_offset_m']['p95'] * 1000.0,
@@ -79,6 +79,20 @@ def _variant(truth, name):
         'scale_error_ppm': similarity['scale_error_ppm'],
         'yaw_error_deg': similarity['yaw_error_deg'],
     }
+    if 'seam_quality' in variant:
+        seam = variant['seam_quality']
+        edge = seam['double_image_edge_displacement_proxy'][
+            'dominant_normal_edge_displacement_m']
+        result['seam_quality'] = {
+            'seam_adjacency_count': seam['seam_adjacency_count'],
+            'gradient_excess_p95_gray_per_pixel': seam['gradient_jump_gray_per_pixel'][
+                'excess_over_truth']['p95'],
+            'double_image_edge_displacement_p95_mm': (
+                edge['p95'] * 1000.0 if edge is not None else None),
+            'eligible_structural_edge_count': seam['double_image_edge_displacement_proxy'][
+                'eligible_structural_edge_count'],
+        }
+    return result
 
 
 def main() -> int:

@@ -19,6 +19,7 @@ import os
 from climbot_mosaic.fusion import (
     _process_tree_pss_bytes,
     _tile_count,
+    _tile_seam_adjacencies,
     _tiles_from_raw,
     _write_raw_tile,
     build_wall_mosaic,
@@ -72,6 +73,19 @@ def test_hard_cut_prefers_interior_source_and_keeps_stable_ties():
         ((True, False), (False, True)))
     with pytest.raises(FusionError, match='share a shape'):
         hard_cut_ownership(owner, candidate[:, :1])
+
+
+def test_hard_cut_seams_include_internal_and_tiled_neighbours():
+    grid = RenderGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4, 2)
+    owner = np.asarray(((1, 2), (3, 3)), np.uint16)
+    rows, columns, axes = _tile_seam_adjacencies(
+        owner, 0, 2, grid, np.asarray((1, 2), np.uint16), None)
+    assert set(zip(rows.tolist(), columns.tolist(), axes.tolist())) == {
+        (1, 1, 0),  # boundary from the preceding tile
+        (0, 2, 0),  # internal horizontal owner transition
+        (0, 2, 1),  # internal vertical owner transition
+        (0, 3, 1),
+    }
 
 
 def test_resource_and_grid_contracts_reject_invalid_values():

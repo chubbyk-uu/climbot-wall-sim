@@ -17,6 +17,7 @@
 import math
 
 from climbot_mosaic.diagnostic_truth import (
+    _seam_quality,
     _summarize_variant,
     DiagnosticTruthError,
     estimate_translation,
@@ -77,3 +78,23 @@ def test_two_anchors_cannot_claim_a_local_deformation_measurement():
     summary = _summarize_variant(matches, {'one', 'two'})
     assert summary['similarity']['local_residual_observable'] is False
     assert summary['similarity']['local_residual_p95'] is None
+
+
+def test_seam_quality_subtracts_real_wall_edges_and_measures_shifted_edges():
+    reference = np.zeros((40, 40), np.uint8)
+    reference[:, 20:] = 180
+    observed = reference.copy()
+    # The upper seam falls on a real wall edge and therefore has no excess.
+    # The lower one has its observed structural edge displaced by two pixels.
+    observed[20:, :] = 0
+    observed[20:, 22:] = 180
+    rows = np.asarray((8, 28), np.uint32)
+    columns = np.asarray((19, 19), np.uint32)
+    axes = np.asarray((0, 0), np.uint8)
+    quality = _seam_quality(observed, reference, rows, columns, axes, 0.001,
+                            normal_radius_px=4, minimum_truth_gradient=16.0)
+    assert quality['gradient_jump_gray_per_pixel']['excess_over_truth']['p95'] == 0.0
+    displacement = quality['double_image_edge_displacement_proxy'][
+        'dominant_normal_edge_displacement_m']
+    assert displacement['count'] == 2
+    assert displacement['p95'] == pytest.approx(0.002)

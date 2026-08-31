@@ -15,7 +15,7 @@
 | `build_overlap_candidates` | processed-run | `overlap_candidates.json` |
 | `build_local_matches` | processed-run | `local_matches.json` |
 | `build_pose_graph` | processed-run + 局部匹配 | `pose_graph.json` |
-| `build_wall_mosaic` | processed-run + 位姿图 | 两张母版、差分、覆盖、不确定度、预览、manifest |
+| `build_wall_mosaic` | processed-run + 位姿图 | 两张母版、差分、覆盖、不确定度、接缝归属、预览、manifest |
 | `evaluate_diagnostic_mosaic` | 母版 + 墙面 manifest | `diagnostic_truth_summary.json` |
 | `inspect_diagnostic_mosaic` | 母版 + 墙面 manifest | `diagnostic_inspection_summary.json`、原尺寸检查 tile |
 | `preflight_diagnostic_coverage` | 任务 YAML + 相机/机器人/墙配置 + 墙面 manifest | 采集前的离散曝光 feature 覆盖 JSON |
@@ -81,9 +81,10 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
 | `mosaic_difference.tif` | 两者差分；由 optimized 那趟逐块相减得出，不重复渲染 |
 | `coverage_count.tif` | 每个像素被几张照片覆盖；**为零表示相机从未拍到** |
 | `uncertainty.tif` | 量化后验不确定度，`65535` 标记无覆盖 |
+| `seams_{pose_only,optimized}.npz` | 稀疏 hard-cut 源图切换邻接；用于后验接缝指标，不是整幅 owner 图 |
 | `mosaic_preview.jpg` | optimized 母版的 JPEG 预览 |
 | `mosaic_comparison.jpg` | pose-only、optimized 和差分的并排 JPEG；默认每个 panel 最长边 4096 px |
-| `mosaic_manifest.json` | 哈希、共享网格、重叠分歧、每一遍的耗时、缓存统计和进程树 PSS 采样 |
+| `mosaic_manifest.json` | 哈希、共享网格、重叠分歧、接缝邻接、每一遍的耗时、缓存统计和进程树 PSS 采样 |
 
 正式母版是 `0.25 mm/px` 的无损 tiled BigTIFF（`--resolution-mm-per-pixel`）。
 `--jobs` 和 `--memory-budget-gb` 只改变耗时：帧键、随机源、候选与边的排序、接受的边、
@@ -99,8 +100,10 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
 `evaluate_diagnostic_mosaic` 和 `inspect_diagnostic_mosaic` 是**渲染完成之后**才运行的
 独立评价器，不参与候选生成、匹配、优化或渲染决策。只有它们可以读诊断墙 DDS 与 feature 真值。
 
-- `evaluate_diagnostic_mosaic`：量测绝对锚点位置、尺度、航向和局部残差；
-  `--anchor-padding-m`、`--minimum-phase-response` 控制锚点提取。
+- `evaluate_diagnostic_mosaic`：量测绝对锚点位置、尺度、航向、局部残差，以及仅在硬切
+  源图切换处统计的灰度跳变（扣除同位置墙面真值梯度）和法向结构边位移代理；
+  `--anchor-padding-m`、`--minimum-phase-response` 控制锚点提取，
+  `--seam-normal-radius-px`、`--seam-minimum-truth-gradient` 控制后两项诊断。
 - `inspect_diagnostic_mosaic`：为每个与拼接域相交的 feature 导出**不缩放的**原尺寸
   truth / pose-only / optimized 检查 tile（`--tile-size-px`、`--padding-m`），
   并把零覆盖区域显式写进摘要，而不是用填充图掩盖。

@@ -297,6 +297,11 @@ def _hard_cut(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
     size = _WORKER_GRID.tile_size_px
     output = np.zeros((size, size), np.uint8)
     owner_priority = np.zeros((size, size), np.float32)
+    # Zero means no source image.  A positive value is the stable frame index
+    # plus one, retained only long enough to extract the hard-cut boundaries.
+    # Persisting every owner pixel would add a multi-gigabyte raster; the sparse
+    # seam adjacencies are the actual input to the post-mosaic diagnostics.
+    owner = np.zeros((size, size), np.uint16)
     coverage = np.zeros((size, size), np.uint16) if auxiliary or quality else None
     uncertainty = np.full((size, size), np.nan, np.float32) if auxiliary else None
     value_sum = np.zeros((size, size), np.float32) if quality else None
@@ -324,6 +329,7 @@ def _hard_cut(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
         take = mask & hard_cut_ownership(owner_priority, priority)
         output[take] = warped[take]
         owner_priority[take] = priority[take]
+        owner[take] = index + 1
         if coverage is not None:
             coverage += mask.astype(np.uint16)
         if value_sum is not None and value_square_sum is not None:
@@ -337,7 +343,7 @@ def _hard_cut(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
             sigma = np.sqrt(sx * sx + sy * sy + syaw * syaw * radius_squared)
             uncertainty[take] = sigma[take]
     valid = owner_priority > 0.0
-    products: list[np.ndarray] = [output]
+    products: list[np.ndarray] = [output, owner]
     if auxiliary and coverage is not None and uncertainty is not None:
         uncertainty[~valid] = np.nan
         products.extend((coverage, uncertainty))
@@ -391,6 +397,85 @@ def _tile_count(grid: RenderGrid) -> int:
     return rows * columns
 
 
+def _tile_seam_adjacencies(owner: np.ndarray, row: int, column: int,
+                           grid: RenderGrid, previous_right: np.ndarray | None,
+                           previous_bottom: np.ndarray | None) -> tuple[
+                               np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Return source-owner transitions inside and immediately before one tile.
+
+    ``axis == 0`` denotes an adjacency from ``(row, column)`` to its right
+    neighbour; ``axis == 1`` denotes one to its lower neighbour.  The supplied
+    edge vectors make the result independent of tiled writer boundaries.
+    """
+    height = min(grid.tile_size_px, grid.height_px - row)
+    width = min(grid.tile_size_px, grid.width_px - column)
+    cropped = owner[:height, :width]
+    if cropped.dtype != np.uint16 or cropped.shape != (height, width):
+        raise FusionError('hard-cut owner tile has an unexpected shape.')
+    rows: list[np.ndarray] = []
+    columns: list[np.ndarray] = []
+    axes: list[np.ndarray] = []
+
+    if width > 1:
+        changed = ((cropped[:, :-1] != cropped[:, 1:]) &
+                   (cropped[:, :-1] != 0) & (cropped[:, 1:] != 0))
+        local_rows, local_columns = np.nonzero(changed)
+        if local_rows.size:
+            rows.append((row + local_rows).astype(np.uint32))
+            columns.append((column + local_columns).astype(np.uint32))
+            axes.append(np.zeros(local_rows.size, np.uint8))
+    if height > 1:
+        changed = ((cropped[:-1, :] != cropped[1:, :]) &
+                   (cropped[:-1, :] != 0) & (cropped[1:, :] != 0))
+        local_rows, local_columns = np.nonzero(changed)
+        if local_rows.size:
+            rows.append((row + local_rows).astype(np.uint32))
+            columns.append((column + local_columns).astype(np.uint32))
+            axes.append(np.ones(local_rows.size, np.uint8))
+    if previous_right is not None:
+        if previous_right.shape != (height,):
+            raise FusionError('previous hard-cut tile edge has an unexpected shape.')
+        changed = ((previous_right != cropped[:, 0]) & (previous_right != 0) &
+                   (cropped[:, 0] != 0))
+        local_rows = np.flatnonzero(changed)
+        if local_rows.size:
+            rows.append((row + local_rows).astype(np.uint32))
+            columns.append(np.full(local_rows.size, column - 1, np.uint32))
+            axes.append(np.zeros(local_rows.size, np.uint8))
+    if previous_bottom is not None:
+        if previous_bottom.shape != (width,):
+            raise FusionError('previous hard-cut tile edge has an unexpected shape.')
+        changed = ((previous_bottom != cropped[0, :]) & (previous_bottom != 0) &
+                   (cropped[0, :] != 0))
+        local_columns = np.flatnonzero(changed)
+        if local_columns.size:
+            rows.append(np.full(local_columns.size, row - 1, np.uint32))
+            columns.append((column + local_columns).astype(np.uint32))
+            axes.append(np.ones(local_columns.size, np.uint8))
+    if not rows:
+        return (np.empty(0, np.uint32), np.empty(0, np.uint32), np.empty(0, np.uint8))
+    return (np.concatenate(rows), np.concatenate(columns), np.concatenate(axes))
+
+
+def _write_seam_adjacencies(path: Path, parts: list[tuple[np.ndarray, np.ndarray, np.ndarray]],
+                            grid: RenderGrid) -> int:
+    """Publish the sparse source-owner boundaries required by seam diagnostics."""
+    if parts:
+        rows = np.concatenate([part[0] for part in parts])
+        columns = np.concatenate([part[1] for part in parts])
+        axes = np.concatenate([part[2] for part in parts])
+    else:
+        rows, columns, axes = (np.empty(0, np.uint32), np.empty(0, np.uint32),
+                               np.empty(0, np.uint8))
+    np.savez_compressed(
+        path, seam_format_version=np.asarray(1, np.uint8), row_px=rows,
+        column_px=columns, axis=axes,
+        grid_width_px=np.asarray(grid.width_px, np.uint32),
+        grid_height_px=np.asarray(grid.height_px, np.uint32))
+    return int(rows.size)
+
+
 def _write_raw_tile(file_descriptor: int, values: np.ndarray, grid: RenderGrid,
                     row: int, column: int) -> None:
     """Store one padded tile at its deterministic tile-order offset."""
@@ -441,6 +526,7 @@ def _description(grid: RenderGrid, kind: str) -> str:
 def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                       initial: tuple[RenderFrame, ...], optimized: tuple[RenderFrame, ...],
                       camera_width: int, camera_height: int, jobs: int,
+                      seam_path: Path,
                       coverage_fd: int | None = None,
                       uncertainty_fd: int | None = None,
                       image_raw_fd: int | None = None,
@@ -457,13 +543,26 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
         quality_count = 0
         cache_hits = 0
         cache_misses = 0
+        seam_parts: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+        previous_right: np.ndarray | None = None
+        previous_bottoms: dict[int, np.ndarray] = {}
 
         def image_tiles():
-            nonlocal quality_sum, quality_count, cache_hits, cache_misses
+            nonlocal quality_sum, quality_count, cache_hits, cache_misses, previous_right
             for result in results:
                 cache_hits += int(result[-2])
                 cache_misses += int(result[-1])
-                row, column, image = result[:3]
+                row, column, image, owner = result[:4]
+                if column == 0:
+                    previous_right = None
+                seams = _tile_seam_adjacencies(
+                    owner, row, column, grid, previous_right, previous_bottoms.get(column))
+                if seams[0].size:
+                    seam_parts.append(seams)
+                height = min(grid.tile_size_px, grid.height_px - row)
+                width = min(grid.tile_size_px, grid.width_px - column)
+                previous_right = owner[:height, width - 1].copy()
+                previous_bottoms[column] = owner[height - 1, :width].copy()
                 # The difference raster used to be a third full render of both
                 # variants. Both tiles already exist by the time the second
                 # pass runs: the first pass keeps its own, and this one
@@ -477,13 +576,13 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                     _write_raw_tile(
                         difference_fd, cv2.absdiff(previous, image), grid, row, column)
                 if coverage_fd is not None and uncertainty_fd is not None:
-                    coverage, uncertainty = result[3:5]
+                    coverage, uncertainty = result[4:6]
                     _write_raw_tile(coverage_fd, coverage, grid, row, column)
                     _write_raw_tile(
                         uncertainty_fd, encode_uncertainty(uncertainty), grid, row, column)
-                    quality = result[5]
+                    quality = result[6]
                 elif mode == 'initial':
-                    quality = result[3]
+                    quality = result[4]
                 else:
                     quality = None
                 if quality is not None:
@@ -501,6 +600,7 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                          dtype=np.uint8, tile=(grid.tile_size_px, grid.tile_size_px),
                          compression='deflate', predictor=True,
                          description=_description(grid, mode))
+    seam_count = _write_seam_adjacencies(seam_path, seam_parts, grid)
     quality_result = None
     if quality_count:
         target = int(math.ceil(0.95 * quality_count))
@@ -519,6 +619,7 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
             'hit_ratio': cache_hits / total_accesses if total_accesses else None,
         },
         'quality': quality_result,
+        'seam_adjacency_count': seam_count,
     }
 
 
@@ -627,6 +728,8 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
     started = time.perf_counter()
     projections = project_inputs(inputs)
     initial, optimized = read_pose_graph(pose_graph_dir, inputs, projections)
+    if len(initial) > np.iinfo(np.uint16).max:
+        raise FusionError('hard-cut seam ownership supports at most 65535 input frames.')
     grid = common_grid(initial, optimized, resolution_m)
     work_dir.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(
@@ -658,10 +761,12 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         initial_pass = _write_image_pass(
             temporary / 'mosaic_pose_only.tif', 'initial', grid,
             initial, optimized, inputs.camera.width, inputs.camera.height, jobs,
+            temporary / 'seams_pose_only.npz',
             image_raw_fd=pose_only_fd)
         optimized_pass = _write_image_pass(
             temporary / 'mosaic_optimized.tif', 'optimized', grid,
             initial, optimized, inputs.camera.width, inputs.camera.height, jobs,
+            temporary / 'seams_optimized.npz',
             coverage_fd, uncertainty_fd,
             difference_fd=difference_fd, previous_raw_fd=pose_only_fd)
         os.close(coverage_fd)
@@ -708,7 +813,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                 outputs[path.name] = {'bytes': path.stat().st_size, 'sha256': _sha256(path)}
         resource_monitor.stop()
         manifest = {
-            'mosaic_format_version': 1,
+            'mosaic_format_version': 2,
             'input_summary': input_summary(inputs),
             'grid': {'frame': 'wall', 'min_x_m': grid.min_x_m, 'min_y_m': grid.min_y_m,
                      'max_x_m': grid.max_x_m, 'max_y_m': grid.max_y_m,
@@ -735,6 +840,15 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                            'difference': {key: value for key, value in difference_pass.items()
                                           if key != 'quality'},
                        }},
+            'seam_adjacencies': {
+                'format_version': 1,
+                'definition': ('adjacent covered pixels whose selected hard-cut source frame '
+                               'differs; axis 0 is rightward and axis 1 is downward'),
+                'pose_only_file': 'seams_pose_only.npz',
+                'optimized_file': 'seams_optimized.npz',
+                'pose_only_count': initial_pass['seam_adjacency_count'],
+                'optimized_count': optimized_pass['seam_adjacency_count'],
+            },
             'uncertainty_encoding': {
                 'dtype': 'uint16', 'scale_m_per_count': UNCERTAINTY_SCALE_M,
                 'nodata': int(UNCERTAINTY_NODATA),
