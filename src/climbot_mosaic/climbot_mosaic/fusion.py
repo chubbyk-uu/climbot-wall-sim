@@ -782,7 +782,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             temporary / 'mosaic_optimized.tif', 'optimized', grid,
             initial, optimized, inputs.camera.width, inputs.camera.height, jobs,
             temporary / 'seams_optimized.npz',
-            coverage_fd, uncertainty_fd,
+            coverage_fd=coverage_fd, uncertainty_fd=uncertainty_fd,
             difference_fd=difference_fd, previous_raw_fd=pose_only_fd)
         os.close(coverage_fd)
         coverage_fd = None
