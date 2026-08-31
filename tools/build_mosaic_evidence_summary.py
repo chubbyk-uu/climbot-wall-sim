@@ -40,7 +40,11 @@ from climbot_mosaic.evidence_chain import (
     verify_manifest_outputs,
     verify_stage_chain,
 )
-from climbot_mosaic.stage_provenance import artifact, stage_record
+from climbot_mosaic.stage_provenance import (
+    artifact,
+    stage_record,
+    STAGE_PROVENANCE_FORMAT_VERSION,
+)
 
 #: The stages that actually produced the measurements quoted by a formal P2-06
 #: summary. overlap_candidates is intentionally absent: its JSON is a parallel
@@ -129,13 +133,30 @@ def _verify_archive_content(directories, frozen):
     seen = {}
     records = {}
     for directory in directories:
-        record = verify_stage_chain(
-            {'archive_content': directory}, required_stages=('archive_content',),
-            required_links=(), require_traceable=True)['stages']['archive_content']
-        summary = _document(Path(directory) / 'archive_content_summary.json')
+        directory = Path(directory)
+        # Checked here rather than through verify_stage_chain, which requires
+        # distinct input artifact names: every archive contributes a file called
+        # manifest.json, so the names collide by construction. The same
+        # conditions are enforced -- stage identity, provenance format, a clean
+        # source tree, and the declared outputs rehashed off disk.
+        record = _document(directory / 'stage_provenance.json')
+        if record.get('stage') != 'archive_content':
+            raise EvidenceChainError(f'{directory} is not an archive content record')
+        if record.get('stage_provenance_format_version') != STAGE_PROVENANCE_FORMAT_VERSION:
+            raise EvidenceChainError(f'{directory} has an unsupported provenance format')
+        if not record.get('git', {}).get('traceable'):
+            raise EvidenceChainError(
+                f'{directory} was not produced from a traceable source tree')
+        for name, declared in record['outputs'].items():
+            path = directory / name
+            if not path.is_file() or sha256_file(path) != declared['sha256']:
+                raise EvidenceChainError(f'{directory} output {name} does not match its record')
+        summary = _document(directory / 'archive_content_summary.json')
         if summary.get('archive_content_format_version') != 2:
             raise EvidenceChainError(
                 f'{directory} is not an archive content record of format version 2')
+        if summary.get('all_runs_match_reference') is not True:
+            raise EvidenceChainError(f'{directory} does not report all runs matching')
         inputs = record['inputs']
         for entry in inputs['archive_manifests']:
             digest = entry['manifest']['sha256']
@@ -150,7 +171,7 @@ def _verify_archive_content(directories, frozen):
         if reference and reference['manifest']['sha256'] in wanted:
             seen.setdefault(reference['manifest']['sha256'],
                             {'run': reference['run'], 'role': 'reference'})
-        records[Path(directory).name] = {
+        records[directory.name] = {
             'stage_provenance': record, 'all_runs_match_reference':
             summary.get('all_runs_match_reference')}
     missing = sorted(task for digest, task in wanted.items() if digest not in seen)
