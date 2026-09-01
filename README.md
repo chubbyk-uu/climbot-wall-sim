@@ -262,6 +262,7 @@ ros2 run climbot_mosaic build_wall_mosaic \
 | 当前验收状态与正式证据 | [ACCEPTANCE](docs/ACCEPTANCE.md) |
 | 当前项目状态、风险与下一步 | [STATUS](docs/STATUS.md) |
 | 离线拼接设计与门禁 | [MOSAIC_PLAN](docs/MOSAIC_PLAN.md) |
+| 隐蔽故障、偶发竞态与排查经验 | [INCIDENTS](docs/INCIDENTS.md) |
 | 结果有效性、基线与重生成入口 | [results/README.md](results/README.md) |
 | 本地大数据保留与清理规则 | [DATA_RETENTION](docs/DATA_RETENTION.md) |
 

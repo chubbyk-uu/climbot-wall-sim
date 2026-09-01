@@ -14,6 +14,9 @@ These instructions apply to all work in this repository.
   overwrite a finalization timeout after the service Future had been retired. The
   last race reproduced on run 8 before its fix; its deterministic regression and
   20 consecutive full `-j8` runs then passed (1222 tests, about 43 s per run).
+  The failure patterns, misleading clues, fixes, and regression entry points are
+  indexed in `docs/INCIDENTS.md`; update it when another intermittent defect is
+  confirmed.
 - Redirect complete stdout and stderr to a uniquely named log under `/tmp`, such as
   `/tmp/climbot_<case>_<timestamp>.log`. Temporary test logs must not be committed.
 - On success, read and report only the process exit code, the concise test/result
