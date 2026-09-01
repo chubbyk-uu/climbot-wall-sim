@@ -16,6 +16,7 @@
 
 import math
 import os
+from pathlib import Path
 import shutil
 import tempfile
 from xml.dom import minidom
@@ -158,6 +159,8 @@ def render_world(gazebo_share, description_share, grid_spacing,
         'inspection_target': str(bool(inspection_target)).lower(),
         'inspection_flat_field_target': str(bool(
             inspection_flat_field_target)).lower(),
+        'flat_field_albedo_map': Path(
+            gazebo_share, 'media', 'flat_field_neutral.png').as_uri(),
         'target_lateral': repr(
             float(spawn['lateral_m']) +
             float(camera['optical_mount']['center_xyz_m'][0])),
@@ -894,8 +897,9 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'inspection_flat_field_target',
             default_value='false',
-            description='Cover the initial view with a uniform grey target '
-                        'for LED flat-field calibration.',
+            description='Cover the initial view with a uniform target using '
+                        'the photographed wall PBR path for flat-field '
+                        'calibration.',
         ),
         OpaqueFunction(function=launch_setup),
     ])

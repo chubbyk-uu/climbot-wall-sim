@@ -31,6 +31,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from ament_index_python.packages import get_package_share_directory
+from PIL import Image
 import pytest
 import xacro
 import yaml
@@ -57,7 +58,8 @@ def _world_defaults():
         for element in root.findall(f'{{{XACRO_NAMESPACE}}}arg')
         if element.attrib['name'] not in {
             'inspection_target', 'inspection_flat_field_target',
-            'wall_textured', 'moonlight_cast_shadows'}
+            'wall_textured', 'flat_field_albedo_map',
+            'moonlight_cast_shadows'}
     }
 
 
@@ -131,6 +133,41 @@ def test_a_textured_wall_recesses_no_matter_what_the_calibration_target_does():
     _, simulation = _documents()
     thickness = float(simulation['wall']['thickness_m'])
     assert float(size.text.split()[0]) == pytest.approx(thickness - 0.002)
+
+
+def test_flat_field_target_matches_the_textured_wall_material_and_plane():
+    """Calibration must observe the same photometric path as inspection."""
+    document = xacro.process_file(
+        str(PACKAGE_ROOT / 'worlds' / 'climbot_wall.sdf.xacro'),
+        mappings={
+            'inspection_flat_field_target': 'true',
+            'flat_field_albedo_map': 'file:///tmp/flat_field_neutral.png',
+        })
+    root = ElementTree.fromstring(document.toxml())
+    target = root.find(".//visual[@name='inspection_flat_field_target']")
+    assert target is not None
+    pose = [float(value) for value in target.find('pose').text.split()]
+    size = [float(value) for value in target.find(
+        'geometry/box/size').text.split()]
+    # Target outer face and collision face are both x=0.05 m.
+    assert pose[0] + size[0] / 2.0 == pytest.approx(0.05, abs=1e-9)
+    material = ElementTree.tostring(target.find('material'), encoding='unicode')
+    assert '<ambient>1 1 1 1</ambient>' in material
+    assert '<diffuse>1 1 1 1</diffuse>' in material
+    assert '<specular>0.1 0.1 0.1 1</specular>' in material
+    assert '<albedo_map>file:///tmp/flat_field_neutral.png</albedo_map>' in material
+    assert '<metalness>0.0</metalness>' in material
+    wall_size = [float(value) for value in root.find(
+        ".//visual[@name='wall_visual']/geometry/box/size").text.split()]
+    assert wall_size[0] == pytest.approx(0.098)
+
+
+def test_flat_field_albedo_is_uniform_and_matches_the_diagnostic_wall_median():
+    """Do not replace the matched PBR input with an arbitrary grey swatch."""
+    with Image.open(PACKAGE_ROOT / 'media' / 'flat_field_neutral.png') as image:
+        assert image.mode == 'RGB'
+        assert image.size == (16, 16)
+        assert image.getcolors(maxcolors=2) == [(256, (99, 94, 90))]
 
 
 def test_optional_inspection_target_uses_shared_camera_geometry():

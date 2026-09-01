@@ -26,11 +26,12 @@ class Calibrator(Node):
         self.declare_parameter('capture_service', '/inspection/capture_once')
         self.declare_parameter('image_topic', '/inspection/camera/image_raw')
         self.declare_parameter('output_file', '/tmp/climbot_flat_field.npz')
-        # The patent uses 128 as an example. The simulated concrete is much
-        # less reflective than the calibration board; 172.75 reproduces the
-        # established 86.21 DN compensated-wall baseline after the stronger
-        # LED / shorter-exposure update, without clipping highlights.
-        self.declare_parameter('target_mean_dn', 172.75)
+        # The patent uses 128 as an example. The simulation target now follows
+        # the photographed wall's PBR path and median albedo, so it no longer
+        # needs the old classic-grey target's 1.92x reflectance compensation.
+        # 90 DN preserves the established roughly 86 DN wall baseline while
+        # leaving highlight headroom after spatial correction.
+        self.declare_parameter('target_mean_dn', 90.0)
         self.declare_parameter('max_saturated_fraction', 0.0001)
         self.declare_parameter('frame_timeout_s', 8.0)
         self.declare_parameter('readiness_timeout_s', 30.0)

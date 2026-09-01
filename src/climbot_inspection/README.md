@@ -13,7 +13,25 @@
 | `flat_field_node` | G3 | 用固定 LED 平场矩阵并行发布补偿图（默认关闭的在线调试预览） |
 | `archive_recorder_node` | G4 | 把原始畸变图和曝光标签原子写入任务目录 |
 
-`scripts/calibrate_flat_field` 用 30 次独立的纯灰板曝光算出平场矩阵。
+`scripts/calibrate_flat_field` 用 30 次独立的均匀靶曝光算出平场矩阵。仿真靶与诊断墙使用
+相同的 PBR/albedo-map 着色路径；经典灰材质与贴图墙的角度响应不同，不能混作同一平场工况。
+
+仿真标定时先启动匹配靶，再采集 30 帧；输出应放在数据根的 `calibration/`，不要提交到仓库：
+
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  headless:=true inspection_flat_field_target:=true wall_grid_spacing:=0
+
+ros2 launch climbot_inspection inspection.launch.py \
+  use_sim_time:=true automatic_capture:=false archive_recorder:=false
+
+ros2 run climbot_inspection calibrate_flat_field --ros-args \
+  -p output_file:="$CLIMBOT_DATA_ROOT/calibration/flat_field_sim_pbr.npz"
+```
+
+默认目标均值为 `90 DN`，用于保持当前仿真墙约 `86 DN` 的处理后亮度并预留高光余量；曝光、
+LED、镜头、相机或被摄材质路径改变后必须重标。真机应按相机动态范围显式设置
+`target_mean_dn`，不能照搬仿真值。
 
 ## 启动
 

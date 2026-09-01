@@ -24,6 +24,7 @@
   <!-- Set by the launch when a wall texture manifest will be applied. -->
   <xacro:arg name="wall_textured" default="false"/>
   <xacro:arg name="inspection_flat_field_target" default="false"/>
+  <xacro:arg name="flat_field_albedo_map" default=""/>
   <xacro:arg name="target_lateral" default="0.34"/>
   <xacro:arg name="target_height" default="2.0"/>
   <xacro:arg name="target_length" default="0.28125"/>
@@ -62,13 +63,13 @@
        kind of error, in the opposite direction, as the one that scaled every
        mosaic by +4566 ppm, so it is not left switched on by default.
 
-       It is the texture that decides this, and nothing else. Tying it to
-       inspection_target once looked equivalent and was not: that flag is the
-       G1 calibration target, which is off for every inspection acquisition,
+       A texture block or the coplanar flat-field target decides this. Tying it
+       to inspection_target once looked equivalent and was not: that flag is
+       the G1 geometry target, which is off for every inspection acquisition,
        so a textured wall rendered coplanar and every frame came back striped
        with z-fighting. -->
   <xacro:property name="wall_visual_recess"
-                 value="${0.001 if '$(arg wall_textured)' in ('true', 'True', '1') else 0.0}"/>
+                 value="${0.001 if ('$(arg wall_textured)' in ('true', 'True', '1') or '$(arg inspection_flat_field_target)' in ('true', 'True', '1')) else 0.0}"/>
   <!-- Lines sit at whole multiples of the spacing measured from the work
        frame's origin, the wall's lower-left corner, so a line is a work
        coordinate an operator can read off the wall. Only the interior ones are
@@ -297,17 +298,25 @@
             <material><ambient>0.02 0.02 1 1</ambient><diffuse>0.02 0.02 1 1</diffuse><emissive>0.02 0.02 1 1</emissive></material>
           </visual>
         </xacro:if>
-        <!-- Uniform low-specular target used only to measure the LED/camera
-             flat field. It exceeds the full distorted footprint, so every
-             output pixel sees the same nominal reflectance. -->
+        <!-- Uniform target used only to measure the LED/camera flat field. It
+             follows the exact PBR/albedo-map path used by the photographed
+             wall: the old classic grey material had a different angular
+             response and left a measured 9% bowl after correction. Its front
+             face is the collision/texture plane, not a decal in front of it. -->
         <xacro:if value="$(arg inspection_flat_field_target)">
           <visual name="inspection_flat_field_target">
-            <pose>${decal_x + 0.004} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
+            <pose>${thickness / 2.0 - 0.002} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
             <geometry><box><size>0.004 0.42 0.68</size></box></geometry>
             <material>
-              <ambient>0.50 0.50 0.50 1</ambient>
-              <diffuse>0.50 0.50 0.50 1</diffuse>
-              <specular>0.01 0.01 0.01 1</specular>
+              <ambient>1 1 1 1</ambient>
+              <diffuse>1 1 1 1</diffuse>
+              <specular>0.1 0.1 0.1 1</specular>
+              <pbr>
+                <metal>
+                  <albedo_map>$(arg flat_field_albedo_map)</albedo_map>
+                  <metalness>0.0</metalness>
+                </metal>
+              </pbr>
             </material>
           </visual>
         </xacro:if>

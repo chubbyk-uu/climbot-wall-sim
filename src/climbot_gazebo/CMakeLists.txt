@@ -68,7 +68,7 @@ ament_target_dependencies(wall_imu_adapter_node rclcpp sensor_msgs)
 ament_python_install_package(${PROJECT_NAME})
 
 install(
-  DIRECTORY config launch worlds
+  DIRECTORY config launch media worlds
   DESTINATION share/${PROJECT_NAME}
 )
 
