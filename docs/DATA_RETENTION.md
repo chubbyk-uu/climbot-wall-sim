@@ -1,12 +1,12 @@
 # 数据保留与清理清单
 
-更新：2026-08-31（第二次）。此清单记录当前保留边界和已经执行的清理；**本文本身不授权未来删除**。
+更新：2026-09-01。此清单记录当前保留边界和已经执行的清理；**本文本身不授权未来删除**。
 
 ## 当前占用
 
 | 位置 | 大小 | 说明 |
 | --- | ---: | --- |
-| `${CLIMBOT_DATA_ROOT}` | 约 29 GB | 原始归档、处理结果、拼接产品与开发中间产物；2026-08-31 实测，含新增的第 2…5 组 |
+| `${CLIMBOT_DATA_ROOT}` | 约 20 GB | 原始归档、处理结果、拼接产品与仓库外小型证据；2026-09-01 清理第 2…4 组可重建派生产物后实测 |
 | `textures/` | 约 1.9 GB | 忽略的 DDS 墙面贴图；可由脚本重建，但重建成本高 |
 | `results/` | 约 48 MB | Git 跟踪的正式摘要和轨迹证据 |
 | `log/` | 约 834 MB | 可再生的本机构建/测试日志 |
@@ -42,18 +42,16 @@
   `20260830d-hardcut-inspection`（约 492 MB），作为新增接缝记录前的逐位复现审计材料；
 - 完整的 `20260831a-{hardcut,hardcut-truth,hardcut-inspection}` 与
   `20260831b-hardcut-truth`，作为 schema 2 证据和现行 schema 3 流式真值评价之间的审计材料；
-- P2-06 门限推导所依据的第 2、3 组重复采集，每组约 3.4 GB：
+- P2-06 门限推导所依据的第 2、3 组重复采集原始归档：
   `inspection-diagnostic-full-{horizontal,vertical}-025mm-20260828` 下 `20260831T0721`、
-  `20260831T0746`（第 2 组）与 `20260831T0807`、`20260831T0838`（第 3 组）四个 run；
-  `processed-p206-{horizontal,vertical}-20260831{g2,g3}`；
-  `mosaic-p206-joint-20260831{g2,g3}-{matches,pose-graph,hardcut,hardcut-truth,hardcut-inspection}`。
-  门限由这三组共同推导，任何一组删除都会使推导无法复核；
+  `20260831T0746`（第 2 组）与 `20260831T0807`、`20260831T0838`（第 3 组）四个 run。
+  对应 processed 与 mosaic 已在 P2-06 关闭后删除；可由这些原始归档、保留的旧平场和 Git
+  历史重建，正式数值与哈希保留在 `results/`；
 - `archive-content-p206-{horizontal,vertical}-20260831` 与
   `archive-content-p206-{horizontal,vertical}-20260831g4`（共约 1.2 MB）：四组采集的图像内容
   记录与判定，是"各组内容一致"这一说法的唯一可复核依据；
-- 第 4 组（`20260831T1215`、`20260831T1234` 两个 run，以及 `processed-p206-*-20260831g4` 和
-  `mosaic-p206-joint-20260831g4-*`，约 3.4 GB）：它带完整渲染记录并通过内容闸门，是门限推导的
-  三组之一，删除会使推导无法复核；
+- 第 4 组（`20260831T1215`、`20260831T1234` 两个 run）：它带完整渲染记录并通过内容闸门，
+  是门限推导的三组之一；processed 与 mosaic 与第 2、3 组同样已删除并可由原始归档重建；
 - 第 5 组（`20260831T1309`、`20260831T1354` 两个 run，`processed-p206-*-20260831g5`、
   `mosaic-p206-joint-20260831g5-*` 与 `archive-content-p206-*-20260831g5`，约 3.4 GB）：
   门限的唯一独立检验，删除会使"已检验"这个说法失去依据；
@@ -119,3 +117,15 @@ work 缓存，共 `2,425,317,078 bytes`（约 2.26 GiB）。旧 manifest、truth
 `b` matches 和 `c` inspection provenance 按上面的审计边界保留；当前 raw、processed、
 `20260830c` 正式链及 `20260830d` inspection 均未删除。本次使用精确路径永久删除，不在废纸篓，
 不能恢复；可由保留的输入重新计算。
+
+## 已清理：2026-09-01 P2-06 重复组派生产物
+
+P2-06 关闭后永久删除第 2、3、4 组的六个 `processed-p206-*` 和十五个
+`mosaic-p206-joint-20260831g{2,3,4}-*` 目录，共约 `8.3 GB`。六份原始归档、旧 moonlight
+平场、`archive-content-*`、Git 中的正式摘要和第 5 组独立检验完整链均保留，因此仍可重建，
+但第 2～4 组不再支持免计算直接浏览。无引用的
+`flat_field_sim_led2_exp065_20260825.npz` 同时删除；被历史处理清单引用的 moonlight 平场和当前
+PBR 平场保留。
+
+home 下独立的 `climbot_acceptance_evidence` 仅有约 `344 KB` JSON 审计副本，不是大数据来源；
+已整体移入 `${CLIMBOT_DATA_ROOT}/acceptance_evidence`，内容不变，避免数据根之外再维护一个目录。
