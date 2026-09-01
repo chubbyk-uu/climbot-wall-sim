@@ -2,7 +2,9 @@
 
 更新：2026-09-01。本文固定当前离线拼接的设计合同、P2-06 判据与有效范围；命令见
 [根 README](../README.md#5-离线墙面拼接) 和 [OPERATION](OPERATION.md)，字段见
-[INTERFACES](INTERFACES.md)，历史试验见[拼接计划归档](archive/plans/MOSAIC_PLAN_2026-08-27.md)。
+[INTERFACES](INTERFACES.md)，当前 CUDA 性能专项见
+[GPU 加速计划](GPU_ACCELERATION_PLAN.md)，历史试验见
+[拼接计划归档](archive/plans/MOSAIC_PLAN_2026-08-27.md)。
 
 ## 目标与边界
 

@@ -26,6 +26,7 @@ OPERATION 面向已经跑通、要做实验或者出了问题的人。判据只�
 | [`OPERATION.md`](OPERATION.md) | **主线之外**的批量回归、评价工具、参数变体、诊断与故障处置 | 主线命令的第二份拷贝、架构解释、结果结论 |
 | [`ACCEPTANCE.md`](ACCEPTANCE.md) | 当前验收项、状态、正式证据和实机边界 | 完整实验流水账 |
 | [`MOSAIC_PLAN.md`](MOSAIC_PLAN.md) | 离线拼接的当前设计、判据、证据范围和已知限制 | 已废弃试验的逐轮细节 |
+| [`GPU_ACCELERATION_PLAN.md`](GPU_ACCELERATION_PLAN.md) | 当前离线预处理与拼接 CUDA 迁移的实施步骤、回退和验收合同 | 已关闭 P2-06 的重新叙述、ROS/Gazebo 图形后端调优 |
 | [`LOCALIZATION_GAP_PLAN.md`](LOCALIZATION_GAP_PLAN.md) | 长任务时序的当前结论、运行判据和未关闭边界 | 已关闭调查的逐轮日志 |
 | [`INCIDENTS.md`](INCIDENTS.md) | 已确认的隐蔽故障、误判线索、修复提交和回归入口 | 尚未定位的猜测或普通开发日志 |
 | [`STATUS.md`](STATUS.md) | 一页式当前阶段、风险、近期下一步 | 按日期追加的开发日记 |
@@ -42,6 +43,7 @@ docs/
   OPERATION.md             实验与故障处置手册
   ACCEPTANCE.md            当前验收矩阵
   MOSAIC_PLAN.md           当前离线拼接设计
+  GPU_ACCELERATION_PLAN.md 当前离线图像链 CUDA 性能专项
   LOCALIZATION_GAP_PLAN.md 长任务时序稳定性
   INCIDENTS.md             隐蔽故障与排查经验
   STATUS.md                当前状态快照
