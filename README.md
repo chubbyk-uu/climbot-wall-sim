@@ -186,7 +186,8 @@ ros2 run climbot_image_processing process_inspection_archive \
 ```
 
 原始照片不会被修改。命令成功后，在 `PROCESSED_RUN` 中得到校正后的图像和对应标签。平场文件
-不可用时，去掉 `--flat-field-file ...`；完整参数见 [image processing README](src/climbot_image_processing/README.md)。
+不可用且明确不做校正时，把 `--flat-field-file ...` 换成 `--no-flat-field`；完整参数见
+[image processing README](src/climbot_image_processing/README.md)。
 
 ### 5. 离线墙面拼接
 
