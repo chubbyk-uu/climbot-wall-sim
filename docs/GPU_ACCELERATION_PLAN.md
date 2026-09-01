@@ -274,7 +274,7 @@ CUDA staging 清理失败。每项都验证：退出码、错误文本、是否 
 | --- | --- | --- |
 | G0 | CPU 解码复用基线 | **已完成**：`3b72f44`、十产物哈希一致、全仓 1,342 tests |
 | G1 | 公共 backend controller、probe、provenance | **已完成**：CPU 默认仍走干净 system-OpenCV child；真实 CUDA probe 通过；无 GPU 包级测试全绿 |
-| G2 | 单 tile CUDA fusion 原型 | 分类输出逐位一致，灰度满足第 8 节 |
+| G2 | 单 tile CUDA fusion 原型 | **不采用**：`cv2.cuda.warpPerspective` 不满足当前 CPU 像素合同，见第 10.1 节 |
 | G3 | 完整 CUDA fusion、显存缓存、双缓冲 | 完整 P2-06 自动后验通过，无半成品 |
 | G4 | 分项性能收敛；必要时聚合 kernel 或 direct writer | 达到至少 20% 加速，单项提交有 A/B |
 | G5 | P1 CUDA 流水 | 全帧数值合同通过；至少 15% 才进入 auto 候选 |
@@ -284,13 +284,34 @@ CUDA staging 清理失败。每项都验证：退出码、错误文本、是否 
 每阶段单独提交。观测、行为修改和门限/默认切换不能混在一个提交里；失败的实验记录结论后撤回，
 不把试验代码留在主路径。G7 完成前，现有 CPU 正式 P2-06 证据仍是唯一权威基线。
 
+### 10.1 G2：CUDA OpenCV fusion 原型的否定结论（2026-09-01）
+
+G2 用三张确定性 `29×37` mono8 随机图、包含整数平移、半像素平移和小旋转/剪切的三张
+homography，在 `64×64` tile 上对照当前 system OpenCV `4.6` 的 CPU 参考。CUDA OpenCV
+`4.14` 已通过上传下载、warp、remap、算术和显存 probe，但其 `warpPerspective` 不能承担本项目的
+fusion 合同：
+
+- source mask 有 `96` 个 coverage 像素不同；因此 hard-cut owner 有 `36` 个分类像素不同；
+- 有效源域内灰度最大差为 `5 DN`，超过 `max ≤ 2 DN` 的冻结上限；
+- 把矩阵预求逆并使用 `WARP_INVERSE_MAP`，mask 差异仍为 `96`，没有改善；
+- 用隔离 OpenCV `4.14` 的 CPU warp 复核，仍得到同样的 `36` 个 owner 差异，故不是 `4.6`/`4.14`
+  的 CPU 版本差，而是 CUDA warp 的取样语义不同。
+
+owner、coverage、接缝和不确定度是分类/合同产物，不能以“GPU 浮点误差”豁免。试验中的 CUDA
+worker 和 tile 实现已撤回；不接入 CLI、不产生正式数据，也不改变 CPU 基线。
+
+若未来仍要加速 fusion，唯一诚实的路线是编写并长期维护一个逐像素复现当前 CPU
+`warpPerspective` 最近邻/线性取样规则的自定义 CUDA kernel，并先在 G2 重做本节的分类和灰度
+验收。这已不再是低风险的 OpenCV 后端替换，不能在没有单独决策的情况下推进。当前可继续评估的
+GPU 目标是 P1 预处理：它不依赖透视采样的分类归属，且有独立逐帧数值合同。
+
 ## 11. 当前工作单
 
 - [x] G0：CPU 解码复用与可测基线；
 - [x] G1：公共 backend controller 和真实 CUDA probe；
-- [ ] G2：单 tile CPU/CUDA 等价性原型；
-- [ ] G3：完整 fusion CUDA 后端；
-- [ ] G4：性能收敛与 I/O 决策；
+- [x] G2：完成可行性原型；`cv2.cuda` fusion 因数值合同不通过而撤回；
+- [ ] G3：完整 fusion CUDA 后端（须先单独决定是否维护自定义 CUDA warp）；
+- [ ] G4：fusion 性能收敛与 I/O 决策（同上）；
 - [ ] G5：P1 CUDA 后端；
 - [ ] G6：是否继续匹配加速的证据化决策；
 - [ ] G7：完整验收、文档和默认后端决策。
