@@ -239,7 +239,7 @@ mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结
 | 真值 tile 有黑边或零覆盖 | 这是实际足迹缺口，须扩大或调整任务重新采集，不可用后处理填充 |
 | Gazebo 无画面 | 加 `headless:=true` 走非 GUI 流程，或检查 WSLg/GPU 后端 |
 | 曝光明显晚于目标或长任务少图 | 查 `Slow capture`、`Capture trigger ... late` 和 archive manifest；确认 launch 同时存在独立的 `inspection_camera_bridge` 与 `inspection_trigger_bridge`，不要把全高清图像/内参或触发并回承载 `/clock`、里程计和 IMU 的 `simulation_data_bridge`。`gpu_backend:=software` 只能用于 A/B，不能代替桥接隔离。 |
-| `Slow capture` 的 `source pair` 达到 0.5–3 s | Fast DDS 共享内存段装不下 6220800 字节的整帧，丢分片后要等 3 s 心跳。确认 `inspection_camera_bridge` 与 `camera_distortion_adapter` 的环境里有 `FASTRTPS_DEFAULT_PROFILES_FILE` 指向 `climbot_gazebo/config/fastdds_inspection_image.xml`（`tr '\0' '\n' < /proc/<pid>/environ`），且 `/dev/shm/fastrtps_*` 中存在约 67 MB 的段而不是 549408 字节的默认段。自带 profile 会抑制这个默认值。 |
+| `Slow capture` 的 `source pair` 达到 0.5–3 s | Fast DDS 默认共享内存段无法同时保留 6220800 字节曝光的全部 RTPS 分片，丢分片后要等 3 s 心跳。确认 `inspection_camera_bridge`、`camera_distortion_adapter` 与 `capture_once_node` 的环境里有 `FASTRTPS_DEFAULT_PROFILES_FILE` 指向 `climbot_common/config/fastdds_inspection_image.xml`（`tr '\0' '\n' < /proc/<pid>/environ`），且 `/dev/shm/fastrtps_*` 中存在约 67 MB 的段而不是 549408 字节的默认段。自带 profile 会抑制这个默认值。 |
 | Pause 之后一直停在 `Pausing` | 机器人没能在 `pause_stop_timeout_s`（`5.0 s`）内停稳，执行器按控制超时中止任务。查看是否有第二个上游控制源在同时发 `/control/cmd_vel` |
 | Pause 被拒绝且提示服务不可用 | 执行器没有提供 `/coverage/executor_pause`。任务原样继续，不是停了；检查 `line_tracker_node` 是否以 `standalone_mode:=false` 启动 |
 | Pause 之后状态变成 `Stopping` | 执行器接了暂停请求却在 `pause_response_timeout_s`（`2.0 s`）内没有应答。管理器无从判断机器人是在减速还是仍在全速，按失联处理：请求 hold 并取消任务 |

@@ -508,9 +508,10 @@ def launch_setup(context, *args, **kwargs):
     # environment wins: this is a default, not an override.
     large_image_environment = {}
     if not os.environ.get('FASTRTPS_DEFAULT_PROFILES_FILE'):
+        common_share = get_package_share_directory('climbot_common')
         large_image_environment = {
             'FASTRTPS_DEFAULT_PROFILES_FILE': os.path.join(
-                package_share, 'config', 'fastdds_inspection_image.xml'),
+                common_share, 'config', 'fastdds_inspection_image.xml'),
         }
 
     bridge_remappings = [
@@ -546,10 +547,10 @@ def launch_setup(context, *args, **kwargs):
     ))
     # The 6220800-byte exposure gets its own bridge for two reasons. It must
     # not share an executor with /clock, odometry, IMU or actuator traffic,
-    # and it is the one participant that needs the enlarged shared-memory
-    # segment: at the stock 512 KiB a fragment of the exposure is eventually
-    # dropped and the reliable reader waits three seconds for the next
-    # heartbeat. See config/fastdds_inspection_image.xml.
+    # and its writer needs enough shared-memory capacity for every RTPS
+    # fragment of the exposure. At the stock roughly 512 KiB a fragment is
+    # eventually dropped and the reliable reader waits three seconds for the
+    # next heartbeat. See climbot_common/config/fastdds_inspection_image.xml.
     actions.append(Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',

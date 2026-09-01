@@ -62,6 +62,7 @@ def _validate_inspection_contract(context):
 def generate_launch_description():
     """Expose topic/config overrides for simulation and future real cameras."""
     package_share = get_package_share_directory('climbot_inspection')
+    common_share = get_package_share_directory('climbot_common')
     description_share = get_package_share_directory('climbot_description')
     default_config = os.path.join(package_share, 'config', 'inspection.yaml')
     default_archive_root = os.path.join(os.path.expanduser('~'), 'climbot_data')
@@ -80,6 +81,12 @@ def generate_launch_description():
         'camera_mount_pitch_rad': mount['rpy_rad'][1],
         'camera_mount_yaw_rad': mount['rpy_rad'][2],
     }
+    large_image_environment = {}
+    if not os.environ.get('FASTRTPS_DEFAULT_PROFILES_FILE'):
+        large_image_environment = {
+            'FASTRTPS_DEFAULT_PROFILES_FILE': os.path.join(
+                common_share, 'config', 'fastdds_inspection_image.xml'),
+        }
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('config_file', default_value=default_config),
@@ -103,6 +110,9 @@ def generate_launch_description():
             parameters=[LaunchConfiguration('config_file'), {
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
             }],
+            # This node republishes the canonical 2 MiB mono8 image to the
+            # archive. Shared-memory capacity belongs to the writer.
+            additional_env=large_image_environment,
             output='screen',
         ),
         Node(

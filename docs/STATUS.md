@@ -102,12 +102,13 @@ D3D12 + Gazebo GUI + RViz 的纵向动态验收完成 `660/660` 曝光与归档�
    复核发现一处光度缺陷：optimized 母版上可见亮度不一致造成的接缝。它不是新问题，流水线的
    接缝指标已经量到——on-seam 梯度超出 P95 `7.0` 灰度/像素、off-seam 基线 `2.0`、比值 `3.50`，
    在冻结门限 `≤ 5.0` 之内，所以判定通过而人眼仍看得见。根因与后续见第 11 条；
-10. **已解决：偶发出图停顿的根因是 Fast DDS 共享内存段装不下整帧。** 一次渲染曝光是
-    `1920 x 1080 x 3 = 6220800` 字节，Fast DDS 默认的共享内存段只有 512 KiB。整帧放不进去
-    就必须分片；持续触发下写端耗尽段内缓冲、丢掉一个分片，可靠读端要等到下一次周期心跳才
+10. **已解决：偶发出图停顿的根因是 Fast DDS 共享内存段容量不足。** 一次渲染曝光是
+    `1920 x 1080 x 3 = 6220800` 字节，Fast DDS 默认的共享内存段约为 512 KiB。图像按
+    `maxMessageSize` 分片后，默认段无法同时保留一帧的全部分片；持续触发下写端耗尽段内缓冲、
+    丢掉一个分片，可靠读端要等到下一次周期心跳才
     发现缺口，而 Fast DDS 默认心跳周期正是 **3 s**——这正是历史停顿时长的上限。修复是
-    `climbot_gazebo/config/fastdds_inspection_image.xml`，通过 `additional_env` 只挂给承载
-    整帧的两个参与者（`inspection_camera_bridge`、`camera_distortion_adapter`）；环境里已有
+    `climbot_common/config/fastdds_inspection_image.xml`，通过 `additional_env` 只挂给三个大图
+    发布参与者（`inspection_camera_bridge`、`camera_distortion_adapter`、`capture_once_node`）；环境里已有
     `FASTRTPS_DEFAULT_PROFILES_FILE` 时不覆盖。
     - **定位方法。** 把图像路径拆成 `trigger -> gz 到达`（触发桥 + 渲染 + gz-transport）、
       `gz -> ideal_image 到达`（`ros_gz_bridge` + 第一跳 6.22 MB DDS）、
@@ -138,10 +139,10 @@ D3D12 + Gazebo GUI + RViz 的纵向动态验收完成 `660/660` 曝光与归档�
       `/clock` 与图像同桥却从未断流（`line_tracker` 全程最大间隙 309 / 362 ms 且都在启动期），
       且本次复现就是在该修复已生效的代码上做的。`a10000a` 的桥接隔离作为工程卫生保留，
       但它不是这个故障的原因；
-    - **未覆盖的同类风险。** 适配器之后是 mono8（`2073600` 字节），仍大于 512 KiB，但它的
-      写端就是已挂 profile 的适配器；`capture_once_node` 到 `archive_recorder_node` 那一跳
-      的写端没有挂，该跳不在触发闭环上（服务在发布前已返回），延迟不会导致曝光被守卫拒收。
-      新增任何单条超过 512 KiB 的话题都要照此定尺寸。
+    - **最后一跳也受保护。** 适配器之后的 mono8 仍有 `2073600` 字节；适配器写入
+      `capture_once_node`，后者又把规范原图写给 `archive_recorder_node`。共享内存段由写端持有，
+      因而 profile 同时挂给这两个发布者；归档读端无需再预留 64 MiB。正式纵向任务已完成
+      `660/660` 端到端归档。新增任何单条超过 512 KiB 的话题都要照此定尺寸。
 11. **待优化：平场标定与工况不匹配，是 optimized 母版上可见接缝的来源。** 平场校正是启用
     的——不在采集端（归档按 G4-01 只存未补偿原图，`flat_field_reference.json` 的
     `available: false` 说的是采集时的补偿预览节点），而在 P1 处理阶段，十个 P2-06
