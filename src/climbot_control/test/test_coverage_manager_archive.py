@@ -35,6 +35,7 @@ from nav_msgs.msg import Odometry
 import pytest
 from rcl_interfaces.srv import GetParameters
 import rclpy
+from rclpy.action import ActionClient
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
@@ -132,6 +133,8 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self.resume = self.node.create_client(Trigger, '/coverage/resume')
         self.manager_parameters = self.node.create_client(
             GetParameters, '/coverage_manager/get_parameters')
+        self.execute = ActionClient(
+            self.node, ExecuteCoverage, '/coverage/execute')
         self.statuses = []
         self.prepare_release = None
         self.finalize_release = None
@@ -152,6 +155,11 @@ class TestCoverageManagerArchive(unittest.TestCase):
         # preflight test fail once other launch tests ran before it.
         for client in (self.start, self.cancel, self.pause, self.resume):
             self.assertTrue(client.wait_for_service(timeout_sec=15.0))
+        # The manager service can be discovered before its separate Action
+        # client has discovered the already-running executor. The first test
+        # then receives a legitimate "Action server is unavailable" refusal;
+        # later tests pass only because they inherit that discovery time.
+        self.assertTrue(self.execute.wait_for_server(timeout_sec=15.0))
 
     def tearDown(self):
         self.stop.set()
