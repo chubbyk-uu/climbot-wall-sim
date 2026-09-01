@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Fast DDS transport sizing for the one oversized topic in this workspace.
+
+  A rendered inspection exposure is 1920 x 1080 x 3 = 6220800 bytes, published
+  once per trigger from inspection_camera_bridge to camera_distortion_adapter.
+  Fast DDS ships a 512 KiB shared-memory segment by default, so a single
+  exposure cannot fit and RTPS has to fragment it. Under sustained triggering
+  the writer runs out of segment buffers, a fragment is dropped, and the
+  reliable reader only learns of the gap at the next periodic heartbeat three
+  seconds later. That is exactly the capture stall this file removes: the
+  segment now holds ten whole exposures, so fragments are never starved.
+
+  Attached only to the two participants that carry the RGB exposure. Everything
+  downstream of the adapter is mono8 (2073600 bytes) and every other topic is a
+  single datagram, so no other node pays for the larger segment.
+-->
+<dds xmlns="http://www.eprosima.com">
+  <profiles>
+    <transport_descriptors>
+      <transport_descriptor>
+        <transport_id>climbot_inspection_shm</transport_id>
+        <type>SHM</type>
+        <!-- Ten 6220800-byte exposures. -->
+        <segment_size>67108864</segment_size>
+        <port_queue_capacity>4096</port_queue_capacity>
+        <maxMessageSize>524288</maxMessageSize>
+      </transport_descriptor>
+      <transport_descriptor>
+        <transport_id>climbot_inspection_udp</transport_id>
+        <type>UDPv4</type>
+        <!-- Kept for discovery and for any peer without shared memory. The
+             kernel clamps these to net.core.rmem_max / wmem_max. -->
+        <sendBufferSize>4194304</sendBufferSize>
+        <receiveBufferSize>4194304</receiveBufferSize>
+      </transport_descriptor>
+    </transport_descriptors>
+    <participant profile_name="climbot_inspection_image" is_default_profile="true">
+      <rtps>
+        <userTransports>
+          <transport_id>climbot_inspection_shm</transport_id>
+          <transport_id>climbot_inspection_udp</transport_id>
+        </userTransports>
+        <!-- Replacing rather than adding: two shared-memory transports on one
+             participant would race for the same port. -->
+        <useBuiltinTransports>false</useBuiltinTransports>
+      </rtps>
+    </participant>
+  </profiles>
+</dds>

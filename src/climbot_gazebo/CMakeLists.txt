@@ -144,6 +144,8 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_g2_inspection_metrics test/test_g2_inspection_metrics.py)
   ament_add_pytest_test(test_inspection_contract test/test_inspection_contract.py)
+  ament_add_pytest_test(
+    test_large_image_transport test/test_large_image_transport.py)
   ament_add_pytest_test(test_model_defaults test/test_model_defaults.py)
   ament_add_pytest_test(
     test_normal_load_statistics test/test_normal_load_statistics.py)

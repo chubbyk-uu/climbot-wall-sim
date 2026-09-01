@@ -23,6 +23,14 @@ WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`
 反向触发。不要把任一相机方向并回主 bridge：大图转换或可靠 DDS 流控会阻塞其中的实时小消息，
 机器人可能在相机真正曝光前已经驶离目标位置。
 
+一次渲染曝光是 `1920 x 1080 x 3 = 6220800` 字节，而 Fast DDS 默认的共享内存段只有 512 KiB。
+整帧放不进去就必须分片；持续触发下写端会耗尽段内缓冲、丢掉一个分片，可靠读端要等到三秒后
+的下一次周期心跳才发现缺口——这就是偶发出图停顿的根因。`config/fastdds_inspection_image.xml`
+把该段放大到能装下十帧，并且**只**挂给承载整帧的两个参与者（`inspection_camera_bridge` 与
+`camera_distortion_adapter`，见 `additional_env`）；适配器之后是 mono8（`2073600` 字节），
+其余话题都是单个数据报，不必为这个段付内存代价。环境里已有
+`FASTRTPS_DEFAULT_PROFILES_FILE` 时 launch 不覆盖它。
+
 ## 内容
 
 - `config/simulation.yaml`：吸附、摩擦、WheelSlip、出生位姿和仿真传感器；

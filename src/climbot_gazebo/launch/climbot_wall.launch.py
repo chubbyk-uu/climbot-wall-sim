@@ -502,6 +502,17 @@ def launch_setup(context, *args, **kwargs):
         )],
     ))
 
+    # Fast DDS sizes its shared-memory segment for small messages, so the
+    # participants that carry a whole rendered exposure are handed a profile
+    # that can actually hold one. An operator profile already in the
+    # environment wins: this is a default, not an override.
+    large_image_environment = {}
+    if not os.environ.get('FASTRTPS_DEFAULT_PROFILES_FILE'):
+        large_image_environment = {
+            'FASTRTPS_DEFAULT_PROFILES_FILE': os.path.join(
+                package_share, 'config', 'fastdds_inspection_image.xml'),
+        }
+
     bridge_remappings = [
         (CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
         (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
@@ -533,11 +544,12 @@ def launch_setup(context, *args, **kwargs):
         }],
         output='screen',
     ))
-    # A full-HD camera message can make a bridge executor wait on conversion
-    # or reliable DDS flow control.  It must therefore not share an executor
-    # with /clock, odometry, IMU, or actuator traffic: delaying those small
-    # streams makes an otherwise local image delay look like a simulator-wide
-    # stall and lets motion outrun an exposure target.
+    # The 6220800-byte exposure gets its own bridge for two reasons. It must
+    # not share an executor with /clock, odometry, IMU or actuator traffic,
+    # and it is the one participant that needs the enlarged shared-memory
+    # segment: at the stock 512 KiB a fragment of the exposure is eventually
+    # dropped and the reliable reader waits three seconds for the next
+    # heartbeat. See config/fastdds_inspection_image.xml.
     actions.append(Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -548,6 +560,7 @@ def launch_setup(context, *args, **kwargs):
             CAMERA_IDEAL_INFO_TOPIC +
             '@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
         ],
+        additional_env=large_image_environment,
         output='screen',
     ))
     if throttle_clock:
@@ -609,6 +622,8 @@ def launch_setup(context, *args, **kwargs):
             'output_noise_seed': int(
                 simulation['inspection_camera']['noise_seed']),
         }],
+        # The reading half of the oversized exposure hop.
+        additional_env=large_image_environment,
         output='screen',
     ))
 
