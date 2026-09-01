@@ -10,12 +10,16 @@ install(PROGRAMS
   scripts/process_inspection_archive
   DESTINATION lib/${PROJECT_NAME})
 
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   ament_add_pytest_test(test_processing_chain test/test_processing_chain.py)
+  ament_add_pytest_test(
+    test_flat_field_pin test/test_flat_field_pin.py)
 endif()
 
 ament_package()

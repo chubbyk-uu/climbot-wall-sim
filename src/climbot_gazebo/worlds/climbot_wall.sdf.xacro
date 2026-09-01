@@ -302,7 +302,23 @@
              follows the exact PBR/albedo-map path used by the photographed
              wall: the old classic grey material had a different angular
              response and left a measured 9% bowl after correction. Its front
-             face is the collision/texture plane, not a decal in front of it. -->
+             face is the collision/texture plane, not a decal in front of it.
+
+             Three things were measured while working out which of those
+             mattered, and two of them did not. Re-shooting the old grey board
+             reproduced the stored 2026-08-25 gain map to three decimals
+             (corner/centre 0.673 against 0.672), so that calibration was never
+             stale - the target was simply not the same kind of surface as the
+             wall. Moving the board from its old 0.059 m decal plane onto this
+             one moved corner/centre only from 0.673 to 0.668: with a source
+             next to the camera the footprint scales with distance, so the
+             angles that set the falloff barely change, and standoff is worth
+             half a point. What did matter is the albedo_map below. Switching
+             the material to the PBR path without one is worse than the classic
+             material it replaced - corner/centre 0.709, and a left/right
+             asymmetry of 0.737 against 0.839 that the PBR specular term
+             introduces. The map is the part that reproduces the wall; do not
+             drop it and keep the pbr block. -->
         <xacro:if value="$(arg inspection_flat_field_target)">
           <visual name="inspection_flat_field_target">
             <pose>${thickness / 2.0 - 0.002} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>

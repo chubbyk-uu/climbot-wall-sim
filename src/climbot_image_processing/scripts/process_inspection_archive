@@ -16,15 +16,92 @@
 """CLI for the immutable G4 archive preprocessing chain."""
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
+import re
 import sys
+
+from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
 
 from climbot_image_processing.processing import (
     ProcessingError,
     ProcessingOptions,
     process_archive,
 )
+
+import yaml
+
+
+PIN_FILE = 'inspection_flat_field.yaml'
+
+
+def _accepted_calibration() -> tuple[dict | None, str | None]:
+    """Return the pinned flat-field identity, or why it could not be read.
+
+    Every failure here is a refusal, never a skip. A pin that cannot be read is
+    indistinguishable from one that was never written, and a check that turns
+    itself off quietly is the same class of defect it exists to catch: a
+    sha256 of all digits once parsed as the integer 0, which is falsy, and
+    silently disabled this guard.
+    """
+    try:
+        share = Path(get_package_share_directory('climbot_image_processing'))
+    except (PackageNotFoundError, KeyError):
+        share = Path(__file__).resolve().parents[1]
+    pin = share / 'config' / PIN_FILE
+    if not pin.is_file():
+        pin = Path(__file__).resolve().parents[1] / 'config' / PIN_FILE
+    if not pin.is_file():
+        return None, f'the accepted-calibration pin is missing: {pin}'
+    try:
+        with open(pin) as handle:
+            document = yaml.safe_load(handle)
+    except yaml.YAMLError as error:
+        return None, f'the accepted-calibration pin is unreadable: {error}'
+    if not isinstance(document, dict):
+        return None, f'the accepted-calibration pin is not a mapping: {pin}'
+    name = document.get('file_name')
+    digest = document.get('sha256')
+    if not isinstance(name, str) or not name:
+        return None, f'the accepted-calibration pin names no file: {pin}'
+    if not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{64}', digest):
+        return None, (
+            f'the accepted-calibration pin has no usable sha256: {digest!r}. '
+            'It must be quoted if it is all digits.')
+    return {'file_name': name, 'sha256': digest}, None
+
+
+def _check_flat_field(path: Path | None, skip: bool, unpinned: bool) -> str | None:
+    """Refuse a run whose flat field is absent or is not the accepted one.
+
+    Applying no correction, or applying a stale one, both produce a processed
+    run that looks completely normal and is wrong by several percent across the
+    frame. Neither the archive nor the mosaic can detect it afterwards, so the
+    only place it can be caught is here, before the output exists.
+    """
+    pin, refusal = _accepted_calibration()
+    if pin is None:
+        return refusal
+    if skip:
+        return None
+    if path is None:
+        return (
+            'no --flat-field-file given. The accepted calibration is '
+            f"{pin['file_name']} (sha256 {pin['sha256']}). Pass it, or pass "
+            '--no-flat-field to record a deliberately uncorrected run.')
+    if not path.is_file():
+        return f'flat-field file does not exist: {path}'
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest == pin['sha256']:
+        return None
+    if unpinned:
+        return None
+    return (
+        f'{path.name} is not the accepted calibration: its sha256 is {digest}, '
+        f"the pin in {PIN_FILE} names {pin['file_name']} with "
+        f"{pin['sha256']}. Pass --allow-unpinned-flat-field to process with "
+        'this one anyway, or update the pin when a new calibration is accepted.')
 
 
 def jobs_argument(value: str) -> int | None:
@@ -48,7 +125,12 @@ def main() -> int:
     parser.add_argument('--output-dir', required=True, type=Path,
                         help='New absolute output directory; it must not exist.')
     parser.add_argument('--flat-field-file', type=Path,
-                        help='Optional NPZ flat-field gain; hash is checked against the archive when recorded.')
+                        help='NPZ flat-field gain; must be the calibration pinned in '
+                             'config/inspection_flat_field.yaml unless overridden.')
+    parser.add_argument('--no-flat-field', action='store_true',
+                        help='Deliberately process without flat-field correction.')
+    parser.add_argument('--allow-unpinned-flat-field', action='store_true',
+                        help='Process with a flat field that is not the pinned calibration.')
     parser.add_argument('--dark-frame', type=Path,
                         help='Optional mono8 dark-frame image in raw camera coordinates.')
     parser.add_argument('--denoise', choices=('none', 'median3'), default='none',
@@ -60,6 +142,16 @@ def main() -> int:
     parser.add_argument('--allow-incomplete', action='store_true',
                         help='Permit canceled/failed source archives for explicit forensic processing.')
     arguments = parser.parse_args()
+    if arguments.no_flat_field and arguments.flat_field_file is not None:
+        print('processing failed: --no-flat-field and --flat-field-file are exclusive.',
+              file=sys.stderr)
+        return 2
+    refusal = _check_flat_field(
+        arguments.flat_field_file, arguments.no_flat_field,
+        arguments.allow_unpinned_flat_field)
+    if refusal is not None:
+        print(f'processing failed: {refusal}', file=sys.stderr)
+        return 2
     try:
         report = process_archive(
             arguments.input_run, arguments.output_dir,

@@ -20,12 +20,21 @@ ros2 run climbot_image_processing process_inspection_archive \
 | --- | --- | --- |
 | `--input-run` | 必填 | 已封存的 G4 归档目录 |
 | `--output-dir` | 必填 | **绝对路径、必须不存在**，且不能落在输入 run 里面 |
-| `--flat-field-file` | 无 | 校验过的 NPZ 平场增益；省略则跳过平场 |
+| `--flat-field-file` | 无 | NPZ 平场增益；必须是 `config/inspection_flat_field.yaml` 钉住的那一份 |
+| `--no-flat-field` | 不启用 | 明确声明这一次不做平场校正 |
+| `--allow-unpinned-flat-field` | 不启用 | 用一份未被钉住的平场处理 |
 | `--dark-frame` | 无 | `mono8` 暗场帧；省略则跳过暗场 |
 | `--denoise` | `none` | `none` 或 `median3` |
 | `--jobs` | `auto` | `auto` 或正整数进程数 |
 | `--memory-budget-gb` | `4.0` | 内存预算，约束 `auto` 的实际并发 |
 | `--allow-incomplete` | 不启用 | 只用于明确的取证运行，见下 |
+
+平场既不能省略也不能随便换：省略 `--flat-field-file` 或给一份 SHA-256 与
+`config/inspection_flat_field.yaml` 对不上的文件，命令会在产生任何输出之前拒绝，并把钉住的
+文件名和摘要打出来。两个覆盖开关都要显式给。这道闸的由来是一次沉默失效——P2-06 有一周是被
+一份靶面材质与被摄墙不同的标定校正的，全链没有任何东西报警，最后是人工看拼接图时看出亮度
+接缝才发现，那份校正在画面上留了 9% 的碗形残差。钉住的那一份换代时，同一次提交里要说明相机、
+LED、曝光或被摄材质发生了什么变化，使旧的那份不再成立。
 
 ## 处理顺序
 

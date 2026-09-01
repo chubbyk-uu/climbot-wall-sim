@@ -1,0 +1,22 @@
+# The flat-field calibration a mosaic-grade processed run is expected to have
+# been corrected with.
+#
+# This pin exists because the failure it guards is silent. P2-06 ran for a week
+# corrected by flat_field_sim_moonlight_led2_exp065_20260825.npz, whose grey
+# board used a different Gazebo shading path from the photographed wall; the
+# correction left a 9% bowl that reached the operator only as visible brightness
+# seams in a hand review of the mosaic. Nothing in the chain objected, because
+# "some calibration was applied" was all anything checked.
+#
+# Bump both fields together when a new calibration is accepted, and say in the
+# same commit what changed about the camera, the LED, the exposure or the
+# photographed material that made the old one wrong.
+file_name: flat_field_sim_pbr_exp065_20260901.npz
+sha256: e78234e7b9b7ee2ee0e16c2ec82e2fe03f2354ee40f69f88a0b69eedd5bd72fb
+# What this calibration was measured against, so a later reader can tell whether
+# it still applies without re-deriving it.
+measured_against: >-
+  A uniform albedo-mapped PBR target coplanar with the wall texture blocks, the
+  same shading path as the photographed surface. Corrects the 660-frame wall
+  average from a 0.611 corner/centre ratio to 1.013, a residual bowl of 1.3%
+  where the previous grey-board calibration left 9.1%.
