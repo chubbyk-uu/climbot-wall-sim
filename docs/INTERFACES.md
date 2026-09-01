@@ -1,6 +1,6 @@
 # ROS 2 与离线数据接口合同
 
-更新：2026-08-28。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
+更新：2026-09-01。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
 [接口归档](archive/interfaces/INTERFACES_2026-08-27.md)。主线操作步骤见
 [根 README](../README.md#快速启动)，实验变体与故障处置见 [OPERATION](OPERATION.md)，
 架构职责见 [ARCHITECTURE](ARCHITECTURE.md)。
@@ -26,9 +26,9 @@ bridge 改发 `/clock_raw`，由 `clock_throttle_node` 抽稀后发布 `/clock`�
 仿真本身一步不差。
 
 只有能整除输入步长的速率是可达的。1 ms 步长对应的梯子是 1000、500、333.3、250、200 Hz……
-落在两档之间的请求无法实现，会静默降到下一档（例如请求 400 Hz 实得 333.3 Hz）。节点因此在
-启动后测量并打印 `CLOCK_THROTTLE measured input=… delivered=… requested=…`，请求与实得不符
-时告警——日志报告的是实测值，不是请求值。
+落在两档之间的请求无法实现，会降到下一档（例如请求 400 Hz 实得 333.3 Hz）。节点在启动后
+测量并打印 `CLOCK_THROTTLE measured input=… delivered=… requested=…`，请求与实得不符时告警——
+日志报告的是实测值，不是请求值。
 
 两条硬约束：
 

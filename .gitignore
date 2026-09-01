@@ -12,7 +12,7 @@ __pycache__/
 *.doc
 *.docx
 docs/*.pdf
-docs/REVIEW_*.md
+docs/archive/reviews/REVIEW_*.md
 
 # Windows alternate data streams occasionally appear as ordinary WSL files.
 *:Zone.Identifier

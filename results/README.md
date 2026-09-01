@@ -24,7 +24,7 @@
 | 侧滑与转向 | `normal_loads_400N.csv`、`turn_slip_2026-08-30.csv`、`turn_map_2026-08-30.csv`（含 `_summary.json`）、`wall_slip_trajectory.csv.gz` | 当前 400 N 几何与侧滑参考；`turn_slip_per_degree_m` 由 24 次转向拟合为 `0.00046`，整圈 48 点 `0.4309--0.5018 mm/deg` 且圆平坦。旧的 `turn_slip.csv`、`turn_map.csv` 与 `turn_map_g1_camera_2026-08-24.*` 保留为历史对照 |
 | G1 相机 | `g1_camera_*`、`target_*`、`localization-g1-*` | 相机接口、轴向/畸变和运动投影中心证据 |
 | G2/G4 采集 | `g2_accept_{horizontal,vertical,trapezoid}_2026-08-26_summary.json` | 异步匀速位置触发、位姿绑定与原始归档正式结果 |
-| P2 相对拼接 | [mosaic_p2_baseline_2026-08-26_summary.json](mosaic_p2_baseline_2026-08-26_summary.json) | 0.25 mm 相对拼接基线；尚未冻结验收门槛 |
+| P2 相对拼接 | [mosaic_p2_baseline_2026-08-26_summary.json](mosaic_p2_baseline_2026-08-26_summary.json) | 0.25 mm 相对拼接历史基线；其最低改善比例未单独冻结，当前绝对门限见 P2-06 |
 | P2 clean blind | [mosaic_p27d_blind_2026-08-27_summary.json](mosaic_p27d_blind_2026-08-27_summary.json) | 诊断墙绝对真值与检查切片；仍有覆盖缺口 |
 | P2-06 采集前预检 | [p206_diagnostic_coverage_preflight_2026-08-28.json](p206_diagnostic_coverage_preflight_2026-08-28.json) | 含 100 mm 机动裕量的横 680／竖 660 张离散曝光联合预测；不是实际拼接验收 |
 | P2-06 联合盲测与接缝诊断 第 1 组 | [mosaic_p206_blind_2026-08-31c_summary.json](mosaic_p206_blind_2026-08-31c_summary.json) | `3f422f5` 采集 1,340 帧；生成器 provenance 为干净 `2dfaf22`；巡检域内零漏拍，锚点 P95 `1.670 mm`，接缝跳变 P95 `16→7`、比值 `3.50×` |
@@ -45,7 +45,8 @@
   独立检验通过**（第 5 组在门限冻结提交之后采集，不参与推导）；第 1 组渲染工况未记录，只作
   旁证。门限值与推导见[拼接计划](../docs/MOSAIC_PLAN.md)。人工 100% 全分辨率复核已于
   2026-09-01 在第 1 组的 `170` 个原尺寸 tile 上完成，未发现错位类缺陷；可见的亮度接缝是
-  光度问题，根因是平场标定与工况不匹配，见[当前状态](../docs/STATUS.md)第 11 条。
+  光度问题，根因是旧标定靶与被摄墙的着色路径不匹配；当前修复与 A/B 见
+  [当前状态](../docs/STATUS.md)。
 - 尺度误差含已知流水线系统偏置 `+21 ppm`（10 m 上 `0.21 mm`），各组复现到 `±5 ppm`，
   来源已定位到位姿图上游的相机模型与重采样链，不是采集工况效应；门限 `≤ 50 ppm` 包住它。
 - 巡检域外各组有 `43 万` 量级未覆盖像素，不作门禁要求；其中一部分落在当前计划 SCAN 足迹内，

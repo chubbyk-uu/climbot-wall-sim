@@ -1,6 +1,7 @@
 # climbot_common
 
-纯 Python、无 ROS 运行时依赖的跨包工具。仿真包和离线拼接包都向它依赖，方向不倒置：
+纯 Python、无 ROS 运行时依赖的跨包工具与共享中间件配置。仿真、巡检和离线拼接包都向它
+依赖，方向不倒置：
 `climbot_mosaic` 只需要 numpy/opencv/scipy/tifffile，不能为了一个 Git 助手把 `rclpy`
 拖进来；`climbot_gazebo` 也不该为了同一个助手去依赖图像处理栈。
 
@@ -11,6 +12,7 @@
 | `provenance.git_state()` | 记录 commit、branch、`source_modified`、`checked_pathspecs` 与 `traceable` |
 | `hashing.sha256_file()` / `sha256_bytes()` | 把一个阶段的输出哈希和下一个阶段的输入哈希统一成同一个定义 |
 | `atomic.write_json()` / `json_text()` | 摘要要么整份发布要么不发布，且渲染形式逐字节固定 |
+| `config/fastdds_inspection_image.xml` | 为 6.22 MB / 2.07 MB 可靠图像发布者预留 64 MiB 共享内存段 |
 
 ## 为什么 `checked_pathspecs` 是返回值的一部分
 

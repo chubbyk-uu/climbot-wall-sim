@@ -68,8 +68,8 @@ Force abandon 只处理 Start 应答永久未知的恢复死锁。第一次点�
 使用单独的 Rearm。两个恢复按钮平时隐藏，只有管理器明确允许其中一个时才显示；面板只
 实现二次确认交互，恢复锁及许可判断仍全部属于管理器。
 
-**任务运行期间，Region、Sweep、Algorithm、Replan、Clear points 五个控件全部置灰**，
-只留 Cancel。它们发出的请求确实只改预览、不动运行中的 Goal，但预览就是画在机器人
+**任务运行期间，Region、Sweep、Algorithm、Replan、Clear points 五个规划控件全部置灰**；
+任务控制区仍按状态提供 Pause、Resume 和 Stop。规划控件发出的请求确实只改预览、不动运行中的 Goal，但预览就是画在机器人
 身上的那条轨迹，运行中改它看起来就像任务被换掉了；换形状还会直接把它撤掉。置灰
 同样取自 `can_cancel`，面板不另立一套“是否在运行”的判断。
 

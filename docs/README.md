@@ -24,9 +24,9 @@ OPERATION 面向已经跑通、要做实验或者出了问题的人。判据只�
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | 包职责、依赖、配置归属、运行时数据流 | 命令教程、接口字段的逐项字典 |
 | [`INTERFACES.md`](INTERFACES.md) | 当前话题、服务、Action、参数、文件格式与兼容性合同 | 已废弃接口的演变过程 |
 | [`OPERATION.md`](OPERATION.md) | **主线之外**的批量回归、评价工具、参数变体、诊断与故障处置 | 主线命令的第二份拷贝、架构解释、结果结论 |
-| [`ACCEPTANCE.md`](ACCEPTANCE.md) | 当前验收项、状态、正式证据和未关闭门禁 | 完整实验流水账 |
-| [`MOSAIC_PLAN.md`](MOSAIC_PLAN.md) | 离线拼接的当前设计、风险、阶段门禁和待办 | 已废弃试验的逐轮细节 |
-| [`LOCALIZATION_GAP_PLAN.md`](LOCALIZATION_GAP_PLAN.md) | 定位链路偶发断档的当前证据、根因调查、优化顺序与验收标准 | 未证实的根因结论、通用操作教程 |
+| [`ACCEPTANCE.md`](ACCEPTANCE.md) | 当前验收项、状态、正式证据和实机边界 | 完整实验流水账 |
+| [`MOSAIC_PLAN.md`](MOSAIC_PLAN.md) | 离线拼接的当前设计、判据、证据范围和已知限制 | 已废弃试验的逐轮细节 |
+| [`LOCALIZATION_GAP_PLAN.md`](LOCALIZATION_GAP_PLAN.md) | 长任务时序的当前结论、运行判据和未关闭边界 | 已关闭调查的逐轮日志 |
 | [`STATUS.md`](STATUS.md) | 一页式当前阶段、风险、近期下一步 | 按日期追加的开发日记 |
 | [`../results/README.md`](../results/README.md) | 当前有效基线和归档结果的索引、重生成入口 | 长篇技术分析 |
 | [`DATA_RETENTION.md`](DATA_RETENTION.md) | 工作区外大数据的保留等级、清理前置条件和目录清单 | 删除命令或临时日志 |
@@ -41,7 +41,7 @@ docs/
   OPERATION.md             实验与故障处置手册
   ACCEPTANCE.md            当前验收矩阵
   MOSAIC_PLAN.md           当前离线拼接设计
-  LOCALIZATION_GAP_PLAN.md 定位断档调查与优化计划
+  LOCALIZATION_GAP_PLAN.md 长任务时序稳定性
   STATUS.md                当前状态快照
   DATA_RETENTION.md        数据保留与清理清单
   images/                  当前文档引用的截图
@@ -50,14 +50,13 @@ docs/
     interfaces/            已替代的详细接口说明
     operations/            已替代的操作与实验流水
     plans/                 已完成或被替代的设计计划
-    reviews/               已提交的 review（当前为空，见归档规则）
+    reviews/               需要长期保留的历史 review
     specifications/        已替代的完整规范
     status-history/        状态与开发过程记录
 ```
 
-`docs/REVIEW_*.md` 是未纳入版本控制的本地 review 工作稿，按 `.gitignore` 忽略；
-它们停留在 `docs/` 根目录，只有逐份确认需要正式保留时才迁入 `archive/reviews/`。
-新增归档子目录前先确认确有内容要放，空目录不进仓库。
+本地 review 工作稿统一放在 `archive/reviews/` 并按 `.gitignore` 忽略，不占用当前文档根目录；
+只有逐份确认需要随项目长期分发时才解除忽略并提交。
 
 `results/` 分为“当前正式基线”和“历史对照”两层；文件本身可以保留，根目录索引只指向
 当前仍有效的证据和归档入口。

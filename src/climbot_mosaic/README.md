@@ -3,8 +3,9 @@
 离线链的末级：把一批 processed-run 投影、匹配、全局优化，再硬切渲染成米制墙面母版，
 并在渲染完成后用诊断墙真值做后验检查。
 
-本包没有 ROS 图依赖，`package.xml` 也不依赖任何项目包。构建母版的全过程**不读 Gazebo
-真值、也不读墙面 DDS**：唯一的图像输入是已完成、已独立校验的 processed-run。
+本包没有 ROS 图依赖，只依赖无 ROS 运行时的 `climbot_common` 复用 provenance、哈希和原子
+JSON 工具。构建母版的全过程**不读 Gazebo 真值、也不读墙面 DDS**：唯一的图像输入是已完成、
+已独立校验的 processed-run。
 
 ## 命令一览
 
@@ -145,7 +146,7 @@ colcon test-result --verbose
 ## 相关文档
 
 上游是 [climbot_image_processing](../climbot_image_processing/README.md)。
-设计合同与未关闭门禁见 [拼接计划](../../docs/MOSAIC_PLAN.md)，
+设计合同与验收边界见 [拼接计划](../../docs/MOSAIC_PLAN.md)，
 接口与目录字段见 [接口合同](../../docs/INTERFACES.md)，
 前置检查与故障处置见 [实验与故障处置手册](../../docs/OPERATION.md)，
 各命令的完整参数以 `--help` 为准。

@@ -1,6 +1,6 @@
 # 爬壁机器人仿真：项目规范
 
-更新：2026-08-27。本文件是产品目标、范围和不可违背约束的唯一规范来源；运行命令见
+更新：2026-09-01。本文件是产品目标、范围和不可违背约束的唯一规范来源；运行命令见
 [README](README.md)，接口字段见 [接口合同](docs/INTERFACES.md)，逐项通过状态见
 [验收矩阵](docs/ACCEPTANCE.md)。此前完整的设计推导与阶段记录见
 [规范归档](docs/archive/specifications/PROJECT_GUIDE_2026-08-27.md)。
