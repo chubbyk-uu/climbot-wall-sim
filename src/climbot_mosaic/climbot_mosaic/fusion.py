@@ -76,18 +76,29 @@ _WORKER_OPTIMIZED: tuple[RenderFrame, ...] = ()
 _WORKER_GRID: RenderGrid | None = None
 _WORKER_INTERIOR_DISTANCE: np.ndarray | None = None
 _WORKER_IMAGES: OrderedDict[str, np.ndarray] = OrderedDict()
-_WORKER_CACHE_SIZE = 4
+_WORKER_IMAGE_CACHE_BYTES = 32 * 1024 * 1024
+_WORKER_IMAGE_CACHE_USED_BYTES = 0
+_WORKER_IMAGE_CACHE_PEAK_BYTES = 0
 _WORKER_CACHE_HITS = 0
+# ``ProcessPoolExecutor.map`` otherwise hands successive tiles to whichever
+# process happens to become idle.  That destroys the spatial locality that
+# the worker-local image cache relies on: the P2-06 baseline decoded 1,340
+# source PNGs more than 57,000 times.  A modest contiguous run lets one worker
+# retain the frames that overlap neighbouring tiles while preserving the
+# public row-major result order.
+_RENDER_TASK_CHUNK_TILES = 16
 #: Memory a fusion run costs before any worker starts: the render grid, the
 #: frame tables and the tiled-TIFF writer's own buffers. Measured at 1.87 GB;
 #: see resolve_jobs for the fit.
 FUSION_BASE_MEMORY_GB = 1.9
 
 #: Marginal resident cost of one render worker, measured at 98 MB on the same
-#: fit. Each holds its share of the decoded source frames.
-FUSION_WORKER_MEMORY_MB = 96.0
+#: fit with a four-image cache.  The bounded 32 MiB cache below adds roughly
+#: 24 MiB of decoded images at the P2 camera geometry.
+FUSION_WORKER_MEMORY_MB = 120.0
 
 _WORKER_CACHE_MISSES = 0
+_WORKER_DECODE_ELAPSED_S = 0.0
 UNCERTAINTY_SCALE_M = 1e-5
 UNCERTAINTY_NODATA = np.iinfo(np.uint16).max
 
@@ -255,30 +266,46 @@ def common_grid(initial: tuple[RenderFrame, ...], optimized: tuple[RenderFrame, 
 def _init_worker(initial: tuple[RenderFrame, ...], optimized: tuple[RenderFrame, ...],
                  grid: RenderGrid, width: int, height: int) -> None:
     global _WORKER_INITIAL, _WORKER_OPTIMIZED, _WORKER_GRID
-    global _WORKER_INTERIOR_DISTANCE, _WORKER_IMAGES
-    global _WORKER_CACHE_HITS, _WORKER_CACHE_MISSES
+    global _WORKER_INTERIOR_DISTANCE, _WORKER_IMAGES, _WORKER_IMAGE_CACHE_USED_BYTES
+    global _WORKER_IMAGE_CACHE_PEAK_BYTES, _WORKER_CACHE_HITS, _WORKER_CACHE_MISSES
+    global _WORKER_DECODE_ELAPSED_S
     _WORKER_INITIAL, _WORKER_OPTIMIZED, _WORKER_GRID = initial, optimized, grid
     _WORKER_INTERIOR_DISTANCE = interior_distance_map(width, height)
     _WORKER_IMAGES = OrderedDict()
+    _WORKER_IMAGE_CACHE_USED_BYTES = 0
+    _WORKER_IMAGE_CACHE_PEAK_BYTES = 0
     _WORKER_CACHE_HITS = 0
     _WORKER_CACHE_MISSES = 0
+    _WORKER_DECODE_ELAPSED_S = 0.0
     cv2.setNumThreads(1)
 
 
 def _image(path: str) -> np.ndarray:
-    global _WORKER_CACHE_HITS, _WORKER_CACHE_MISSES
+    global _WORKER_CACHE_HITS, _WORKER_CACHE_MISSES, _WORKER_DECODE_ELAPSED_S
+    global _WORKER_IMAGE_CACHE_USED_BYTES, _WORKER_IMAGE_CACHE_PEAK_BYTES
     if path in _WORKER_IMAGES:
         _WORKER_CACHE_HITS += 1
         value = _WORKER_IMAGES.pop(path)
         _WORKER_IMAGES[path] = value
         return value
     _WORKER_CACHE_MISSES += 1
+    started = time.perf_counter()
     value = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+    _WORKER_DECODE_ELAPSED_S += time.perf_counter() - started
     if value is None or value.dtype != np.uint8 or value.ndim != 2:
         raise FusionError(f'render source is not mono8: {path}.')
+    image_bytes = int(value.nbytes)
+    if image_bytes > _WORKER_IMAGE_CACHE_BYTES:
+        # The worker must still render an unusually large frame correctly; it
+        # simply cannot retain it without violating the cache contract.
+        return value
     _WORKER_IMAGES[path] = value
-    while len(_WORKER_IMAGES) > _WORKER_CACHE_SIZE:
-        _WORKER_IMAGES.popitem(last=False)
+    _WORKER_IMAGE_CACHE_USED_BYTES += image_bytes
+    while _WORKER_IMAGE_CACHE_USED_BYTES > _WORKER_IMAGE_CACHE_BYTES:
+        _, evicted = _WORKER_IMAGES.popitem(last=False)
+        _WORKER_IMAGE_CACHE_USED_BYTES -= int(evicted.nbytes)
+    _WORKER_IMAGE_CACHE_PEAK_BYTES = max(
+        _WORKER_IMAGE_CACHE_PEAK_BYTES, _WORKER_IMAGE_CACHE_USED_BYTES)
     return value
 
 
@@ -365,6 +392,7 @@ def _hard_cut(frames: tuple[RenderFrame, ...], tile_row: int, tile_column: int,
 
 def _render_task(task: tuple[str, int, int, tuple[int, ...], tuple[int, ...]]):
     hits_before, misses_before = _WORKER_CACHE_HITS, _WORKER_CACHE_MISSES
+    decode_before = _WORKER_DECODE_ELAPSED_S
     mode, row, column, initial_candidates, optimized_candidates = task
     if mode == 'initial':
         products = _hard_cut(
@@ -374,7 +402,8 @@ def _render_task(task: tuple[str, int, int, tuple[int, ...], tuple[int, ...]]):
     else:
         raise FusionError(f'unknown render mode: {mode}.')
     return (row, column, *products,
-            _WORKER_CACHE_HITS - hits_before, _WORKER_CACHE_MISSES - misses_before)
+            _WORKER_CACHE_HITS - hits_before, _WORKER_CACHE_MISSES - misses_before,
+            _WORKER_DECODE_ELAPSED_S - decode_before, _WORKER_IMAGE_CACHE_PEAK_BYTES)
 
 
 def _tasks(mode: str, grid: RenderGrid, initial: tuple[RenderFrame, ...],
@@ -529,7 +558,7 @@ def _description(grid: RenderGrid, kind: str) -> str:
 
 def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                       initial: tuple[RenderFrame, ...], optimized: tuple[RenderFrame, ...],
-                      camera_width: int, camera_height: int, jobs: int,
+                      pool: ProcessPoolExecutor,
                       seam_path: Path,
                       coverage_fd: int | None = None,
                       coverage_only_fd: int | None = None,
@@ -539,76 +568,78 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                       previous_raw_fd: int | None = None) -> dict[str, Any]:
     started = time.perf_counter()
     task_values = _tasks(mode, grid, initial, optimized)
-    with ProcessPoolExecutor(
-            max_workers=jobs, initializer=_init_worker,
-            initargs=(initial, optimized, grid, camera_width, camera_height)) as pool:
-        results = pool.map(_render_task, task_values, chunksize=1)
-        quality_histogram = np.zeros(4096, np.int64)
-        quality_sum = 0.0
-        quality_count = 0
-        cache_hits = 0
-        cache_misses = 0
-        seam_parts: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
-        previous_right: np.ndarray | None = None
-        previous_bottoms: dict[int, np.ndarray] = {}
+    results = pool.map(_render_task, task_values, chunksize=_RENDER_TASK_CHUNK_TILES)
+    quality_histogram = np.zeros(4096, np.int64)
+    quality_sum = 0.0
+    quality_count = 0
+    cache_hits = 0
+    cache_misses = 0
+    decode_elapsed_s = 0.0
+    cache_peak_bytes = 0
+    seam_parts: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+    previous_right: np.ndarray | None = None
+    previous_bottoms: dict[int, np.ndarray] = {}
 
-        def image_tiles():
-            nonlocal quality_sum, quality_count, cache_hits, cache_misses, previous_right
-            for result in results:
-                cache_hits += int(result[-2])
-                cache_misses += int(result[-1])
-                row, column, image, owner = result[:4]
-                if column == 0:
-                    previous_right = None
-                seams = _tile_seam_adjacencies(
-                    owner, row, column, grid, previous_right, previous_bottoms.get(column))
-                if seams[0].size:
-                    seam_parts.append(seams)
-                height = min(grid.tile_size_px, grid.height_px - row)
-                width = min(grid.tile_size_px, grid.width_px - column)
-                previous_right = owner[:height, width - 1].copy()
-                previous_bottoms[column] = owner[height - 1, :width].copy()
-                # The difference raster used to be a third full render of both
-                # variants. Both tiles already exist by the time the second
-                # pass runs: the first pass keeps its own, and this one
-                # subtracts against it, so the same bytes come out of one
-                # read instead of a whole render pass.
-                if image_raw_fd is not None:
-                    _write_raw_tile(image_raw_fd, image, grid, row, column)
-                if difference_fd is not None and previous_raw_fd is not None:
-                    previous = _read_raw_tile(
-                        previous_raw_fd, np.dtype(np.uint8), grid, row, column)
-                    _write_raw_tile(
-                        difference_fd, cv2.absdiff(previous, image), grid, row, column)
-                if coverage_only_fd is not None:
-                    coverage = result[4]
-                    _write_raw_tile(coverage_only_fd, coverage, grid, row, column)
-                    quality = result[5]
-                elif coverage_fd is not None and uncertainty_fd is not None:
-                    coverage, uncertainty = result[4:6]
-                    _write_raw_tile(coverage_fd, coverage, grid, row, column)
-                    _write_raw_tile(
-                        uncertainty_fd, encode_uncertainty(uncertainty), grid, row, column)
-                    quality = result[6]
-                elif mode == 'initial':
-                    quality = result[4]
-                else:
-                    quality = None
-                if quality is not None:
-                    finite = quality[np.isfinite(quality)]
-                    if finite.size:
-                        quality_sum += float(finite.sum(dtype=np.float64))
-                        quality_count += int(finite.size)
-                        bins = np.clip(np.rint(finite * (4095.0 / 255.0)), 0, 4095)
-                        quality_histogram[:] += np.bincount(
-                            bins.astype(np.int32), minlength=4096)
-                yield image
+    def image_tiles():
+        nonlocal quality_sum, quality_count, cache_hits, cache_misses, decode_elapsed_s
+        nonlocal cache_peak_bytes, previous_right
+        for result in results:
+            cache_hits += int(result[-4])
+            cache_misses += int(result[-3])
+            decode_elapsed_s += float(result[-2])
+            cache_peak_bytes = max(cache_peak_bytes, int(result[-1]))
+            row, column, image, owner = result[:4]
+            if column == 0:
+                previous_right = None
+            seams = _tile_seam_adjacencies(
+                owner, row, column, grid, previous_right, previous_bottoms.get(column))
+            if seams[0].size:
+                seam_parts.append(seams)
+            height = min(grid.tile_size_px, grid.height_px - row)
+            width = min(grid.tile_size_px, grid.width_px - column)
+            previous_right = owner[:height, width - 1].copy()
+            previous_bottoms[column] = owner[height - 1, :width].copy()
+            # The difference raster used to be a third full render of both
+            # variants. Both tiles already exist by the time the second
+            # pass runs: the first pass keeps its own, and this one subtracts
+            # against it, so the same bytes come out of one read instead of a
+            # whole render pass.
+            if image_raw_fd is not None:
+                _write_raw_tile(image_raw_fd, image, grid, row, column)
+            if difference_fd is not None and previous_raw_fd is not None:
+                previous = _read_raw_tile(
+                    previous_raw_fd, np.dtype(np.uint8), grid, row, column)
+                _write_raw_tile(
+                    difference_fd, cv2.absdiff(previous, image), grid, row, column)
+            if coverage_only_fd is not None:
+                coverage = result[4]
+                _write_raw_tile(coverage_only_fd, coverage, grid, row, column)
+                quality = result[5]
+            elif coverage_fd is not None and uncertainty_fd is not None:
+                coverage, uncertainty = result[4:6]
+                _write_raw_tile(coverage_fd, coverage, grid, row, column)
+                _write_raw_tile(
+                    uncertainty_fd, encode_uncertainty(uncertainty), grid, row, column)
+                quality = result[6]
+            elif mode == 'initial':
+                quality = result[4]
+            else:
+                quality = None
+            if quality is not None:
+                finite = quality[np.isfinite(quality)]
+                if finite.size:
+                    quality_sum += float(finite.sum(dtype=np.float64))
+                    quality_count += int(finite.size)
+                    bins = np.clip(np.rint(finite * (4095.0 / 255.0)), 0, 4095)
+                    quality_histogram[:] += np.bincount(
+                        bins.astype(np.int32), minlength=4096)
+            yield image
 
-        with tifffile.TiffWriter(path, bigtiff=True) as writer:
-            writer.write(data=image_tiles(), shape=(grid.height_px, grid.width_px),
-                         dtype=np.uint8, tile=(grid.tile_size_px, grid.tile_size_px),
-                         compression='deflate', predictor=True,
-                         description=_description(grid, mode))
+    with tifffile.TiffWriter(path, bigtiff=True) as writer:
+        writer.write(data=image_tiles(), shape=(grid.height_px, grid.width_px),
+                     dtype=np.uint8, tile=(grid.tile_size_px, grid.tile_size_px),
+                     compression='deflate', predictor=True,
+                     description=_description(grid, mode))
     seam_count = _write_seam_adjacencies(seam_path, seam_parts, grid)
     quality_result = None
     if quality_count:
@@ -626,6 +657,12 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
             'hits': cache_hits,
             'misses': cache_misses,
             'hit_ratio': cache_hits / total_accesses if total_accesses else None,
+            'capacity_bytes_per_worker': _WORKER_IMAGE_CACHE_BYTES,
+            'peak_bytes_in_one_worker': cache_peak_bytes,
+            # This is a sum over workers, deliberately not wall time. It
+            # quantifies decoding work even while workers run concurrently.
+            'aggregate_png_decode_cpu_s': decode_elapsed_s,
+            'task_chunk_tiles': _RENDER_TASK_CHUNK_TILES,
         },
         'quality': quality_result,
         'seam_adjacency_count': seam_count,
@@ -772,18 +809,23 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         os.ftruncate(uncertainty_fd, raw_bytes)
         os.ftruncate(pose_only_fd, image_bytes)
         os.ftruncate(difference_fd, image_bytes)
-        initial_pass = _write_image_pass(
-            temporary / 'mosaic_pose_only.tif', 'initial', grid,
-            initial, optimized, inputs.camera.width, inputs.camera.height, jobs,
-            temporary / 'seams_pose_only.npz',
-            coverage_only_fd=pose_coverage_fd,
-            image_raw_fd=pose_only_fd)
-        optimized_pass = _write_image_pass(
-            temporary / 'mosaic_optimized.tif', 'optimized', grid,
-            initial, optimized, inputs.camera.width, inputs.camera.height, jobs,
-            temporary / 'seams_optimized.npz',
-            coverage_fd=coverage_fd, uncertainty_fd=uncertainty_fd,
-            difference_fd=difference_fd, previous_raw_fd=pose_only_fd)
+        # Keep the pool alive over both full-resolution passes. Combined with
+        # spatial task chunks this preserves decoded PNGs in the worker-local
+        # cache instead of recreating a cold cache for every pass.
+        with ProcessPoolExecutor(
+                max_workers=jobs, initializer=_init_worker,
+                initargs=(initial, optimized, grid,
+                          inputs.camera.width, inputs.camera.height)) as pool:
+            initial_pass = _write_image_pass(
+                temporary / 'mosaic_pose_only.tif', 'initial', grid,
+                initial, optimized, pool, temporary / 'seams_pose_only.npz',
+                coverage_only_fd=pose_coverage_fd,
+                image_raw_fd=pose_only_fd)
+            optimized_pass = _write_image_pass(
+                temporary / 'mosaic_optimized.tif', 'optimized', grid,
+                initial, optimized, pool, temporary / 'seams_optimized.npz',
+                coverage_fd=coverage_fd, uncertainty_fd=uncertainty_fd,
+                difference_fd=difference_fd, previous_raw_fd=pose_only_fd)
         os.close(coverage_fd)
         coverage_fd = None
         os.close(pose_coverage_fd)
@@ -889,7 +931,9 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             temporary, 'wall_mosaic',
             {'resolution_m_per_pixel': resolution_m, 'jobs': jobs,
              'memory_budget_gb': memory_budget_gb,
-             'preview_max_side_px': preview_max_side_px},
+             'preview_max_side_px': preview_max_side_px,
+             'image_cache_bytes_per_worker': _WORKER_IMAGE_CACHE_BYTES,
+             'render_task_chunk_tiles': _RENDER_TASK_CHUNK_TILES},
             {**processed_run_inputs(manifest['input_summary']),
              'pose_graph': artifact(pose_graph_dir / 'pose_graph.json'),
              'optimized_poses': artifact(pose_graph_dir / 'optimized_poses.json')},
@@ -932,8 +976,10 @@ def resolve_jobs(value: int | None, memory_budget_gb: float) -> int:
     doing the memory model's job with a number that fit one machine.
     Measured on the P2-06 joint mosaic (1340 frames, 38226 x 29079 px) by
     fitting peak process-tree PSS over 4, 8, 14 and 20 workers: 1.87 GB fixed
-    plus 98 MB each, so the 96 MB below was right and only the base was
-    missing.  Fusion at 4 GB now runs 22 workers where it ran 8.
+    plus 98 MB each with the original four-image cache.  The current cache is
+    explicitly capped at 32 MiB per worker, so the scheduling estimate is 120
+    MB; a 4 GB planning budget therefore selects 17 workers, rather than
+    silently treating the larger cache as free memory.
     """
     spare_mb = (memory_budget_gb - FUSION_WORKER_MEMORY_MB / 1024.0
                 - FUSION_BASE_MEMORY_GB) * 1024.0

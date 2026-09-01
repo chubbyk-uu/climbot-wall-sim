@@ -16,6 +16,7 @@
 
 import os
 
+import climbot_mosaic.fusion as fusion
 from climbot_mosaic.fusion import (
     _process_tree_pss_bytes,
     _tile_count,
@@ -36,6 +37,7 @@ from climbot_mosaic.fusion import (
     resolve_jobs,
 )
 from climbot_mosaic.mosaic_inputs import FrameKey
+import cv2
 import numpy as np
 import pytest
 
@@ -86,6 +88,20 @@ def test_hard_cut_seams_include_internal_and_tiled_neighbours():
         (0, 2, 1),  # internal vertical owner transition
         (0, 3, 1),
     }
+
+
+def test_worker_image_cache_is_byte_bounded(tmp_path, monkeypatch):
+    first = tmp_path / 'first.png'
+    second = tmp_path / 'second.png'
+    assert cv2.imwrite(str(first), np.full((4, 4), 10, np.uint8))
+    assert cv2.imwrite(str(second), np.full((4, 4), 20, np.uint8))
+    monkeypatch.setattr(fusion, '_WORKER_IMAGE_CACHE_BYTES', 16)
+    grid = RenderGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4, 16)
+    fusion._init_worker((), (), grid, 4, 4)
+    np.testing.assert_array_equal(fusion._image(str(first)), np.full((4, 4), 10, np.uint8))
+    np.testing.assert_array_equal(fusion._image(str(second)), np.full((4, 4), 20, np.uint8))
+    assert list(fusion._WORKER_IMAGES) == [str(second)]
+    assert fusion._WORKER_IMAGE_CACHE_USED_BYTES == 16
 
 
 def test_resource_and_grid_contracts_reject_invalid_values():
