@@ -182,6 +182,9 @@ D3D12 + Gazebo GUI + RViz 的纵向动态验收完成 `660/660` 曝光与归档�
       真值扣除 P95 `7 → 6 DN`、off-seam 基线仍为 `2 DN`、比值 `3.50 → 3.00`；绝对锚点
       P95 `1.139 mm`、局部残差 P95 `0.189 mm`、尺度 `18.95 ppm`，几何没有退化。该次是
       开发 A/B，不替换五份已冻结正式证据；以后新采集使用新标定。
+      可用标定已在干净提交 `73e6e8f` 上重采到
+      `$CLIMBOT_DATA_ROOT/calibration/flat_field_sim_pbr_exp065_20260901.npz`，SHA-256 为
+      `e78234e7b9b7ee2ee0e16c2ec82e2fe03f2354ee40f69f88a0b69eedd5bd72fb`。
 
 
 文档治理已于 2026-08-27 完成收敛：README、规范、架构、接口、操作、状态、验收、结果索引、
