@@ -19,6 +19,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import hashlib
 import json
 import math
@@ -758,7 +759,8 @@ class _ProcessTreePssMonitor:
 def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                       pose_graph_dir: Path, resolution_m: float,
                       jobs: int, memory_budget_gb: float,
-                      preview_max_side_px: int = 4096) -> dict[str, Any]:
+                      preview_max_side_px: int = 4096,
+                      execution_backend: dict[str, Any] | None = None) -> dict[str, Any]:
     """Atomically build comparable BigTIFF products with bounded worker memory."""
     if not output_dir.is_absolute() or output_dir.exists() or not output_dir.parent.is_dir():
         raise FusionError('output directory must be absolute, new and have an existing parent.')
@@ -772,6 +774,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             not isinstance(preview_max_side_px, int) or preview_max_side_px < 512):
         raise FusionError('preview_max_side_px must be an integer of at least 512.')
     started = time.perf_counter()
+    execution_started_utc = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     projections = project_inputs(inputs)
     initial, optimized = read_pose_graph(pose_graph_dir, inputs, projections)
     if len(initial) > np.iinfo(np.uint16).max:
@@ -921,6 +924,22 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             },
             'outputs': outputs,
         }
+        if execution_backend is not None:
+            if not isinstance(execution_backend, dict):
+                raise FusionError('execution backend provenance must be an object.')
+            # This record comes from the clean worker which loaded OpenCV. It
+            # has build hashes, never a host-private installation path.
+            execution = dict(execution_backend)
+            attempts = execution.get('attempts', [])
+            if (not isinstance(attempts, list) or
+                    not all(isinstance(item, dict) for item in attempts)):
+                raise FusionError('execution backend attempts must be objects.')
+            execution['attempts'] = [*attempts, {
+                'backend': 'cpu', 'outcome': 'completed',
+                'started_utc': execution_started_utc,
+                'elapsed_s': time.perf_counter() - started,
+            }]
+            manifest['execution'] = execution
         (temporary / 'mosaic_manifest.json').write_text(json.dumps(
             manifest, allow_nan=False, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
             encoding='utf-8')
@@ -933,7 +952,12 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
              'memory_budget_gb': memory_budget_gb,
              'preview_max_side_px': preview_max_side_px,
              'image_cache_bytes_per_worker': _WORKER_IMAGE_CACHE_BYTES,
-             'render_task_chunk_tiles': _RENDER_TASK_CHUNK_TILES},
+             'render_task_chunk_tiles': _RENDER_TASK_CHUNK_TILES,
+             **({'backend': {
+                 key: manifest['execution'][key]
+                 for key in ('requested', 'effective', 'fallback')
+                 if key in manifest['execution']
+             }} if execution_backend is not None else {})},
             {**processed_run_inputs(manifest['input_summary']),
              'pose_graph': artifact(pose_graph_dir / 'pose_graph.json'),
              'optimized_poses': artifact(pose_graph_dir / 'optimized_poses.json')},

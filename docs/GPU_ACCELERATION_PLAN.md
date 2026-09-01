@@ -273,7 +273,7 @@ CUDA staging 清理失败。每项都验证：退出码、错误文本、是否 
 | 阶段 | 内容 | 完成条件 |
 | --- | --- | --- |
 | G0 | CPU 解码复用基线 | **已完成**：`3b72f44`、十产物哈希一致、全仓 1,342 tests |
-| G1 | 公共 backend controller、probe、provenance | CPU 默认逐位不变；无 GPU CI 测试全绿 |
+| G1 | 公共 backend controller、probe、provenance | **已完成**：CPU 默认仍走干净 system-OpenCV child；真实 CUDA probe 通过；无 GPU 包级测试全绿 |
 | G2 | 单 tile CUDA fusion 原型 | 分类输出逐位一致，灰度满足第 8 节 |
 | G3 | 完整 CUDA fusion、显存缓存、双缓冲 | 完整 P2-06 自动后验通过，无半成品 |
 | G4 | 分项性能收敛；必要时聚合 kernel 或 direct writer | 达到至少 20% 加速，单项提交有 A/B |
@@ -287,7 +287,7 @@ CUDA staging 清理失败。每项都验证：退出码、错误文本、是否 
 ## 11. 当前工作单
 
 - [x] G0：CPU 解码复用与可测基线；
-- [ ] G1：公共 backend controller 和真实 CUDA probe；
+- [x] G1：公共 backend controller 和真实 CUDA probe；
 - [ ] G2：单 tile CPU/CUDA 等价性原型；
 - [ ] G3：完整 fusion CUDA 后端；
 - [ ] G4：性能收敛与 I/O 决策；

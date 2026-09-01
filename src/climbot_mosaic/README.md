@@ -101,6 +101,18 @@ worker 峰值缓存、聚合 PNG 解码 CPU 时间和 tile 块大小，便于后
 `--preview-max-side-px` 只改变两份 JPEG 预览的尺寸，不会改变正式 BigTIFF 或位姿图。默认 `4096`
 便于查看接缝和局部细节；想减小文件可设为 `2048`，最小值为 `512`。
 
+### GPU 后端的当前状态
+
+`build_wall_mosaic` 已有 `--backend cpu|cuda|auto` 与 `--cuda-opencv-root`，默认仍为 `cpu`。
+控制器不导入 OpenCV：它为 CPU 或 CUDA 启动干净子进程，避免系统 OpenCV 与隔离 CUDA OpenCV
+混装。manifest 会记录请求/实际 backend、fallback、OpenCV 模块及构建信息的 SHA-256，不记录
+本机安装路径。
+
+当前完成的是 CUDA 真实自检：上传下载、`warpPerspective`、`remap`、算术和显存查询都必须成功。
+GPU fusion 本体将在下一阶段接入；因此目前 `--backend cuda` 会在自检后明确失败，`--backend auto`
+会清理并从头运行 CPU。不要把这一步当作性能开关；实际加速与 CPU/CUDA 像素等价验证完成前，
+请继续使用默认 `--backend cpu`。
+
 ## 后验评价
 
 `evaluate_diagnostic_mosaic` 和 `inspect_diagnostic_mosaic` 是**渲染完成之后**才运行的

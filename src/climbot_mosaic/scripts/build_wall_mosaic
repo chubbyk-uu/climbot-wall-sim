@@ -2,15 +2,26 @@
 # Copyright 2026 jerry
 # Licensed under the Apache License, Version 2.0
 
-"""Build pose-only and globally optimized tiled wall mosaics."""
+"""Select an isolated fusion backend, then launch its clean worker process."""
 
 import argparse
+from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
+import sys
+import time
 
-from climbot_mosaic.fusion import build_wall_mosaic, FusionError, resolve_jobs
-from climbot_mosaic.mosaic_inputs import MosaicInputError, validate_processed_runs
-from climbot_mosaic.projection import ProjectionError
+from climbot_common.acceleration import (
+    AccelerationError,
+    BackendUnavailableError,
+    cpu_child_environment,
+    execute_backend,
+    parse_backend,
+    probe_cuda_opencv,
+    resolve_cuda_opencv_root,
+    run_json_child,
+)
 
 
 def _jobs(value: str) -> int | None:
@@ -25,7 +36,14 @@ def _jobs(value: str) -> int | None:
     return result
 
 
-def main() -> int:
+def _backend(value: str) -> str:
+    try:
+        return parse_backend(value)
+    except AccelerationError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+
+
+def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Build comparable tiled Climbot wall mosaics.')
     parser.add_argument('--input-run', action='append', required=True, type=Path)
     parser.add_argument('--pose-graph-dir', required=True, type=Path)
@@ -37,20 +55,72 @@ def main() -> int:
     parser.add_argument(
         '--preview-max-side-px', type=int, default=4096,
         help='Longest edge of each JPEG preview panel (default: 4096; minimum: 512).')
-    arguments = parser.parse_args()
+    parser.add_argument('--backend', type=_backend, default='cpu',
+                        help='Execution backend: cpu (default), cuda, or auto.')
+    parser.add_argument('--cuda-opencv-root', type=Path,
+                        help='Isolated CUDA OpenCV prefix; otherwise read CLIMBOT_CUDA_OPENCV_ROOT.')
+    return parser
+
+
+def _cpu_execution(requested: str, fallback: dict | None) -> dict:
+    attempts = []
+    if fallback is not None:
+        attempts.append(fallback)
+    result = {'requested': requested, 'effective': 'cpu', 'fallback': fallback is not None,
+              'attempts': attempts}
+    if fallback is not None:
+        result['fallback_reason'] = fallback['error']
+    return result
+
+
+def main() -> int:
+    arguments = _parser().parse_args()
+    requested = arguments.backend
+    root_hint = arguments.cuda_opencv_root or os.environ.get('CLIMBOT_CUDA_OPENCV_ROOT')
+    root_for_cpu = Path(root_hint).expanduser() if root_hint else None
+    fallback: list[dict | None] = [None]
+
+    def cpu_attempt() -> dict:
+        request = {
+            'input_runs': [str(path) for path in arguments.input_run],
+            'pose_graph_dir': str(arguments.pose_graph_dir),
+            'output_dir': str(arguments.output_dir),
+            'work_dir': str(arguments.work_dir),
+            'resolution_m_per_pixel': arguments.resolution_mm_per_pixel / 1000.0,
+            'jobs': arguments.jobs,
+            'memory_budget_gb': arguments.memory_budget_gb,
+            'preview_max_side_px': arguments.preview_max_side_px,
+            'execution': _cpu_execution(requested, fallback[0]),
+        }
+        return run_json_child(
+            (sys.executable, '-m', 'climbot_mosaic.mosaic_worker'), request,
+            environment=cpu_child_environment(root_for_cpu))
+
+    def cuda_attempt() -> None:
+        attempt_started = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        started = time.perf_counter()
+        try:
+            root = resolve_cuda_opencv_root(arguments.cuda_opencv_root)
+            probe_cuda_opencv(root)
+            error = BackendUnavailableError(
+                'CUDA fusion execution is not implemented yet; the CUDA OpenCV probe passed. '
+                'Use --backend cpu until the G2 tile-equivalence backend is available.')
+        except AccelerationError as caught:
+            error = caught
+        fallback[0] = {'backend': 'cuda', 'outcome': 'failed',
+                       'started_utc': attempt_started,
+                       'elapsed_s': time.perf_counter() - started,
+                       'error': {'category': error.category, 'message': str(error)}}
+        raise error
     try:
-        jobs = resolve_jobs(arguments.jobs, arguments.memory_budget_gb)
-        manifest = build_wall_mosaic(
-            arguments.output_dir, arguments.work_dir,
-            validate_processed_runs(arguments.input_run), arguments.pose_graph_dir,
-            arguments.resolution_mm_per_pixel / 1000.0,
-            jobs, arguments.memory_budget_gb, arguments.preview_max_side_px)
-    except (MosaicInputError, ProjectionError, FusionError, OSError, ValueError) as error:
-        print(f'wall mosaic failed: {error}')
+        result = execute_backend(requested, cpu_attempt, cuda_attempt)
+    except AccelerationError as error:
+        print(f'wall mosaic failed: {error}', file=sys.stderr)
         return 2
-    print(json.dumps({'status': 'completed', 'output_dir': str(arguments.output_dir),
-                      'grid': manifest['grid'], 'outputs': manifest['outputs']},
-                     allow_nan=False, sort_keys=True))
+    response = dict(result.value)
+    # Keep the public CLI response compatible with the pre-controller command.
+    response['output_dir'] = str(arguments.output_dir)
+    print(json.dumps(response, allow_nan=False, sort_keys=True))
     return 0
 
 

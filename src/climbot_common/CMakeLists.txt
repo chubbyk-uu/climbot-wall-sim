@@ -15,6 +15,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_provenance test/test_provenance.py)
   ament_add_pytest_test(test_hashing test/test_hashing.py)
   ament_add_pytest_test(test_atomic test/test_atomic.py)
+  ament_add_pytest_test(test_acceleration test/test_acceleration.py)
 endif()
 
 ament_package()
