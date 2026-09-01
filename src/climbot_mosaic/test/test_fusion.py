@@ -15,10 +15,12 @@
 """Small deterministic geometry tests for tiled mosaic fusion."""
 
 import os
+from types import SimpleNamespace
 
 import climbot_mosaic.fusion as fusion
 from climbot_mosaic.fusion import (
     _process_tree_pss_bytes,
+    _tasks,
     _tile_count,
     _tile_seam_adjacencies,
     _tiles_from_raw,
@@ -90,6 +92,26 @@ def test_hard_cut_seams_include_internal_and_tiled_neighbours():
     }
 
 
+def test_spatial_task_index_preserves_exact_intersection_and_frame_order():
+    grid = RenderGrid(-0.2, -0.1, 0.83, 0.77, 0.01, 103, 87, 16)
+    frames = tuple(_frame(index, bbox) for index, bbox in enumerate((
+        (-0.2, -0.1, -0.04, 0.06),
+        (-0.0400000000001, 0.0599999999999, 0.4, 0.33),
+        (0.39, 0.32, 0.83, 0.77),
+        (0.1, -0.05, 0.11, 0.76),
+    )))
+    for _, row, column, candidates, _ in _tasks('initial', grid, frames, frames):
+        top = grid.max_y_m - row * grid.resolution_m
+        bottom = grid.max_y_m - min(row + grid.tile_size_px, grid.height_px) * grid.resolution_m
+        left = grid.min_x_m + column * grid.resolution_m
+        right = grid.min_x_m + min(
+            column + grid.tile_size_px, grid.width_px) * grid.resolution_m
+        expected = tuple(index for index, frame in enumerate(frames)
+                         if frame.bbox_xy_m[2] > left and frame.bbox_xy_m[0] < right and
+                         frame.bbox_xy_m[3] > bottom and frame.bbox_xy_m[1] < top)
+        assert candidates == expected
+
+
 def test_worker_image_cache_is_byte_bounded(tmp_path, monkeypatch):
     first = tmp_path / 'first.png'
     second = tmp_path / 'second.png'
@@ -128,6 +150,30 @@ def test_preview_size_contract_rejects_too_small_panels(tmp_path):
         build_wall_mosaic(
             tmp_path / 'result', tmp_path / 'work', None, None,
             0.001, 1, 1.0, preview_max_side_px=511)
+
+
+def test_ctrl_c_removes_atomic_staging_and_rebuildable_cache(tmp_path, monkeypatch):
+    frame = _frame(0, (0.0, 0.0, 0.004, 0.004))
+    grid = RenderGrid(0.0, 0.0, 0.004, 0.004, 0.001, 4, 4, 16)
+    monkeypatch.setattr(fusion, 'project_inputs', lambda _inputs: object())
+    monkeypatch.setattr(fusion, 'read_pose_graph',
+                        lambda _path, _inputs, _projections: ((frame,), (frame,)))
+    monkeypatch.setattr(fusion, 'common_grid',
+                        lambda _initial, _optimized, _resolution: grid)
+
+    def interrupted_pool(*_arguments):
+        raise KeyboardInterrupt
+
+    output = tmp_path / 'result'
+    work = tmp_path / 'work'
+    inputs = SimpleNamespace(camera=SimpleNamespace(width=4, height=4))
+    with pytest.raises(KeyboardInterrupt):
+        build_wall_mosaic(
+            output, work, inputs, tmp_path / 'graph', 0.001, 1, 1.0,
+            render_pool_factory=interrupted_pool)
+    assert not output.exists()
+    assert not tuple(tmp_path.glob('.result.tmp-*'))
+    assert not tuple(work.glob('fusion-*'))
 
 
 def test_uncertainty_encoding_has_precision_range_and_explicit_nodata():

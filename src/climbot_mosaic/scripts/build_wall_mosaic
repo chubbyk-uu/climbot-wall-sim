@@ -5,21 +5,15 @@
 """Select an isolated fusion backend, then launch its clean worker process."""
 
 import argparse
-from datetime import datetime, timezone
 import json
-import os
 from pathlib import Path
 import sys
-import time
 
 from climbot_common.acceleration import (
     AccelerationError,
-    BackendUnavailableError,
     cpu_child_environment,
     execute_backend,
     parse_backend,
-    probe_cuda_opencv,
-    resolve_cuda_opencv_root,
     run_json_child,
 )
 
@@ -57,8 +51,6 @@ def _parser() -> argparse.ArgumentParser:
         help='Longest edge of each JPEG preview panel (default: 4096; minimum: 512).')
     parser.add_argument('--backend', type=_backend, default='cpu',
                         help='Execution backend: cpu (default), cuda, or auto.')
-    parser.add_argument('--cuda-opencv-root', type=Path,
-                        help='Isolated CUDA OpenCV prefix; otherwise read CLIMBOT_CUDA_OPENCV_ROOT.')
     return parser
 
 
@@ -76,8 +68,6 @@ def _cpu_execution(requested: str, fallback: dict | None) -> dict:
 def main() -> int:
     arguments = _parser().parse_args()
     requested = arguments.backend
-    root_hint = arguments.cuda_opencv_root or os.environ.get('CLIMBOT_CUDA_OPENCV_ROOT')
-    root_for_cpu = Path(root_hint).expanduser() if root_hint else None
     fallback: list[dict | None] = [None]
 
     def cpu_attempt() -> dict:
@@ -94,24 +84,32 @@ def main() -> int:
         }
         return run_json_child(
             (sys.executable, '-m', 'climbot_mosaic.mosaic_worker'), request,
-            environment=cpu_child_environment(root_for_cpu))
+            environment=cpu_child_environment(), timeout_s=1800.0)
 
-    def cuda_attempt() -> None:
-        attempt_started = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-        started = time.perf_counter()
+    def cuda_attempt() -> dict:
+        request = {
+            'input_runs': [str(path) for path in arguments.input_run],
+            'pose_graph_dir': str(arguments.pose_graph_dir),
+            'output_dir': str(arguments.output_dir),
+            'work_dir': str(arguments.work_dir),
+            'resolution_m_per_pixel': arguments.resolution_mm_per_pixel / 1000.0,
+            'jobs': arguments.jobs,
+            'memory_budget_gb': arguments.memory_budget_gb,
+            'preview_max_side_px': arguments.preview_max_side_px,
+            'execution': {
+                'requested': requested, 'effective': 'cuda', 'fallback': False,
+                'attempts': [],
+            },
+        }
         try:
-            root = resolve_cuda_opencv_root(arguments.cuda_opencv_root)
-            probe_cuda_opencv(root)
-            error = BackendUnavailableError(
-                'CUDA fusion execution is not implemented yet; the CUDA OpenCV probe passed. '
-                'Use --backend cpu until the G2 tile-equivalence backend is available.')
-        except AccelerationError as caught:
-            error = caught
-        fallback[0] = {'backend': 'cuda', 'outcome': 'failed',
-                       'started_utc': attempt_started,
-                       'elapsed_s': time.perf_counter() - started,
-                       'error': {'category': error.category, 'message': str(error)}}
-        raise error
+            return run_json_child(
+                (sys.executable, '-m', 'climbot_mosaic.mosaic_cuda_worker'), request,
+                environment=cpu_child_environment(), timeout_s=1800.0)
+        except AccelerationError as error:
+            fallback[0] = {
+                'backend': 'cuda', 'outcome': 'failed',
+                'error': {'category': error.category, 'message': str(error)}}
+            raise
     try:
         result = execute_backend(requested, cpu_attempt, cuda_attempt)
     except AccelerationError as error:

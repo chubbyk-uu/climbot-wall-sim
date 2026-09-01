@@ -6,6 +6,30 @@ find_package(ament_cmake_python REQUIRED)
 
 ament_python_install_package(${PROJECT_NAME})
 
+# CUDA is optional: CPU-only ROS installations must continue to configure and
+# run the package.  A CUDA 12.8+ host builds the custom fusion extension; it
+# does not link the private CUDA OpenCV experiment.
+include(CheckLanguage)
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+  enable_language(CUDA)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+  find_package(pybind11_vendor REQUIRED)
+  find_package(pybind11 REQUIRED)
+  find_package(CUDAToolkit REQUIRED)
+  pybind11_add_module(_fusion_cuda SHARED src/fusion_cuda.cu)
+  target_compile_features(_fusion_cuda PRIVATE cxx_std_17)
+  target_compile_options(_fusion_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+  target_link_libraries(_fusion_cuda PRIVATE CUDA::cudart)
+  set(CLIMBOT_CUDA_ARCHITECTURES "120" CACHE STRING
+    "CUDA architectures for the optional Climbot fusion extension")
+  set_target_properties(_fusion_cuda PROPERTIES
+    CUDA_ARCHITECTURES "${CLIMBOT_CUDA_ARCHITECTURES}"
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON)
+  install(TARGETS _fusion_cuda DESTINATION "${PYTHON_INSTALL_DIR}/climbot_mosaic")
+endif()
+
 install(PROGRAMS
   scripts/build_wall_mosaic
   scripts/build_pose_graph
@@ -31,6 +55,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_projection test/test_projection.py)
   ament_add_pytest_test(test_pose_graph test/test_pose_graph.py)
   ament_add_pytest_test(test_fusion test/test_fusion.py)
+  ament_add_pytest_test(test_cuda_fusion test/test_cuda_fusion.py)
   ament_add_pytest_test(test_backend_controller test/test_backend_controller.py)
   ament_add_pytest_test(test_evidence_chain test/test_evidence_chain.py)
   ament_add_pytest_test(test_stage_provenance test/test_stage_provenance.py)

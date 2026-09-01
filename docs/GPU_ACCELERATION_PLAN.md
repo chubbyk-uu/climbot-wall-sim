@@ -1,17 +1,17 @@
 # 离线图像链 GPU 加速实施计划
 
-更新：2026-09-01。本文是当前进行中的性能专项，规定预处理与墙面拼接怎样引入 CUDA、哪些
-合同不得改变、每一步修改什么以及如何验收。当前拼接算法、P2-06 判据和证据边界仍以
+更新：2026-09-01。本文记录已完成的 fusion CUDA 性能专项及仍可复用的验收合同，并标明被
+否决的预处理/CUDA OpenCV 路线。当前拼接算法、P2-06 判据和证据边界仍以
 [墙面拼接设计](MOSAIC_PLAN.md)为准；本文不重新定义几何或质量门限。
 
 ## 1. 目标、范围与非目标
 
 目标是在保持 CPU 路径、不可变输入、原子发布和分阶段 provenance 的前提下，为离线图像链
-增加可选 CUDA 后端，并降低完整 P2-06 重建时间。优先级按已测瓶颈排列：
+增加可选 CUDA 后端，并降低完整 P2-06 重建时间。当前结论按已测瓶颈排列：
 
-1. `build_wall_mosaic` 的 tile 投影与 hard-cut 融合；
-2. `process_inspection_archive` 的平场、暗场、去噪与去畸变；
-3. 只有前两项完成后仍值得优化，才评估描述子匹配。
+1. `build_wall_mosaic` 的 tile 投影与 hard-cut 融合已落地，fusion 中位加速 `1.92×`；
+2. `process_inspection_archive` 的 CUDA 原型端到端更慢，已撤回；
+3. 后续只有 CUDA SIFT 仍可能为整链节省超过 `15 s`，须另做可行性验证。
 
 不在本专项内：
 
@@ -43,38 +43,27 @@ CPU 解码复用基线提交为 `3b72f44`。同一组 P2-06 输入为横向 680 
 
 ## 3. 运行环境与隔离边界
 
-已验证的开发环境为 OpenCV `4.14.0`、CUDA Toolkit `12.8`、GPU 架构 `sm_120`。CUDA OpenCV
-安装在工作区之外，系统 OpenCV `4.6.0` 继续供 ROS 2 和 CPU 路径使用。
+已验证环境为系统 OpenCV `4.6.0`、CUDA Toolkit `12.8`、GPU 架构 `sm_120`。生产 fusion 使用
+pybind11 编译的自定义 C++/CUDA 扩展，**不依赖 CUDA OpenCV、Torch、Conda 或 cuDNN**；此前
+隔离安装的 OpenCV `4.14.0` 只属于被否定的原型。
 
-禁止把 CUDA OpenCV 写入全局 `PYTHONPATH`、`LD_LIBRARY_PATH`、系统 Python 或仓库私有路径。
-运行时由 `CLIMBOT_CUDA_OPENCV_ROOT` 指向隔离安装前缀；manifest 只记录版本、构建指纹和设备
-信息，不记录该绝对路径。仓库、文档和测试不得出现具体用户名目录。
-
-一个 Python 进程不得同时加载系统 OpenCV 与 CUDA OpenCV。公共 CLI 先由不导入 `cv2` 的控制层
-解析后端，再启动干净子进程：
-
-```text
-CLI controller（stdlib + climbot_common，不导入 cv2）
-  ├─ cpu child  → 系统 OpenCV 4.6 → 现有实现
-  └─ cuda child → 隔离 OpenCV 4.14 + CUDA 12.8 → CUDA 实现
-```
-
-这条进程边界同时解决三件事：ROS 不会误载私有 OpenCV、CPU fallback 可以从干净状态重跑、
-CUDA context 不会被 `fork` 到多个进程。
+CPU-only 主机必须仍能配置和运行：CMake 找不到 CUDA compiler 时不构建扩展；找到时默认生成
+`sm_120`，其他设备通过 `CLIMBOT_CUDA_ARCHITECTURES` 覆盖。CLI controller 自身不导入 OpenCV，
+CPU/CUDA 都在干净 child 中运行，CUDA context 不会被 fork。manifest 只记录扩展摘要、CUDA
+版本和设备信息，不记录编译器、安装前缀或用户目录。
 
 ## 4. 公共后端合同
 
-P1 与 fusion 的 CLI 都增加同一组参数：
+生产 `build_wall_mosaic` CLI 提供以下后端参数；P1 CUDA 原型已撤回，不提供后端选项：
 
 | 参数 | 语义 |
 | --- | --- |
 | `--backend cpu` | 强制现有 CPU 路径；CUDA 环境完全不参与 |
 | `--backend cuda` | 强制 CUDA；探测、显存或运行失败必须明确失败，不静默回退 |
 | `--backend auto` | CUDA 自检通过才尝试；不可用或运行失败时清理 staging 后从头执行 CPU |
-| `--cuda-opencv-root` | 可选显式前缀；未给时只读取 `CLIMBOT_CUDA_OPENCV_ROOT` |
 
-实施期默认仍为 `cpu`。只有第 9 节全部通过，才在单独提交中讨论把默认改成 `auto`；不能把默认
-切换夹在算法实现提交里。
+最终默认保持 `cpu`，让没有 CUDA 的机器与历史命令继续得到确定的 CPU 行为。本项目 CUDA
+开发机的完整拼接、性能和验收运行则显式使用 `cuda`；`auto` 只用于允许回退的普通批处理。
 
 错误分三类，控制器必须区分：
 
@@ -100,14 +89,14 @@ stage provenance 同步记录影响结果或调度的后端参数，但不记录
 新增纯标准库模块 `climbot_common/acceleration.py`：
 
 - 解析和校验 backend 参数；
-- 解析 CUDA OpenCV 前缀，构造只对子进程生效的环境；
-- 启动 probe/worker，校验严格 JSON 协议和退出码；
+- 构造不污染父进程的 child 环境；
+- 启动 worker，校验严格 JSON 协议和退出码；
 - 分类错误并编排 `auto` 的清理后重跑；
 - 生成不含路径的 backend provenance。
 
-新增 `climbot_common/cuda_probe.py`，只在 CUDA 子进程中导入 `cv2`。probe 不以
-`getCudaEnabledDeviceCount() > 0` 作为唯一判据，还要实际完成：`GpuMat` 上传/下载、
-`warpPerspective`、`remap`、算术运算和一次显存查询。版本号存在但 kernel 不能执行时必须失败。
+早期 CUDA OpenCV 原型使用过独立 `cuda_probe.py` 和安装前缀隔离；原型否决后两者均已删除。
+生产 CUDA worker 直接加载本包的自定义扩展，扩展负责设备、compute capability、显存和 kernel
+执行检查，不能仅凭库或设备名称存在就报告可用。
 
 单元测试全部使用伪 worker，不要求 CI 有 NVIDIA GPU。真实 GPU smoke test 是显式集成测试，没 GPU
 时报告 skip，不能让普通 `colcon test` 依赖本机私有安装。
@@ -122,61 +111,37 @@ CUDA worker 仍使用现有“不存在的输出目录 + 同父目录随机 stag
 
 ## 6. Fusion CUDA 实现
 
-### 6.1 保持在 CPU 的部分
+### 6.1 CPU/GPU 边界
 
-以下代码继续使用现有实现：输入和 SHA-256 校验、投影和 bbox、位姿图读取、共同网格、tile 候选
-顺序、TIFF/PNG/JPEG 编码、稀疏接缝提取、产物哈希和 provenance。GPU 不能改变稳定帧序和
-`candidate_priority > owner_priority` 的严格平局规则。
+CPU 继续负责输入与 SHA-256 校验、投影/bbox、位姿图、共同网格、候选顺序、TIFF/PNG/JPEG、
+稀疏接缝、产物哈希、provenance 和原子发布。CUDA 只替换每个 tile 的透视采样、coverage、
+interior-distance hard-cut、owner、uncertainty 和重叠质量归约，因此失败时仍走同一套清理合同。
 
-### 6.2 放到 GPU 的部分
+自定义 kernel 以 double 计算逆投影坐标，再按 OpenCV `INTER_LINEAR` 的 `1/32 px` 表量化采样点；
+候选按稳定帧序循环，只有 `priority > best` 才换 owner，不用并发原子竞争决定归属。完整数据证明
+coverage、owner 和接缝与 CPU 逐位一致。连续坐标变体会改变少量 owner，却没有改善锚点或接缝
+等级指标，已删除而不是保留第二套语义。
 
-每个 tile 内依次执行：
+### 6.2 驻留、显存与输出
 
-1. `source_mask` 的 nearest `warpPerspective`；
-2. 源图的 linear `warpPerspective`；
-3. interior-distance priority 的 linear `warpPerspective`；
-4. mask 与 priority 比较，更新 hard-cut image、owner 和 owner priority；
-5. coverage、重叠灰度 sum/square-sum 累加并输出 tile 级 quality。
+1,340 张 `1920×1080 mono8` 由 8 个有界线程并行解码，每张只上传一次；约 `2.78 GiB` 图像在
+pose-only 与 optimized 两遍之间共享。启动时实测空闲显存，计划占用不得超过其 `80%`，并至少
+留 `2 GiB`；不足时 `cuda` 失败、`auto` 从零改跑 CPU。每个正式 `512×512` tile 只下载 image、
+owner、coverage、uncertainty 和 4096-bin 质量直方图，不下载整幅浮点质量图。
 
-最终 image、owner、coverage 和 quality 下载一次。uncertainty 继续在 CPU 按最终 owner 和现有公式
-生成，以减少 GPU 分支并优先保证现有量化结果逐位一致；这项等价重构必须先有单元测试证明。
+TIFF 和派生产物仍是后半程主要成本，继续用 lossless deflate level 1。raw 缓存和单写入器没有
+为了 GPU 改写；若以后优化 I/O，必须独立 A/B，不能把压缩或 schema 变化算成 CUDA 收益。
 
-第一版使用已有 `cv2.cuda` primitives，候选帧仍按稳定顺序串行更新，tile 内像素并行；禁止用
-并发原子竞争改变平局结果。若 profiler 证明 kernel launch/中间 GpuMat 成为主要瓶颈，第二版才
-增加一个小型 CUDA 聚合 kernel；不能在没有基线时直接维护整套自定义 warp。
+### 6.3 实际文件边界
 
-### 6.3 显存图像缓存
-
-本组 1,340 张 mono8 解码后约 `2.78 GiB`，可在 16 GiB GPU 中一次驻留。CUDA worker：
-
-- 本组显存充足时每张 PNG 最多解码一次、上传一次；
-- pose-only 与 optimized 共用同一份 GPU 图像缓存；
-- source mask、interior-distance map 和常量矩阵只上传一次；
-- 其他数据集显存不够时使用按字节 LRU，允许有记录的重复解码/上传，但不创建多个 CUDA 进程；
-- 启动前以 `DeviceInfo.queryMemory()` 量测可用显存，至少保留 `2 GiB` 且不计划占用超过启动时
-  空闲显存的 `80%`；不满足时按 backend 合同失败或回退。
-
-### 6.4 Tile 流水
-
-正式 TIFF 仍为 `512×512` tile。先比较 GPU render block `512/1024/2048`，但存储 tile 和输出
-网格不得改变。采用双缓冲：GPU 计算下一块时，CPU 下载、统计并压缩上一块。上传/下载和 kernel
-分别计时，不能只报告一个总数。
-
-初版保留现有 raw 辅助缓存，以便只比较 CPU/CUDA 计算差异；通过数值验收后，再单独做写入流水
-A/B。后续可让多个有界 writer 队列直接消费 image/coverage/uncertainty/difference tile，目标是
-消除除 pose-only difference 所需数据之外的 raw 写放大。这个 I/O 改造必须单独提交和测量，不能
-与首个 CUDA 结果混在一起。
-
-### 6.5 计划修改的文件
-
-| 文件 | 计划改动 |
+| 文件 | 当前职责 |
 | --- | --- |
-| `climbot_mosaic/scripts/build_wall_mosaic` | 变成不预先导入 `cv2` 的 backend controller |
-| `climbot_mosaic/fusion.py` | 保留 CPU 权威实现，抽出共享 grid、tile 组装和发布合同 |
-| `climbot_mosaic/fusion_cuda.py` | GPU cache、CUDA warp、hard-cut 与统计 |
-| `climbot_mosaic/cuda_worker.py` | CUDA child 入口与结构化错误转换 |
-| `climbot_mosaic/test/test_cuda_fusion.py` | synthetic 等价、故障和 fallback 测试 |
-| `climbot_mosaic/README.md` | 完成后加入当前 backend 用法和 manifest 字段 |
+| `scripts/build_wall_mosaic` | OpenCV-free controller、backend 选择与 fallback |
+| `fusion.py` | CPU 权威实现和共享 grid、TIFF、接缝、发布合同 |
+| `fusion_cuda.py` | 解码/上传、tile 任务适配和 CUDA 计时 |
+| `mosaic_cuda_worker.py` | CUDA child、设备 provenance 与结构化错误 |
+| `src/fusion_cuda.cu` | 自定义 hard-cut kernel 与 pybind11 session |
+| `test_cuda_fusion.py` | 有 GPU时执行 CPU/CUDA 小型全链合同测试 |
 
 ## 7. P1 预处理 CUDA 实现
 
@@ -200,7 +165,8 @@ context，也不得在创建 context 后使用 `fork`。若编码成为瓶颈，
 | 两个包的 `package.xml` | P1 增加 `climbot_common` 运行依赖；不声明私有 CUDA OpenCV 为系统包 |
 
 P1 当前两组只需约 `9 s`。只有 GPU 中位耗时至少降低 `15%` 且不降低吞吐稳定性，才保留
-`auto` 候选；否则功能可以保留为显式 `cuda` 实验路径，但默认继续 CPU。
+`auto` 候选；否则默认继续 CPU。未通过本节数值或性能验收的试验实现必须撤回，不保留一个
+看似可用、实际没有收益的显式 `cuda` 路径。
 
 ## 8. 数值与数据合同验收
 
@@ -211,11 +177,15 @@ CPU 是权威参考。验收使用同一输入、位姿图、分辨率、帧序�
 - 输入帧数、身份、SHA-256 和共同网格；
 - coverage count、有效 mask；
 - hard-cut owner 与稀疏 seam adjacency；
-- 由 owner 产生的 uncertainty 编码和 nodata；
 - 所有标签、目录结构、完成/失败语义和 provenance 链接。
 
 任一分类栅格不一致都表示算法合同改变，不能用“GPU 浮点差异”豁免。先调整实现或把该步留在
 CPU，不能放宽验收。
+
+uncertainty 是 owner 与后验协方差推导出的连续量，不参与 owner 或覆盖判定。CPU/CUDA 分别执行
+float32 开方后，允许编码最大差 `1 count = 0.01 mm`，差异比例不得超过 `1e-5`，nodata 必须
+逐位一致。完整 P2-06 实测为 `2,446 / 1,109,992,689 ≈ 2.2e-6`，最大 `1 count`。强行搬回
+Python/CPU 仍有 509 个边界舍入像素，却使 fusion 从约 `47 s` 增至 `71 s`，因此不采用。
 
 ### 8.2 灰度连续量
 
@@ -232,8 +202,9 @@ PNG 文件摘要不同误判为像素不同。
 GPU fusion 必须重跑当前全部自动后验：巡检域零漏拍、绝对锚点、局部残差、尺度、航向、接缝/
 off-seam 比和 optimized 不劣于 pose-only。全部继续使用已经冻结的门限，不因加速重新推导。
 
-CPU/GPU 原尺寸检查 tile 做自动像素差统计；若存在非零差，再对所有受影响 tile 做人工 100%
-检查。没有像素差时，沿用自动哈希证明，不制造无信息的重复人工任务。
+CPU/GPU 原尺寸检查 tile 做自动像素差统计。分类栅格变化或灰度超过第 8.2 节容差才重新做受影响
+tile 的人工检查；只有 `≤1 DN` 的已界定插值差时，以完整自动后验和既有人工基线收口，不制造
+无法靠肉眼鉴别的重复任务。
 
 ## 9. 性能、稳定性与故障验收
 
@@ -258,9 +229,19 @@ fusion 以当前 `88.81 s` 单次结果为初始参考，最终以同轮重复 C
 若只加 CUDA warp 达不到最低门，先依据分项计时决定是做聚合 kernel、扩大 render block 还是处理
 TIFF/raw I/O；不能凭感觉同时改三项。
 
+2026-09-01 在机器空闲、CPU/CUDA 交替各三轮的完整 1,340 帧结果：
+
+| 口径 | CPU min/median/max | CUDA min/median/max | 中位加速 |
+| --- | ---: | ---: | ---: |
+| fusion manifest | `91.13 / 91.86 / 91.92 s` | `46.89 / 47.73 / 47.82 s` | `1.92×` |
+| CLI 全程 | `107.25 / 108.01 / 108.03 s` | `63.21 / 64.02 / 64.14 s` | `1.69×` |
+
+最低保留门通过；`≤45 s` 的进取目标差 `2.73 s`，不为这点差距改写 TIFF 或输出合同。单次峰值
+进程树 PSS 约 `1.78 GiB`，驻留图像 `2.78 GiB`，启动空闲显存约 `14.60 GiB`。
+
 ### 9.3 故障矩阵
 
-必须覆盖：前缀缺失、错误 OpenCV、无 CUDA device、不兼容架构、probe kernel 失败、预检显存不足、
+必须覆盖：扩展缺失、无 CUDA device、不兼容架构、kernel 失败、预检显存不足、
 运行中 OOM、child 非零退出、child 被信号终止、输出协议损坏、用户 Ctrl-C、CPU 输出目录已存在、
 CUDA staging 清理失败。每项都验证：退出码、错误文本、是否 fallback、没有 completed 半成品、
 原始输入未修改。
@@ -273,16 +254,17 @@ CUDA staging 清理失败。每项都验证：退出码、错误文本、是否 
 | 阶段 | 内容 | 完成条件 |
 | --- | --- | --- |
 | G0 | CPU 解码复用基线 | **已完成**：`3b72f44`、十产物哈希一致、全仓 1,342 tests |
-| G1 | 公共 backend controller、probe、provenance | **已完成**：CPU 默认仍走干净 system-OpenCV child；真实 CUDA probe 通过；无 GPU 包级测试全绿 |
+| G1 | 公共 backend controller、worker 协议、provenance | **已完成**：CPU 默认仍走 system-OpenCV child；CUDA worker 严格失败分类；无 GPU 包级测试全绿 |
 | G2 | 单 tile CUDA fusion 原型 | **不采用**：`cv2.cuda.warpPerspective` 不满足当前 CPU 像素合同，见第 10.1 节 |
-| G3 | 完整 CUDA fusion、显存缓存、双缓冲 | 完整 P2-06 自动后验通过，无半成品 |
-| G4 | 分项性能收敛；必要时聚合 kernel 或 direct writer | 达到至少 20% 加速，单项提交有 A/B |
-| G5 | P1 CUDA 流水 | 全帧数值合同通过；至少 15% 才进入 auto 候选 |
-| G6 | 可选 CUDA BF matching 评估 | 仅在仍是显著瓶颈且边集合逐位一致时实施 |
+| G3 | 完整自定义 CUDA fusion 与显存缓存 | **已完成**：完整 P2-06 自动后验通过，无半成品 |
+| G4 | 分项性能收敛与 I/O 决策 | **已完成**：fusion 中位 `1.92×`；保留现有 lossless 输出 |
+| G5 | P1 CUDA 流水 | **不采用**：端到端慢于 8-worker CPU，见第 10.2 节 |
+| G6 | 可选 GPU 特征阶段 | 未实施；只有 CUDA SIFT 仍可能达到整链 `≥15 s` 收益 |
 | G7 | 三轮交替长测、文档和默认策略决定 | 数值、性能、故障矩阵和全仓 `-j8` 全部通过 |
 
 每阶段单独提交。观测、行为修改和门限/默认切换不能混在一个提交里；失败的实验记录结论后撤回，
-不把试验代码留在主路径。G7 完成前，现有 CPU 正式 P2-06 证据仍是唯一权威基线。
+不把试验代码留在主路径。CPU 正式 P2-06 证据仍是验收基线；CUDA A/B 证明执行后端等价，不
+覆写既有证据目录。
 
 ### 10.1 G2：CUDA OpenCV fusion 原型的否定结论（2026-09-01）
 
@@ -305,13 +287,54 @@ worker 和 tile 实现已撤回；不接入 CLI、不产生正式数据，也不
 验收。这已不再是低风险的 OpenCV 后端替换，不能在没有单独决策的情况下推进。当前可继续评估的
 GPU 目标是 P1 预处理：它不依赖透视采样的分类归属，且有独立逐帧数值合同。
 
+### 10.2 G5：P1 CUDA OpenCV 可行性原型的否定结论（2026-09-01）
+
+原型覆盖 dark/gain 的四种开关组合、`median3`，以及随机图、棋盘、斜坡、边界外推和非整数
+remap。得到三个可复用结论：
+
+1. CUDA `remap` 使用连续坐标，而 CPU `remap` 使用 `1/32` 像素插值表。GPU 使用
+   `round(map * 32) / 32` 的兼容坐标后，36 组合合成测试和 32 张真实 `1920×1080` 帧均满足
+   `max = 1 DN`、`p99.99 = 1 DN`。这不是“GPU 更好”的证据，只是保证两个取样定义可比。
+2. 隔离 OpenCV `4.14` 自行计算 `getOptimalNewCameraMatrix` 时，与生产 system OpenCV `4.6`
+   的 new-camera matrix 最大相差 `0.922 px`，生成的 remap 最大相差 `1.027 px`，会导致真实帧
+   最大 `115 DN` 的输出差。因此 CUDA 生产实现若重启，必须使用由 CPU 参考阶段冻结并传入的
+   remap，不得在 CUDA 子进程重新标定；这个差异也没有被当作“画质提升”。
+3. CUDA 12 的 wavelet-matrix median 与 CPU `medianBlur` 的边缘/并列值规则不同。可保留 CPU
+   median 后再回 GPU remap，不能静默替换成不同的滤波器。
+
+性能不满足保留条件。常量驻留后，在 100 张真实 `1920×1080` 帧上，GPU 的解码、上传、像素
+计算、下载（尚未编码）为 `14.26 ms/frame`；单核 CPU 同口径为 `20.83 ms/frame`。但当前 CPU
+归档以 8 个 worker 完整处理 680 帧仅 `4.769 s`，约 `7.01 ms/frame`，且已经包含 PNG 编码和
+写入。GPU 的纯像素阶段已是该端到端基线两倍，无法达到 `15%` 加速门槛。多 stream 原型仅降至
+`13.95 ms/frame`，不足以改变结论。
+
+因此试验中的 CUDA session/child 已撤回：不接入 CLI、不生成正式数据、不改变 P1 CPU 基线。
+若将来 GPU 需要用于提升图像质量，应先提出独立的、可量化的画质目标（例如独立靶标的几何误差
+或平场均匀性），再与当前 CPU 输出和下游 P2-06 验收做盲测；不能仅以输出不同或新版本 OpenCV
+为理由替换生产算法。
+
+### 10.3 G3/G4：自定义 CUDA fusion 收口结果（2026-09-01）
+
+自定义 kernel 避开了第 10.1 节的 OpenCV CUDA 取样差异。完整 P2-06 对比结果为：coverage
+两个栅格逐位一致，pose-only/optimized 接缝数组逐项一致；两张母版分别约 `0.63%`、`0.62%`
+像素相差 `1 DN`，最大也是 `1 DN`。uncertainty 最大差 `0.01 mm`，差异比例 `2.2e-6`。
+
+后验评价接受 8 个共同锚点；optimized 锚点 P95 `1.130 mm`，巡检域内 feature 漏拍 `0`，
+optimized/pose-only 接缝 excess P95 为 `7 / 16 DN`，全部保持原冻结判据。连续坐标变体把
+optimized 接缝数改变 `2,015` 条，却没有改变 P95/P99、锚点等级或运行时间；均值改善只有约
+`0.00065 DN`，不足以证明更好，因此对外参数和分支均删除。
+
+默认最终保持 `cpu`：它是所有机器上的确定基线，也不会因有无 GPU 改变命令结果。`cuda` 是已
+验收的显式加速路径；`auto` 供希望优先 GPU、失败再 CPU 的批处理使用。CUDA OpenCV 安装不再是
+生产依赖。
+
 ## 11. 当前工作单
 
 - [x] G0：CPU 解码复用与可测基线；
-- [x] G1：公共 backend controller 和真实 CUDA probe；
+- [x] G1：公共 backend controller、结构化错误和 provenance；
 - [x] G2：完成可行性原型；`cv2.cuda` fusion 因数值合同不通过而撤回；
-- [ ] G3：完整 fusion CUDA 后端（须先单独决定是否维护自定义 CUDA warp）；
-- [ ] G4：fusion 性能收敛与 I/O 决策（同上）；
-- [ ] G5：P1 CUDA 后端；
-- [ ] G6：是否继续匹配加速的证据化决策；
-- [ ] G7：完整验收、文档和默认后端决策。
+- [x] G3：完整自定义 fusion CUDA 后端、显存守卫和真实 GPU 集成测试；
+- [x] G4：完整 P2-06 数值/后验与三轮交替性能 A/B；
+- [x] G5：完成 CUDA OpenCV 可行性原型；数值兼容可做，但端到端性能不达门槛，已撤回；
+- [ ] G6：CUDA SIFT 可行性验证（独立后续，不属于本次 fusion 收口）；
+- [x] G7：完整验收、文档和默认策略；全仓 `-j8` 为 1,370 tests、0 failures。

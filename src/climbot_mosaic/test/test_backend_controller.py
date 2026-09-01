@@ -30,8 +30,9 @@ def test_backend_controller_does_not_import_opencv_before_its_worker():
         encoding='utf-8')
     assert not re.search(r'^import cv2\b|^from cv2\b', source, flags=re.MULTILINE)
     assert "'climbot_mosaic.mosaic_worker'" in source
+    assert "'climbot_mosaic.mosaic_cuda_worker'" in source
     assert "'--backend'" in source
-    assert "'--cuda-opencv-root'" in source
+    assert "'--cuda-opencv-root'" not in source
 
 
 def test_cpu_worker_is_the_only_module_that_imports_cpu_fusion():
@@ -39,6 +40,28 @@ def test_cpu_worker_is_the_only_module_that_imports_cpu_fusion():
         encoding='utf-8')
     assert 'from climbot_mosaic.fusion import' in source
     assert 'from climbot_common.acceleration import opencv_provenance' in source
+
+
+def test_cuda_worker_labels_invalid_inputs_before_probing_the_gpu(tmp_path):
+    """Auto mode must not hide an invalid archive behind a CPU retry."""
+    completed = subprocess.run(
+        [sys.executable, '-m', 'climbot_mosaic.mosaic_cuda_worker'],
+        input=json.dumps({
+            'input_runs': [str(tmp_path / 'missing')],
+            'pose_graph_dir': str(tmp_path / 'graph'),
+            'output_dir': str(tmp_path / 'output'),
+            'work_dir': str(tmp_path / 'work'),
+            'resolution_m_per_pixel': 0.005,
+            'jobs': 1,
+            'memory_budget_gb': 1.0,
+            'preview_max_side_px': 512,
+            'execution': {'requested': 'auto', 'effective': 'cuda'},
+        }),
+        check=False, capture_output=True, text=True, env=os.environ.copy(), timeout=10.0)
+    assert completed.returncode == 2
+    result = json.loads(completed.stdout)
+    assert result['status'] == 'failed'
+    assert result['error']['category'] == 'input_contract'
 
 
 def test_default_cpu_backend_runs_in_a_clean_child_and_records_provenance(tmp_path):

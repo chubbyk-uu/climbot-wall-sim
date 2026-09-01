@@ -149,6 +149,11 @@ P1 仅接收完整 run，输出新的 processed-run；处理顺序固定为暗�
 manifest。`evaluate_diagnostic_mosaic` 与 `inspect_diagnostic_mosaic` 是后验接口，不参与拼接决策。
 精确 CLI、目录树、编码与失败码见 [拼接计划](MOSAIC_PLAN.md) 和各包 `--help`。
 
+`build_wall_mosaic --backend cpu|cuda|auto` 只选择第 4 阶段执行设备，不改变输入、网格、候选、
+hard-cut 平局规则或输出 schema。默认 `cpu`；`cuda` 要求已构建自定义 CUDA 扩展；`auto` 只对
+`cuda_unavailable` 与 `cuda_runtime_failure` 从头回退 CPU，`input_contract` 和
+`backend_independent_failure` 必须原样失败。CUDA OpenCV 不是该接口的运行依赖。
+
 ## 配置归属
 
 | 范围 | 位置 |

@@ -103,15 +103,34 @@ worker 峰值缓存、聚合 PNG 解码 CPU 时间和 tile 块大小，便于后
 
 ### GPU 后端的当前状态
 
-`build_wall_mosaic` 已有 `--backend cpu|cuda|auto` 与 `--cuda-opencv-root`，默认仍为 `cpu`。
-控制器不导入 OpenCV：它为 CPU 或 CUDA 启动干净子进程，避免系统 OpenCV 与隔离 CUDA OpenCV
-混装。manifest 会记录请求/实际 backend、fallback、OpenCV 模块及构建信息的 SHA-256，不记录
-本机安装路径。
+`build_wall_mosaic` 支持 `--backend cpu|cuda|auto`，默认仍为 `cpu`，因此普通 ROS 2 安装不要求
+CUDA。CUDA 路径使用本包编译出的自定义 C++/CUDA hard-cut kernel；系统 OpenCV 只负责 PNG/TIFF
+等 CPU I/O，**不需要 CUDA OpenCV、Torch、Conda 或 cuDNN**。
 
-当前完成的是 CUDA 真实自检：上传下载、`warpPerspective`、`remap`、算术和显存查询都必须成功。
-GPU fusion 本体将在下一阶段接入；因此目前 `--backend cuda` 会在自检后明确失败，`--backend auto`
-会清理并从头运行 CPU。不要把这一步当作性能开关；实际加速与 CPU/CUDA 像素等价验证完成前，
-请继续使用默认 `--backend cpu`。
+CUDA Toolkit 可用时构建系统会自动生成扩展，默认架构为 `sm_120`；其他 GPU 显式传
+`-DCLIMBOT_CUDA_ARCHITECTURES=<架构>`。运行示例：
+
+```bash
+CUDACXX=/usr/local/cuda-12.8/bin/nvcc colcon build --packages-up-to climbot_mosaic \
+  --cmake-args -DCLIMBOT_CUDA_ARCHITECTURES=120
+source install/setup.bash
+ros2 run climbot_mosaic build_wall_mosaic <其余参数> --backend cuda
+```
+
+Toolkit 的 WSL2 安装步骤见仓库根目录 [README](../../README.md#可选安装-cuda-拼接后端)。本项目
+CUDA 开发机上的完整拼接、性能和验收运行都必须显式使用 `--backend cuda`，并确认 manifest 的
+`execution.backend.effective` 为 `cuda`；`auto` 只适合允许回退的普通批处理，不能作为 GPU 证据。
+
+`cuda` 强制使用 GPU，环境、显存或 kernel 失败就明确失败；`auto` 才允许从干净状态改跑 CPU。
+输入、哈希、参数和共享输出错误不会回退。GPU 启动时至少保留 `2 GiB` 显存，且计划占用不超过
+启动空闲显存的 `80%`。manifest 记录实际 backend、fallback、扩展摘要、设备、CUDA 版本、
+启动空闲显存、驻留图像字节数和分项耗时，不记录本机安装路径。
+
+完整 1,340 帧 P2-06 三轮交替 A/B 的 fusion 中位数为 CPU `91.86 s`、CUDA `47.73 s`
+（`1.92×`）；命令全程中位数为 `108.01 s`、`64.02 s`（`1.69×`）。coverage、hard-cut owner
+和接缝逐位一致，灰度最大差 `1 DN`；uncertainty 最多差一个 `0.01 mm` 编码单位，差异比例约
+`2.2e-6`。诊断墙后验继续通过：巡检域内零漏拍、optimized 锚点 P95 `1.13 mm`、接缝 P95
+`7 DN`（pose-only `16 DN`）。连续坐标试验没有改善这些等级指标却改变 owner，已撤回。
 
 ## 后验评价
 

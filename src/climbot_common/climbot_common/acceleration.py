@@ -12,14 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Run an optional CUDA backend without contaminating the CPU process.
-
-The controller deliberately has no OpenCV import. A CUDA OpenCV build is a
-private, optional toolchain; loading it in the ROS/system OpenCV process makes
-both the CPU fallback and the provenance claim ambiguous.  Backends therefore
-communicate with this module through one strict, small JSON document.
-"""
+"""Run an optional acceleration backend through one strict child protocol."""
 
 from __future__ import annotations
 
@@ -28,12 +21,10 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import sys
 from typing import Any, Callable, Mapping, Sequence
 
 
 BACKENDS = ('cpu', 'cuda', 'auto')
-CUDA_OPENCV_ROOT_ENV = 'CLIMBOT_CUDA_OPENCV_ROOT'
 
 
 class AccelerationError(RuntimeError):
@@ -43,7 +34,7 @@ class AccelerationError(RuntimeError):
 
 
 class BackendConfigurationError(AccelerationError):
-    """The caller supplied an invalid backend setting or CUDA prefix."""
+    """The caller supplied an invalid backend setting."""
 
     category = 'configuration'
 
@@ -52,6 +43,12 @@ class BackendInputError(AccelerationError):
     """Inputs are invalid, so changing execution backend cannot help."""
 
     category = 'input_contract'
+
+
+class BackendIndependentError(AccelerationError):
+    """A shared operation failed, so retrying another backend cannot help."""
+
+    category = 'backend_independent_failure'
 
 
 class BackendUnavailableError(AccelerationError):
@@ -88,59 +85,9 @@ def parse_backend(value: str) -> str:
     return value
 
 
-def _path_entries(value: str | None) -> list[str]:
-    return [entry for entry in (value or '').split(os.pathsep) if entry]
-
-
-def _prepend_path(value: str, existing: str | None) -> str:
-    entries = [value] + [entry for entry in _path_entries(existing) if entry != value]
-    return os.pathsep.join(entries)
-
-
-def resolve_cuda_opencv_root(explicit_root: str | Path | None = None,
-                             environment: Mapping[str, str] | None = None) -> Path:
-    """Resolve and validate the isolated CUDA OpenCV prefix without importing it."""
-    environment = os.environ if environment is None else environment
-    value = explicit_root if explicit_root is not None else environment.get(CUDA_OPENCV_ROOT_ENV)
-    if value is None or not str(value).strip():
-        raise BackendUnavailableError(
-            f'CUDA OpenCV prefix is not configured; pass --cuda-opencv-root or set '
-            f'{CUDA_OPENCV_ROOT_ENV}.')
-    root = Path(value).expanduser().resolve(strict=False)
-    python_root = root / 'python'
-    library_root = root / 'lib'
-    extension = next(python_root.glob('cv2/python-*/cv2*.so'), None)
-    if not python_root.is_dir() or extension is None or not library_root.is_dir():
-        raise BackendUnavailableError(
-            'CUDA OpenCV prefix is incomplete; expected python/cv2/python-*/cv2*.so '
-            'and lib beneath the configured prefix.')
-    return root
-
-
-def cuda_child_environment(root: Path,
-                           environment: Mapping[str, str] | None = None) -> dict[str, str]:
-    """Return an environment that loads CUDA OpenCV only in its child process."""
-    child = dict(os.environ if environment is None else environment)
-    root = Path(root)
-    child[CUDA_OPENCV_ROOT_ENV] = str(root)
-    child['PYTHONPATH'] = _prepend_path(str(root / 'python'), child.get('PYTHONPATH'))
-    child['LD_LIBRARY_PATH'] = _prepend_path(str(root / 'lib'), child.get('LD_LIBRARY_PATH'))
-    return child
-
-
-def cpu_child_environment(cuda_root: Path | None,
-                          environment: Mapping[str, str] | None = None) -> dict[str, str]:
-    """Remove this controller's CUDA prefix before starting a CPU child."""
-    child = dict(os.environ if environment is None else environment)
-    child.pop(CUDA_OPENCV_ROOT_ENV, None)
-    if cuda_root is None:
-        return child
-    root = Path(cuda_root).resolve(strict=False)
-    for key in ('PYTHONPATH', 'LD_LIBRARY_PATH'):
-        child[key] = os.pathsep.join(
-            entry for entry in _path_entries(child.get(key))
-            if not Path(entry).resolve(strict=False).is_relative_to(root))
-    return child
+def cpu_child_environment(environment: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Copy the environment for a clean worker subprocess."""
+    return dict(os.environ if environment is None else environment)
 
 
 def _reject_non_finite(token: str) -> None:
@@ -181,7 +128,15 @@ def run_json_child(command: Sequence[str], request: Mapping[str, Any], *,
     if completed.returncode != 0:
         error = result.get('error')
         message = error.get('message') if isinstance(error, dict) else None
-        raise BackendRuntimeError(
+        category = error.get('category') if isinstance(error, dict) else None
+        error_types = {
+            BackendInputError.category: BackendInputError,
+            BackendIndependentError.category: BackendIndependentError,
+            BackendUnavailableError.category: BackendUnavailableError,
+            BackendRuntimeError.category: BackendRuntimeError,
+        }
+        error_type = error_types.get(category, BackendRuntimeError)
+        raise error_type(
             f'backend child exited {completed.returncode}' + (f': {message}' if message else '.'))
     if result.get('status') != 'completed':
         raise BackendProtocolError("successful backend child did not report status 'completed'.")
@@ -207,7 +162,7 @@ def execute_backend(requested: str, cpu_attempt: Callable[[], Any],
         })
     try:
         value = cuda_attempt()
-    except BackendInputError:
+    except (BackendInputError, BackendIndependentError):
         raise
     except (BackendUnavailableError, BackendRuntimeError) as error:
         attempts.append(_failure_record('cuda', error))
@@ -225,20 +180,6 @@ def execute_backend(requested: str, cpu_attempt: Callable[[], Any],
         'requested': requested, 'effective': 'cuda', 'fallback': False,
         'attempts': attempts,
     })
-
-
-def probe_cuda_opencv(root: Path, *, environment: Mapping[str, str] | None = None,
-                      timeout_s: float = 30.0) -> dict[str, Any]:
-    """Run the real CUDA probe in an isolated interpreter."""
-    try:
-        result = run_json_child(
-            (sys.executable, '-m', 'climbot_common.cuda_probe'), {},
-            environment=cuda_child_environment(root, environment), timeout_s=timeout_s)
-    except BackendRuntimeError as error:
-        raise BackendUnavailableError(str(error)) from error
-    if result.get('probe') != 'cuda_opencv':
-        raise BackendUnavailableError('CUDA probe returned an unexpected result type.')
-    return result
 
 
 def opencv_provenance(cv2_module: Any, *, backend: str,

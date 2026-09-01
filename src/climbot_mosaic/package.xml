@@ -8,6 +8,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
+  <build_depend>pybind11_vendor</build_depend>
 
   <exec_depend>climbot_common</exec_depend>
   <exec_depend>python3-numpy</exec_depend>

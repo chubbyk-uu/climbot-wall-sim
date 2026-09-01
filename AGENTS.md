@@ -33,3 +33,12 @@ These instructions apply to all work in this repository.
   acceptance evidence. Routine diagnostic logs remain under `/tmp`.
 - Do not claim a background test has started until its process or persistent
   execution session has actually been created.
+
+## CUDA mosaic tests on this workstation
+
+- Run full offline wall-mosaic performance and acceptance jobs with the explicit
+  `build_wall_mosaic --backend cuda` argument. After completion, verify that
+  `mosaic_manifest.json` records `execution.backend.effective` as `cuda`.
+- Do not use `--backend auto` for GPU evidence because fallback would change the
+  tested backend. Use `--backend cpu` only for an explicit CPU baseline or A/B
+  comparison. Ordinary unit tests remain portable and may exercise either path.

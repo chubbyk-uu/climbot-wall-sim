@@ -29,7 +29,7 @@ import shutil
 import tempfile
 import threading
 import time
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 import warnings
 
@@ -102,6 +102,9 @@ _WORKER_CACHE_MISSES = 0
 _WORKER_DECODE_ELAPSED_S = 0.0
 UNCERTAINTY_SCALE_M = 1e-5
 UNCERTAINTY_NODATA = np.iinfo(np.uint16).max
+# Level 1 remains lossless while avoiding most of zlib level 6's CPU cost.
+# A 512-tile P2 sample encoded 6.6x faster for 11.5% more bytes.
+TIFF_DEFLATE_LEVEL = 1
 
 
 def _finite(value: Any, description: str) -> float:
@@ -409,20 +412,47 @@ def _render_task(task: tuple[str, int, int, tuple[int, ...], tuple[int, ...]]):
 
 def _tasks(mode: str, grid: RenderGrid, initial: tuple[RenderFrame, ...],
            optimized: tuple[RenderFrame, ...]):
+    """Yield row-major tiles with exact bbox candidates in stable frame order."""
     size = grid.tile_size_px
-    for row in range(0, grid.height_px, size):
-        top = grid.max_y_m - row * grid.resolution_m
-        bottom = grid.max_y_m - min(row + size, grid.height_px) * grid.resolution_m
-        for column in range(0, grid.width_px, size):
-            left = grid.min_x_m + column * grid.resolution_m
-            right = grid.min_x_m + min(column + size, grid.width_px) * grid.resolution_m
+    tile_span = size * grid.resolution_m
+    tile_rows = math.ceil(grid.height_px / size)
+    tile_columns = math.ceil(grid.width_px / size)
 
-            def intersects(frame: RenderFrame) -> bool:
-                x0, y0, x1, y1 = frame.bbox_xy_m
-                return x1 > left and x0 < right and y1 > bottom and y0 < top
+    def candidate_index(frames: tuple[RenderFrame, ...]):
+        result: dict[tuple[int, int], list[int]] = {}
+        for index, frame in enumerate(frames):
+            x0, y0, x1, y1 = frame.bbox_xy_m
+            # Add one tile on each side before applying the exact predicate.
+            # The margin absorbs bbox values that land within a few ulps of a
+            # tile boundary; it cannot add false candidates because every
+            # prospective tile is checked below.
+            first_column = max(0, math.floor((x0 - grid.min_x_m) / tile_span) - 1)
+            last_column = min(
+                tile_columns - 1, math.floor((x1 - grid.min_x_m) / tile_span) + 1)
+            first_row = max(0, math.floor((grid.max_y_m - y1) / tile_span) - 1)
+            last_row = min(
+                tile_rows - 1, math.floor((grid.max_y_m - y0) / tile_span) + 1)
+            for tile_row in range(first_row, last_row + 1):
+                row = tile_row * size
+                top = grid.max_y_m - row * grid.resolution_m
+                bottom = grid.max_y_m - min(
+                    row + size, grid.height_px) * grid.resolution_m
+                for tile_column in range(first_column, last_column + 1):
+                    column = tile_column * size
+                    left = grid.min_x_m + column * grid.resolution_m
+                    right = grid.min_x_m + min(
+                        column + size, grid.width_px) * grid.resolution_m
+                    if x1 > left and x0 < right and y1 > bottom and y0 < top:
+                        result.setdefault((row, column), []).append(index)
+        return result
+
+    initial_index = candidate_index(initial)
+    optimized_index = candidate_index(optimized)
+    for row in range(0, grid.height_px, size):
+        for column in range(0, grid.width_px, size):
             yield (mode, row, column,
-                   tuple(index for index, frame in enumerate(initial) if intersects(frame)),
-                   tuple(index for index, frame in enumerate(optimized) if intersects(frame)))
+                   tuple(initial_index.get((row, column), ())),
+                   tuple(optimized_index.get((row, column), ())))
 
 
 def _tile_count(grid: RenderGrid) -> int:
@@ -580,11 +610,25 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
     seam_parts: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
     previous_right: np.ndarray | None = None
     previous_bottoms: dict[int, np.ndarray] = {}
+    result_wait_elapsed = 0.0
+    seam_elapsed = 0.0
+    raw_write_elapsed = 0.0
+    quality_elapsed = 0.0
+    tiff_elapsed = 0.0
 
     def image_tiles():
         nonlocal quality_sum, quality_count, cache_hits, cache_misses, decode_elapsed_s
         nonlocal cache_peak_bytes, previous_right
-        for result in results:
+        nonlocal result_wait_elapsed, seam_elapsed, raw_write_elapsed, quality_elapsed
+        nonlocal tiff_elapsed
+        iterator = iter(results)
+        while True:
+            result_started = time.perf_counter()
+            try:
+                result = next(iterator)
+            except StopIteration:
+                break
+            result_wait_elapsed += time.perf_counter() - result_started
             cache_hits += int(result[-4])
             cache_misses += int(result[-3])
             decode_elapsed_s += float(result[-2])
@@ -592,6 +636,7 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
             row, column, image, owner = result[:4]
             if column == 0:
                 previous_right = None
+            seam_started = time.perf_counter()
             seams = _tile_seam_adjacencies(
                 owner, row, column, grid, previous_right, previous_bottoms.get(column))
             if seams[0].size:
@@ -600,11 +645,13 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
             width = min(grid.tile_size_px, grid.width_px - column)
             previous_right = owner[:height, width - 1].copy()
             previous_bottoms[column] = owner[height - 1, :width].copy()
+            seam_elapsed += time.perf_counter() - seam_started
             # The difference raster used to be a third full render of both
             # variants. Both tiles already exist by the time the second
             # pass runs: the first pass keeps its own, and this one subtracts
             # against it, so the same bytes come out of one read instead of a
             # whole render pass.
+            raw_started = time.perf_counter()
             if image_raw_fd is not None:
                 _write_raw_tile(image_raw_fd, image, grid, row, column)
             if difference_fd is not None and previous_raw_fd is not None:
@@ -626,7 +673,20 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                 quality = result[4]
             else:
                 quality = None
-            if quality is not None:
+            raw_write_elapsed += time.perf_counter() - raw_started
+            quality_started = time.perf_counter()
+            if isinstance(quality, dict):
+                histogram = np.asarray(quality.get('histogram'))
+                tile_sum = quality.get('sum')
+                tile_count = quality.get('count')
+                if (histogram.shape != (4096,) or histogram.dtype != np.uint64 or
+                        not isinstance(tile_count, int) or tile_count < 0 or
+                        not isinstance(tile_sum, float) or not math.isfinite(tile_sum)):
+                    raise FusionError('CUDA quality reduction has an invalid shape or value.')
+                quality_histogram[:] += histogram.astype(np.int64)
+                quality_sum += tile_sum
+                quality_count += tile_count
+            elif quality is not None:
                 finite = quality[np.isfinite(quality)]
                 if finite.size:
                     quality_sum += float(finite.sum(dtype=np.float64))
@@ -634,12 +694,16 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
                     bins = np.clip(np.rint(finite * (4095.0 / 255.0)), 0, 4095)
                     quality_histogram[:] += np.bincount(
                         bins.astype(np.int32), minlength=4096)
+            quality_elapsed += time.perf_counter() - quality_started
+            tiff_started = time.perf_counter()
             yield image
+            tiff_elapsed += time.perf_counter() - tiff_started
 
     with tifffile.TiffWriter(path, bigtiff=True) as writer:
         writer.write(data=image_tiles(), shape=(grid.height_px, grid.width_px),
                      dtype=np.uint8, tile=(grid.tile_size_px, grid.tile_size_px),
-                     compression='deflate', predictor=True,
+                     compression='deflate', compressionargs={'level': TIFF_DEFLATE_LEVEL},
+                     predictor=True,
                      description=_description(grid, mode))
     seam_count = _write_seam_adjacencies(seam_path, seam_parts, grid)
     quality_result = None
@@ -667,6 +731,13 @@ def _write_image_pass(path: Path, mode: str, grid: RenderGrid,
         },
         'quality': quality_result,
         'seam_adjacency_count': seam_count,
+        'timing': {
+            'result_wait_s': result_wait_elapsed,
+            'seam_extraction_s': seam_elapsed,
+            'raw_auxiliary_write_s': raw_write_elapsed,
+            'quality_reduction_s': quality_elapsed,
+            'tiff_writer_s': tiff_elapsed,
+        },
     }
 
 
@@ -676,7 +747,8 @@ def _write_raw_tiles(path: Path, raw_path: Path, dtype: np.dtype, grid: RenderGr
         writer.write(data=_tiles_from_raw(raw_path, dtype, grid),
                      shape=(grid.height_px, grid.width_px), dtype=dtype,
                      tile=(grid.tile_size_px, grid.tile_size_px),
-                     compression='deflate', predictor=predictor,
+                     compression='deflate', compressionargs={'level': TIFF_DEFLATE_LEVEL},
+                     predictor=predictor,
                      description=_description(grid, kind))
 
 
@@ -760,7 +832,8 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                       pose_graph_dir: Path, resolution_m: float,
                       jobs: int, memory_budget_gb: float,
                       preview_max_side_px: int = 4096,
-                      execution_backend: dict[str, Any] | None = None) -> dict[str, Any]:
+                      execution_backend: dict[str, Any] | None = None,
+                      render_pool_factory: Callable[..., Any] | None = None) -> dict[str, Any]:
     """Atomically build comparable BigTIFF products with bounded worker memory."""
     if not output_dir.is_absolute() or output_dir.exists() or not output_dir.parent.is_dir():
         raise FusionError('output directory must be absolute, new and have an existing parent.')
@@ -815,10 +888,13 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
         # Keep the pool alive over both full-resolution passes. Combined with
         # spatial task chunks this preserves decoded PNGs in the worker-local
         # cache instead of recreating a cold cache for every pass.
-        with ProcessPoolExecutor(
-                max_workers=jobs, initializer=_init_worker,
-                initargs=(initial, optimized, grid,
-                          inputs.camera.width, inputs.camera.height)) as pool:
+        pool_context = (ProcessPoolExecutor(
+            max_workers=jobs, initializer=_init_worker,
+            initargs=(initial, optimized, grid, inputs.camera.width, inputs.camera.height))
+            if render_pool_factory is None else render_pool_factory(
+                initial, optimized, grid, inputs.camera.width, inputs.camera.height))
+        renderer_summary = None
+        with pool_context as pool:
             initial_pass = _write_image_pass(
                 temporary / 'mosaic_pose_only.tif', 'initial', grid,
                 initial, optimized, pool, temporary / 'seams_pose_only.npz',
@@ -829,6 +905,8 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                 initial, optimized, pool, temporary / 'seams_optimized.npz',
                 coverage_fd=coverage_fd, uncertainty_fd=uncertainty_fd,
                 difference_fd=difference_fd, previous_raw_fd=pose_only_fd)
+            if hasattr(pool, 'summary'):
+                renderer_summary = pool.summary()
         os.close(coverage_fd)
         coverage_fd = None
         os.close(pose_coverage_fd)
@@ -886,6 +964,10 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                      'tile_size_px': grid.tile_size_px},
             'fusion': {'method': ('single-image hard cut by maximum interior distance; '
                                   'stable input-frame order resolves ties'),
+                       'tiff_compression': {
+                           'codec': 'deflate', 'level': TIFF_DEFLATE_LEVEL,
+                           'lossless': True,
+                       },
                        'same_grid_and_pixels_except_pose': True,
                        'jobs': jobs, 'memory_budget_gb': memory_budget_gb,
                        'preview_max_side_px': preview_max_side_px,
@@ -903,7 +985,9 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
                                          if key != 'quality'},
                            'difference': {key: value for key, value in difference_pass.items()
                                           if key != 'quality'},
-                       }},
+                       },
+                       **({'cuda_renderer': renderer_summary}
+                          if renderer_summary is not None else {})},
             'seam_adjacencies': {
                 'format_version': 1,
                 'definition': ('adjacent covered pixels whose selected hard-cut source frame '
@@ -934,8 +1018,11 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             if (not isinstance(attempts, list) or
                     not all(isinstance(item, dict) for item in attempts)):
                 raise FusionError('execution backend attempts must be objects.')
+            effective_backend = execution.get('effective')
+            if effective_backend not in ('cpu', 'cuda'):
+                raise FusionError('execution backend has an invalid effective value.')
             execution['attempts'] = [*attempts, {
-                'backend': 'cpu', 'outcome': 'completed',
+                'backend': effective_backend, 'outcome': 'completed',
                 'started_utc': execution_started_utc,
                 'elapsed_s': time.perf_counter() - started,
             }]
@@ -953,6 +1040,7 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
              'preview_max_side_px': preview_max_side_px,
              'image_cache_bytes_per_worker': _WORKER_IMAGE_CACHE_BYTES,
              'render_task_chunk_tiles': _RENDER_TASK_CHUNK_TILES,
+             'tiff_deflate_level': TIFF_DEFLATE_LEVEL,
              **({'backend': {
                  key: manifest['execution'][key]
                  for key in ('requested', 'effective', 'fallback')
@@ -964,7 +1052,9 @@ def build_wall_mosaic(output_dir: Path, work_dir: Path, inputs: MosaicInputs,
             ('mosaic_manifest.json',))
         temporary.replace(output_dir)
         return manifest
-    except Exception:
+    # Cleanup is also required for Ctrl-C/SystemExit; both inherit directly
+    # from BaseException and otherwise leave a multi-gigabyte staging tree.
+    except BaseException:
         shutil.rmtree(temporary, ignore_errors=True)
         raise
     finally:

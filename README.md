@@ -26,6 +26,7 @@ A～G4、P1 和 P2 的仿真链路均已完成；P2-06 的门限已由三组数�
 | Gazebo | Harmonic，`gz-sim 8.x` |
 | Python | 3.12 |
 | 构建 | C++17、colcon、rosdep |
+| CUDA（可选） | Toolkit 12.8；已验证 `sm_120` |
 
 GUI 在 WSL2 上需要 WSLg/GPU 图形支持；无 GUI 的采集、处理、拼接和测试可使用
 `headless:=true`。墙面 DDS 贴图放在 `textures/`，由 `.gitignore` 排除；刚克隆下来的仓库如果要跑带贴图的
@@ -70,6 +71,41 @@ gz sim --versions
 ros2 doctor --report | head -20
 ```
 
+### 可选：安装 CUDA 拼接后端
+
+CUDA 只加速 `build_wall_mosaic` 的 hard-cut 融合；普通构建、ROS 2 在线节点和 CPU 拼接均不要求
+CUDA，也不需要 CUDA OpenCV、Torch、Conda 或 cuDNN。本项目当前在 CUDA Toolkit `12.8`、
+`sm_120` 上完成验收。WSL2 先在 Windows 安装或更新 NVIDIA 驱动，**不要在 WSL 内安装 Linux
+显示驱动**；然后在 WSL 内安装 Toolkit：
+
+```bash
+cd /tmp
+wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+sudo apt-get update
+sudo apt-get install -y cuda-toolkit-12-8
+
+export PATH=/usr/local/cuda-12.8/bin:$PATH
+nvidia-smi
+nvcc --version
+```
+
+仓库钉住 `cuda-toolkit-12-8` 是为了复现已验证环境；安装其他版本前先按
+[NVIDIA 的 WSL CUDA 指南](https://docs.nvidia.com/cuda/archive/12.8.2/cuda-installation-guide-linux/index.html#wsl)
+和[当前下载选择器](https://developer.nvidia.com/cuda-downloads)确认安装命令。构建 CUDA 扩展：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd ~/robot_ws/climbot_sim
+CUDACXX=/usr/local/cuda-12.8/bin/nvcc \
+  colcon build --symlink-install --packages-up-to climbot_mosaic \
+  --cmake-args -DCLIMBOT_CUDA_ARCHITECTURES=120
+source install/setup.bash
+```
+
+`120` 是本项目开发机 GPU 的 compute capability；其他 GPU 应改成 NVIDIA 公布的对应值。配置
+阶段如果没有 CUDA compiler，本包仍会构建 CPU 后端，但 `--backend cuda` 会明确失败。
+
 ## 构建与测试
 
 ```bash
@@ -82,7 +118,7 @@ colcon test-result --verbose
 不要把高并发失败当成噪声。此前 `-j8` 暴露的域号冲突、目标句柄 abort、DDS 发现等待、
 错误的等待期限和归档终态竞态都是真实缺陷。最后一项在修复前第 8 次完整运行复现；补上
 确定性回归后，当时的完整套件以 `-j8` 连续 20 次全绿（每次 1222 tests，约 43 s），因此恢复
-为默认测试并行度；当前套件为 1332 tests。若以后再次出现低频失败，仍按真实竞态定位，不以
+为默认测试并行度；当前套件为 1370 tests。若以后再次出现低频失败，仍按真实竞态定位，不以
 重跑通过作为关闭依据。
 
 需要产品源码静态分析时：
@@ -238,8 +274,14 @@ ros2 run climbot_mosaic build_wall_mosaic \
   --pose-graph-dir "$ROOT-pose-graph" \
   --output-dir "$ROOT-hardcut" --work-dir "$ROOT-work-fusion" \
   --resolution-mm-per-pixel 0.25 --jobs auto --memory-budget-gb 4 \
-  --preview-max-side-px 4096
+  --preview-max-side-px 4096 --backend cuda
 ```
+
+上面的命令是本项目 CUDA 开发机的标准拼接测试方式；运行后应检查
+`mosaic_manifest.json` 中 `execution.backend.effective` 为 `cuda`。CLI 默认仍是 `--backend cpu`，
+因此普通 ROS 2 机器可把最后一个参数改为 `--backend cpu`。`--backend auto` 会在 CUDA 不可用或运行失败时清理
+临时目录并从头改跑 CPU，但不会用回退掩盖输入、哈希或共享磁盘错误。CUDA 只加速第 4 步的
+hard-cut 融合，不改变前面的特征匹配和位姿图。
 
 最终重点看两个文件：`mosaic_pose_only.tif` 是直接按拍摄位姿拼出的结果；
 `mosaic_optimized.tif` 是经过第 3 步对齐后拼出的结果。两者使用同一批照片，因此可以直接比较。

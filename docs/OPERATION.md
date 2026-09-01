@@ -180,6 +180,10 @@ ros2 run climbot_mosaic summarize_archive_content \
 各命令的完整参数以 [`climbot_image_processing`](../src/climbot_image_processing/README.md) 和
 [`climbot_mosaic`](../src/climbot_mosaic/README.md) 的 README 及 `--help` 为准。
 
+本项目 CUDA 开发机上的完整拼接、性能和验收运行，`build_wall_mosaic` 必须显式传
+`--backend cuda`，结束后核对 `mosaic_manifest.json` 的 `execution.backend.effective` 为 `cuda`。
+不要用 `auto` 生成 GPU 性能或验收证据；它可能按设计回退 CPU。CPU 只用于明确的基线或 A/B。
+
 ## 诊断墙后验检查
 
 只有诊断墙数据才能做这一步，且必须在 mosaic 渲染完成之后运行——评价器是独立的，不参与

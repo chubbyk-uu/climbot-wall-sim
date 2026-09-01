@@ -12,22 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""The controller stays testable without a CUDA device or CUDA OpenCV."""
+"""The backend controller stays testable without a CUDA device."""
 
-from pathlib import Path
 import sys
 
 from climbot_common.acceleration import (
     BackendConfigurationError,
+    BackendIndependentError,
     BackendInputError,
     BackendProtocolError,
     BackendRuntimeError,
     BackendUnavailableError,
     cpu_child_environment,
-    cuda_child_environment,
     execute_backend,
     parse_backend,
-    resolve_cuda_opencv_root,
     run_json_child,
 )
 import pytest
@@ -39,41 +37,17 @@ def _worker(tmp_path, body: str) -> list[str]:
     return [sys.executable, str(path)]
 
 
-def _cuda_prefix(tmp_path) -> Path:
-    prefix = tmp_path / 'cuda-opencv'
-    extension = prefix / 'python' / 'cv2' / 'python-3.12' / 'cv2.test.so'
-    extension.parent.mkdir(parents=True)
-    extension.write_bytes(b'not loaded')
-    (prefix / 'lib').mkdir()
-    return prefix
-
-
 def test_backend_spelling_is_closed():
     assert parse_backend('cpu') == 'cpu'
     with pytest.raises(BackendConfigurationError, match='one of'):
         parse_backend('gpu')
 
 
-def test_cuda_environment_is_child_local_and_cpu_strips_it(tmp_path):
-    prefix = _cuda_prefix(tmp_path)
-    environment = {'PYTHONPATH': 'workspace', 'LD_LIBRARY_PATH': 'system'}
-    cuda = cuda_child_environment(prefix, environment)
-    assert cuda['PYTHONPATH'].split(':')[0] == str(prefix / 'python')
-    assert cuda['LD_LIBRARY_PATH'].split(':')[0] == str(prefix / 'lib')
-    assert 'CLIMBOT_CUDA_OPENCV_ROOT' not in environment
-    cpu = cpu_child_environment(prefix, cuda)
-    assert cpu['PYTHONPATH'] == 'workspace'
-    assert cpu['LD_LIBRARY_PATH'] == 'system'
-    assert 'CLIMBOT_CUDA_OPENCV_ROOT' not in cpu
-
-
-def test_cuda_prefix_is_required_and_structurally_validated(tmp_path):
-    with pytest.raises(BackendUnavailableError, match='not configured'):
-        resolve_cuda_opencv_root(environment={})
-    with pytest.raises(BackendUnavailableError, match='incomplete'):
-        resolve_cuda_opencv_root(tmp_path / 'missing')
-    prefix = _cuda_prefix(tmp_path)
-    assert resolve_cuda_opencv_root(prefix) == prefix.resolve()
+def test_child_environment_is_an_independent_copy():
+    environment = {'PYTHONPATH': 'workspace', 'MARKER': 'parent'}
+    child = cpu_child_environment(environment)
+    child['MARKER'] = 'child'
+    assert environment['MARKER'] == 'parent'
 
 
 def test_json_child_only_accepts_one_finite_completed_object(tmp_path):
@@ -97,6 +71,20 @@ raise SystemExit(2)
 """)
     with pytest.raises(BackendRuntimeError, match='exited 2: nope'):
         run_json_child(unsuccessful, {})
+    invalid = _worker(tmp_path, """print(
+    '{\"status\": \"failed\", \"error\": '
+    '{\"category\": \"input_contract\", \"message\": \"bad archive\"}}')
+raise SystemExit(2)
+""")
+    with pytest.raises(BackendInputError, match='bad archive'):
+        run_json_child(invalid, {})
+    shared = _worker(tmp_path, """print(
+    '{\"status\": \"failed\", \"error\": '
+    '{\"category\": \"backend_independent_failure\", \"message\": \"disk full\"}}')
+raise SystemExit(2)
+""")
+    with pytest.raises(BackendIndependentError, match='disk full'):
+        run_json_child(shared, {})
 
 
 def test_auto_falls_back_only_for_cuda_availability_or_runtime_failure():
@@ -124,4 +112,11 @@ def test_auto_falls_back_only_for_cuda_availability_or_runtime_failure():
 
     with pytest.raises(BackendInputError):
         execute_backend('auto', cpu, invalid_input)
+    assert calls == ['cuda', 'cpu', 'cuda']
+
+    def shared_failure():
+        raise BackendIndependentError('output disk failed')
+
+    with pytest.raises(BackendIndependentError):
+        execute_backend('auto', cpu, shared_failure)
     assert calls == ['cuda', 'cpu', 'cuda']
