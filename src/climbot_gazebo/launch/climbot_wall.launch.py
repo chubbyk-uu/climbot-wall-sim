@@ -23,12 +23,14 @@ from xml.dom import minidom
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from climbot_description.wall_frame import reference_grid_spacing
+from climbot_gazebo.mesa_runtime import default_prefix, environment, KEYS, SNAPSHOT, validate
 from climbot_gazebo.total_station_model import resolve_component_enabled
 from climbot_gazebo.wall_texture import load_manifest, texture_visuals
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     ExecuteProcess,
+    LogInfo,
     OpaqueFunction,
     RegisterEventHandler,
     SetEnvironmentVariable,
@@ -38,7 +40,7 @@ from launch.actions import (
 )
 from launch.conditions import UnlessCondition
 from launch.event_handlers import OnShutdown
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 import xacro
 import yaml
@@ -405,6 +407,28 @@ def cleanup_rendered_assets(context, *, world_path, model_root):
 
 def launch_setup(context, *args, **kwargs):
     """Build the actions that depend on resolved launch configurations."""
+    backend = LaunchConfiguration('gpu_backend').perform(context)
+    if backend == 'auto':
+        backend = 'wsl_d3d12' if running_on_wsl() else 'native'
+    if backend not in ('wsl_d3d12', 'software', 'native'):
+        raise ValueError('gpu_backend must be auto, software, wsl_d3d12, or native')
+    mesa_mode = LaunchConfiguration('mesa').perform(context)
+    if mesa_mode not in ('private', 'system'):
+        raise ValueError('mesa must be private or system')
+    mesa_actions = []
+    if backend == 'wsl_d3d12':
+        prefix = default_prefix()
+        identity = validate(prefix) if mesa_mode == 'private' else None
+        target = environment(mesa_mode, prefix, os.environ)
+        for key in (*KEYS, SNAPSHOT):
+            value = target.get(key)
+            if value != os.environ.get(key):
+                mesa_actions.append(
+                    SetEnvironmentVariable(name=key, value=value) if value is not None else
+                    UnsetEnvironmentVariable(name=key))
+        mesa_actions.append(LogInfo(msg=(
+            f"Mesa: patched D3D12 Gallium sha256={identity['gallium_sha256']}"
+            if identity else 'WARNING Mesa: explicit system Mesa; D3D12 leak fix inactive')))
     package_share = get_package_share_directory('climbot_gazebo')
     control_share = get_package_share_directory('climbot_control')
     description_share = get_package_share_directory('climbot_description')
@@ -434,7 +458,7 @@ def launch_setup(context, *args, **kwargs):
         simulation = yaml.safe_load(handle)['simulation']
     localization_model = resolved_localization_measurement_model(context)
 
-    actions = [
+    actions = list(mesa_actions) + [
         SetEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
             value=model_path + os.pathsep + existing_resource_path,
@@ -459,9 +483,6 @@ def launch_setup(context, *args, **kwargs):
         raise ValueError('clock_publish_hz must be zero or positive and finite')
     throttle_clock = clock_publish_hz > 0.0
 
-    backend = LaunchConfiguration('gpu_backend').perform(context)
-    if backend == 'auto':
-        backend = 'wsl_d3d12' if running_on_wsl() else 'native'
     if backend == 'wsl_d3d12':
         # Route OGRE2 through Mesa's D3D12 driver so it reaches the host GPU.
         actions.append(SetEnvironmentVariable(
@@ -475,9 +496,6 @@ def launch_setup(context, *args, **kwargs):
             name='GALLIUM_DRIVER', value='llvmpipe'))
         actions.append(UnsetEnvironmentVariable(
             name='MESA_D3D12_DEFAULT_ADAPTER_NAME'))
-    elif backend != 'native':
-        raise ValueError(
-            'gpu_backend must be auto, software, wsl_d3d12, or native, not ' + backend)
 
     gui_backend = LaunchConfiguration('gui_gpu_backend').perform(context)
     if gui_backend == 'auto':
@@ -783,6 +801,12 @@ def generate_launch_description():
             default_value='auto',
             description='Rendering backend: auto, software, wsl_d3d12, or native. '
                         'WSL auto uses the D3D12 GPU path.',
+        ),
+        DeclareLaunchArgument(
+            'mesa',
+            default_value=EnvironmentVariable('CLIMBOT_MESA', default_value='private'),
+            description='WSL D3D12 Mesa: private patched build (required by default), '
+                        'or system (explicit unpatched run).',
         ),
         DeclareLaunchArgument(
             'gui_gpu_backend',

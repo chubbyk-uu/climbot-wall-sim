@@ -22,7 +22,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 
 
 def generate_launch_description():
@@ -39,6 +39,7 @@ def generate_launch_description():
             'clock_publish_hz': LaunchConfiguration('clock_publish_hz'),
             'headless': LaunchConfiguration('headless'),
             'gpu_backend': LaunchConfiguration('gpu_backend'),
+            'mesa': LaunchConfiguration('mesa'),
             'gui_gpu_backend': LaunchConfiguration('gui_gpu_backend'),
             'wall_grid_spacing': LaunchConfiguration('wall_grid_spacing'),
             'wall_texture': LaunchConfiguration('wall_texture'),
@@ -105,6 +106,10 @@ def generate_launch_description():
             default_value='auto',
             description='Rendering backend: auto, software, wsl_d3d12, or native. '
                         'WSL auto uses the D3D12 GPU path.',
+        ),
+        DeclareLaunchArgument(
+            'mesa', default_value=EnvironmentVariable('CLIMBOT_MESA', default_value='private'),
+            description='WSL D3D12 Mesa: private patched build or explicit system.',
         ),
         DeclareLaunchArgument(
             'gui_gpu_backend',

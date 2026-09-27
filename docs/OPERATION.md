@@ -91,6 +91,12 @@ WSL 默认用 D3D12 GPU 渲染。只有排查渲染后端时才加 `gpu_backend:
 会让 Gazebo、RViz 和传感器统一走 llvmpipe，通常更慢、CPU 和内存也更高。正常运行不要设置
 该参数；`auto` 会回到 D3D12。
 
+WSL D3D12 默认加载共享的私有 Mesa 修复版：`$HOME/opt/agv-mesa-25.2.8/install`。
+启动前核对库、构建记录和 Gallium SHA-256，缺失或摘要不符会报错退出。自定义位置设置
+`CLIMBOT_MESA_PREFIX`；仅为有意对照未修复系统库时传 `mesa:=system`，日志会明确警告。
+`headless:=true` 的离屏渲染也走 D3D12，仍需这份库。私有构建没有软件渲染回退，
+`gpu_backend:=software` 不会选择它。该库由公共 Mesa 安装维护；本仓库不保存二进制或重复编译。
+
 `clock_publish_hz` 默认 `500`。它只抽稀 ROS 侧的时钟广播，**物理步长不变，仿真一步不差**
 （实测 `gz sim` 自身占用 98.9% 对 98.8%，无差别）。设为 `0` 可退回按每个物理步长直发。
 
