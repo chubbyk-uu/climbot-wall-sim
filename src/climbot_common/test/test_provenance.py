@@ -16,7 +16,7 @@
 
 import subprocess
 
-from climbot_common.provenance import DEFAULT_PATHSPECS, git_state
+from climbot_common.provenance import DEFAULT_PATHSPECS, git_state, runtime_source_state
 import pytest
 
 
@@ -81,6 +81,27 @@ def test_a_directory_without_git_reports_nulls_rather_than_guessing(tmp_path):
         'commit': None, 'branch': None, 'source_modified': None,
         'checked_pathspecs': list(DEFAULT_PATHSPECS), 'traceable': False,
     }
+
+
+def test_runtime_copy_must_match_the_committed_source(tmp_path):
+    """A clean checkout with an old installed module must not be traceable."""
+    from types import SimpleNamespace
+
+    repository = _repository(tmp_path)
+    source = repository / 'src/climbot_mosaic/climbot_mosaic/example.py'
+    source.parent.mkdir(parents=True)
+    source.write_text('revision = 2\n', encoding='utf-8')
+    subprocess.run(['git', 'add', str(source)], cwd=repository, check=True)
+    subprocess.run(['git', 'commit', '--quiet', '-m', 'module'], cwd=repository, check=True)
+    old_copy = repository / 'installed/example.py'
+    old_copy.parent.mkdir()
+    old_copy.write_text('revision = 1\n', encoding='utf-8')
+    state = runtime_source_state(
+        path=repository,
+        modules={'climbot_mosaic.example': SimpleNamespace(__file__=str(old_copy))},
+        entrypoint='')
+    assert git_state(path=repository)['traceable'] is True
+    assert state['source_matches_commit'] is False
 
 
 if __name__ == '__main__':

@@ -30,7 +30,7 @@ from typing import Any
 
 from climbot_common.atomic import write_json
 from climbot_common.hashing import sha256_file
-from climbot_common.provenance import git_state
+from climbot_common.provenance import git_state, runtime_source_state
 
 #: The file each stage leaves in its own output directory.
 STAGE_PROVENANCE_FILENAME = 'stage_provenance.json'
@@ -61,11 +61,15 @@ def processed_run_inputs(summary: dict[str, Any]) -> dict[str, Any]:
 def stage_record(stage: str, parameters: dict[str, Any],
                  inputs: dict[str, Any], outputs: dict[str, Any]) -> dict[str, Any]:
     """Describe one stage run: its code, its settings, and what it read and wrote."""
+    git = git_state()
+    runtime = runtime_source_state()
+    git['traceable'] = bool(git['traceable'] and runtime['source_matches_commit'])
     return {
         'stage_provenance_format_version': STAGE_PROVENANCE_FORMAT_VERSION,
         'stage': stage,
         'recorded_utc': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'git': git_state(),
+        'git': git,
+        'runtime': runtime,
         'parameters': parameters,
         'inputs': inputs,
         'outputs': outputs,
