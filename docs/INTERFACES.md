@@ -111,6 +111,11 @@ bridge 改发 `/clock_raw`，由 `clock_throttle_node` 抽稀后发布 `/clock`�
 不额外刷新采集门，使两个监督始终由同一条参考驱动。该合同由
 `climbot_gazebo/test/test_inspection_contract.py` 跨包断言。
 
+`line_tracker` 的融合里程计活性同时检查消息到达时间和 `Odometry.header.stamp` 的源时间：
+源时间为零、重复或倒退、超过 `odometry_timeout_s`（默认 `0.25 s`）未更新，或超前当前 ROS
+时钟多于 `odometry_future_tolerance_s`（默认 `0.05 s`）时均不能刷新有效位姿。这样持续重发
+旧 EKF 位姿不能误当成定位仍新鲜；仿真时钟重置后旧 epoch 位姿也会被清除。
+
 G4 按时间戳配对每张原图和 `InspectionCapture`，同时使用 transient-local 的最新会话标定；
 标定内容在 run 内发生变化必须失败。run 必须有 manifest、原图 SHA-256、每图标签和相机快照，
 且 `expected_images == saved_images`。

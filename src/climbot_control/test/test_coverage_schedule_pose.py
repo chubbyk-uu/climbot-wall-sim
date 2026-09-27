@@ -146,6 +146,7 @@ class TestCoverageSchedulePose(unittest.TestCase):
 
     def _publish_odom(self):
         message = Odometry()
+        message.header.stamp = self.node.get_clock().now().to_msg()
         message.header.frame_id = 'odom'
         message.pose.pose = _pose(POSE_X, POSE_Y, 0.0)
         self.odom_publisher.publish(message)

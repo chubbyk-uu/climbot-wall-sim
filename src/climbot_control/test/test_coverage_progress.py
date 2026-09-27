@@ -129,6 +129,7 @@ class TestCoverageProgress(unittest.TestCase):
 
     def _publish_odom(self, x):
         message = Odometry()
+        message.header.stamp = self.node.get_clock().now().to_msg()
         message.header.frame_id = 'odom'
         message.pose.pose = _pose(x, 0.0, 0.0)
         self.odom_publisher.publish(message)

@@ -75,6 +75,7 @@ def generate_test_description():
             'standalone_mode': False,
             'use_sim_time': True,
             'odometry_timeout_s': 2.0,
+            'odometry_future_tolerance_s': 1.0,
             'segment_timeout_s': SEGMENT_TIMEOUT_S,
             'pause_stop_timeout_s': 5.0,
             'alignment_settle_duration_s': 0.05,
@@ -207,6 +208,7 @@ class TestPauseBeforeFirstPose(unittest.TestCase):
 
     def _publish_odometry(self, linear=0.0, angular=0.0):
         message = Odometry()
+        message.header.stamp = rclpy.time.Time(nanoseconds=int(self.sim_time * 1e9)).to_msg()
         message.pose.pose = _pose(self.x, self.y, self.yaw)
         message.twist.twist.linear.x = linear * math.cos(self.yaw)
         message.twist.twist.linear.y = linear * math.sin(self.yaw)

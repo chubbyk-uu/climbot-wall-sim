@@ -71,6 +71,7 @@ def generate_test_description():
             # than turn_slip_per_degree_m says it does looks exactly like this.
             'turn_slip_per_degree_m': 0.0,
             'odometry_timeout_s': 2.0,
+            'odometry_future_tolerance_s': 1.0,
             'segment_timeout_s': 30.0,
             'alignment_settle_duration_s': 0.05,
             'goal_settle_duration_s': 0.05,
@@ -182,6 +183,7 @@ class TestArcEntry(unittest.TestCase):
 
     def _publish_odometry(self, x, y, yaw, linear=0.0, angular=0.0):
         message = Odometry()
+        message.header.stamp = rclpy.time.Time(nanoseconds=int(self.sim_time * 1e9)).to_msg()
         message.pose.pose = _pose(x, y, yaw)
         message.twist.twist.linear.x = linear * math.cos(yaw)
         message.twist.twist.linear.y = linear * math.sin(yaw)

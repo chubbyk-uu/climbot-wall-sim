@@ -115,6 +115,7 @@ class TestLineTrackerCompletion(unittest.TestCase):
         while time.monotonic() < deadline:
             linear, angular, complete = self._state()
             odometry = Odometry()
+            odometry.header.stamp = self.node.get_clock().now().to_msg()
             odometry.pose.pose.position.x = x
             odometry.pose.pose.orientation.w = 1.0
             odometry.twist.twist.linear.x = linear
@@ -131,6 +132,7 @@ class TestLineTrackerCompletion(unittest.TestCase):
 
         for _ in range(10):
             odometry = Odometry()
+            odometry.header.stamp = self.node.get_clock().now().to_msg()
             odometry.pose.pose.position.x = x
             odometry.pose.pose.orientation.w = 1.0
             self.publisher.publish(odometry)

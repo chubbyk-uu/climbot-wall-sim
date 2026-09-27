@@ -102,6 +102,7 @@ class TestLineTrackerAlignment(unittest.TestCase):
 
         while time.monotonic() < deadline:
             odometry = Odometry()
+            odometry.header.stamp = self.node.get_clock().now().to_msg()
             odometry.pose.pose.orientation.z = math.sin(yaw / 2.0)
             odometry.pose.pose.orientation.w = math.cos(yaw / 2.0)
             self.publisher.publish(odometry)

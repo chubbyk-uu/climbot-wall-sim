@@ -72,6 +72,7 @@ def generate_test_description():
             # Keep this integration test tolerant of loaded CI scheduling;
             # stale-input behavior has a dedicated short-timeout launch test.
             'odometry_timeout_s': 2.0,
+            'odometry_future_tolerance_s': 1.0,
             'segment_timeout_s': 15.0,
             'capture_gate_timeout_s': 0.15,
             'capture_gate_start_timeout_s': 0.15,
@@ -218,6 +219,7 @@ class TestCoverageExecutor(unittest.TestCase):
 
     def _publish_odometry(self, x, y, yaw, linear=0.0, angular=0.0):
         message = Odometry()
+        message.header.stamp = rclpy.time.Time(nanoseconds=int(self.sim_time * 1e9)).to_msg()
         message.pose.pose = _pose(x, y, yaw)
         message.twist.twist.linear.x = linear * math.cos(yaw)
         message.twist.twist.linear.y = linear * math.sin(yaw)
@@ -460,9 +462,12 @@ class TestCoverageExecutor(unittest.TestCase):
         # string off the small-string buffer, so any read after the task is
         # released touches returned heap memory, not stale inline bytes.
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
-        for _ in range(5):
-            self._publish_odometry(10.0, 10.0, 0.0)
+        # This test resets /clock while keeping the tracker process alive.
+        # Give its clock and odometry subscriptions time to enter the new epoch
+        # before testing the task's motion-region rejection.
+        for _ in range(50):
             self._advance(0.02)
+            self._publish_odometry(10.0, 10.0, 0.0)
 
         goal = ExecuteCoverage.Goal()
         goal.task = _task()

@@ -91,6 +91,7 @@ public:
     heading_gain_ = declare_parameter("heading_gain", 2.0);
     control_frequency_hz_ = declare_parameter("control_frequency_hz", 50.0);
     odometry_timeout_s_ = declare_parameter("odometry_timeout_s", 0.25);
+    odometry_future_tolerance_s_ = declare_parameter("odometry_future_tolerance_s", 0.05);
     timing_summary_period_s_ = declare_parameter("timing_summary_period_s", 10.0);
     execution_reference_heartbeat_hz_ = declare_parameter(
       "execution_reference_heartbeat_hz", 5.0);
@@ -300,6 +301,33 @@ public:
         const auto receipt_ns = steadyNowNs();
         recordTiming(odometry_callback_timing_, "odometry_callback", receipt_ns);
         last_odometry_callback_steady_ns_ = receipt_ns;
+        const auto source_time = rclcpp::Time(message->header.stamp, RCL_ROS_TIME);
+        const auto source_now = now();
+        if (last_pose_source_time_.has_value() &&
+        source_now < *last_pose_source_time_ -
+        rclcpp::Duration::from_seconds(odometry_future_tolerance_s_))
+        {
+          // A new simulator episode may restart /clock at zero while this
+          // node stays alive. The old pose and stamp belong to the old epoch.
+          have_pose_ = false;
+          last_pose_source_time_.reset();
+          RCLCPP_WARN(get_logger(),
+          "ROS time moved behind the last odometry stamp; invalidated pose.");
+        }
+        // Receipt proves transport activity, not that the EKF produced a new
+        // pose. Compare source and current time only within the ROS clock domain.
+        if (source_time.nanoseconds() <= 0 ||
+        source_now < source_time - rclcpp::Duration::from_seconds(odometry_future_tolerance_s_) ||
+        source_now - source_time > rclcpp::Duration::from_seconds(odometry_timeout_s_) ||
+        (last_pose_source_time_.has_value() && source_time <= *last_pose_source_time_))
+        {
+          RCLCPP_WARN_THROTTLE(
+            get_logger(), *control_clock_, 2000,
+            "Rejected filtered odometry stamp: source_ns=%ld now_ns=%ld previous_ns=%ld",
+            source_time.nanoseconds(), source_now.nanoseconds(),
+            last_pose_source_time_.has_value() ? last_pose_source_time_->nanoseconds() : 0L);
+          return;
+        }
         const auto & position = message->pose.pose.position;
         const auto & orientation = message->pose.pose.orientation;
         const auto yaw = climbot_control::yawFromQuaternion(
@@ -323,6 +351,7 @@ public:
         measured_linear_speed_ = std::hypot(linear.x, linear.y);
         measured_angular_speed_ = std::abs(angular.z);
         last_pose_received_time_ = controlNow();
+        last_pose_source_time_ = source_time;
         have_pose_ = true;
       });
 
@@ -383,7 +412,12 @@ private:
   bool poseIsFresh(const rclcpp::Time & current_time) const
   {
     return have_pose_ && current_time >= last_pose_received_time_ &&
-           (current_time - last_pose_received_time_).seconds() <= odometry_timeout_s_;
+           (current_time - last_pose_received_time_).seconds() <= odometry_timeout_s_ &&
+           last_pose_source_time_.has_value() &&
+           now() >= *last_pose_source_time_ -
+           rclcpp::Duration::from_seconds(odometry_future_tolerance_s_) &&
+           now() - *last_pose_source_time_ <=
+           rclcpp::Duration::from_seconds(odometry_timeout_s_);
   }
 
   rclcpp::Time zeroInstant() const
@@ -493,6 +527,7 @@ private:
     requirePositive("heading_gain", heading_gain_);
     requirePositive("control_frequency_hz", control_frequency_hz_);
     requirePositive("odometry_timeout_s", odometry_timeout_s_);
+    requirePositive("odometry_future_tolerance_s", odometry_future_tolerance_s_);
     requirePositive("timing_summary_period_s", timing_summary_period_s_);
     requirePositive("execution_reference_heartbeat_hz", execution_reference_heartbeat_hz_);
     requirePositive("segment_timeout_s", segment_timeout_s_);
@@ -2183,6 +2218,7 @@ private:
   double heading_gain_{2.0};
   double control_frequency_hz_{50.0};
   double odometry_timeout_s_{0.25};
+  double odometry_future_tolerance_s_{0.05};
   double timing_summary_period_s_{10.0};
   double execution_reference_heartbeat_hz_{5.0};
   double segment_timeout_s_{120.0};
@@ -2263,6 +2299,7 @@ private:
   rclcpp::Time arc_entry_start_time_;
   climbot_control::SegmentArrival arrival_;
   rclcpp::Time last_pose_received_time_;
+  std::optional<rclcpp::Time> last_pose_source_time_;
   rclcpp::Time last_control_time_;
   rclcpp::Time task_start_time_;
   rclcpp::Time segment_start_time_;

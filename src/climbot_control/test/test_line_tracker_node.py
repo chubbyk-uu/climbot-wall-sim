@@ -94,10 +94,51 @@ class TestLineTrackerNode(unittest.TestCase):
         self.assertTrue(self.output_event.wait(5.0))
         self.assertEqual(self._last_output(), (0.0, 0.0))
 
+    def test_replayed_and_invalid_source_stamps_cannot_keep_motion_alive(self):
+        self.assertTrue(self.output_event.wait(5.0))
+        deadline = time.monotonic() + 3.0
+        while self.publisher.get_subscription_count() == 0 and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertGreater(self.publisher.get_subscription_count(), 0)
+
+        odometry = Odometry()
+        odometry.pose.pose.orientation.w = 1.0
+        old_stamp = self.node.get_clock().now().to_msg()
+        odometry.header.stamp = old_stamp
+        deadline = time.monotonic() + 0.5
+        while time.monotonic() < deadline:
+            self.publisher.publish(odometry)
+            time.sleep(0.02)
+        self.assertEqual(self._last_output(), (0.0, 0.0))
+
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline and self._last_output()[0] <= 0.0:
+            odometry.header.stamp = self.node.get_clock().now().to_msg()
+            self.publisher.publish(odometry)
+            time.sleep(0.02)
+        self.assertGreater(self._last_output()[0], 0.0)
+
+        # A valid pose followed by an old stream must eventually stop, even
+        # though DDS callbacks continue arriving at 50 Hz.
+        frozen = odometry.header.stamp
+        deadline = time.monotonic() + 0.5
+        while time.monotonic() < deadline:
+            odometry.header.stamp = frozen
+            self.publisher.publish(odometry)
+            time.sleep(0.02)
+        self.assertEqual(self._last_output(), (0.0, 0.0))
+
+        future = self.node.get_clock().now().nanoseconds + 10_000_000_000
+        odometry.header.stamp = rclpy.time.Time(nanoseconds=future).to_msg()
+        self.publisher.publish(odometry)
+        time.sleep(0.1)
+        self.assertEqual(self._last_output(), (0.0, 0.0))
+
         odometry = Odometry()
         odometry.pose.pose.orientation.w = 1.0
         deadline = time.monotonic() + 2.0
         while time.monotonic() < deadline:
+            odometry.header.stamp = self.node.get_clock().now().to_msg()
             self.publisher.publish(odometry)
             time.sleep(0.02)
             if self._last_output()[0] > 0.0:
