@@ -1,6 +1,6 @@
 # 实验与故障处置手册
 
-更新：2026-09-01。第一次跑通全链路请看 [README 的快速启动](../README.md#快速启动)——
+更新：2026-09-29。第一次跑通全链路请看 [README 的快速启动](../README.md#快速启动)——
 仿真、规划预览、点选任务、离线处理和墙面拼接的主线命令都在那里，本页不重复。
 
 本页只写主线之外的内容：批量回归、评价工具、参数变体和故障处置。接口字段见
@@ -91,11 +91,9 @@ WSL 默认用 D3D12 GPU 渲染。只有排查渲染后端时才加 `gpu_backend:
 会让 Gazebo、RViz 和传感器统一走 llvmpipe，通常更慢、CPU 和内存也更高。正常运行不要设置
 该参数；`auto` 会回到 D3D12。
 
-WSL D3D12 默认加载共享的私有 Mesa 修复版：`$HOME/opt/agv-mesa-25.2.8/install`。
-启动前核对库、构建记录和 Gallium SHA-256，缺失或摘要不符会报错退出。自定义位置设置
-`CLIMBOT_MESA_PREFIX`；仅为有意对照未修复系统库时传 `mesa:=system`，日志会明确警告。
-`headless:=true` 的离屏渲染也走 D3D12，仍需这份库。私有构建没有软件渲染回退，
-`gpu_backend:=software` 不会选择它。该库由公共 Mesa 安装维护；本仓库不保存二进制或重复编译。
+WSL D3D12 默认使用共享 Mesa 修复库，原生 Linux 自动走 native，不加载它。构建脚本和补丁
+已随本仓库提供；安装、共享前缀、模式切换及实际选库验证统一见
+[MESA_SETUP](MESA_SETUP.md)，本页不维护第二套安装命令。headless 相机采集同样需要渲染库。
 
 `clock_publish_hz` 默认 `500`。它只抽稀 ROS 侧的时钟广播，**物理步长不变，仿真一步不差**
 （实测 `gz sim` 自身占用 98.9% 对 98.8%，无差别）。设为 `0` 可退回按每个物理步长直发。
@@ -250,6 +248,7 @@ mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结
 | 拼接预检拒绝 | 不要修补输入；按 JSON 修复原始归档或标定问题后，重新生成一个独立的 processed-run |
 | 真值 tile 有黑边或零覆盖 | 这是实际足迹缺口，须扩大或调整任务重新采集，不可用后处理填充 |
 | Gazebo 无画面 | 加 `headless:=true` 走非 GUI 流程，或检查 WSLg/GPU 后端 |
+| WSL 启动提示 Mesa 缺失或摘要不符 | 按 [Mesa 安装与验证](MESA_SETUP.md)恢复完整共享库与构建记录；不要用 `mesa:=system` 把缺库当成已修复 |
 | 曝光明显晚于目标或长任务少图 | 查 `Slow capture`、`Capture trigger ... late` 和 archive manifest；确认 launch 同时存在独立的 `inspection_camera_bridge` 与 `inspection_trigger_bridge`，不要把全高清图像/内参或触发并回承载 `/clock`、里程计和 IMU 的 `simulation_data_bridge`。`gpu_backend:=software` 只能用于 A/B，不能代替桥接隔离。 |
 | `Slow capture` 的 `source pair` 达到 0.5–3 s | Fast DDS 默认共享内存段无法同时保留 6220800 字节曝光的全部 RTPS 分片，丢分片后要等 3 s 心跳。确认 `inspection_camera_bridge`、`camera_distortion_adapter` 与 `capture_once_node` 的环境里有 `FASTRTPS_DEFAULT_PROFILES_FILE` 指向 `climbot_common/config/fastdds_inspection_image.xml`（`tr '\0' '\n' < /proc/<pid>/environ`），且 `/dev/shm/fastrtps_*` 中存在约 67 MB 的段而不是 549408 字节的默认段。自带 profile 会抑制这个默认值。 |
 | Pause 之后一直停在 `Pausing` | 机器人没能在 `pause_stop_timeout_s`（`5.0 s`）内停稳，执行器按控制超时中止任务。查看是否有第二个上游控制源在同时发 `/control/cmd_vel` |

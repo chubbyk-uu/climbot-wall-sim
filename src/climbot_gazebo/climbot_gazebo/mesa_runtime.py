@@ -57,8 +57,9 @@ def validate(prefix):
     if absent:
         raise ValueError(
             f'Patched Mesa is missing: {absent[0]}. Restore the shared '
-            'Mesa install, set CLIMBOT_MESA_PREFIX, or explicitly use '
-            'mesa:=system.')
+            'Mesa install or build with python3 tools/build_private_mesa.py '
+            '(docs/MESA_SETUP.md). Set CLIMBOT_MESA_PREFIX for another '
+            'install; mesa:=system is only an explicit unpatched comparison.')
     record = prefix.parent / 'build-result.json'
     try:
         manifest = json.loads(record.read_text(encoding='utf-8'))

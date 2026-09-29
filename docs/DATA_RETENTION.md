@@ -52,6 +52,11 @@
 
 ## 当前可清理项
 
+共享 Mesa 工具链不是数据缓存：`$HOME/opt/agv-mesa-25.2.8/install` 和相邻的
+`build-result.json` 是 WSL D3D12 默认启动所需，不能随采集数据、`build/` 或 `install/` 清理。
+其源码构建和恢复方法见 [MESA_SETUP](MESA_SETUP.md)。这里的工作区 `install/` 与共享库
+前缀中的 `install/` 不是同一个目录。
+
 - `/tmp/climbot_*` 的诊断日志和 A/B 产物：确认不再人工查看后可直接永久删除；
 - `build/`、`install/`、`log/`、`.pytest_cache/`：均可重建，但清理后需要重新构建或失去本地
   测试日志；

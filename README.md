@@ -19,7 +19,7 @@ A～G4、P1 和 P2 的仿真链路均已完成；P2-06 的门限已由三组数�
 
 ## 环境要求
 
-| 组件 | 已验证版本 |
+| 组件 | 项目基线 |
 | --- | --- |
 | 系统 | Ubuntu 24.04 / WSL2 或原生 Ubuntu |
 | ROS 2 | Jazzy Jalisco |
@@ -28,14 +28,20 @@ A～G4、P1 和 P2 的仿真链路均已完成；P2-06 的门限已由三组数�
 | 构建 | C++17、colcon、rosdep |
 | CUDA（可选） | Toolkit 12.8；已验证 `sm_120` |
 
-GUI 在 WSL2 上需要 WSLg/GPU 图形支持；无 GUI 的采集、处理、拼接和测试可使用
-`headless:=true`。墙面 DDS 贴图放在 `textures/`，由 `.gitignore` 排除；刚克隆下来的仓库如果要跑带贴图的
-视觉任务，按 [墙面贴图](docs/OPERATION.md#墙面贴图) 自行生成。
+先按所在系统选择图形环境；ROS、构建和运行命令共用，不要把 WSL 配置套到原生 Linux 上。
 
-WSL2 的 D3D12 仿真默认要求修复命令签名缓存泄漏的私有 Mesa，默认共享安装前缀为
-`$HOME/opt/agv-mesa-25.2.8/install`。若安装在别处，设置 `CLIMBOT_MESA_PREFIX`；缺库或构建摘要
-不符时启动会直接报错。只做显式系统 Mesa 对照时传 `mesa:=system`。私有版仅支持 D3D12，
-软件渲染对照使用 `gpu_backend:=software`。详见[运行指南](docs/OPERATION.md)。
+| 项目 | 原生 Ubuntu 24.04 | WSL2 中的 Ubuntu 24.04 |
+| --- | --- | --- |
+| 图形驱动 | Linux 主机的正常 GPU 驱动 | Windows 主机驱动 + WSLg |
+| `gpu_backend:=auto` | 自动选择 `native` | 自动选择 `wsl_d3d12`；当前启动配置偏好 NVIDIA |
+| Mesa 补丁 | 不需要这份 D3D12 专用补丁 | 默认必须有修复版 Mesa；缺失会报错，不静默回退 |
+| headless 采集 | 关闭窗口，但相机仍需渲染 | 同样仍使用 D3D12，需要修复版 Mesa |
+| 可选 CUDA | Linux 驱动 + Toolkit | Windows 驱动 + WSL 内 Toolkit；不安装 Linux 显示驱动 |
+
+本机运行验收在 WSL2/NVIDIA 上完成；原生 Linux 使用独立的 native 启动路径，不能把本机
+长任务结果当作原生 Linux 的验收。无窗口仿真可用 `headless:=true`，离线处理与 CPU 拼接则
+不需要图形环境。墙面 DDS 贴图放在 `textures/`，不随 Git 分发；视觉任务按
+[墙面贴图](docs/OPERATION.md#墙面贴图) 生成。
 
 采集、预处理与拼接的大文件不进入仓库。默认写入**记录器所在主机**当前用户的
 `$HOME/climbot_data`，并在首次归档时创建。要使用另一块数据盘或共享目录时，再设置一个持久化、
@@ -44,12 +50,43 @@ WSL2 的 D3D12 仿真默认要求修复命令签名缓存泄漏的私有 Mesa，
 
 ## 安装与部署
 
+以下步骤从已克隆的仓库开始；示例位置为 `~/robot_ws/climbot_sim`。首次获取源码可运行
+`git clone https://github.com/chubbyk-uu/climbot-wall-sim.git ~/robot_ws/climbot_sim`；已有仓库
+跳过，不要覆盖现有工作区。接着按系统准备图形环境，再安装共同依赖并构建。
+
+### 1. 准备对应系统的图形环境
+
+**原生 Ubuntu：**先确保桌面和主机 GPU 驱动正常。NVIDIA 主机通过 Ubuntu 的驱动管理方式
+安装匹配的 Linux 驱动；不要加载 WSL 的私有 Mesa，也不必设置 `CLIMBOT_MESA_PREFIX`。
+launch 的默认 `auto` 会选原生后端；需要明确指定时使用 `gpu_backend:=native`。
+
+**WSL2：**在 Windows 安装匹配的 GPU 驱动，并按
+[微软 WSLg 指南](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps)确认 WSL2 和
+Linux GUI 可用。更新 WSL 时，在 Windows PowerShell 中执行：
+
+```powershell
+wsl --update
+wsl --status
+```
+
+更新后若需要重启 WSL，先结束正在运行的任务；`wsl --shutdown` 会停止所有 WSL 发行版。
+在 WSL 内还须按 [Mesa 安装与验证](docs/MESA_SETUP.md)准备共享修复库。本仓库已包含构建
+脚本、补丁和版本锁；已有合格的共享安装可直接复用，不必重复编译。不要在 WSL 内安装 Linux
+显示驱动，也不要把私有库的 `LD_PRELOAD` 写进全局 shell 配置。
+
+按[微软的文件存储建议](https://learn.microsoft.com/en-us/windows/wsl/filesystems)，仓库和数据放在
+WSL 的 Linux 文件系统，而不是 `/mnt/c`；大图读写尤其应避免跨文件系统。
+
+### 2. 安装共同依赖
+
 先按 [ROS 2 Jazzy 官方 Ubuntu 安装说明](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
-安装 `ros-jazzy-desktop`，再安装工作区工具：
+配置 ROS 软件源并安装 `ros-jazzy-desktop`，再安装 Gazebo 桥接和工作区工具。
+[Gazebo 官方兼容说明](https://gazebosim.org/docs/harmonic/ros_installation/)推荐 Jazzy + Harmonic，
+`ros-jazzy-ros-gz` 会安装对应组件，不要混装其他 Gazebo 主版本：
 
 ```bash
 sudo apt update
-sudo apt install -y python3-colcon-common-extensions python3-rosdep
+sudo apt install -y ros-jazzy-ros-gz python3-colcon-common-extensions python3-rosdep mesa-utils
 
 cd ~/robot_ws/climbot_sim
 source /opt/ros/jazzy/setup.bash
@@ -58,7 +95,9 @@ rosdep update
 rosdep install --from-paths src --ignore-src --rosdistro jazzy -y
 ```
 
-构建并加载工作区：
+### 3. 构建、加载和检查
+
+以下路径以仓库放在 `~/robot_ws/climbot_sim` 为例，其他位置相应修改。构建并加载工作区：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -74,19 +113,38 @@ export CLIMBOT_DATA_ROOT="${CLIMBOT_DATA_ROOT:-$HOME/climbot_data}"
 ```bash
 gz sim --versions
 ros2 doctor --report | head -20
+glxinfo -B
 ```
+
+`glxinfo -B` 在有图形会话的终端执行。原生 Linux 检查是否使用预期 GPU；WSL 普通终端显示的
+只是系统库渲染器，不能据此证明启动时加载了修复库，按 [Mesa 验证步骤](docs/MESA_SETUP.md#验证是否真正生效)
+检查。`nvidia-smi` 能看到 GPU 也不能代替图形渲染验证。
 
 ### 可选：安装 CUDA 拼接后端
 
 CUDA 只加速 `build_wall_mosaic` 的 hard-cut 融合；普通构建、ROS 2 在线节点和 CPU 拼接均不要求
 CUDA，也不需要 CUDA OpenCV、Torch、Conda 或 cuDNN。本项目当前在 CUDA Toolkit `12.8`、
-`sm_120` 上完成验收。WSL2 先在 Windows 安装或更新 NVIDIA 驱动，**不要在 WSL 内安装 Linux
-显示驱动**；然后在 WSL 内安装 Toolkit：
+`sm_120` 上完成验收。先确认对应系统的 NVIDIA 驱动正常，再安装 Toolkit。
+
+**WSL2 使用 WSL 软件源**（驱动仅安装在 Windows）：
 
 ```bash
 cd /tmp
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-keyring_1.1-1_all.deb
 sudo dpkg -i cuda-keyring_1.1-1_all.deb
+```
+
+**原生 Ubuntu 24.04 x86_64 使用 Ubuntu 软件源**（主机须已有匹配的 Linux NVIDIA 驱动）：
+
+```bash
+cd /tmp
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+```
+
+两种系统选上面对应的一段，再执行共同步骤：
+
+```bash
 sudo apt-get update
 sudo apt-get install -y cuda-toolkit-12-8
 
@@ -95,7 +153,8 @@ nvidia-smi
 nvcc --version
 ```
 
-仓库钉住 `cuda-toolkit-12-8` 是为了复现已验证环境；安装其他版本前先按
+WSL 不要安装会拉入 Linux 驱动的 `cuda`、`cuda-12-8` 或 `cuda-drivers` 元包；不要将链接用的
+CUDA `stubs` 目录加入运行时库路径。仓库钉住 `cuda-toolkit-12-8` 是为了复现已验证环境；安装其他版本前先按
 [NVIDIA 的 WSL CUDA 指南](https://docs.nvidia.com/cuda/archive/12.8.2/cuda-installation-guide-linux/index.html#wsl)
 和[当前下载选择器](https://developer.nvidia.com/cuda-downloads)确认安装命令。构建 CUDA 扩展：
 
@@ -123,7 +182,7 @@ colcon test-result --verbose
 不要把高并发失败当成噪声。此前 `-j8` 暴露的域号冲突、目标句柄 abort、DDS 发现等待、
 错误的等待期限和归档终态竞态都是真实缺陷。最后一项在修复前第 8 次完整运行复现；补上
 确定性回归后，当时的完整套件以 `-j8` 连续 20 次全绿（每次 1222 tests，约 43 s），因此恢复
-为默认测试并行度；当前套件为 1370 tests。若以后再次出现低频失败，仍按真实竞态定位，不以
+为默认测试并行度；当前用例数以 `colcon test-result` 为准。若以后再次出现低频失败，仍按真实竞态定位，不以
 重跑通过作为关闭依据。
 
 需要产品源码静态分析时：
@@ -303,6 +362,7 @@ hard-cut 融合，不改变前面的特征匹配和位姿图。
 | 需要了解 | 唯一入口 |
 | --- | --- |
 | 文档职责、归档和写作边界 | [docs/README.md](docs/README.md) |
+| WSL D3D12 修复库的构建、复用和验证 | [MESA_SETUP](docs/MESA_SETUP.md) |
 | 项目目标、范围、硬约束与规范验收 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) |
 | 包职责、依赖和数据流 | [ARCHITECTURE](docs/ARCHITECTURE.md) |
 | 话题、服务、Action、参数、文件格式 | [INTERFACES](docs/INTERFACES.md) |

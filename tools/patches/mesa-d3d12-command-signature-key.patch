@@ -1,0 +1,5 @@
+--- a/src/gallium/drivers/d3d12/d3d12_cmd_signature.cpp
++++ b/src/gallium/drivers/d3d12/d3d12_cmd_signature.cpp
+@@ -68 +68 @@
+-   struct hash_entry *entry = _mesa_hash_table_search(ctx->cmd_signature_cache, &key);
++   struct hash_entry *entry = _mesa_hash_table_search(ctx->cmd_signature_cache, key);

@@ -18,6 +18,9 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
+import sys
+from types import SimpleNamespace
 
 from climbot_gazebo.mesa_runtime import environment, GALLIUM, validate
 
@@ -84,3 +87,133 @@ def test_wsl_launch_rejects_missing_patch_before_rendering_world(
         gpu_backend='wsl_d3d12', mesa='private')
     with pytest.raises(ValueError, match='Patched Mesa is missing'):
         module.launch_setup(context)
+
+
+def _builder():
+    script = (Path(__file__).resolve().parents[3] /
+              'tools/build_private_mesa.py')
+    spec = importlib.util.spec_from_file_location('mesa_builder_test', script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_builder_help_needs_no_ros_or_other_workspace():
+    """The standalone recipe is usable before colcon or ROS environment setup."""
+    script = _builder().REPO / 'tools/build_private_mesa.py'
+    result = subprocess.run(
+        [sys.executable, '-I', str(script), '--help'],
+        capture_output=True, text=True, check=True)
+    assert '--root' in result.stdout
+    assert '--cache' in result.stdout
+    assert '--jobs' in result.stdout
+
+
+def test_build_lock_matches_runtime_and_local_patch():
+    """The locally shipped patch and recipe must match runtime expectations."""
+    builder = _builder()
+    lock = json.loads((builder.REPO / 'tools/patches/mesa-build-lock.json').read_text())
+    assert lock['ubuntu_source_version'] == '25.2.8-0ubuntu0.24.04.2'
+    builder.verify(builder.REPO / lock['project_patch'], lock['project_patch_sha256'])
+    assert '-Dgallium-drivers=d3d12' in lock['configuration']
+    assert '-Dllvm=disabled' in lock['configuration']
+    assert '--libdir=lib' in lock['configuration']
+    for digest in [*lock['downloads'].values(), *lock['dependency_packages'].values()]:
+        assert len(digest) == 64
+        int(digest, 16)
+
+
+@pytest.mark.parametrize('bad_root', ['existing', 'has space', 'has:colon'])
+def test_builder_rejects_unsafe_or_existing_root(tmp_path, monkeypatch, bad_root):
+    """No downloads, overwrite or deletion before root validation."""
+    builder = _builder()
+    monkeypatch.setattr(builder.platform, 'freedesktop_os_release',
+                        lambda: {'ID': 'ubuntu', 'VERSION_ID': '24.04'})
+    monkeypatch.setattr(builder.platform, 'machine', lambda: 'x86_64')
+    monkeypatch.setattr(builder, 'urlopen', lambda *a, **k: pytest.fail('download'))
+    root = tmp_path / bad_root
+    if bad_root == 'existing':
+        root.mkdir()
+        (root / 'keep').write_text('existing shared runtime')
+    args = SimpleNamespace(root=root, jobs=8, cache=None)
+    with pytest.raises(ValueError, match='already exists|whitespace or colon'):
+        builder.build(args)
+    if bad_root == 'existing':
+        assert (root / 'keep').read_text() == 'existing shared runtime'
+    else:
+        assert not root.exists()
+
+
+def test_builder_rejects_changed_cache_before_extracting(tmp_path, monkeypatch):
+    """A supplied cache never disables the pinned SHA-256 check."""
+    builder = _builder()
+    monkeypatch.setattr(builder.platform, 'freedesktop_os_release',
+                        lambda: {'ID': 'ubuntu', 'VERSION_ID': '24.04'})
+    monkeypatch.setattr(builder.platform, 'machine', lambda: 'x86_64')
+    monkeypatch.setattr(builder.shutil, 'which', lambda command: command)
+    monkeypatch.setattr(builder, 'urlopen', lambda *a, **k: pytest.fail('download'))
+    monkeypatch.setattr(builder.subprocess, 'run',
+                        lambda *a, **k: pytest.fail('subprocess'))
+    cache = tmp_path / 'cache'
+    (cache / 'downloads').mkdir(parents=True)
+    (cache / 'downloads/mesa.dsc').write_bytes(b'wrong cached source')
+    root = tmp_path / 'new-build'
+    with pytest.raises(ValueError, match='SHA256 mismatch: mesa.dsc'):
+        builder.build(SimpleNamespace(root=root, jobs=8, cache=cache))
+    assert (root / 'COLCON_IGNORE').exists()
+    assert not (root / 'install').exists()
+
+
+def test_builder_publishes_runtime_compatible_record(tmp_path, monkeypatch):
+    """Exercise build orchestration without network or a real Mesa compilation."""
+    builder = _builder()
+    monkeypatch.setattr(builder.platform, 'freedesktop_os_release',
+                        lambda: {'ID': 'ubuntu', 'VERSION_ID': '24.04'})
+    monkeypatch.setattr(builder.platform, 'machine', lambda: 'x86_64')
+    monkeypatch.setattr(builder.shutil, 'which', lambda command: command)
+    monkeypatch.setattr(builder, 'urlopen', lambda *a, **k: pytest.fail('download'))
+    repo = tmp_path / 'recipe'
+    (repo / 'tools/patches').mkdir(parents=True)
+    patch = repo / 'tools/patches/fix.patch'
+    patch.write_bytes(b'locked patch')
+    cache = tmp_path / 'cache'
+    (cache / 'downloads').mkdir(parents=True)
+    (cache / 'deps').mkdir()
+    source = cache / 'downloads/mesa.dsc'
+    source.write_bytes(b'locked source')
+    dep = cache / 'deps/example_1_amd64.deb'
+    dep.write_bytes(b'locked dependency')
+
+    def digest(path):
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    lock = {
+        'ubuntu_source_version': '25.2.8-0ubuntu0.24.04.2',
+        'downloads': {'mesa.dsc': digest(source)},
+        'dependency_packages': {dep.name: digest(dep)},
+        'project_patch': str(patch.relative_to(repo)),
+        'project_patch_sha256': digest(patch),
+        'configuration': ['--libdir=lib', '-Dgallium-drivers=d3d12'],
+    }
+    (repo / 'tools/patches/mesa-build-lock.json').write_text(json.dumps(lock))
+    monkeypatch.setattr(builder, 'REPO', repo)
+    root = tmp_path / 'new-build'
+    calls = []
+
+    def fake_run(command, **kwargs):
+        calls.append(command)
+        if command[0] == 'dpkg-source':
+            (root / 'source').mkdir()
+        if 'install' in command:
+            _fake_install(root)
+        return SimpleNamespace(returncode=0, stdout='dependencies resolved\n', stderr='')
+
+    monkeypatch.setattr(builder.subprocess, 'run', fake_run)
+    builder.build(SimpleNamespace(root=root, jobs=4, cache=cache))
+    record = json.loads((root / 'build-result.json').read_text())
+    assert validate(root / 'install')['gallium_sha256'] == record['libraries_sha256'][GALLIUM]
+    assert record['runtime_tested'] is False
+    assert (root / 'COLCON_IGNORE').is_file()
+    assert ['ninja', '-C', str(root / 'build'), '-j4'] in calls
+    assert any(command[0] == 'patch' and '--fuzz=0' in command for command in calls)
+    assert not any(command[0] in ('sudo', 'apt-get') for command in calls)

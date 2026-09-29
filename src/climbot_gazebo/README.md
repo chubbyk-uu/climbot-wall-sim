@@ -14,7 +14,9 @@ ros2 launch climbot_gazebo climbot_wall.launch.py
 ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
 ```
 
-WSL2 默认自动选择 Mesa D3D12；也可显式设置 `gpu_backend:=wsl_d3d12`。软件渲染只用于
+原生 Linux 默认自动选择 `native`，使用主机图形驱动。WSL2 默认自动选择 Mesa D3D12，
+需要共享修复库；本仓库包含构建脚本和补丁，见 [Mesa 安装与验证](../../docs/MESA_SETUP.md)。
+也可显式设置 `gpu_backend:=wsl_d3d12`。软件渲染只用于
 排查渲染后端差异，显式传 `gpu_backend:=software` 即可；它会让 Gazebo、RViz 和传感器
 渲染统一走 llvmpipe，资源占用明显高于默认 GPU 路径，不作为正常运行配置。
 

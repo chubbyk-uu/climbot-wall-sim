@@ -10,7 +10,8 @@
 README 和 `OPERATION.md` **按读者分工，不按详略分工**：README 面向第一次跑通的人，
 OPERATION 面向已经跑通、要做实验或者出了问题的人。判据只有一条——**同一条命令只出现在
 一处**：它属不属于“第一次跑通”这条主线，就决定它写在哪边。所以 README 里的步骤可以写得
-比 OPERATION 详细，这不是倒置。
+比 OPERATION 详细，这不是倒置。平台专用的 Mesa 构建配方单独归属 `MESA_SETUP.md`，
+README 只保留 WSL／原生 Linux 的选择和入口，不重复该配方。
 
 ## 当前文档的职责
 
@@ -24,6 +25,7 @@ OPERATION 面向已经跑通、要做实验或者出了问题的人。判据只�
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | 包职责、依赖、配置归属、运行时数据流 | 命令教程、接口字段的逐项字典 |
 | [`INTERFACES.md`](INTERFACES.md) | 当前话题、服务、Action、参数、文件格式与兼容性合同 | 已废弃接口的演变过程 |
 | [`OPERATION.md`](OPERATION.md) | **主线之外**的批量回归、评价工具、参数变体、诊断与故障处置 | 主线命令的第二份拷贝、架构解释、结果结论 |
+| [`MESA_SETUP.md`](MESA_SETUP.md) | WSL D3D12 修复库的本仓库构建配方、共享安装、切换和验证 | 原生 Linux 或 ROS 的另一份安装教程、二进制分发 |
 | [`ACCEPTANCE.md`](ACCEPTANCE.md) | 当前验收项、状态、正式证据和实机边界 | 完整实验流水账 |
 | [`MOSAIC_PLAN.md`](MOSAIC_PLAN.md) | 离线拼接的当前设计、判据、证据范围和已知限制 | 已废弃试验的逐轮细节 |
 | [`GPU_ACCELERATION_PLAN.md`](GPU_ACCELERATION_PLAN.md) | 已完成 fusion CUDA 专项、否决路线、回退和验收合同 | 已关闭 P2-06 的重新叙述、ROS/Gazebo 图形后端调优 |
@@ -41,6 +43,7 @@ docs/
   ARCHITECTURE.md          当前架构
   INTERFACES.md            当前接口合同
   OPERATION.md             实验与故障处置手册
+  MESA_SETUP.md            WSL D3D12 修复库安装与验证
   ACCEPTANCE.md            当前验收矩阵
   MOSAIC_PLAN.md           当前离线拼接设计
   GPU_ACCELERATION_PLAN.md fusion CUDA 结果与验收合同
