@@ -217,7 +217,9 @@ def build(config, camera, legacy_robot, extension=0.0, body_offset=0.0,
                   b['internal_bay_z_m']-bay[2]/2-z0-t,
                   z1-cover_t-b['internal_bay_z_m']-bay[2]/2)
     ball_cup_gap = min(bore/2-r, top-cap-2*r)
-    housing_inside_cutout = ball['flange_width_m'] >= ball['floor_cutout_m']
+    flange_cover = (fw-ball['floor_cutout_m'])/2-ball['mount_tolerance_m']
+    cup_fit = (ball['floor_cutout_m']-hw)/2-ball['mount_tolerance_m']
+    housing_inside_cutout = flange_cover > 0 and cup_fit > 0
     valid = (clearance >= ball['clearance_to_seal_m'] and wheel_gap > 0 and
              fan_gap > 0 and cup_fan_gap > 0 and cup_duct_gap >= .003 and
              fan_body_gap > cover_t and bay_gap > 0 and ball_cup_gap > 0 and
@@ -243,7 +245,9 @@ def build(config, camera, legacy_robot, extension=0.0, body_offset=0.0,
                              'cup_to_fan_separating_axis': cup_fan_gap,
                              'cup_to_duct_after_mount_tolerance': cup_duct_gap,
                              'fan_to_body': fan_body_gap, 'internal_bays': bay_gap,
-                             'ball_to_cup': ball_cup_gap},
+                             'ball_to_cup': ball_cup_gap,
+                             'flange_overlap_after_mount_tolerance': flange_cover,
+                             'cup_fit_after_mount_tolerance': cup_fit},
             'camera_optical_xyz_m': list(optical),
             'actuator_limits': deepcopy(legacy_robot['drive']),
             'recommended_footprint': {'length_m': 2*max(abs(x0), abs(arm_x1)),

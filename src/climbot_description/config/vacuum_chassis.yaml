@@ -25,18 +25,18 @@ vacuum_chassis:
     joint_damping_nm_s: 0.05         # existing model.sdf.xacro default
   caster:
     # Rear-relative mount follows the same body CAD-offset uncertainty.
-    rear_offset_m: 0.06425            # nominal ball x=-0.290 m
+    rear_offset_m: 0.05425            # revised candidate ball x=-0.300 m
     mount_tolerance_m: 0.002
     radius_m: 0.0125
     ball_density_kg_m3: 7850.0
     housing_mass_kg: 0.2              # includes cup, rollers and flange
-    housing_width_m: 0.044
+    housing_width_m: 0.036
     housing_bore_m: 0.028
     housing_bottom_z_m: 0.015
     housing_top_z_m: 0.045
     cap_thickness_m: 0.003
-    flange_width_m: 0.056
-    floor_cutout_m: 0.05
+    flange_width_m: 0.050
+    floor_cutout_m: 0.042
     clearance_to_seal_m: 0.010
   fans:
     count: 3
@@ -74,7 +74,7 @@ vacuum_chassis:
     maximum_search_pressure_pa: 30000.0
     # Geometric variants change the outline and all derived mass/areas together.
     front_extensions_m: [0.0, 0.020, 0.040]
-    caster_reference_x_m: [-0.240, -0.280, -0.290, -0.295, -0.310]
+    caster_reference_x_m: [-0.240, -0.280, -0.290, -0.295, -0.300, -0.310]
     internal_mass_scan_kg: [6.0, 8.0, 10.0]
     drive_mu_scan: [0.8, 1.1, 1.3]
     body_offset_scan_m: [-0.005, 0.0, 0.005]

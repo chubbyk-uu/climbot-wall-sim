@@ -39,16 +39,18 @@ def test_plate_overlapping_holes_removed_as_union():
 
 def test_cad_geometry_clearances_and_single_cavity(model):
     assert model['geometry_valid']
-    assert model['caster_x_m']==pytest.approx(-.290)
+    assert model['caster_x_m']==pytest.approx(-.300)
     assert model['effective_area_m2']==pytest.approx(.131293)
     assert model['clearances_m']['wheel_to_body']==pytest.approx(.023)
-    assert model['clearances_m']['cutout_to_seal_after_mount_tolerance']==pytest.approx(.01725)
-    assert model['clearances_m']['cup_to_duct_after_mount_tolerance']==pytest.approx(.0135)
+    assert model['clearances_m']['cutout_to_seal_after_mount_tolerance']==pytest.approx(.01125)
+    assert model['clearances_m']['cup_to_duct_after_mount_tolerance']==pytest.approx(.0275)
+    assert model['clearances_m']['flange_overlap_after_mount_tolerance']==pytest.approx(.002)
+    assert model['clearances_m']['cup_fit_after_mount_tolerance']==pytest.approx(.001)
     assert .002 < model['volume_m3'] < .0025  # not the ambient body interior
     assert len([p for p in model['parts'] if p['name'].startswith('fan_') and p['name'].endswith('_link')])==3
 
 
-@pytest.mark.parametrize('x,valid',[(-.240,False),(-.280,True),(-.290,True),(-.295,True),(-.310,False)])
+@pytest.mark.parametrize('x,valid',[(-.240,False),(-.280,True),(-.290,True),(-.295,True),(-.300,True),(-.310,False)])
 def test_layout_rejects_seal_and_inlet_obstructions(data,x,valid):
     c,r,cam,*_=data
     assert build(c,cam,r,caster_x=x)['geometry_valid']==valid
@@ -57,7 +59,15 @@ def test_layout_rejects_seal_and_inlet_obstructions(data,x,valid):
 def test_wider_band_and_mounting_tolerance_limit_rearward_ball(data):
     c,r,cam,*_=data;c['skirt']['contact_band_m']=.025
     assert build(c,cam,r,caster_x=-.290)['geometry_valid']
-    assert not build(c,cam,r,caster_x=-.295)['geometry_valid']
+    assert build(c,cam,r,caster_x=-.295)['geometry_valid']
+    assert not build(c,cam,r,caster_x=-.300)['geometry_valid']
+
+
+def test_cup_fit_and_flange_overlap_include_mounting_tolerance(data):
+    c,r,cam,*_=data;c['caster']['flange_width_m']=.045
+    assert not build(c,cam,r)['geometry_valid']
+    c['caster']['flange_width_m']=.050;c['caster']['floor_cutout_m']=.039
+    assert not build(c,cam,r)['geometry_valid']
 
 
 def test_shared_cad_offset_moves_caster_but_front_extension_changes_outline(data):
