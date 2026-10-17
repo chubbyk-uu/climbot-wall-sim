@@ -1,0 +1,8 @@
+{
+  "native_source": "9a51f50",
+  "audit_source": "039d3dc",
+  "native_source_hashes_match": true,
+  "artifact_audit_code_hash_match": true,
+  "final_regression_all_passed": true,
+  "legacy_inputs_unchanged": true
+}

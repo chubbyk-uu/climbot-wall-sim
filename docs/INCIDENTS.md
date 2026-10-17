@@ -283,7 +283,7 @@
   及原时间窗口，不屏蔽旧段消息、不延长固定睡眠、不修改产品心跳／监督期限。
 - **回归**：`test_camera_mount_mismatch_withholds_the_gate_heartbeat` 与上述
   `test_noninspection_reference_does_not_heartbeat_the_next_scan` 的实际节点测试，以及
-  修复后的完整 -j8 套件。精确修复提交和运行记录见 S3 报告。
+  修复后的完整 -j8 套件。修复提交 `fe3cc38`，运行记录见 S3 报告。
 
 ## 新增案例的规则
 

@@ -1,0 +1,65 @@
+{
+  "released": true,
+  "release_s": 0.711,
+  "native_samples": 64000,
+  "steady_samples": 60000,
+  "expected_steady_samples": 60000,
+  "steady_normal_mean_n": [
+    225.87888920367462,
+    283.4441059249478,
+    451.6685073771802
+  ],
+  "normal_min_since_release_n": [
+    221.2235457502866,
+    278.7910193571922,
+    443.4081038850563
+  ],
+  "normal_prediction_max_error_n": 0.1448169444128382,
+  "drive_requirement_min_slack_n": 115.97002129802063,
+  "native_friction_margin_min": 3.156650496053945,
+  "steady_delta_pa": 8404.442633895425,
+  "minimum_pressure_pa": 4500.075872638263,
+  "steady_force_residual_mean_n": [
+    -4.17440496635398e-07,
+    3.0645271386999386e-11,
+    -1.0500472077031494e-11
+  ],
+  "steady_world_moment_residual_mean_nm": [
+    -1.032536170506329e-09,
+    -4.2474040956906845e-05,
+    -1.250387165863015e-07
+  ],
+  "steady_force_residual_max_n": 1.7533378726668516e-06,
+  "linear_impulse_residual_ns": [
+    -2.504808850327782e-05,
+    8.120684845110519e-10,
+    -2.4965584305386655e-09
+  ],
+  "angular_impulse_residual_nms": [
+    -5.979921046416442e-08,
+    -0.0025483828120716773,
+    -7.502631701300317e-06
+  ],
+  "steady_translation_range_m": 2.689930038885979e-06,
+  "maximum_tilt_gap_spread_m": 1.0798297048128513e-06,
+  "minimum_body_gap_m": 0.017998938703745637,
+  "plugin_cpu_p99_us": 146.18062000000003,
+  "plugin_cpu_mean_us": 73.1756877389793,
+  "pressure_substeps_max": 20.0,
+  "raw_contact_header_stamp_all_zero": true,
+  "checks": {
+    "all_physics_samples_present": true,
+    "unique_physics_timestamps": true,
+    "full_60s_steady_window": true,
+    "no_invalid_or_missing_contact": true,
+    "support_floors": true,
+    "per_wheel_requirement": true,
+    "native_traction_margin": true,
+    "normal_balance_2pct": true,
+    "moment_balance_2pct": true,
+    "no_fixture_after_release": true,
+    "pressure_above_static_requirement": true,
+    "body_clearance": true,
+    "no_runtime_or_startup_failure": true
+  }
+}

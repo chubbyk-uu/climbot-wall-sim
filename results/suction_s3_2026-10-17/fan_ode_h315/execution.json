@@ -1,0 +1,9 @@
+{
+  "exit_code": 0,
+  "log_name": "climbot_s3_fan_ode_h315_1792249193296578959.log",
+  "rendering": {
+    "backend": "wsl_d3d12",
+    "mesa": "private",
+    "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
+  }
+}

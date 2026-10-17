@@ -18,6 +18,7 @@
 
 | 范围 | 证据 | 地位 |
 | --- | --- | --- |
+| 三风机吸附 S3 | [平墙原生集成报告](suction_s3_2026-10-17/REPORT.md) | 八朝向 B/C、60 s 保持、逐轮轮载与暂停/reset；231 项主检查及 3 项原始复核通过，S4～S7／M2 待验收 |
 | 覆盖任务与控制 | `coverage_{bigH,bigTH,bigTV,bigV,horizontal,trapezoid_horizontal,trapezoid_vertical,vertical}_2026-08-20_summary.json` | 默认 `time` 控制的八工况正式仿真基线 |
 | 距离控制对照 | 对应的 `*_2026-08-20d_summary.json` | 与默认控制律同口径的对照，不替代默认基线 |
 | 定位 | [localization_2026-08-19_summary.json](localization_2026-08-19_summary.json) | 融合定位与轮式里程计的四方向独立真值对照 |

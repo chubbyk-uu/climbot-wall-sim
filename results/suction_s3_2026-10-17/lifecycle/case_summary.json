@@ -1,0 +1,24 @@
+{
+  "lifecycle": {
+    "native_frames": 5000,
+    "paused_frames": 101,
+    "pause_state_equal": true,
+    "pause_pose_equal": true,
+    "pause_boundary_refresh_m": 2.0187171196709334e-07,
+    "pause_boundary_refresh_rad": 1.4211362587047103e-06,
+    "reset_restored": true,
+    "reset_requested": true,
+    "reset_snapshots": 1,
+    "state_present": true,
+    "last_runtime_failed": false,
+    "last_startup_failed": false,
+    "elapsed_wall_s": 4.732440676
+  },
+  "checks": {
+    "pause_state_frozen": true,
+    "paused_backend_pose_frozen": true,
+    "reset_reinitializes": true,
+    "observer_survives_reset": true,
+    "no_lifecycle_runtime_failure": true
+  }
+}

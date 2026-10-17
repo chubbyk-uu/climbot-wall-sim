@@ -1,0 +1,22 @@
+{
+  "lifecycle": {
+    "native_frames": 10500,
+    "paused_frames": 0,
+    "pause_state_equal": true,
+    "pause_pose_equal": true,
+    "pause_boundary_refresh_m": 0,
+    "pause_boundary_refresh_rad": 0,
+    "reset_restored": true,
+    "reset_requested": false,
+    "reset_snapshots": 0,
+    "state_present": true,
+    "last_runtime_failed": false,
+    "last_startup_failed": true,
+    "elapsed_wall_s": 6.999238708
+  },
+  "checks": {
+    "timeout_explicit": true,
+    "fixture_held_on_timeout": true,
+    "timeout_is_not_model_failure": true
+  }
+}
