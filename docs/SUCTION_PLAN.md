@@ -4,7 +4,7 @@
 当前完成 S0 基线与 S1 离线结构／逐轮设计；新结构尚未接入运行模型，负压插件和整车验收尚未完成。
 S0 冻结规则见 [SUCTION_CONTRACT](SUCTION_CONTRACT.md)，S1 方法见
 [SUCTION_S1_METHOD](SUCTION_S1_METHOD.md)，数值、假设和预览见
-[S1 结果报告](../results/suction_s1_2026-10-17/REPORT.md)。
+[S1 结果报告](../results/suction_s1_rearward_2026-10-17/REPORT.md)。
 本轮修订区分 CAD 标注与按比例量取来源，拆分平墙负压与起伏／柔顺扩展两个里程碑，
 并纳入裙边贴合经验、接触参考及标定／验证分离要求；墙面贴图优化已拆为独立计划。
 
