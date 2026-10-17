@@ -1,12 +1,14 @@
 """Independent Newton/Euler and friction checks for offline suction analysis."""
 
+import json
+from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import numpy as np
 import pytest
 
 from freeze_suction_baseline import inertial_summary, portable_xml, rotation
-from screen_suction_layouts import feasible, loads, minimum_force, tangential
+from screen_suction_layouts import compare_static, feasible, loads, minimum_force, tangential
 
 
 def test_rotated_wheel_and_parallel_axis_inertia():
@@ -125,3 +127,23 @@ def test_minimum_force_is_a_boundary_for_both_allocation_rules():
         demand = tangential(162, -.05, 0, .43, 37)
         assert feasible(loads(result + 1e-5, *args), demand, 1.1, 1.5, mode, 10)
         assert not feasible(loads(result - 1e-5, *args), demand, 1.1, 1.5, mode, 10)
+
+
+def test_static_prediction_matches_independent_historical_gazebo_measurements():
+    root = Path(__file__).resolve().parents[1]
+    history = json.loads((root / 'results/normal_loads_g1_camera_2026-08-24_summary.json').read_text())
+    frozen = {
+        'robot': {'centre_xyz_m': [-.05242424242424242, 0, .10915151515151517],
+                  'parts': [{'link': 'left_wheel_link', 'centre_xyz_m': [0, .215, .08]},
+                            {'link': 'right_wheel_link', 'centre_xyz_m': [0, -.215, .08]},
+                            {'link': 'caster_ball_link', 'centre_xyz_m': [-.33, 0, .05]}]},
+        'world': {'weight_n': 16.5 * 9.81, 'persistent_force_world_n': [-400, 0, 0],
+                  'pressure_point_in_base_m': [-.11, 0, .085]},
+    }
+    result = compare_static(frozen, history)
+    assert result['record_count'] == 72
+    assert result['maximum_absolute_error_n'] < 1.1
+    with pytest.raises(ValueError):
+        compare_static(frozen, {'records': []})
+    with pytest.raises(ValueError):
+        compare_static(frozen, {'records': history['records'][:1]})

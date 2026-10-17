@@ -139,6 +139,35 @@ G4 对高帧数任务采用每 32 张一次的耐久提交，避免逐图 `fsync
 
 ## 覆盖回归与定位对照
 
+### 负压专项的旧模型基线与静力诊断
+
+在已经按根 README 加载 ROS 和工作区环境的终端中执行。先提交 `src/` 与 `tools/` 的修改，
+选择未被其他仿真实例使用的 ROS 域号；输出目录必须不存在，不覆盖历史批次：
+
+```bash
+bash tools/run_suction_baseline.sh results/suction_A_<tag> 187
+python3 tools/screen_suction_layouts.py \
+  --baseline results/suction_A_<tag>/baseline_summary.json \
+  --observations results/suction_A_<tag>/a_loads_summary.json \
+  --output-dir results/suction_A_<tag>/static_screening
+```
+
+第一条冻结旧输入并与 `c2acf17` 和安装区比较，自动创建独立 Gazebo partition／进程组，
+复测 34 个 A 组轮压工况，清理后写 `run_summary.json`。返回非零时保留失败批次、查 `/tmp`
+下分离的模拟器／测量日志；`cleanup_passed`、实际测量退出码和原有测量器 `passed` 分别核对。
+日志路径与命令摘要在结果中留存，不把完整调试日志提交到仓库。
+
+第二条仅按冻结的**旧质量／重心**扫描压力中心和球位，输出 1° 全航向及极值附近 0.1°
+采样。包含静态偏航，分别报告按法向比例分配的需求和摩擦圆可行域下限，不计裙边或动态。
+不能将其输出命名为新结构 `F_design`，也不能把可行域下限当作真实接触分配已验证。
+旧几何删除后需从保存该基线工具及 legacy 描述的 Git 版本复现，不重新引入第二套活动模型。
+
+合同见 [SUCTION_CONTRACT](SUCTION_CONTRACT.md)，正式批次入口见
+[结果索引](../results/README.md)。原有轮压测量器只保存事件统计，未留逐步原始接触时序；
+这批结果不能替代新模型对缺失采样、启动撤架和短时失载的时序验收。
+
+### 既有覆盖与定位入口
+
 ```bash
 tools/run_coverage_regression.sh -t <tag> -j 4
 

@@ -89,7 +89,45 @@ def minimum_force(weight, cg, track, caster_x, pressure_x, heading_deg,
     return upper
 
 
-def screen(baseline, output):
+def compare_static(frozen, observations):
+    """Compare predicted means with an independent legacy measurement archive."""
+    centres = {p['link']: p['centre_xyz_m'] for p in frozen['robot']['parts']}
+    track = centres['left_wheel_link'][1] - centres['right_wheel_link'][1]
+    names = ['left_wheel', 'right_wheel', 'caster']
+    records, seen = [], set()
+    for observed in observations['records']:
+        if observed['category'] != 'static':
+            continue
+        heading, name = observed['heading_deg'], observed['contact']
+        if (heading, name) in seen:
+            raise ValueError('duplicate static observation')
+        seen.add((heading, name))
+        if not math.isfinite(observed['mean']):
+            raise ValueError('non-finite observation')
+        prediction = loads(
+            -frozen['world']['persistent_force_world_n'][0],
+            frozen['world']['weight_n'], frozen['robot']['centre_xyz_m'][2],
+            track, centres['caster_ball_link'][0],
+            frozen['world']['pressure_point_in_base_m'][0], heading)
+        predicted = prediction[names.index(name)]
+        records.append({'heading_deg': heading, 'contact': name,
+                        'predicted_n': predicted, 'measured_mean_n': observed['mean'],
+                        'error_n': predicted - observed['mean']})
+    if not records or any(
+            {name for h, name in seen if h == heading} != set(names)
+            for heading, _ in seen):
+        raise ValueError('need all three contacts at each static heading')
+    return {
+        'record_count': len(records),
+        'rmse_n': math.sqrt(sum(r['error_n'] ** 2 for r in records) / len(records)),
+        'maximum_absolute_error_n': max(abs(r['error_n']) for r in records),
+        'heading_basis': 'requested headings; actual settled pose is not in the archive',
+        'no_parameters_fitted': True,
+        'records': records,
+    }
+
+
+def screen(baseline, output, observations=None):
     frozen = json.loads(baseline.read_text())
     robot = frozen['robot']
     weight = frozen['world']['weight_n']
@@ -170,6 +208,11 @@ def screen(baseline, output):
                        'cable_weight_and_tension', 'real_fan_performance'],
         'cases': summaries,
     }
+    if observations:
+        summary['legacy_static_comparison'] = {
+            'observations_sha256': hashlib.sha256(observations.read_bytes()).hexdigest(),
+            **compare_static(frozen, json.loads(observations.read_text())),
+        }
     (output / 'screening_summary.json').write_text(
         json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + '\n')
     return summary
@@ -179,8 +222,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--baseline', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
+    parser.add_argument('--observations', type=Path,
+                        help='independent legacy normal-load summary JSON')
     args = parser.parse_args()
-    result = screen(args.baseline, args.output_dir)
+    result = screen(args.baseline, args.output_dir, args.observations)
     for case in result['cases']:
         print('%s: axial=%.1f N all_heading=%.1f N heading=%g deg' % (
             case['layout'], case['axial_s1_5_n'],
