@@ -149,6 +149,9 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_model_defaults test/test_model_defaults.py)
   ament_add_pytest_test(
     test_normal_load_statistics test/test_normal_load_statistics.py)
+  # Offline design tools live at repository level, outside the runtime package.
+  ament_add_pytest_test(test_suction_analysis
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_suction_analysis.py)
   ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
   ament_add_pytest_test(
     test_total_station_model test/test_total_station_model.py)

@@ -30,6 +30,7 @@ README 只保留 WSL／原生 Linux 的选择和入口，不重复该配方。
 | [`MOSAIC_PLAN.md`](MOSAIC_PLAN.md) | 离线拼接的当前设计、判据、证据范围和已知限制 | 已废弃试验的逐轮细节 |
 | [`GPU_ACCELERATION_PLAN.md`](GPU_ACCELERATION_PLAN.md) | 已完成 fusion CUDA 专项、否决路线、回退和验收合同 | 已关闭 P2-06 的重新叙述、ROS/Gazebo 图形后端调优 |
 | [`SUCTION_PLAN.md`](SUCTION_PLAN.md) | 三风机单腔负压吸附的机械调整、等效模型、实施顺序与待验证判据 | 尚未取得的真机性能或已通过验收的宣称 |
+| [`SUCTION_CONTRACT.md`](SUCTION_CONTRACT.md) | S0 冻结的逐轮裕量、启动、数据分集、数值与 M2 表面误差合同 | 模型实现细节、试验通过声明 |
 | [`WALL_TEXTURE_PLAN.md`](WALL_TEXTURE_PLAN.md) | 墙面贴图局部去重与随机变换的方法、实施顺序与待验证判据 | 负压物理模型、已通过验收的宣称 |
 | [`LOCALIZATION_GAP_PLAN.md`](LOCALIZATION_GAP_PLAN.md) | 长任务时序的当前结论、运行判据和未关闭边界 | 已关闭调查的逐轮日志 |
 | [`INCIDENTS.md`](INCIDENTS.md) | 已确认的隐蔽故障、误判线索、修复提交和回归入口 | 尚未定位的猜测或普通开发日志 |
@@ -50,6 +51,7 @@ docs/
   MOSAIC_PLAN.md           当前离线拼接设计
   GPU_ACCELERATION_PLAN.md fusion CUDA 结果与验收合同
   SUCTION_PLAN.md          三风机单腔负压吸附实施计划
+  SUCTION_CONTRACT.md      吸附专项 S0 实验合同
   WALL_TEXTURE_PLAN.md     墙面贴图局部去重计划
   LOCALIZATION_GAP_PLAN.md 长任务时序稳定性
   INCIDENTS.md             隐蔽故障与排查经验
