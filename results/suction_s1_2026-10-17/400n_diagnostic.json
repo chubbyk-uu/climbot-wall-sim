@@ -1,0 +1,1646 @@
+{
+  "force_n": 400,
+  "pressure_pa": 3046.6209165759024,
+  "meaning": "rejected historical force on new geometry; never a design target",
+  "profiles": [
+    {
+      "profile": "static",
+      "group": "static",
+      "minimum_normals_n": [
+        50.41856894056201,
+        50.418568940562,
+        120.21773692845964
+      ],
+      "minimum_drive_margin": 0.7073604640804573,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "cruise_001",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.45928995987204,
+        50.459289959872,
+        120.16594191127639
+      ],
+      "minimum_drive_margin": 0.7429439515065202,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "cruise_002",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.3778128022265,
+        50.377812802226465,
+        120.26957661521554
+      ],
+      "minimum_drive_margin": 0.6746366879433294,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "catchup_003",
+      "group": "operation",
+      "minimum_normals_n": [
+        51.242679073107695,
+        51.24267907310766,
+        118.599163934274
+      ],
+      "minimum_drive_margin": 0.7771628895629323,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "catchup_004",
+      "group": "operation",
+      "minimum_normals_n": [
+        49.675901531941534,
+        49.6759015319415,
+        121.73271901660631
+      ],
+      "minimum_drive_margin": 0.7104948073271653,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "catchup_005",
+      "group": "operation",
+      "minimum_normals_n": [
+        51.16187685317219,
+        51.161876853172174,
+        118.70144826342475
+      ],
+      "minimum_drive_margin": 0.7044408849280565,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "catchup_006",
+      "group": "operation",
+      "minimum_normals_n": [
+        49.593748064793076,
+        49.59374806479303,
+        121.83770584018299
+      ],
+      "minimum_drive_margin": 0.646316578403152,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_007",
+      "group": "operation",
+      "minimum_normals_n": [
+        51.04678717064057,
+        51.47377337900227,
+        118.56278885727905
+      ],
+      "minimum_drive_margin": 0.742457387823629,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_008",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.712306738959754,
+        51.8082538106831,
+        118.56278885727905
+      ],
+      "minimum_drive_margin": 0.7649742179292863,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_009",
+      "group": "operation",
+      "minimum_normals_n": [
+        51.8082538106831,
+        50.712306738959754,
+        118.56278885727905
+      ],
+      "minimum_drive_margin": 0.7649742179292863,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_010",
+      "group": "operation",
+      "minimum_normals_n": [
+        51.47377337900228,
+        51.046787170640584,
+        118.56278885727905
+      ],
+      "minimum_drive_margin": 0.742457387823629,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_011",
+      "group": "operation",
+      "minimum_normals_n": [
+        49.479732117454674,
+        49.90721992541443,
+        121.69639736405279
+      ],
+      "minimum_drive_margin": 0.6802736598618037,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_012",
+      "group": "operation",
+      "minimum_normals_n": [
+        49.14525168577387,
+        50.241700357095255,
+        121.69639736405279
+      ],
+      "minimum_drive_margin": 0.6994525676308015,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_013",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.24170035709527,
+        49.14525168577386,
+        121.69639736405279
+      ],
+      "minimum_drive_margin": 0.6994525676308013,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_014",
+      "group": "operation",
+      "minimum_normals_n": [
+        49.90721992541445,
+        49.47973211745469,
+        121.69639736405279
+      ],
+      "minimum_drive_margin": 0.6802736598618035,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_015",
+      "group": "operation",
+      "minimum_normals_n": [
+        51.700663830688825,
+        50.66471886319306,
+        118.66099393297034
+      ],
+      "minimum_drive_margin": 0.6944114544131672,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_016",
+      "group": "operation",
+      "minimum_normals_n": [
+        51.36618339900801,
+        50.99919929487389,
+        118.66099393297034
+      ],
+      "minimum_drive_margin": 0.696540436119473,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_017",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.99919929487389,
+        51.36618339900799,
+        118.66099393297034
+      ],
+      "minimum_drive_margin": 0.6965404361194731,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_018",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.66471886319307,
+        51.70066383068881,
+        118.66099393297034
+      ],
+      "minimum_drive_margin": 0.6944114544131671,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_019",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.13231079217725,
+        49.096867839752456,
+        121.79719799492257
+      ],
+      "minimum_drive_margin": 0.6380223550479158,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_020",
+      "group": "operation",
+      "minimum_normals_n": [
+        49.797830360496434,
+        49.431348271433286,
+        121.79719799492257
+      ],
+      "minimum_drive_margin": 0.6393821491064097,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_021",
+      "group": "operation",
+      "minimum_normals_n": [
+        49.431348271433265,
+        49.79783036049641,
+        121.79719799492257
+      ],
+      "minimum_drive_margin": 0.6393821491064099,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "correct_022",
+      "group": "operation",
+      "minimum_normals_n": [
+        49.09686783975246,
+        50.13231079217724,
+        121.79719799492257
+      ],
+      "minimum_drive_margin": 0.6380223550479157,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "turn_023",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.62977734456818,
+        50.32024768224806,
+        120.10484978276735
+      ],
+      "minimum_drive_margin": 0.6539953144467588,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "turn_024",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.21167680496718,
+        50.73834822184908,
+        120.10484978276735
+      ],
+      "minimum_drive_margin": 0.6756714917742375,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "turn_025",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.738348221849094,
+        50.211676804967176,
+        120.10484978276735
+      ],
+      "minimum_drive_margin": 0.6756714917742375,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "turn_026",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.32024768224808,
+        50.6297773445682,
+        120.10484978276735
+      ],
+      "minimum_drive_margin": 0.6539953144467586,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "turn_start_027",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.6276192103625,
+        50.209518670761476,
+        120.21773692845964
+      ],
+      "minimum_drive_margin": 0.6951958980069985,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "turn_start_028",
+      "group": "operation",
+      "minimum_normals_n": [
+        50.2095186707615,
+        50.6276192103625,
+        120.21773692845964
+      ],
+      "minimum_drive_margin": 0.6951958980069985,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_straight_029",
+      "group": "actuator",
+      "minimum_normals_n": [
+        52.02606790823664,
+        52.02606790823663,
+        117.0323863118013
+      ],
+      "minimum_drive_margin": 0.8132022415798263,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_straight_030",
+      "group": "actuator",
+      "minimum_normals_n": [
+        48.89251282808135,
+        48.89251282808131,
+        123.29949647211193
+      ],
+      "minimum_drive_margin": 0.6797058974701226,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_straight_031",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.94594118270449,
+        51.94594118270445,
+        117.13331955649245
+      ],
+      "minimum_drive_margin": 0.7358288054960418,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_straight_032",
+      "group": "actuator",
+      "minimum_normals_n": [
+        48.80968360376548,
+        48.809683603765464,
+        123.40583471437044
+      ],
+      "minimum_drive_margin": 0.6193882977565282,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_turn_033",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.05006503059802,
+        50.23862143329507,
+        119.76618834569054
+      ],
+      "minimum_drive_margin": 0.6398286394895204,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_turn_034",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.13024384347578,
+        51.158442620417325,
+        119.76618834569054
+      ],
+      "minimum_drive_margin": 0.6870961895286333,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_turn_035",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.15844262041735,
+        50.13024384347574,
+        119.76618834569054
+      ],
+      "minimum_drive_margin": 0.6870961895286333,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_turn_036",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.23862143329511,
+        51.05006503059799,
+        119.76618834569054
+      ],
+      "minimum_drive_margin": 0.6398286394895204,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_037",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.89503274316087,
+        51.42420864201055,
+        118.74978605233905
+      ],
+      "minimum_drive_margin": 0.6613400559630667,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_038",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.97521155603863,
+        52.34402982913281,
+        118.74978605233905
+      ],
+      "minimum_drive_margin": 0.7123398352848347,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_039",
+      "group": "actuator",
+      "minimum_normals_n": [
+        52.34402982913282,
+        49.97521155603861,
+        118.74978605233905
+      ],
+      "minimum_drive_margin": 0.7123398352848347,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_040",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.42420864201058,
+        50.89503274316086,
+        118.74978605233905
+      ],
+      "minimum_drive_margin": 0.6613400559630667,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_041",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.90276213956548,
+        50.43293979407698,
+        120.73332550386806
+      ],
+      "minimum_drive_margin": 0.6276057364497718,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_042",
+      "group": "actuator",
+      "minimum_normals_n": [
+        48.98294095244324,
+        51.35276098119923,
+        120.73332550386806
+      ],
+      "minimum_drive_margin": 0.6738087461726184,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_043",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.35276098119924,
+        48.98294095244321,
+        120.73332550386806
+      ],
+      "minimum_drive_margin": 0.6738087461726184,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_044",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.432939794077,
+        49.90276213956547,
+        120.73332550386806
+      ],
+      "minimum_drive_margin": 0.6276057364497718,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_045",
+      "group": "actuator",
+      "minimum_normals_n": [
+        52.21070342459072,
+        50.031359735593085,
+        118.7986531974749
+      ],
+      "minimum_drive_margin": 0.6628724292943885,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_046",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.29088223746848,
+        50.95118092271534,
+        118.7986531974749
+      ],
+      "minimum_drive_margin": 0.7007817198708607,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_047",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.95118092271534,
+        51.290882237468466,
+        118.7986531974749
+      ],
+      "minimum_drive_margin": 0.7007817198708608,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_048",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.0313597355931,
+        52.210703424590726,
+        118.7986531974749
+      ],
+      "minimum_drive_margin": 0.6628724292943884,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_049",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.21802448820408,
+        49.039682967104255,
+        120.7830089023504
+      ],
+      "minimum_drive_margin": 0.6293642974639677,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_050",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.29820330108184,
+        49.95950415422651,
+        120.7830089023504
+      ],
+      "minimum_drive_margin": 0.6637197559536337,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_051",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.95950415422652,
+        50.29820330108181,
+        120.7830089023504
+      ],
+      "minimum_drive_margin": 0.6637197559536339,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_mixed_052",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.039682967104284,
+        51.218024488204065,
+        120.7830089023504
+      ],
+      "minimum_drive_margin": 0.6293642974639678,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_053",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.41497414047325,
+        50.49515295335098,
+        119.17439503445031
+      ],
+      "minimum_drive_margin": 0.7339408617929183,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_054",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.95506354691214,
+        50.95506354691212,
+        119.17439503445031
+      ],
+      "minimum_drive_margin": 0.7643872106628935,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_055",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.49515295335101,
+        51.41497414047324,
+        119.17439503445031
+      ],
+      "minimum_drive_margin": 0.733940861792918,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_056",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.919200961720094,
+        49.999379774597834,
+        120.16594139195662
+      ],
+      "minimum_drive_margin": 0.7140030234459347,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_057",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.459290368159,
+        50.45929036815897,
+        120.16594139195662
+      ],
+      "minimum_drive_margin": 0.7429443238052104,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_058",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.999379774597855,
+        50.91920096172009,
+        120.16594139195662
+      ],
+      "minimum_drive_margin": 0.7140030234459347,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_059",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.42342778296694,
+        49.50360659584469,
+        121.15748774946292
+      ],
+      "minimum_drive_margin": 0.6946989650586857,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_060",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.963517189405835,
+        49.96351718940582,
+        121.15748774946292
+      ],
+      "minimum_drive_margin": 0.7222099044169912,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_061",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.5036065958447,
+        50.42342778296694,
+        121.15748774946292
+      ],
+      "minimum_drive_margin": 0.6946989650586857,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_062",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.50690879479251,
+        52.95482384897174,
+        116.60729479374623
+      ],
+      "minimum_drive_margin": 0.7272190681456419,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_063",
+      "group": "actuator",
+      "minimum_normals_n": [
+        52.02606744678512,
+        52.026067446785106,
+        117.03238689307803
+      ],
+      "minimum_drive_margin": 0.813201757717419,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_064",
+      "group": "actuator",
+      "minimum_normals_n": [
+        52.95482384897173,
+        51.506908794792515,
+        116.60729479374623
+      ],
+      "minimum_drive_margin": 0.7272190681456416,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_065",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.435122149599735,
+        51.88411923557169,
+        118.74978605233905
+      ],
+      "minimum_drive_margin": 0.6857093268244862,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_066",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.414973673702235,
+        50.49515248657999,
+        119.17439562636596
+      ],
+      "minimum_drive_margin": 0.7339404529840277,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_067",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.955063080141144,
+        50.95506308014113,
+        119.17439562636596
+      ],
+      "minimum_drive_margin": 0.7643867653277053,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_068",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.49515248658,
+        51.41497367370225,
+        119.17439562636596
+      ],
+      "minimum_drive_margin": 0.7339404529840277,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_069",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.884119235571674,
+        50.43512214959974,
+        118.74978605233905
+      ],
+      "minimum_drive_margin": 0.6857093268244864,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_070",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.398897441363175,
+        50.92857421804376,
+        119.74155577810356
+      ],
+      "minimum_drive_margin": 0.6442191893068728,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_071",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.93898684780203,
+        51.38848481160489,
+        119.74155577810356
+      ],
+      "minimum_drive_margin": 0.6674299498379311,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_072",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.47907625424094,
+        51.84839540516601,
+        119.74155577810356
+      ],
+      "minimum_drive_margin": 0.6927618926912478,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_073",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.91920049248671,
+        49.99937930536443,
+        120.16594198879709
+      ],
+      "minimum_drive_margin": 0.7140026301512113,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_074",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.459289898925604,
+        50.45928989892556,
+        120.16594198879709
+      ],
+      "minimum_drive_margin": 0.7429438959322044,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_075",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.99937930536447,
+        50.91920049248668,
+        120.16594198879709
+      ],
+      "minimum_drive_margin": 0.7140026301512113,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_076",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.848395405166016,
+        49.47907625424091,
+        119.74155577810356
+      ],
+      "minimum_drive_margin": 0.6927618926912475,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_077",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.38848481160488,
+        49.93898684780204,
+        119.74155577810356
+      ],
+      "minimum_drive_margin": 0.667429949837931,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_078",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.92857421804378,
+        50.39889744136316,
+        119.74155577810356
+      ],
+      "minimum_drive_margin": 0.6442191893068726,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_079",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.442851546004334,
+        50.89285038763811,
+        120.73332550386806
+      ],
+      "minimum_drive_margin": 0.64971247008879,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_080",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.423427311271126,
+        49.50360612414887,
+        121.1574883512282
+      ],
+      "minimum_drive_margin": 0.6946985866653658,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_081",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.963516717710036,
+        49.96351671771,
+        121.1574883512282
+      ],
+      "minimum_drive_margin": 0.7222094932988166,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_082",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.50360612414889,
+        50.42342731127112,
+        121.1574883512282
+      ],
+      "minimum_drive_margin": 0.6946985866653658,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_083",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.892850387638106,
+        49.44285154600435,
+        120.73332550386806
+      ],
+      "minimum_drive_margin": 0.6497124700887899,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_084",
+      "group": "actuator",
+      "minimum_normals_n": [
+        48.37106490081155,
+        49.822145774238024,
+        122.8758167624609
+      ],
+      "minimum_drive_margin": 0.6132575569018981,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_085",
+      "group": "actuator",
+      "minimum_normals_n": [
+        48.892512351066074,
+        48.89251235106604,
+        123.29949708451615
+      ],
+      "minimum_drive_margin": 0.6797055202312018,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_086",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.82214577423801,
+        48.37106490081156,
+        122.8758167624609
+      ],
+      "minimum_drive_margin": 0.6132575569018981,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_087",
+      "group": "actuator",
+      "minimum_normals_n": [
+        52.158508141859215,
+        52.2650840691474,
+        116.63128259857703
+      ],
+      "minimum_drive_margin": 0.7213317379799201,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_088",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.98602181411877,
+        51.98602181411876,
+        117.08283118134614
+      ],
+      "minimum_drive_margin": 0.7729018127630818,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_089",
+      "group": "actuator",
+      "minimum_normals_n": [
+        52.26508406914742,
+        52.158508141859194,
+        116.63128259857703
+      ],
+      "minimum_drive_margin": 0.72133173797992,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_090",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.546336952909655,
+        50.73432325810579,
+        118.77421459856818
+      ],
+      "minimum_drive_margin": 0.6566991793230673,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_091",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.08642635934855,
+        51.19423385166693,
+        118.77421459856818
+      ],
+      "minimum_drive_margin": 0.680443574749607,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_092",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.62651576578742,
+        51.65414444522805,
+        118.77421459856818
+      ],
+      "minimum_drive_margin": 0.7063601386034172,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_093",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.37446640768428,
+        50.454645220562035,
+        119.22576318133729
+      ],
+      "minimum_drive_margin": 0.6998924914505428,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_094",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.91455581412319,
+        50.914555814123176,
+        119.22576318133729
+      ],
+      "minimum_drive_margin": 0.7273578586740446,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_095",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.45464522056204,
+        51.374466407684295,
+        119.22576318133729
+      ],
+      "minimum_drive_margin": 0.6998924914505427,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_096",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.654144445228056,
+        50.62651576578738,
+        118.77421459856818
+      ],
+      "minimum_drive_margin": 0.7063601386034172,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_097",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.194233851666965,
+        51.086426359348515,
+        118.77421459856818
+      ],
+      "minimum_drive_margin": 0.680443574749607,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_098",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.73432325810582,
+        51.546336952909634,
+        118.77421459856818
+      ],
+      "minimum_drive_margin": 0.6566991793230673,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_099",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.590154437036915,
+        50.698532026856206,
+        119.76618834569054
+      ],
+      "minimum_drive_margin": 0.6624441558408692,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_100",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.878479534123116,
+        49.95865834700086,
+        120.21773692845964
+      ],
+      "minimum_drive_margin": 0.681240714911367,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_101",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.95865834700088,
+        50.878479534123116,
+        120.21773692845964
+      ],
+      "minimum_drive_margin": 0.681240714911367,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_102",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.69853202685624,
+        50.59015443703687,
+        119.76618834569054
+      ],
+      "minimum_drive_margin": 0.6624441558408691,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_103",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.5537931082864,
+        49.74291960848438,
+        120.75816209281288
+      ],
+      "minimum_drive_margin": 0.6234602589788992,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_104",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.093882514725294,
+        50.20283020204552,
+        120.75816209281288
+      ],
+      "minimum_drive_margin": 0.6450008147275985,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_105",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.63397192116416,
+        50.66274079560664,
+        120.75816209281288
+      ],
+      "minimum_drive_margin": 0.6684506423935273,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_106",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.38249266056195,
+        49.46267147343967,
+        121.209710675582
+      ],
+      "minimum_drive_margin": 0.6631714291593024,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_107",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.922582067000846,
+        49.9225820670008,
+        121.209710675582
+      ],
+      "minimum_drive_margin": 0.6880122778995617,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_108",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.46267147343971,
+        50.38249266056192,
+        121.209710675582
+      ],
+      "minimum_drive_margin": 0.6631714291593024,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_109",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.662740795606666,
+        49.633971921164125,
+        120.75816209281288
+      ],
+      "minimum_drive_margin": 0.6684506423935273,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_110",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.20283020204556,
+        50.09388251472526,
+        120.75816209281288
+      ],
+      "minimum_drive_margin": 0.6450008147275985,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_111",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.74291960848443,
+        50.55379310828638,
+        120.75816209281288
+      ],
+      "minimum_drive_margin": 0.6234602589788992,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_112",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.02180073221459,
+        49.13197998456501,
+        122.90109409280404
+      ],
+      "minimum_drive_margin": 0.609116180308502,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_113",
+      "group": "actuator",
+      "minimum_normals_n": [
+        48.85111606700528,
+        48.851116067005236,
+        123.35264267557315
+      ],
+      "minimum_drive_margin": 0.6483097727849847,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_114",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.13197998456505,
+        49.02180073221455,
+        122.90109409280404
+      ],
+      "minimum_drive_margin": 0.609116180308502,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_115",
+      "group": "actuator",
+      "minimum_normals_n": [
+        52.82302053094159,
+        51.56241555200275,
+        116.65528027471437
+      ],
+      "minimum_drive_margin": 0.7281218721766548,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_116",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.945941644952285,
+        51.94594164495227,
+        117.13331897421268
+      ],
+      "minimum_drive_margin": 0.7358292151652746,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_117",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.56241555200275,
+        52.82302053094159,
+        116.65528027471437
+      ],
+      "minimum_drive_margin": 0.7281218721766547,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_118",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.750792831029585,
+        50.49127032915422,
+        118.7986531974749
+      ],
+      "minimum_drive_margin": 0.6868581705615773,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_119",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.3339242070404,
+        50.41410301991814,
+        119.27717503715867
+      ],
+      "minimum_drive_margin": 0.6684907963168416,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_120",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.87401361347929,
+        50.87401361347927,
+        119.27717503715867
+      ],
+      "minimum_drive_margin": 0.6933201126357524,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_121",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.41410301991816,
+        51.33392420704039,
+        119.27717503715867
+      ],
+      "minimum_drive_margin": 0.6684907963168415,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_122",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.491270329154204,
+        51.75079283102961,
+        118.7986531974749
+      ],
+      "minimum_drive_margin": 0.6868581705615774,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_123",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.71436395639739,
+        49.535521351348656,
+        119.79083104991267
+      ],
+      "minimum_drive_margin": 0.6458625870930027,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_124",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.25445336283626,
+        49.9954319449098,
+        119.79083104991267
+      ],
+      "minimum_drive_margin": 0.6687047217330632,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_125",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.794542769275154,
+        50.455342538470916,
+        119.79083104991267
+      ],
+      "minimum_drive_margin": 0.6819540745493472,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_126",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.8377234568392,
+        49.91790226971695,
+        120.26957653756106
+      ],
+      "minimum_drive_margin": 0.6510118151614245,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_127",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.377812863278095,
+        50.37781286327808,
+        120.26957653756106
+      ],
+      "minimum_drive_margin": 0.674636734946736,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_128",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.91790226971696,
+        50.8377234568392,
+        120.26957653756106
+      ],
+      "minimum_drive_margin": 0.6510118151614241,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_129",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.455342538470916,
+        50.79454276927513,
+        119.79083104991267
+      ],
+      "minimum_drive_margin": 0.6819540745493473,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_130",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.99543194490978,
+        51.254453362836266,
+        119.79083104991267
+      ],
+      "minimum_drive_margin": 0.6687047217330631,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_131",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.53552135134868,
+        51.714363956397385,
+        119.79083104991267
+      ],
+      "minimum_drive_margin": 0.6458625870930026,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_132",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.758113894642946,
+        49.49959356066539,
+        120.7830089023504
+      ],
+      "minimum_drive_margin": 0.6511183009148978,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_133",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.34152270663802,
+        49.42170151951574,
+        121.26197803796346
+      ],
+      "minimum_drive_margin": 0.634067966851453,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_134",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.88161211307691,
+        49.881612113076876,
+        121.26197803796346
+      ],
+      "minimum_drive_margin": 0.6565478403272942,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_135",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.42170151951578,
+        50.341522706637996,
+        121.26197803796346
+      ],
+      "minimum_drive_margin": 0.6340679668514528,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_136",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.49959356066539,
+        50.758113894642946,
+        120.7830089023504
+      ],
+      "minimum_drive_margin": 0.6511183009148978,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_137",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.68588619473091,
+        48.428448337816825,
+        122.92638182511095
+      ],
+      "minimum_drive_margin": 0.6149573683299939,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_138",
+      "group": "actuator",
+      "minimum_normals_n": [
+        48.809684081603905,
+        48.80968408160389,
+        123.40583410090946
+      ],
+      "minimum_drive_margin": 0.6193886178851813,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_139",
+      "group": "actuator",
+      "minimum_normals_n": [
+        48.42844833781683,
+        49.68588619473091,
+        122.92638182511095
+      ],
+      "minimum_drive_margin": 0.6149573683299936,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_140",
+      "group": "actuator",
+      "minimum_normals_n": [
+        51.33392373946394,
+        50.41410255234167,
+        119.27717563009574
+      ],
+      "minimum_drive_margin": 0.6684904485665978,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_141",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.874013145902836,
+        50.8740131459028,
+        119.27717563009574
+      ],
+      "minimum_drive_margin": 0.6933197363183345,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_142",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.4141025523417,
+        51.33392373946392,
+        119.27717563009574
+      ],
+      "minimum_drive_margin": 0.6684904485665978,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_143",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.837722986796095,
+        49.917901799673814,
+        120.26957713543145
+      ],
+      "minimum_drive_margin": 0.6510114803152659,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_144",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.37781239323499,
+        50.37781239323495,
+        120.26957713543145
+      ],
+      "minimum_drive_margin": 0.6746363730624416,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_145",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.91790179967386,
+        50.83772298679607,
+        120.26957713543145
+      ],
+      "minimum_drive_margin": 0.6510114803152657,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_146",
+      "group": "actuator",
+      "minimum_normals_n": [
+        50.34152223412822,
+        49.42170104700596,
+        121.26197864076715
+      ],
+      "minimum_drive_margin": 0.634067644386615,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_147",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.881611640567115,
+        49.8816116405671,
+        121.26197864076715
+      ],
+      "minimum_drive_margin": 0.6565474922723812,
+      "passes_sampled_traction_support": false
+    },
+    {
+      "profile": "rated_grid_148",
+      "group": "actuator",
+      "minimum_normals_n": [
+        49.42170104700598,
+        50.34152223412822,
+        121.26197864076715
+      ],
+      "minimum_drive_margin": 0.634067644386615,
+      "passes_sampled_traction_support": false
+    }
+  ]
+}

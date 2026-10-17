@@ -1,0 +1,2154 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf version="1.9">
+  <!-- S1 inspection only: no pressure, controller or sensor plugins; skirt visual only. -->
+  <model name="vacuum_s1_preview" canonical_link="chassis_link">
+    <link name="chassis_link">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>-0.139141510197773 0 0.0195 0 0 0</pose>
+        <mass>1.1004903</mass>
+        <inertia>
+          <ixx>0.011499936321825001</ixx>
+          <iyy>0.017019672368388243</iyy>
+          <izz>0.02851795795476325</izz>
+          <ixy>0.0</ixy>
+          <ixz>-1.8055593228630336e-35</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="chassis_link_visual_0">
+        <pose>-0.334625 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03925 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_0">
+        <pose>-0.334625 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03925 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_1">
+        <pose>-0.334625 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03925 0.05 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_1">
+        <pose>-0.334625 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03925 0.05 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_2">
+        <pose>-0.334625 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03925 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_2">
+        <pose>-0.334625 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03925 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_3">
+        <pose>-0.29 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_3">
+        <pose>-0.29 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_4">
+        <pose>-0.29 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_4">
+        <pose>-0.29 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_5">
+        <pose>-0.2575 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0149999999999999 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_5">
+        <pose>-0.2575 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0149999999999999 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_6">
+        <pose>-0.2575 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0149999999999999 0.05 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_6">
+        <pose>-0.2575 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0149999999999999 0.05 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_7">
+        <pose>-0.2575 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0149999999999999 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_7">
+        <pose>-0.2575 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0149999999999999 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_8">
+        <pose>-0.225 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_8">
+        <pose>-0.225 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_9">
+        <pose>-0.225 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_9">
+        <pose>-0.225 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_10">
+        <pose>-0.175 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_10">
+        <pose>-0.175 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_11">
+        <pose>-0.175 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_11">
+        <pose>-0.175 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_12">
+        <pose>-0.175 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_12">
+        <pose>-0.175 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_13">
+        <pose>-0.125 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_13">
+        <pose>-0.125 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_14">
+        <pose>-0.125 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_14">
+        <pose>-0.125 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_15">
+        <pose>-0.075 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_15">
+        <pose>-0.075 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_16">
+        <pose>-0.075 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_16">
+        <pose>-0.075 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_17">
+        <pose>-0.075 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_17">
+        <pose>-0.075 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_18">
+        <pose>-0.025 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_18">
+        <pose>-0.025 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_19">
+        <pose>-0.025 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_19">
+        <pose>-0.025 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_20">
+        <pose>0.036125 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_20">
+        <pose>0.036125 -0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_21">
+        <pose>0.036125 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.05 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_21">
+        <pose>0.036125 0 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.05 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_link_visual_22">
+        <pose>0.036125 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.146 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="chassis_link_collision_22">
+        <pose>0.036125 0.098 0.0195 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.146 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <link name="cover_link">
+      <pose>-0.141461965779885 0 0.0825889818274211 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.6818686875000003</mass>
+        <inertia>
+          <ixx>0.010641938989592321</ixx>
+          <iyy>0.015136937282703678</iyy>
+          <izz>0.02487215771089263</izz>
+          <ixy>0.0</ixy>
+          <ixz>6.035720724362358e-06</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="cover_link_visual_0">
+        <pose>-0.211538034220115 -0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_0">
+        <pose>-0.211538034220115 -0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_1">
+        <pose>-0.211538034220115 0 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.337 0.0795</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_1">
+        <pose>-0.211538034220115 0 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.337 0.0795</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_2">
+        <pose>-0.211538034220115 0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_2">
+        <pose>-0.211538034220115 0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_3">
+        <pose>0.000461965779884943 -0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.4215 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_3">
+        <pose>0.000461965779884943 -0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.4215 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_4">
+        <pose>0.000461965779884943 0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.4215 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_4">
+        <pose>0.000461965779884943 0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.4215 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_5">
+        <pose>0.212461965779885 -0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_5">
+        <pose>0.212461965779885 -0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_6">
+        <pose>0.212461965779885 0 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.337 0.0795</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_6">
+        <pose>0.212461965779885 0 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.337 0.0795</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_7">
+        <pose>0.212461965779885 0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_7">
+        <pose>0.212461965779885 0.16975 -0.0218389818274211 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.0795</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_8">
+        <pose>-0.160663034220115 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10425 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_8">
+        <pose>-0.160663034220115 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10425 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_9">
+        <pose>-0.160663034220115 0 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10425 0.05 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_9">
+        <pose>-0.160663034220115 0 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10425 0.05 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_10">
+        <pose>-0.160663034220115 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10425 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_10">
+        <pose>-0.160663034220115 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10425 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_11">
+        <pose>-0.0835380342201151 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_11">
+        <pose>-0.0835380342201151 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_12">
+        <pose>-0.0835380342201151 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_12">
+        <pose>-0.0835380342201151 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_13">
+        <pose>-0.0335380342201151 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_13">
+        <pose>-0.0335380342201151 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_14">
+        <pose>-0.0335380342201151 0 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_14">
+        <pose>-0.0335380342201151 0 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_15">
+        <pose>-0.0335380342201151 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_15">
+        <pose>-0.0335380342201151 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_16">
+        <pose>0.0164619657798849 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_16">
+        <pose>0.0164619657798849 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_17">
+        <pose>0.0164619657798849 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_17">
+        <pose>0.0164619657798849 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_18">
+        <pose>0.0664619657798849 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_18">
+        <pose>0.0664619657798849 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_19">
+        <pose>0.0664619657798849 0 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_19">
+        <pose>0.0664619657798849 0 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_20">
+        <pose>0.0664619657798849 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_20">
+        <pose>0.0664619657798849 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_21">
+        <pose>0.116461965779885 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_21">
+        <pose>0.116461965779885 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_22">
+        <pose>0.116461965779885 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_22">
+        <pose>0.116461965779885 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_23">
+        <pose>0.177586965779885 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_23">
+        <pose>0.177586965779885 -0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_24">
+        <pose>0.177586965779885 0 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.05 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_24">
+        <pose>0.177586965779885 0 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.05 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="cover_link_visual_25">
+        <pose>0.177586965779885 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="cover_link_collision_25">
+        <pose>0.177586965779885 0.098 0.0191610181725789 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.07225 0.146 0.0025</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="cover_link_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>cover_link</child>
+    </joint>
+    <link name="internal_left">
+      <pose>-0.141 0.105 0.055 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>4.0</mass>
+        <inertia>
+          <ixx>0.002466666666666667</ixx>
+          <iyy>0.02696666666666667</iyy>
+          <izz>0.027766666666666672</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="internal_left_visual_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.28 0.07 0.05</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="internal_left_collision_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.28 0.07 0.05</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="internal_left_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>internal_left</child>
+    </joint>
+    <link name="left_wheel_link">
+      <pose>0 0.2175 0.0475 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.6</mass>
+        <inertia>
+          <ixx>0.0004488875</ixx>
+          <iyy>0.000676875</iyy>
+          <izz>0.0004488875</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="left_wheel_link_visual_0">
+        <pose>0 0 0 1.5707963267949 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0475</radius>
+            <length>0.046999999999999986</length>
+          </cylinder>
+        </geometry>
+      </visual>
+      <collision name="left_wheel_link_collision_0">
+        <pose>0 0 0 1.5707963267949 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0475</radius>
+            <length>0.046999999999999986</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="left_wheel_link_joint" type="revolute">
+      <parent>chassis_link</parent>
+      <child>left_wheel_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <effort>80.0</effort>
+          <velocity>30.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.05</damping>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name="internal_right">
+      <pose>-0.141 -0.105 0.055 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>4.0</mass>
+        <inertia>
+          <ixx>0.002466666666666667</ixx>
+          <iyy>0.02696666666666667</iyy>
+          <izz>0.027766666666666672</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="internal_right_visual_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.28 0.07 0.05</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="internal_right_collision_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.28 0.07 0.05</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="internal_right_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>internal_right</child>
+    </joint>
+    <link name="right_wheel_link">
+      <pose>0 -0.2175 0.0475 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.6</mass>
+        <inertia>
+          <ixx>0.0004488875</ixx>
+          <iyy>0.000676875</iyy>
+          <izz>0.0004488875</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="right_wheel_link_visual_0">
+        <pose>0 0 0 1.5707963267949 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0475</radius>
+            <length>0.046999999999999986</length>
+          </cylinder>
+        </geometry>
+      </visual>
+      <collision name="right_wheel_link_collision_0">
+        <pose>0 0 0 1.5707963267949 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0475</radius>
+            <length>0.046999999999999986</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="right_wheel_link_joint" type="revolute">
+      <parent>chassis_link</parent>
+      <child>right_wheel_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <effort>80.0</effort>
+          <velocity>30.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.05</damping>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name="fan_0_link">
+      <pose>-0.025 0 0.073 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.45</mass>
+        <inertia>
+          <ixx>0.00023999999999999998</ixx>
+          <iyy>0.00023999999999999998</iyy>
+          <izz>0.00036</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="fan_0_link_visual_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.04</radius>
+            <length>0.04</length>
+          </cylinder>
+        </geometry>
+      </visual>
+      <collision name="fan_0_link_collision_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.04</radius>
+            <length>0.04</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="fan_0_link_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>fan_0_link</child>
+    </joint>
+    <link name="fan_0_duct">
+      <pose>-0.025 0 0.037 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.017639999999999992</mass>
+        <inertia>
+          <ixx>9.627029999999995e-06</ixx>
+          <iyy>9.627029999999996e-06</iyy>
+          <izz>1.624349999999999e-05</izz>
+          <ixy>0.0</ixy>
+          <ixz>-4.408103815583578e-37</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="fan_0_duct_visual_0">
+        <pose>-0.02625 -0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_0_duct_collision_0">
+        <pose>-0.02625 -0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_0_duct_visual_1">
+        <pose>-0.02625 0 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_0_duct_collision_1">
+        <pose>-0.02625 0 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_0_duct_visual_2">
+        <pose>-0.02625 0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_0_duct_collision_2">
+        <pose>-0.02625 0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_0_duct_visual_3">
+        <pose>3.46944695195361e-18 -0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_0_duct_collision_3">
+        <pose>3.46944695195361e-18 -0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_0_duct_visual_4">
+        <pose>3.46944695195361e-18 0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_0_duct_collision_4">
+        <pose>3.46944695195361e-18 0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_0_duct_visual_5">
+        <pose>0.02625 -0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_0_duct_collision_5">
+        <pose>0.02625 -0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_0_duct_visual_6">
+        <pose>0.02625 0 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_0_duct_collision_6">
+        <pose>0.02625 0 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_0_duct_visual_7">
+        <pose>0.02625 0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_0_duct_collision_7">
+        <pose>0.02625 0.02625 -6.93889390390723e-18 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="fan_0_duct_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>fan_0_duct</child>
+    </joint>
+    <link name="fan_1_link">
+      <pose>-0.125 0 0.073 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.45</mass>
+        <inertia>
+          <ixx>0.00023999999999999998</ixx>
+          <iyy>0.00023999999999999998</iyy>
+          <izz>0.00036</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="fan_1_link_visual_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.04</radius>
+            <length>0.04</length>
+          </cylinder>
+        </geometry>
+      </visual>
+      <collision name="fan_1_link_collision_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.04</radius>
+            <length>0.04</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="fan_1_link_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>fan_1_link</child>
+    </joint>
+    <link name="fan_1_duct">
+      <pose>-0.125 0 0.037 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.01764</mass>
+        <inertia>
+          <ixx>9.627029999999998e-06</ixx>
+          <iyy>9.627030000000003e-06</iyy>
+          <izz>1.62435e-05</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="fan_1_duct_visual_0">
+        <pose>-0.02625 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_1_duct_collision_0">
+        <pose>-0.02625 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_1_duct_visual_1">
+        <pose>-0.02625 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_1_duct_collision_1">
+        <pose>-0.02625 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_1_duct_visual_2">
+        <pose>-0.02625 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_1_duct_collision_2">
+        <pose>-0.02625 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_1_duct_visual_3">
+        <pose>0 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_1_duct_collision_3">
+        <pose>0 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_1_duct_visual_4">
+        <pose>0 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_1_duct_collision_4">
+        <pose>0 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_1_duct_visual_5">
+        <pose>0.02625 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_1_duct_collision_5">
+        <pose>0.02625 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_1_duct_visual_6">
+        <pose>0.02625 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_1_duct_collision_6">
+        <pose>0.02625 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_1_duct_visual_7">
+        <pose>0.02625 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_1_duct_collision_7">
+        <pose>0.02625 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="fan_1_duct_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>fan_1_duct</child>
+    </joint>
+    <link name="fan_2_link">
+      <pose>-0.225 0 0.073 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.45</mass>
+        <inertia>
+          <ixx>0.00023999999999999998</ixx>
+          <iyy>0.00023999999999999998</iyy>
+          <izz>0.00036</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="fan_2_link_visual_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.04</radius>
+            <length>0.04</length>
+          </cylinder>
+        </geometry>
+      </visual>
+      <collision name="fan_2_link_collision_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.04</radius>
+            <length>0.04</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="fan_2_link_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>fan_2_link</child>
+    </joint>
+    <link name="fan_2_duct">
+      <pose>-0.225 0 0.037 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.01764</mass>
+        <inertia>
+          <ixx>9.62703e-06</ixx>
+          <iyy>9.62703e-06</iyy>
+          <izz>1.6243499999999998e-05</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="fan_2_duct_visual_0">
+        <pose>-0.0262499999999999 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_2_duct_collision_0">
+        <pose>-0.0262499999999999 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_2_duct_visual_1">
+        <pose>-0.0262499999999999 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_2_duct_collision_1">
+        <pose>-0.0262499999999999 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_2_duct_visual_2">
+        <pose>-0.0262499999999999 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_2_duct_collision_2">
+        <pose>-0.0262499999999999 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_2_duct_visual_3">
+        <pose>5.55111512312578e-17 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_2_duct_collision_3">
+        <pose>5.55111512312578e-17 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_2_duct_visual_4">
+        <pose>5.55111512312578e-17 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_2_duct_collision_4">
+        <pose>5.55111512312578e-17 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_2_duct_visual_5">
+        <pose>0.0262500000000001 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_2_duct_collision_5">
+        <pose>0.0262500000000001 -0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_2_duct_visual_6">
+        <pose>0.0262500000000001 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_2_duct_collision_6">
+        <pose>0.0262500000000001 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.05 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="fan_2_duct_visual_7">
+        <pose>0.0262500000000001 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="fan_2_duct_collision_7">
+        <pose>0.0262500000000001 0.02625 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0025 0.0025 0.032</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="fan_2_duct_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>fan_2_duct</child>
+    </joint>
+    <link name="caster_housing_link">
+      <pose>-0.29 0 0.0298507109004739 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.19999999999999998</mass>
+        <inertia>
+          <ixx>6.383282533336328e-05</ixx>
+          <iyy>6.383282533336336e-05</iyy>
+          <izz>9.388688783570308e-05</izz>
+          <ixy>0.0</ixy>
+          <ixz>1.852884572118782e-22</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="caster_housing_link_visual_0">
+        <pose>-0.018 -0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.008 0.027</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_0">
+        <pose>-0.018 -0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.008 0.027</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_1">
+        <pose>-0.018 0 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.028 0.027</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_1">
+        <pose>-0.018 0 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.028 0.027</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_2">
+        <pose>-0.018 0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.008 0.027</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_2">
+        <pose>-0.018 0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.008 0.027</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_3">
+        <pose>0 -0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.008 0.027</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_3">
+        <pose>0 -0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.008 0.027</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_4">
+        <pose>0 0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.008 0.027</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_4">
+        <pose>0 0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.008 0.027</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_5">
+        <pose>0.018 -0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.008 0.027</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_5">
+        <pose>0.018 -0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.008 0.027</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_6">
+        <pose>0.018 0 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.028 0.027</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_6">
+        <pose>0.018 0 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.028 0.027</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_7">
+        <pose>0.018 0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.008 0.027</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_7">
+        <pose>0.018 0.018 -0.00135071090047393 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00800000000000001 0.008 0.027</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_8">
+        <pose>0 0 0.0136492890995261 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.044 0.044 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_8">
+        <pose>0 0 0.0136492890995261 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.044 0.044 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_9">
+        <pose>-0.025 -0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.006 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_9">
+        <pose>-0.025 -0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.006 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_10">
+        <pose>-0.025 0 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.044 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_10">
+        <pose>-0.025 0 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.044 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_11">
+        <pose>-0.025 0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.006 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_11">
+        <pose>-0.025 0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.006 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_12">
+        <pose>0 -0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.044 0.006 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_12">
+        <pose>0 -0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.044 0.006 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_13">
+        <pose>0 0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.044 0.006 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_13">
+        <pose>0 0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.044 0.006 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_14">
+        <pose>0.025 -0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.006 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_14">
+        <pose>0.025 -0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.006 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_15">
+        <pose>0.025 0 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.044 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_15">
+        <pose>0.025 0 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.044 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="caster_housing_link_visual_16">
+        <pose>0.025 0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.006 0.003</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="caster_housing_link_collision_16">
+        <pose>0.025 0.025 -0.0103507109004739 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.00600000000000001 0.006 0.003</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="caster_housing_link_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>caster_housing_link</child>
+    </joint>
+    <link name="caster_ball_link">
+      <pose>-0.29 0 0.0125 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.06422266231947886</mass>
+        <inertia>
+          <ixx>4.01391639496743e-06</ixx>
+          <iyy>4.01391639496743e-06</iyy>
+          <izz>4.01391639496743e-06</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="caster_ball_link_visual_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.0125</radius>
+          </sphere>
+        </geometry>
+      </visual>
+      <collision name="caster_ball_link_collision_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.0125</radius>
+          </sphere>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="caster_ball_link_joint" type="ball">
+      <parent>chassis_link</parent>
+      <child>caster_ball_link</child>
+    </joint>
+    <link name="skirt_link">
+      <pose>-0.141 0 0.009 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.35</mass>
+        <inertia>
+          <ixx>0.006430436055822466</ixx>
+          <iyy>0.009114237902510865</iyy>
+          <izz>0.015525773958333332</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="skirt_link_visual_0">
+        <pose>-0.20325 -0.161 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.018</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name="skirt_link_visual_1">
+        <pose>-0.20325 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.302 0.018</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name="skirt_link_visual_2">
+        <pose>-0.20325 0.161 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.018</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name="skirt_link_visual_3">
+        <pose>0 -0.161 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.3865 0.02 0.018</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name="skirt_link_visual_4">
+        <pose>0 0.161 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.3865 0.02 0.018</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name="skirt_link_visual_5">
+        <pose>0.20325 -0.161 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.018</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name="skirt_link_visual_6">
+        <pose>0.20325 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.302 0.018</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name="skirt_link_visual_7">
+        <pose>0.20325 0.161 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.018</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="skirt_link_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>skirt_link</child>
+    </joint>
+    <link name="inspection_camera_link">
+      <pose>0.34 0 0.315 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>1.5</mass>
+        <inertia>
+          <ixx>0.0032500000000000007</ixx>
+          <iyy>0.00205</iyy>
+          <izz>0.0037000000000000006</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="inspection_camera_link_visual_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.1 0.14 0.08</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="inspection_camera_link_collision_0">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.1 0.14 0.08</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="inspection_camera_link_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>inspection_camera_link</child>
+    </joint>
+    <link name="camera_upright">
+      <pose>0.04975 0 0.229 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.1524096</mass>
+        <inertia>
+          <ixx>0.0008368012800000002</ixx>
+          <iyy>0.0008163348480000001</iyy>
+          <izz>4.00329216e-05</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="camera_upright_visual_0">
+        <pose>-0.009 0 2.77555756156289e-17 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.002 0.04 0.252</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="camera_upright_collision_0">
+        <pose>-0.009 0 2.77555756156289e-17 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.002 0.04 0.252</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="camera_upright_visual_1">
+        <pose>0.009 0 2.77555756156289e-17 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.002 0.04 0.252</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="camera_upright_collision_1">
+        <pose>0.009 0 2.77555756156289e-17 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.002 0.04 0.252</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="camera_upright_visual_2">
+        <pose>0 -0.019 2.77555756156289e-17 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.016 0.002 0.252</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="camera_upright_collision_2">
+        <pose>0 -0.019 2.77555756156289e-17 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.016 0.002 0.252</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="camera_upright_visual_3">
+        <pose>0 0.019 2.77555756156289e-17 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.016 0.002 0.252</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="camera_upright_collision_3">
+        <pose>0 0.019 2.77555756156289e-17 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.016 0.002 0.252</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="camera_upright_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>camera_upright</child>
+    </joint>
+    <link name="camera_arm">
+      <pose>0.214875 0 0.365 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.21183120000000005</mass>
+        <inertia>
+          <ixx>5.564099520000003e-05</ixx>
+          <iyy>0.0021791313538875004</iyy>
+          <izz>0.0022075772578875005</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="camera_arm_visual_0">
+        <pose>2.77555756156289e-17 -0.019 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.35025 0.002 0.02</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="camera_arm_collision_0">
+        <pose>2.77555756156289e-17 -0.019 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.35025 0.002 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="camera_arm_visual_1">
+        <pose>2.77555756156289e-17 0.019 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.35025 0.002 0.02</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="camera_arm_collision_1">
+        <pose>2.77555756156289e-17 0.019 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.35025 0.002 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="camera_arm_visual_2">
+        <pose>2.77555756156289e-17 0 -0.00900000000000001 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.35025 0.036 0.002</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="camera_arm_collision_2">
+        <pose>2.77555756156289e-17 0 -0.00900000000000001 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.35025 0.036 0.002</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="camera_arm_visual_3">
+        <pose>2.77555756156289e-17 0 0.00900000000000001 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.35025 0.036 0.002</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="camera_arm_collision_3">
+        <pose>2.77555756156289e-17 0 0.00900000000000001 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.35025 0.036 0.002</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="camera_arm_joint" type="fixed">
+      <parent>chassis_link</parent>
+      <child>camera_arm</child>
+    </joint>
+    <frame name="base_link" attached_to="chassis_link" />
+    <frame name="inspection_camera_optical_frame" attached_to="chassis_link">
+      <pose>0.34 0 0.275 3.14159265358979 0 -1.5707963267949</pose>
+    </frame>
+  </model>
+</sdf>
