@@ -1,0 +1,16 @@
+# S4 provisional sensor, not a measured hardware specification.
+vacuum_io:
+  schema_version: 1
+  truth_rate_hz: 100.0
+  sensor:
+    rate_hz: 100.0
+    noise_pa: 10.0
+    bias_pa: 25.0
+    delay_s: 0.020
+    minimum_pa: 20000.0
+    maximum_pa: 120000.0
+    seed: 4817
+  # Same execution path as ROS commands, applied on the first unpaused step
+  # at/after time_s. kind: enabled=0, failed=1, sensor fault=2. Fans index 0..2.
+  # sensor value: normal=0, dropout=1, stuck=2. Events replay after reset.
+  events: []

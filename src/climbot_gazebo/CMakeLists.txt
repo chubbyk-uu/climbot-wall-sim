@@ -17,11 +17,13 @@ find_package(gz_sim_vendor REQUIRED)
 find_package(gz-sim8 REQUIRED)
 find_package(gz_plugin_vendor REQUIRED)
 find_package(gz-plugin2 REQUIRED COMPONENTS register)
+find_package(gz_transport_vendor REQUIRED)
+find_package(gz-transport13 REQUIRED)
 
-add_library(climbot_vacuum_system SHARED src/vacuum_system.cpp)
+add_library(climbot_vacuum_system SHARED src/vacuum_system.cpp src/vacuum_io.cpp)
 target_compile_features(climbot_vacuum_system PUBLIC cxx_std_17)
 target_link_libraries(climbot_vacuum_system PRIVATE vacuum_core
-  gz-sim8::gz-sim8 gz-plugin2::register)
+  gz-sim8::gz-sim8 gz-plugin2::register gz-transport13::core)
 target_include_directories(climbot_vacuum_system PRIVATE include)
 install(TARGETS climbot_vacuum_system LIBRARY DESTINATION lib)
 add_executable(vacuum_sim_probe src/vacuum_sim_probe.cpp)
@@ -31,7 +33,7 @@ target_link_libraries(vacuum_sim_probe PRIVATE gz-sim8::gz-sim8 yaml-cpp::yaml-c
 install(TARGETS vacuum_sim_probe RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 # S2 physics core deliberately has no ROS, Gazebo or YAML dependencies.
-add_library(vacuum_core src/vacuum_core.cpp)
+add_library(vacuum_core src/vacuum_core.cpp src/pressure_sensor.cpp)
 target_compile_features(vacuum_core PUBLIC cxx_std_17)
 target_include_directories(vacuum_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -148,8 +150,12 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   ament_add_gtest(test_vacuum_core test/test_vacuum_core.cpp)
   target_link_libraries(test_vacuum_core vacuum_core)
+  ament_add_gtest(test_pressure_sensor test/test_pressure_sensor.cpp)
+  target_link_libraries(test_pressure_sensor vacuum_core)
   ament_add_pytest_test(test_vacuum_assets test/test_vacuum_assets.py)
   ament_add_pytest_test(test_vacuum_native test/test_vacuum_native.py TIMEOUT 90)
+  ament_add_pytest_test(test_vacuum_bridge test/test_vacuum_bridge.py TIMEOUT 120
+    ENV ROS_DOMAIN_ID=96)
   ament_add_gtest(test_wall_wheel_odom_adapter test/test_wall_wheel_odom_adapter.cpp)
   target_link_libraries(test_wall_wheel_odom_adapter wall_wheel_odom_adapter_core)
   target_include_directories(test_wall_wheel_odom_adapter PRIVATE include)

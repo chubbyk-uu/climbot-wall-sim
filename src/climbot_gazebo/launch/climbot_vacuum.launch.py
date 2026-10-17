@@ -30,6 +30,7 @@ from launch.conditions import UnlessCondition
 from launch.event_handlers import OnShutdown
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+import yaml
 
 
 def _setup(context):
@@ -44,8 +45,11 @@ def _setup(context):
                                 else UnsetEnvironmentVariable(key))
     directory = tempfile.TemporaryDirectory(prefix='climbot_vacuum_')
     root = Path(directory.name)
+    io_config = LaunchConfiguration('io_config').perform(context)
+    io = yaml.safe_load(Path(io_config).read_text())['vacuum_io'] if io_config else None
     build_assets(root, mode=LaunchConfiguration('pressure_mode').perform(context),
-                 heading_deg=float(LaunchConfiguration('heading_deg').perform(context)))
+                 heading_deg=float(LaunchConfiguration('heading_deg').perform(context)),
+                 io_overrides=io)
     prefix = Path(get_package_prefix('climbot_gazebo'))
     share = Path(get_package_share_directory('climbot_gazebo'))
     control = Path(get_package_share_directory('climbot_control'))
@@ -71,7 +75,13 @@ def _setup(context):
                  '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
                  '/model/climbot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
                  '/model/climbot/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
-             ], remappings=[('/model/climbot/joint_state', '/joint_states')],
+                 '/suction/pressure@sensor_msgs/msg/FluidPressure[gz.msgs.FluidPressure',
+                 '/suction/ambient_pressure@sensor_msgs/msg/FluidPressure[gz.msgs.FluidPressure',
+                 '/suction/ground_truth/state@std_msgs/msg/String[gz.msgs.StringMsg',
+                 '/suction/sensor/fault@std_msgs/msg/Int32]gz.msgs.Int32',
+                 *[f'/suction/fans/fan_{i}/{field}@std_msgs/msg/Bool]gz.msgs.Boolean'
+                   for i in range(3) for field in ['enabled', 'failed']]],
+             remappings=[('/model/climbot/joint_state', '/joint_states')],
              parameters=[{'qos_overrides./cmd_vel.subscriber.reliability': 'reliable'}]),
         Node(package='climbot_control', executable='cmd_vel_watchdog_node',
              name='cmd_vel_watchdog',
@@ -81,11 +91,12 @@ def _setup(context):
 
 
 def generate_launch_description():
-    """Launch the flat-wall, rigid-wheel model; pressure sensing follows in S4."""
+    """Launch flat-wall rigid-wheel physics, measured pressure and fault inputs."""
     return LaunchDescription([
         DeclareLaunchArgument('pressure_mode', default_value='fan_ode',
                               choices=['fan_ode', 'fixed_pressure']),
         DeclareLaunchArgument('heading_deg', default_value='0'),
+        DeclareLaunchArgument('io_config', default_value=''),
         DeclareLaunchArgument('headless', default_value='true'),
         DeclareLaunchArgument('gpu_backend', default_value='auto',
                               choices=['auto', 'wsl_d3d12', 'native', 'software']),

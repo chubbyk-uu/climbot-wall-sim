@@ -77,3 +77,17 @@ def test_invalid_runtime_selection_is_explicit(tmp_path, kwargs):
     """A rejected choice never silently becomes the legacy force model."""
     with pytest.raises(ValueError):
         build_assets(tmp_path, **deepcopy(kwargs))
+
+
+@pytest.mark.parametrize('io', [
+    {'sensor': {'rate_hz': 70}}, {'sensor': {'delay_s': .0005}},
+    {'sensor': {'seed': -1}}, {'sensor': {'noise_pa': float('nan')}},
+    {'sensor': {'minimum_pa': 130000}}, {'sensor': {'typo': 1}},
+    {'events': [{'time_s': -1, 'kind': 0, 'index': 0, 'value': 1}]},
+    {'events': [{'time_s': 1, 'kind': 0, 'index': 3, 'value': 1}]},
+    {'events': [{'time_s': 1, 'kind': 2, 'index': 0, 'value': 3}]},
+])
+def test_sensor_and_fault_configuration_reject_invalid_contracts(tmp_path, io):
+    """Reject invalid grids and commands before starting physics."""
+    with pytest.raises(ValueError):
+        build_assets(tmp_path, io_overrides=io)

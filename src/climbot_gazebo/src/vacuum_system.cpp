@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "climbot_gazebo/vacuum_core.hpp"
+#include "climbot_gazebo/vacuum_io.hpp"
 #include "climbot_gazebo/vacuum_state.hpp"
 #include <gz/common/Console.hh>
 #include <gz/math/Matrix3.hh>
@@ -121,6 +122,7 @@ public:
     }
     require(fans.size() == 3, "exactly three independent fans required");
     core_ = std::make_unique<v::Chamber>(g, fans);
+    io_ = std::make_unique<v::VacuumIO>(sdf);
     auto sk = sdf->GetElement("skirt");
     parameters_.inner_area_m2 = inner_;
     parameters_.band_m = read(sk, "contact_band_m");
@@ -177,6 +179,7 @@ public:
     double time = seconds(info.simTime), dt = seconds(info.dt);
     if (runtimeFailed_) {return;}
     try {
+      auto targets = io_->apply(time);
       auto pose = link_.WorldPose(ecm);auto linear = link_.WorldLinearVelocity(ecm);
       auto angular = link_.WorldAngularVelocity(ecm);
       require(pose && linear && angular, "missing physical pose/velocity state");
@@ -214,13 +217,13 @@ public:
       int substeps = static_cast<int>(std::ceil(dt / substep_));
       double h = dt / substeps;
       if (ideal_) {
-        speeds_ = core_->speedsAfter(speeds_, {1, 1, 1}, dt);
+        speeds_ = core_->speedsAfter(speeds_, targets, dt);
         pressure_ = core_->gas().ambient_pa - fixed_;
         balance_ = core_->balance(pressure_, speeds_, area);
       } else {
         for (int i = 0; i < substeps; ++i) {
-          auto mid = core_->speedsAfter(speeds_, {1, 1, 1}, h / 2);
-          speeds_ = core_->speedsAfter(speeds_, {1, 1, 1}, h);
+          auto mid = core_->speedsAfter(speeds_, targets, h / 2);
+          speeds_ = core_->speedsAfter(speeds_, targets, h);
           double v0 = previousVolume_ + (volume - previousVolume_) * i / substeps;
           double v1 = previousVolume_ + (volume - previousVolume_) * (i + 1) / substeps;
           double a = previousArea_ + (area - previousArea_) * (i + .5) / substeps;
@@ -303,6 +306,7 @@ public:
       state_[v::PressureCentreZ] = centre.Z();
       state_[v::CpuNanoseconds] = std::chrono::duration<double, std::nano>(
         std::chrono::steady_clock::now() - start).count();
+      io_->publish(time, state_);
       ecm.SetComponentData<v::State>(entity_, state_);
     } catch (const std::exception & error) {
       runtimeFailed_ = true;state_[v::RuntimeFailed] = 1;
@@ -414,12 +418,15 @@ private:
   }
   void Clear(ECM & ecm)
   {
+    io_->reset();
     fixture_ = true;startupFailed_ = false;runtimeFailed_ = false;readyDuration_ = 0;release_ = -1;
     pressure_ = core_->gas().ambient_pa;speeds_ = {0, 0, 0};
     previousVolume_ = volumeNominal_;previousArea_ = baseLeak_;
     state_.assign(v::Count, 0);state_[v::CavityPressure] = pressure_;
     state_[v::AmbientPressure] = pressure_;state_[v::FixtureActive] = 1;state_[v::ReleaseTime] = -1;
     state_[v::Generation] = generation_;state_[v::IdealSource] = ideal_;
+    for (int i = 0; i < 3; ++i) {state_[v::Enabled0 + i] = 1;}
+    state_[v::SensorStamp] = -1;state_[v::SensorDelivery] = -1;
     ecm.SetComponentData<v::State>(entity_, state_);
   }
   gz::sim::Entity entity_{};
@@ -428,6 +435,7 @@ private:
   std::vector<gz::sim::Link> wheelLinks_;
   std::vector<gz::sim::Entity> wheelCollisions_;
   std::unique_ptr<v::Chamber> core_;
+  std::unique_ptr<v::VacuumIO> io_;
   v::SkirtParameters parameters_;
   v::Balance balance_;
   Pose wall_, pose_;

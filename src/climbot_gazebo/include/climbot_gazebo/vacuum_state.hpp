@@ -36,6 +36,9 @@ enum Field : std::size_t
   MinimumGap, MaximumGap, LinearSpeed, Generation, Substeps, ReadyPressure,
   CpuNanoseconds, PressureCentreX, PressureCentreY, PressureCentreZ,
   RollingMx, RollingMy, RollingMz,
+  Enabled0, Enabled1, Enabled2, Failed0, Failed1, Failed2,
+  SensorFault, CommandRevision, RejectedCommands, SensorSequence,
+  SensorStamp, SensorDelivery, SensorValue, SensorVariance, SensorSaturated,
   Count
 };
 inline constexpr std::array<const char *, Count> kNames{
@@ -48,7 +51,11 @@ inline constexpr std::array<const char *, Count> kNames{
   "fixture_fx", "fixture_fy", "fixture_fz", "fixture_mx", "fixture_my", "fixture_mz",
   "minimum_gap_m", "maximum_gap_m", "linear_speed_mps", "generation", "substeps", "ready_pa",
   "cpu_ns", "pressure_centre_x", "pressure_centre_y", "pressure_centre_z",
-  "rolling_mx", "rolling_my", "rolling_mz"
+  "rolling_mx", "rolling_my", "rolling_mz",
+  "fan_enabled_0", "fan_enabled_1", "fan_enabled_2", "fan_failed_0", "fan_failed_1", "fan_failed_2",
+  "sensor_fault", "command_revision", "rejected_commands", "sensor_sequence",
+  "sensor_stamp_s", "sensor_delivery_s", "sensor_value_pa", "sensor_variance_pa2",
+  "sensor_saturated"
 };
 using State = gz::sim::components::Component<std::vector<double>, class VacuumStateTag,
     gz::sim::serializers::VectorDoubleSerializer>;

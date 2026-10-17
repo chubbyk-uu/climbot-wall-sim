@@ -33,6 +33,43 @@ def _read(path, key):
     return yaml.safe_load(path.read_text())[key]
 
 
+def _validate_io(io, step_s):
+    if set(io) != {'schema_version', 'truth_rate_hz', 'sensor', 'events'}:
+        raise ValueError('invalid vacuum IO keys')
+    sensor = io['sensor']
+    if set(sensor) != {'rate_hz', 'noise_pa', 'bias_pa', 'delay_s', 'minimum_pa',
+                       'maximum_pa', 'seed'} or io['schema_version'] != 1:
+        raise ValueError('invalid sensor schema')
+    for value in [io['truth_rate_hz'], *sensor.values()]:
+        if (isinstance(value, bool) or not isinstance(value, (int, float)) or
+                not math.isfinite(value)):
+            raise ValueError('nonfinite/non-numeric sensor parameter')
+    if (not isinstance(sensor['seed'], int) or not 0 <= sensor['seed'] <= 2**32 - 1 or
+            sensor['noise_pa'] < 0 or not 0 <= sensor['delay_s'] <= 10 or
+            not 0 < sensor['minimum_pa'] < sensor['maximum_pa']):
+        raise ValueError('invalid sensor domain')
+    for rate in [io['truth_rate_hz'], sensor['rate_hz']]:
+        if not 0 < rate <= 1000 or abs(1 / rate / step_s - round(1 / rate / step_s)) > 1e-8:
+            raise ValueError('publication rate must align with physical step')
+    if abs(sensor['delay_s'] / step_s - round(sensor['delay_s'] / step_s)) > 1e-8:
+        raise ValueError('sensor delay must align with physical step')
+    previous = -1
+    for event in io['events']:
+        if set(event) != {'time_s', 'kind', 'index', 'value'}:
+            raise ValueError('invalid scheduled command keys')
+        time = event['time_s']
+        if (isinstance(time, bool) or not isinstance(time, (int, float)) or
+                not math.isfinite(time) or time < 0 or time < previous):
+            raise ValueError('scheduled commands must be ordered by simulation time')
+        kind, index, value = [event[key] for key in ['kind', 'index', 'value']]
+        if (any(type(x) is not int for x in [kind, index, value]) or
+                kind not in (0, 1, 2) or index not in range(3) or
+                (kind == 2 and (index != 0 or value not in range(3))) or
+                (kind != 2 and value not in (0, 1))):
+            raise ValueError('invalid scheduled command domain')
+        previous = time
+
+
 def _rpy(quaternion):
     columns = [rotate_vector(quaternion, axis) for axis in [(1, 0, 0), (0, 1, 0), (0, 0, 1)]]
     r = [[columns[j][i] for j in range(3)] for i in range(3)]
@@ -51,7 +88,7 @@ def _legacy_module(gazebo):
 
 
 def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
-                 realtime_factor=1.0, runtime_overrides=None):
+                 realtime_factor=1.0, runtime_overrides=None, io_overrides=None):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
@@ -68,6 +105,16 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     simulation = _read(gazebo / 'config/simulation.yaml', 'simulation')
     physics = _read(gazebo / 'config/vacuum_physics.yaml', 'vacuum_physics')
     runtime = _read(gazebo / 'config/vacuum_runtime.yaml', 'vacuum_runtime')
+    io = _read(gazebo / 'config/vacuum_io.yaml', 'vacuum_io')
+    if io_overrides:
+        if set(io_overrides) - set(io):
+            raise ValueError('unknown vacuum IO override')
+        for key, value in io_overrides.items():
+            if key == 'sensor':
+                io[key].update(value)
+            else:
+                io[key] = value
+    _validate_io(io, step_s)
     if runtime_overrides:
         if set(runtime_overrides) - set(runtime):
             raise ValueError('unknown runtime override')
@@ -145,6 +192,15 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     # actual load and slip, rather than silently changing this tyre model.
     sp = node(new, 'plugin', filename='climbot_vacuum_system', name='climbot_gazebo::VacuumSystem')
     node(sp, 'pressure_mode', mode)
+    io_element = node(sp, 'io')
+    node(io_element, 'truth_rate_hz', io['truth_rate_hz'])
+    sensor = node(io_element, 'sensor')
+    for key, value in io['sensor'].items():
+        node(sensor, key, value)
+    for event in io['events']:
+        element = node(io_element, 'event')
+        for key, value in event.items():
+            node(element, key, value)
     for key, value in runtime.items():
         if key not in ('schema_version', 'pressure_mode', 'camera_enabled'):
             node(sp, key, str(value).lower() if isinstance(value, bool) else value)
@@ -223,7 +279,7 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         ET.indent(root)
         ET.ElementTree(root).write(path, encoding='utf-8', xml_declaration=True)
     resolved = {'mode': mode, 'heading_deg': heading_deg, 'step_s': step_s,
-                'runtime': runtime, 'model': model, 'physics': physics,
+                'runtime': runtime, 'model': model, 'physics': physics, 'io': io,
                 'wall_surface_pose': surface + wall['origin_rpy'],
                 'nominal_startup_minimum_pa': nominal_minimum,
                 'camera_enabled': runtime['camera_enabled']}

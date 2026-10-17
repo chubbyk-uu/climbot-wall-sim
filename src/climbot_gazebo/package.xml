@@ -24,6 +24,7 @@
   <depend>yaml-cpp</depend>
   <depend>gz_sim_vendor</depend>
   <depend>gz_plugin_vendor</depend>
+  <depend>gz_transport_vendor</depend>
   <depend>nav_msgs</depend>
   <exec_depend>ros_gz_interfaces</exec_depend>
   <exec_depend>xacro</exec_depend>
