@@ -1,0 +1,133 @@
+# Gazebo-only contact, rendering, sensor, and initialization parameters.
+simulation:
+  lighting:
+    # Phase G3/G4 models a night-time, weak-moonlight operating condition.
+    # A single bracket-mounted LED is deliberately non-uniform;
+    # its centre-bright field will later be flat-fielded by the patented
+    # calibration method. Ambient prevents completely black unlit surfaces.
+    ambient_rgb: [0.025, 0.025, 0.025]
+    # One physical, cool moonlight. It is intentionally weaker than the LED
+    # but casts shadows like real directional moonlight. Regenerate flat-field
+    # calibration whenever it changes.
+    moonlight:
+      intensity: 0.30
+      direction_xyz: [-1.0, 0.2, -0.4]
+      diffuse_rgb: [0.85, 0.88, 0.95]
+      cast_shadows: true
+    inspection_led:
+      centre_xyz_m: [0.380, 0.000, 0.290]
+      direction_xyz: [0.0, 0.0, -1.0]
+      # Stronger than the 0.30 operator fill, as on the real bracket.  The
+      # camera's 0.65 relative exposure below preserves raw highlight headroom.
+      intensity: 2.0
+      range_m: 2.0
+      attenuation_constant: 0.20
+      attenuation_linear: 0.35
+      attenuation_quadratic: 1.8
+      inner_angle_rad: 0.35
+      # Wider than the distorted camera diagonal, so no artificial circular
+      # cutoff enters the image; falloff still leaves the corners darker.
+      outer_angle_rad: 2.05
+      falloff: 0.55
+      cast_shadows: true
+
+  wall:
+    # Where the wall body sits in the Gazebo world. This is not free: it has to
+    # place the same surface that climbot_description/config/wall.yaml already
+    # describes, so centre_y must be origin_xyz[1] + width/2 and centre_z must
+    # be origin_xyz[2] + height/2. test_wall_world_matches_description.py holds
+    # the two files to that, because a stale centre_z lifts the wall off the
+    # ground without any other symptom.
+    centre_xyz: [0.0, 0.0, 4.0]
+    thickness_m: 0.10
+    mu: 1.1
+    # The reference grid pitch used to live here. It moved to
+    # climbot_description/config/wall.yaml, because RViz draws the same grid
+    # and cannot read this file.
+
+    # Path to a bake manifest from tools/bake_wall_texture.py, resolved
+    # against the directory ros2 launch was run from. Empty leaves the wall its
+    # flat colour. The blocks are visual only: the collision box and the
+    # friction and WheelSlip parameters calibrated against it are untouched.
+    #
+    # It is empty by default because the bake is 200 MB of generated files that
+    # the repository does not carry - run tools/fetch_wall_texture.sh and
+    # tools/bake_wall_texture.py first, then point this or the wall_texture
+    # launch argument at the manifest.
+    texture_manifest: ''
+
+  spawn:
+    surface_gap_m: 0.001
+    lateral_m: 0.0
+    height_m: 2.0
+
+  suction:
+    # Sized against sliding, not against peeling. The drive wheels carry 66.7%
+    # of this (measured, results/normal_loads_400N.csv), so their Coulomb limit
+    # is mu * 0.667 * force_n and the static safety factor against a 142 N robot
+    # is force_n / 194. At the old 220 N that factor was 1.13, and turning on
+    # the spot - which shifts load onto the freely rolling caster - pushed the
+    # instantaneous limit below the robot's own weight for part of the heading
+    # circle. 400 N gives 2.06, and 1.81 once a 2 kg camera is fitted. Below
+    # 225 N the slip band comes back and below 215 N the robot falls off the
+    # wall outright: see results/band_variants/ and docs/STATUS.md.
+    force_n: 400.0
+
+  drive_wheel:
+    mu: 1.1
+    # Quoted at nominal_normal_force_n below. WheelSlip only ever uses the
+    # ratio compliance/nominal, so 0.208 at 133.3 N is the same tyre as the
+    # 0.12 at 77 N these were carried at while the suction was 220 N - all 48
+    # headings of results/band_variants/optionB_map.csv match the unscaled
+    # run to 0.001 mm/deg. The pair is restated at the load the wheels
+    # actually carry so the numbers mean something on their own.
+    slip_lateral: 0.208
+    slip_longitudinal: 0.069
+    # The load the compliances above are quoted at: half the wheels' measured
+    # 66.7% share of the suction force (results/normal_loads_400N.csv).
+    nominal_normal_force_n: 133.3
+
+  caster:
+    mu: 0.35
+
+  drive:
+    joint_damping: 0.05
+    odom_publish_frequency_hz: 50.0
+
+  imu:
+    update_rate_hz: 100.0
+    angular_velocity_stddev: 0.0002
+    linear_acceleration_stddev: 0.017
+
+  inspection_camera:
+    # Rendering/runtime properties only. Resolution, K/D, effective footprint
+    # and the physical mount come from climbot_description.
+    triggered: true
+    update_rate_hz: 30.0
+    # Ogre2 renders RGB internally so material reflectance and illumination are
+    # preserved. The distortion adapter converts the final calibrated output
+    # to the real industrial camera's mono8 format.
+    image_format: R8G8B8
+    # Ogre2 does not implement SDF Brown distortion. Render a wider ideal
+    # source image, then the simulation-only adapter maps it into the shared
+    # calibrated K/D without black borders at the distorted corners.
+    render_overscan_focal_scale: 0.83
+    # Relative integration time applied to the raw sensor signal after the
+    # renderer and before read noise. Gazebo SDF has no physical exposure
+    # control, so this is the explicit simulation equivalent of a shorter
+    # real-camera exposure. One is the legacy exposure; values above one are
+    # intentionally rejected to avoid using gain as a substitute for light.
+    exposure_scale: 0.65
+    near_clip_m: 0.05
+    far_clip_m: 20.0
+    noise_mean: 0.0
+    # Additive per-frame Gaussian sensor noise in normalized intensity. 0.003
+    # is about 0.77 DN in mono8: visible to a 30-frame flat-field statistic,
+    # yet leaves margin for the 1 DN Brown-map reconstruction check.
+    noise_stddev: 0.003
+    noise_seed: 73
+    visualize: false
+
+  contact:
+    # Match the 1 ms physics step so millisecond caster lift-off is observable.
+    update_rate_hz: 1000.0

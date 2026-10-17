@@ -1,0 +1,49 @@
+build/climbot_control/Testing/20261017-1248/Test.xml: 38 tests, 0 errors, 1 failure, 0 skipped
+- test_test_coverage_manager_forced_recovery.py
+  <<< failure message
+    -- run_test.py: extra environment variables:
+     - ROS_DOMAIN_ID=55
+    -- run_test.py: invoking following command in '$WORKSPACE/build/climbot_control':
+     - /usr/bin/python3 -m launch_testing.launch_test $WORKSPACE/src/climbot_control/test/test_coverage_manager_forced_recovery.py --junit-xml=$WORKSPACE/build/climbot_control/test_results/climbot_control/test_test_coverage_manager_forced_recovery.py.xunit.xml --package-name=climbot_control
+    [INFO] [launch]: Default logging verbosity is set to INFO
+    test_operator_can_recover_without_calling_an_unknown_goal_finished (climbot_control.TestCoverageManagerForcedRecovery.test_operator_can_recover_without_calling_an_unknown_goal_finished)
+    SIGKILL after send but before response must have an explicit escape. ... [INFO] [coverage_manager_node-1]: process started with pid [34299]
+    [coverage_manager_node-1] [INFO] [1792241309.142958770] [coverage_manager]: Idle: waiting for a valid coverage preview.
+    [coverage_manager_node-1] [INFO] [1792241309.888724589] [coverage_manager]: Ready: forced-recovery-test revision 1
+    FAIL
+    
+    ======================================================================
+    FAIL: test_operator_can_recover_without_calling_an_unknown_goal_finished (climbot_control.TestCoverageManagerForcedRecovery.test_operator_can_recover_without_calling_an_unknown_goal_finished)
+    SIGKILL after send but before response must have an explicit escape.
+    ----------------------------------------------------------------------
+    Traceback (most recent call last):
+      File "$WORKSPACE/src/climbot_control/test/test_coverage_manager_forced_recovery.py", line 162, in test_operator_can_recover_without_calling_an_unknown_goal_finished
+        self.assertTrue(self._call(self.start_client).success)
+    AssertionError: False is not true
+    
+    ----------------------------------------------------------------------
+    Ran 1 test in 0.946s
+    
+    FAILED (failures=1)
+    [INFO] [coverage_manager_node-1]: sending signal 'SIGINT' to process[coverage_manager_node-1]
+    [coverage_manager_node-1] [INFO] [1792241309.963522751] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+    [INFO] [coverage_manager_node-1]: process has finished cleanly [pid 34299]
+    test_processes_exit_cleanly (climbot_control.TestProcessExitCodes.test_processes_exit_cleanly) ... ok
+    
+    ----------------------------------------------------------------------
+    Ran 1 test in 0.000s
+    
+    OK
+    -- run_test.py: return code 1
+    -- run_test.py: verify result file '$WORKSPACE/build/climbot_control/test_results/climbot_control/test_test_coverage_manager_forced_recovery.py.xunit.xml'
+  >>>
+build/climbot_control/test_results/climbot_control/test_test_coverage_manager_forced_recovery.py.xunit.xml: 2 tests, 0 errors, 1 failure, 0 skipped
+- climbot_control.TestCoverageManagerForcedRecovery test_operator_can_recover_without_calling_an_unknown_goal_finished
+  <<< failure message
+    Traceback (most recent call last):
+      File "$WORKSPACE/src/climbot_control/test/test_coverage_manager_forced_recovery.py", line 162, in test_operator_can_recover_without_calling_an_unknown_goal_finished
+        self.assertTrue(self._call(self.start_client).success)
+    AssertionError: False is not true
+  >>>
+
+Summary: 1436 tests, 0 errors, 2 failures, 67 skipped

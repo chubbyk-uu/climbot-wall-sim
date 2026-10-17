@@ -1,0 +1,33 @@
+{
+  "files": {
+    "REPORT.md": "a51af2e0b5708e4af15d199b8af90f461dfc741720e16b4c4dfdf50d3d381741",
+    "a_loads.csv": "98542616beee05f8053e8ce02704e47f770c1f05f6f0c6993162b0aa7484f579",
+    "a_loads_summary.json": "089bfab4105de7dc9b2a7d10f5be0edf6b0c99b8cd577ef3a7d856b1bbecdf8d",
+    "baseline_summary.json": "db6686a4cc90414a0150b8216929a394c04a3baa38b3d7ccae2b8838459c625e",
+    "inputs/src/climbot_control/config/control.yaml": "789b8b3276b0876f78bebfe03d18d66c35001a494b4a0e579d3271627001b07a",
+    "inputs/src/climbot_description/config/inspection_camera.yaml": "f76bb343e0ebcf8cab65354a135a42ff413bbd7198a845cd727fa0c15138eabb",
+    "inputs/src/climbot_description/config/robot.yaml": "8e324b1e2f00cfdfd787327fbb38e343bea09046ddade871cd3728c2d05f9013",
+    "inputs/src/climbot_description/config/wall.yaml": "39426794fc0b8c0b33f207cbdf497901d5822e22923ab90ecd7f2f6c0f6db049",
+    "inputs/src/climbot_description/urdf/climbot.urdf.xacro": "3344bda50acd474c3922365bb4e3a90f42684555866ceab25d6bc7562f621171",
+    "inputs/src/climbot_gazebo/config/ekf_wall.yaml": "18df173b4d0b1ba8d1e180f90420bd0f06102e540e3476cf0c03c8ac2344a9b1",
+    "inputs/src/climbot_gazebo/config/simulation.yaml": "b23d56b8c2c0a4b82e718b430a76690158e535912ddec70325a46afa2043c25d",
+    "inputs/src/climbot_gazebo/launch/climbot_wall.launch.py": "a85aa961de7354404290fb6bf1069707eeb176074cbea6d4b9f71444e96ec3c0",
+    "inputs/src/climbot_gazebo/models/climbot/model.config": "b8918ca3e9a5b22236345b30419b5c8e62b8664169813594c99c6bed6d256045",
+    "inputs/src/climbot_gazebo/models/climbot/model.sdf.xacro": "ad04eab3fe9d3a9d7bcd1658290fd30ce87f7c5339c343d8ceca76fb7e58d03e",
+    "inputs/src/climbot_gazebo/scripts/measure_normal_loads.py": "e0c0a86605eb8e84dc17b90cedbb2503d928243538352ce27710657da8c65961",
+    "inputs/src/climbot_gazebo/worlds/climbot_wall.sdf.xacro": "077d78dc55cdc51f060e6caf10de3612a4d1e6e9e21073988a6a2b98ea217b55",
+    "model.sdf": "0ed049f9420358a8e16ad5478374237837ce47d35612b1b2b8445c4f384ce42f",
+    "regression_clock_failure.txt": "aa636a91559b10766cb86d807ca096d1e3366cf5beb3e19c598f9ff888e740e8",
+    "regression_discovery_failure.txt": "a20e8baa14d2618507e314ec317ad15d2c70bb12d7c5eeeea8952b609ab67b9f",
+    "regression_initial_failure.txt": "ccee93e51b3a132ed34a117307f50fab839c827a8bee7add65fa5696d44679cc",
+    "regression_summary.json": "d58a5f69f264e591fb8fc7ff36c04c59eb8b73e25a671a12172968b1deadda2a",
+    "regression_validation_summary.json": "1d30d7c0606605f0f0fca34e2716261c6f7f3acf66c02269a410d5c0814d5f9f",
+    "robot.urdf": "cddbdabc8511cff68c8fc717a06d7edf8ac9fbac3729dfafbb88df614197e1d6",
+    "run_summary.json": "e420d5b39dec82afc8895bf2a3dc11fa8a11478077d199e7478339f7816368b8",
+    "static_screening/headings.csv": "ab646b1d3b15fdf888620030975a8235d4c0cbc2ee1e70b42ae0065c039a835c",
+    "static_screening/screening_summary.json": "488f45136d2e0757c51bf633f5904d1bb7fd0ac68919ff27f152b2725de71395",
+    "world.sdf": "fba3445be63c0e74401b326eb05e4e5d14472e570b445ae33f22cacb63fd49fd"
+  },
+  "kind": "s0_evidence_file_inventory",
+  "schema_version": 1
+}

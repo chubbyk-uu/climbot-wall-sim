@@ -1,0 +1,174 @@
+line_tracker:
+  ros__parameters:
+    cruise_speed: 0.20
+    cross_gain: 1.0
+    cross_integral_gain: 0.30
+    cross_integral_limit_m_s: 0.10
+    heading_gain: 2.0
+    control_frequency_hz: 50.0
+    odometry_timeout_s: 0.25
+    # Reject source timestamps from a different clock epoch or the future.
+    odometry_future_tolerance_s: 0.05
+    # Frozen scan geometry and state are reliable state messages, not a 50 Hz
+    # control stream. Publish changes immediately and renew capture liveness
+    # at 5 Hz, comfortably inside the 0.50 s gate timeout below.
+    execution_reference_heartbeat_hz: 5.0
+    standalone_mode: true
+    segment_timeout_s: 180.0
+    # How long a paused task may take to reach a standstill before the pause is
+    # treated as a control fault rather than a pause. It bounds the
+    # deceleration only: once the task is PAUSED nothing here is running, and
+    # the hold may last as long as the operator wants. Generous against the
+    # ~0.8 s the rate limiter needs from cruise_speed, because a deadline that
+    # ends the run is the wrong thing to make tight.
+    pause_stop_timeout_s: 5.0
+    # Inspection-enabled SCANs must keep receiving a matching position-gate
+    # heartbeat.  Its timeout uses steady time, not Gazebo's paused ROS clock.
+    capture_gate_timeout_s: 0.50
+    # A new SCAN gets a one-time DDS/callback startup allowance before its
+    # first matching gate arrives. Once it does, the shorter heartbeat applies.
+    capture_gate_start_timeout_s: 2.0
+    motion_region_tolerance_m: 0.02
+    turn_slip_per_degree_m: 0.00046
+    parallel_scan_offset_m: 0.045
+    maximum_scan_offset_m: 0.12
+    # Bounds where a scan line entered by arc is frozen, so it has to sit
+    # inside the 20 mm adjacent-spacing budget of PROJECT_GUIDE 14.3.
+    arc_entry_finish_offset_m: 0.012
+    arc_entry_speed_mps: 0.08
+    arc_entry_lookahead_m: 0.20
+    arc_entry_heading_gain: 2.0
+    arc_entry_max_heading_deg: 20.0
+    arc_entry_max_angular_speed: 0.25
+    arc_entry_timeout_s: 15.0
+    # This is a diagnostic for visibly large oscillations, not a zero-crossing fault.
+    visible_oscillation_amplitude_m: 0.03
+    visible_oscillation_minimum_travel_m: 0.10
+    visible_oscillation_reversals: 4
+    max_linear_speed: 0.25
+    max_angular_speed: 0.35
+    max_heading_correction_deg: 12.0
+    max_gravity_feedforward_deg: 8.0
+    max_cross_feedback_deg: 8.0
+    alignment_threshold_deg: 10.0
+    cross_slowdown_start_m: 0.03
+    cross_slowdown_full_m: 0.08
+    cross_slowdown_min_scale: 0.25
+    alignment_reentry_threshold_deg: 12.0
+    # A deadband, not a convergence target: inside it ALIGN_SETTLE commands
+    # zero angular velocity and stops correcting, so whatever error the robot
+    # carried across the edge is what it starts the scan line with. It has to
+    # stay well under the 2.0 deg maximum_turn_end_heading_error_deg that
+    # PROJECT_GUIDE 14.3 accepts - at 2.0 the two were the same number and the
+    # residual sat at 1.5 to 1.8 deg with no margin at all. 0.5 measured clean
+    # too (107 settles, never more than one command reversal in any of them),
+    # but 1.0 keeps a 2x margin without asking a real robot's heading estimate
+    # to hold a deadband that narrow.
+    alignment_tolerance_deg: 1.0
+    alignment_settle_duration_s: 0.50
+    turn_heading_gain: 2.0
+    max_turn_angular_speed: 0.60
+    max_turn_angular_acceleration: 1.00
+    # A terminal guard, not the mechanism that stops the robot: the braking
+    # profile below already lands within a few millimetres. Kept just above
+    # goal_position_exit_tolerance_m, and at a speed the profile is close to
+    # anyway at that distance, so the guard costs about 0.2 s per segment.
+    final_approach_distance_m: 0.05
+    final_approach_speed_mps: 0.08
+    goal_position_tolerance_m: 0.03
+    goal_position_exit_tolerance_m: 0.04
+    # This covers the entry leg's end, where the robot turns in place and
+    # slips while stopped; tightening it there stalls the approach. Stopping
+    # accuracy comes from the braking profile instead.
+    start_approach_tolerance_m: 0.05
+    start_approach_exit_tolerance_m: 0.06
+    goal_heading_exit_tolerance_deg: 3.0
+    stopped_linear_speed_mps: 0.01
+    stopped_angular_speed_rps: 0.02
+    goal_settle_duration_s: 0.30
+    max_linear_acceleration: 0.20
+    max_linear_deceleration: 0.25
+    # Time-parameterised tracking. The mode itself is a launch argument rather
+    # than a value here: an A/B run has to switch it without editing a shipped
+    # config, and a setting in both places would silently disagree.
+    #
+    # The profile rates are symmetric and equal to the rated acceleration, so
+    # both modes plan from the same operating point and their nominal segment
+    # durations differ by under 2%. The catch_up_* pair is the room the
+    # correction works in above that: the profile has to ask for less than the
+    # rate limiter can deliver, or the command trails the curve the whole way
+    # down with nothing left for the correction - which is the same reason
+    # braking_profile_deceleration above sits below max_linear_deceleration.
+    time_profile_acceleration: 0.20
+    time_profile_deceleration: 0.20
+    catch_up_max_linear_speed: 0.35
+    catch_up_max_linear_acceleration: 0.35
+    # How long the plant takes to actually have a speed it has been commanded,
+    # measured at 0.0799 s (sd 0.0193) over 124 segments of the eight-case set
+    # and consistent across them: 0.084-0.086 on horizontal scans, 0.076-0.077
+    # on vertical ones, which fits horizontal travel working across gravity.
+    # Commanding the curve's speed alone therefore falls short by lag times
+    # acceleration for the whole ramp - 16 mm a segment, the entire startup
+    # shortfall - so the curve's acceleration is fed forward as well.
+    time_speed_lag_s: 0.08
+    # Feedforward carries the motion; this only removes the residual lag, and
+    # the gain was chosen from both ends of its range rather than tuned by eye.
+    #
+    # At 0 the vertical rectangle fails outright: with the linear channel open
+    # loop, a climb loses along-track distance to gravity, the curve runs out
+    # while the robot is still short, the command goes to zero and the segment
+    # times out 174 mm from its endpoint. So the term is what lets a segment
+    # finish at all, not a refinement.
+    #
+    # Above that the peak lag is not monotonic - paired per segment over four
+    # cases it reads 7.06 mm at 1, 5.11 at 2.5, 5.78 at 3 and 6.20 at 6, so it
+    # bottoms out near 2.5 and a stiffer gain starts overcorrecting. Command
+    # activity, on the other hand, does rise monotonically: 0.026, 0.066, 0.069
+    # and 0.146. 2.5 and 3 are within noise of each other on lag, so the lower
+    # one wins on the axis that is not ambiguous.
+    #
+    # Pure P: the cruise phase tracks the commanded speed to within a percent,
+    # so there is no steady-state error for an integral term to remove.
+    time_along_gain: 2.5
+    time_along_integral_gain: 0.0
+    time_along_integral_limit_m_s: 0.05
+    # Both off for the first pass: the point is to measure what the schedule
+    # alone does, not to hide its failure modes. The first holds the reference
+    # clock while the robot is far behind, the second hands the last few
+    # centimetres back to the distance-to-stop curve.
+    time_axis_stretch_enabled: false
+    time_axis_stretch_lag_m: 0.05
+    # On, and the first run is why. Without it the eight-case set landed 10.9
+    # to 15.4 mm from its endpoints against 2.6 to 5.0 in distance mode, and
+    # bigV's scan line spacing reached 17.6 mm against a 20 mm limit. The peak
+    # schedule lag was 0.08 s, which at the cruise speed is 16 mm: a controller
+    # that stops when the schedule says so turns the lag it still carries into
+    # endpoint error, where a distance-to-stop curve does not stop until the
+    # position is right. The schedule still governs the whole segment; only the
+    # last final_approach_distance_m goes back to the distance curve.
+    time_mode_final_approach_enabled: true
+    # Measured, not assumed. The eight baseline trajectories were split by
+    # controller state and compared against what the model predicts for each:
+    # convergence into the 1 degree alignment deadband costs 1.24 s a segment
+    # beyond the configured hold (sd 0.14), waiting out the previous command
+    # before the turn starts costs 0.43 (sd 0.17), and the final-approach speed
+    # cap with the decay to a standstill costs 0.13 (sd 0.06). Entering them
+    # moves the prediction from 10.6% short (sd 2.4) to 0.4% long (sd 1.2),
+    # worst case 3.0% on the smallest task, where per-segment terms dominate.
+    schedule_align_converge_s: 1.24
+    schedule_goal_stop_s: 0.13
+    schedule_handshake_s: 0.43
+    # Deliberately below max_linear_deceleration: the distance-to-stop profile
+    # has to ask for less than the rate limiter can deliver, or the command
+    # trails the profile all the way down and passes the endpoint. Braking
+    # starts at cruise_speed^2 / (2 * 0.12) = 0.167 m.
+    braking_profile_deceleration: 0.12
+    max_angular_acceleration: 0.80
+    gravity_slip_ratio: 0.1042
+    gravity_down_x: 0.0
+    gravity_down_y: -1.0
+
+cmd_vel_watchdog:
+  ros__parameters:
+    command_timeout_s: 0.40
+    publish_rate_hz: 50.0

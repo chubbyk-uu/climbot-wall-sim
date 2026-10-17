@@ -1,0 +1,71 @@
+# Robot properties shared by simulation, planning, control, and the real robot.
+robot:
+  base:
+    size_xyz: [0.52, 0.44, 0.10]
+    mass_kg: 12.0
+    # Relative to base_link at the drive-axle midpoint on the wall plane.
+    centre_xyz: [-0.11, 0.0, 0.085]
+
+  drive_wheel:
+    radius_m: 0.08
+    width_m: 0.045
+    mass_kg: 1.0
+    axle_x_m: 0.0
+    separation_m: 0.43
+
+  caster:
+    radius_m: 0.05
+    mass_kg: 0.5
+    centre_x_m: -0.33
+
+  # Conservative G1 proxy until the selected camera and bracket have measured
+  # CAD / mass properties. These are physical inertial parts, not only visuals.
+  # The optical centre and calibration live in inspection_camera.yaml.
+  inspection_payload:
+    camera_body:
+      size_xyz_m: [0.10, 0.14, 0.08]
+      mass_kg: 1.5
+      # The wall-facing surface is at z=0.275 m, coincident with the nominal
+      # lens plane; the body extends away from the wall.
+      centre_xyz_m: [0.340, 0.000, 0.315]
+    bracket:
+      mass_kg: 0.5
+      # One rigid equivalent inertia for the two-box L bracket rendered by the
+      # descriptions below. Replace with CAD inertia when hardware is chosen.
+      centre_xyz_m: [0.220, 0.000, 0.247]
+      inertia_box_size_xyz_m: [0.20, 0.12, 0.17]
+      upright_size_xyz_m: [0.04, 0.12, 0.14]
+      upright_centre_xyz_m: [0.170, 0.000, 0.205]
+      top_arm_size_xyz_m: [0.18, 0.12, 0.03]
+      top_arm_centre_xyz_m: [0.265, 0.000, 0.300]
+
+  # The actuator envelope, not the operating point. Both controllers still
+  # cruise at 0.20 m/s and plan their profiles from the same rated
+  # accelerations; what these bound is how much room a correction has above
+  # that. Without headroom a robot that falls behind its schedule can only
+  # observe that it is late, and the wheel-level saturation in rateLimit
+  # scales linear and angular together, so a linear command sitting on the
+  # ceiling takes the heading correction down with it just when it is needed.
+  # 0.45 m/s clears the worst combination of cruise speed and a saturated
+  # angular correction (0.20 + 0.35 * 0.215 = 0.275) with margin to spare, and
+  # also the worst the tracker can command at all, which is the catch-up
+  # ceiling rather than the cruise speed (0.35 + 0.35 * 0.215 = 0.425). That
+  # second sum is the one line_tracker now checks at startup, so lowering this
+  # number without lowering catch_up_max_linear_speed or max_angular_speed
+  # stops the node instead of quietly costing it the correction.
+  drive:
+    max_linear_velocity_mps: 0.45
+    max_angular_velocity_rps: 1.20
+    max_linear_acceleration_mps2: 0.70
+    max_angular_acceleration_rps2: 2.20
+    joint_effort_nm: 80.0
+    joint_velocity_rps: 30.0
+
+  # Conservative envelope centred on base_link for planning. The physical
+  # footprint runs from x=-0.38 m to x=+0.15 m; because base_link is the drive
+  # axle rather than its centre, length_m is twice the larger 0.38 m overhang.
+  # edge_clearance is additional clearance from the requested region boundary.
+  footprint:
+    length_m: 0.76
+    width_m: 0.475
+    edge_clearance_m: 0.10

@@ -1,0 +1,128 @@
+build/climbot_control/Testing/20261017-1242/Test.xml: 38 tests, 0 errors, 1 failure, 0 skipped
+- test_test_coverage_executor.py
+  <<< failure message
+    -- run_test.py: extra environment variables:
+     - ROS_DOMAIN_ID=45
+    -- run_test.py: invoking following command in '$WORKSPACE/build/climbot_control':
+     - /usr/bin/python3 -m launch_testing.launch_test $WORKSPACE/src/climbot_control/test/test_coverage_executor.py --junit-xml=$WORKSPACE/build/climbot_control/test_results/climbot_control/test_test_coverage_executor.py.xunit.xml --package-name=climbot_control
+    [INFO] [launch]: Default logging verbosity is set to INFO
+    test_approaches_first_waypoint_before_counting_scan_segments (climbot_control.TestCoverageExecutor.test_approaches_first_waypoint_before_counting_scan_segments)
+    A distant start enters the first scan only after turn-slip recovery. ... [INFO] [line_tracker_node-1]: process started with pid [28492]
+    [line_tracker_node-1] [INFO] [1792240982.380614917] [line_tracker]: Accepted coverage task 'node-test' revision 1 with 1 segments.
+    [line_tracker_node-1] [INFO] [1792240982.381814422] [line_tracker]: Entering first task waypoint from 0.245 m away.
+    [line_tracker_node-1] [INFO] [1792240982.684337486] [line_tracker]: Re-anchored the start approach 45.4 mm from its captured origin.
+    [line_tracker_node-1] [INFO] [1792240982.684394446] [line_tracker]: Segment 0 scheduled over 2.45 s for 0.290 m remaining.
+    [line_tracker_node-1] [INFO] [1792240982.989636458] [line_tracker]: Segment complete: position error 0.0049 m, heading error 0.01 deg.
+    [line_tracker_node-1] [INFO] [1792240983.346708067] [line_tracker]: Locked a parallel scan line -7.2 mm from nominal.
+    [line_tracker_node-1] [INFO] [1792240983.346746306] [line_tracker]: Segment 0 scheduled over 4.00 s for 0.601 m remaining.
+    [line_tracker_node-1] [INFO] [1792240983.834603946] [line_tracker]: Segment complete: position error 0.0051 m, heading error 0.00 deg.
+    [line_tracker_node-1] [INFO] [1792240983.837070076] [line_tracker]: Coverage execution stopped: Coverage task completed.
+    ok
+    test_cancel_stops_an_active_task (climbot_control.TestCoverageExecutor.test_cancel_stops_an_active_task)
+    Cancellation returns a canceled result after commanding zero. ... [line_tracker_node-1] [WARN] [1792240984.108941720] [line_tracker]: LINE_TRACKER_TIMING event=gap source=odometry_callback duration_ms=271.984
+    [line_tracker_node-1] [WARN] [1792240984.108984793] [line_tracker]: ROS time moved behind the last odometry stamp; invalidated pose.
+    [line_tracker_node-1] [WARN] [1792240984.111202970] [line_tracker]: LINE_TRACKER_TIMING event=gap source=control_timer duration_ms=274.176
+    [line_tracker_node-1] [INFO] [1792240984.120294819] [line_tracker]: Accepted coverage task 'node-test' revision 1 with 3 segments.
+    [line_tracker_node-1] [INFO] [1792240984.121638128] [line_tracker]: Coverage execution stopped: Coverage task canceled.
+    ok
+    test_capture_heartbeat_does_not_modulate_scan_speed (climbot_control.TestCoverageExecutor.test_capture_heartbeat_does_not_modulate_scan_speed)
+    Ordinary image capture must leave a long SCAN at cruise speed. ... [line_tracker_node-1] [WARN] [1792240984.645224303] [line_tracker]: LINE_TRACKER_TIMING event=gap source=odometry_callback duration_ms=522.326
+    [line_tracker_node-1] [WARN] [1792240984.647550042] [line_tracker]: LINE_TRACKER_TIMING event=gap source=control_timer duration_ms=523.514
+    [line_tracker_node-1] [INFO] [1792240984.656506169] [line_tracker]: Accepted coverage task 'node-test' revision 1 with 1 segments.
+    [line_tracker_node-1] [WARN] [1792240984.657924568] [line_tracker]: LINE_TRACKER_TIMING event=stale_pose callback_age_ms=0.053
+    [line_tracker_node-1] [INFO] [1792240984.657976399] [line_tracker]: Coverage execution stopped: Filtered odometry is unavailable or stale.
+    FAIL
+    test_executes_three_segments_without_cutting_the_turn (climbot_control.TestCoverageExecutor.test_executes_three_segments_without_cutting_the_turn)
+    The Action advances segments and turns only after linear stop. ... [line_tracker_node-1] [WARN] [1792240985.888449253] [line_tracker]: LINE_TRACKER_TIMING event=gap source=odometry_callback duration_ms=269.183
+    [line_tracker_node-1] [WARN] [1792240985.888490829] [line_tracker]: ROS time moved behind the last odometry stamp; invalidated pose.
+    [line_tracker_node-1] [WARN] [1792240985.890699379] [line_tracker]: LINE_TRACKER_TIMING event=gap source=control_timer duration_ms=272.567
+    [line_tracker_node-1] [INFO] [1792240985.899585911] [line_tracker]: Accepted coverage task 'node-test' revision 1 with 3 segments.
+    [line_tracker_node-1] [INFO] [1792240985.910239813] [line_tracker]: Locked a parallel scan line 0.0 mm from nominal.
+    [line_tracker_node-1] [INFO] [1792240985.910271959] [line_tracker]: Segment 0 scheduled over 2.00 s for 0.200 m remaining.
+    [line_tracker_node-1] [INFO] [1792240986.144191750] [line_tracker]: Segment complete: position error 0.0045 m, heading error 0.00 deg.
+    [line_tracker_node-1] [INFO] [1792240986.433036691] [line_tracker]: Prepared dynamic transition after observing 45.3 mm downward motion during alignment.
+    [line_tracker_node-1] [INFO] [1792240986.471969689] [line_tracker]: Segment 1 scheduled over 2.46 s for 0.292 m remaining.
+    [line_tracker_node-1] [INFO] [1792240986.764778480] [line_tracker]: Segment complete: position error 0.0048 m, heading error 0.00 deg.
+    [line_tracker_node-1] [INFO] [1792240987.117294729] [line_tracker]: Locked a parallel scan line 7.2 mm from nominal.
+    [line_tracker_node-1] [INFO] [1792240987.117329361] [line_tracker]: Segment 2 scheduled over 2.00 s for 0.200 m remaining.
+    [line_tracker_node-1] [INFO] [1792240987.360152722] [line_tracker]: Segment complete: position error 0.0048 m, heading error 0.05 deg.
+    [line_tracker_node-1] [INFO] [1792240987.362622158] [line_tracker]: Coverage execution stopped: Coverage task completed.
+    ok
+    test_inspection_scan_requires_a_fresh_capture_gate (climbot_control.TestCoverageExecutor.test_inspection_scan_requires_a_fresh_capture_gate)
+    A lost capture process must abort promptly, not stall until segment timeout. ... [line_tracker_node-1] [WARN] [1792240987.634241435] [line_tracker]: LINE_TRACKER_TIMING event=gap source=odometry_callback duration_ms=271.679
+    [line_tracker_node-1] [WARN] [1792240987.634283662] [line_tracker]: ROS time moved behind the last odometry stamp; invalidated pose.
+    [line_tracker_node-1] [WARN] [1792240987.636502214] [line_tracker]: LINE_TRACKER_TIMING event=gap source=control_timer duration_ms=273.926
+    [line_tracker_node-1] [INFO] [1792240987.645642752] [line_tracker]: Accepted coverage task 'node-test' revision 1 with 3 segments.
+    [line_tracker_node-1] [INFO] [1792240987.656573902] [line_tracker]: Locked a parallel scan line 0.0 mm from nominal.
+    [line_tracker_node-1] [INFO] [1792240987.656607485] [line_tracker]: Segment 0 scheduled over 2.00 s for 0.200 m remaining.
+    [line_tracker_node-1] [INFO] [1792240987.810404271] [line_tracker]: Coverage execution stopped: Inspection capture gate heartbeat was not received for the active SCAN.
+    ok
+    test_refuses_a_first_scan_entry_whose_drop_cannot_be_reserved (climbot_control.TestCoverageExecutor.test_refuses_a_first_scan_entry_whose_drop_cannot_be_reserved)
+    Approaching backwards onto a line pinned to the region's top edge. ... [line_tracker_node-1] [WARN] [1792240988.082235006] [line_tracker]: LINE_TRACKER_TIMING event=gap source=odometry_callback duration_ms=271.884
+    [line_tracker_node-1] [WARN] [1792240988.082277826] [line_tracker]: ROS time moved behind the last odometry stamp; invalidated pose.
+    [line_tracker_node-1] [WARN] [1792240988.084519628] [line_tracker]: LINE_TRACKER_TIMING event=gap source=control_timer duration_ms=274.155
+    [line_tracker_node-1] [INFO] [1792240988.093557118] [line_tracker]: Accepted coverage task 'node-test' revision 1 with 1 segments.
+    [line_tracker_node-1] [INFO] [1792240988.093591677] [line_tracker]: Shortened the first-scan drop reserve to 10.0 mm to stay in bounds.
+    [line_tracker_node-1] [INFO] [1792240988.093638117] [line_tracker]: Coverage execution stopped: Entering the first scan line would leave up to 123.784 mm of normal offset, beyond the 120 mm the scan entry can recover.
+    ok
+    test_rejects_structurally_invalid_task (climbot_control.TestCoverageExecutor.test_rejects_structurally_invalid_task)
+    An empty task never becomes an executable goal. ... [line_tracker_node-1] [WARN] [1792240988.616442967] [line_tracker]: Rejected invalid coverage task: task_id cannot be empty
+    ok
+    test_survives_a_task_rejected_during_acceptance (climbot_control.TestCoverageExecutor.test_survives_a_task_rejected_during_acceptance)
+    A goal that ends inside handleAccepted must not disturb the node. ... [line_tracker_node-1] [WARN] [1792240988.890214640] [line_tracker]: LINE_TRACKER_TIMING event=gap source=odometry_callback duration_ms=795.421
+    [line_tracker_node-1] [WARN] [1792240988.890290651] [line_tracker]: LINE_TRACKER_TIMING event=gap source=control_timer duration_ms=795.404
+    [line_tracker_node-1] [INFO] [1792240989.000125140] [line_tracker]: Accepted coverage task 'outside-motion-region-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' revision 1 with 3 segments.
+    [line_tracker_node-1] [INFO] [1792240989.000172359] [line_tracker]: Coverage execution stopped: Robot or first task waypoint lies outside the motion region.
+    [line_tracker_node-1] [INFO] [1792240989.013877943] [line_tracker]: Accepted coverage task 'node-test' revision 1 with 3 segments.
+    ok
+    test_the_same_backwards_entry_succeeds_when_the_drop_can_be_reserved (climbot_control.TestCoverageExecutor.test_the_same_backwards_entry_succeeds_when_the_drop_can_be_reserved)
+    The case the retired runway point could not serve. ... [line_tracker_node-1] [WARN] [1792240989.275493209] [line_tracker]: LINE_TRACKER_TIMING event=gap source=odometry_callback duration_ms=264.069
+    [line_tracker_node-1] [WARN] [1792240989.275538248] [line_tracker]: ROS time moved behind the last odometry stamp; invalidated pose.
+    [line_tracker_node-1] [WARN] [1792240989.277761025] [line_tracker]: LINE_TRACKER_TIMING event=gap source=control_timer duration_ms=263.813
+    [line_tracker_node-1] [INFO] [1792240989.277845464] [line_tracker]: Coverage execution stopped: Coverage task canceled.
+    [line_tracker_node-1] [INFO] [1792240989.286865225] [line_tracker]: Accepted coverage task 'node-test' revision 1 with 1 segments.
+    [line_tracker_node-1] [INFO] [1792240989.286908965] [line_tracker]: Entering first task waypoint from 0.500 m away.
+    [line_tracker_node-1] [INFO] [1792240989.868748382] [line_tracker]: Re-anchored the start approach 91.0 mm from its captured origin.
+    [line_tracker_node-1] [INFO] [1792240989.868783775] [line_tracker]: Segment 0 scheduled over 3.53 s for 0.506 m remaining.
+    [line_tracker_node-1] [INFO] [1792240990.297547401] [line_tracker]: Segment complete: position error 0.0086 m, heading error 0.05 deg.
+    [line_tracker_node-1] [INFO] [1792240990.907786351] [line_tracker]: Locked a parallel scan line -8.6 mm from nominal.
+    [line_tracker_node-1] [INFO] [1792240990.907818882] [line_tracker]: Segment 0 scheduled over 3.98 s for 0.596 m remaining.
+    [line_tracker_node-1] [INFO] [1792240991.388637782] [line_tracker]: Segment complete: position error 0.0052 m, heading error 0.00 deg.
+    [line_tracker_node-1] [INFO] [1792240991.391099405] [line_tracker]: Coverage execution stopped: Coverage task completed.
+    ok
+    
+    ======================================================================
+    FAIL: test_capture_heartbeat_does_not_modulate_scan_speed (climbot_control.TestCoverageExecutor.test_capture_heartbeat_does_not_modulate_scan_speed)
+    Ordinary image capture must leave a long SCAN at cruise speed.
+    ----------------------------------------------------------------------
+    Traceback (most recent call last):
+      File "$WORKSPACE/src/climbot_control/test/test_coverage_executor.py", line 387, in test_capture_heartbeat_does_not_modulate_scan_speed
+        self.assertGreater(len(cruise_samples), 20)
+    AssertionError: 0 not greater than 20
+    
+    ----------------------------------------------------------------------
+    Ran 9 tests in 9.243s
+    
+    FAILED (failures=1)
+    [INFO] [line_tracker_node-1]: sending signal 'SIGINT' to process[line_tracker_node-1]
+    [line_tracker_node-1] [INFO] [1792240991.407740408] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+    [INFO] [line_tracker_node-1]: process has finished cleanly [pid 28492]
+    test_processes_exit_cleanly (climbot_control.TestProcessExitCodes.test_processes_exit_cleanly) ... ok
+    
+    ----------------------------------------------------------------------
+    Ran 1 test in 0.000s
+    
+    OK
+    -- run_test.py: return code 1
+    -- run_test.py: verify result file '$WORKSPACE/build/climbot_control/test_results/climbot_control/test_test_coverage_executor.py.xunit.xml'
+  >>>
+build/climbot_control/test_results/climbot_control/test_test_coverage_executor.py.xunit.xml: 10 tests, 0 errors, 1 failure, 0 skipped
+- climbot_control.TestCoverageExecutor test_capture_heartbeat_does_not_modulate_scan_speed
+  <<< failure message
+    Traceback (most recent call last):
+      File "$WORKSPACE/src/climbot_control/test/test_coverage_executor.py", line 387, in test_capture_heartbeat_does_not_modulate_scan_speed
+        self.assertGreater(len(cruise_samples), 20)
+    AssertionError: 0 not greater than 20
+  >>>
+
+Summary: 1434 tests, 0 errors, 2 failures, 67 skipped

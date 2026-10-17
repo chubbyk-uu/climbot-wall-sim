@@ -1,0 +1,35 @@
+# Work-surface description shared by simulation, planning, and the real robot.
+wall:
+  # Pose of the wall work frame expressed in the external world frame.
+  # The right-handed work frame is +X horizontal, +Y up, and +Z outward.
+  #
+  # The origin sits at the wall's lower-left corner, so the whole surface
+  # is x in [0, width] and y in [0, height] with no negative coordinates to
+  # carry through region definitions and result files. The wall itself is
+  # still centred on world Y = 0, which is why this offset is -width/2.
+  origin_xyz: [0.0, -5.0, 0.0]
+  origin_rpy: [1.5707963267948966, 0.0, 1.5707963267948966]
+
+  surface:
+    width_m: 10.0
+    height_m: 8.0
+
+  # Pitch of the reference grid, in metres. 0 removes it.
+  #
+  # The real wall has no grid on it. This is a drawing aid, and it is here
+  # rather than in a simulation or an RViz file because two views draw it -
+  # painted on the wall face in Gazebo, and as a latched marker overlay in
+  # RViz - and a coordinate read off one has to be the coordinate in the
+  # other. Two defaults would eventually be two different grids.
+  #
+  # Worth keeping while a human watches a run and worth removing while the
+  # wall is being photographed: at the 0.50 m by 0.28 m photo footprint a 1 m
+  # grid lands in 67% of images, repeats identically, and sits 3 mm off the
+  # surface a stitch treats as a plane.
+  #
+  # Only the painted one ends up in a photograph, so only that one has a
+  # launch argument: wall_grid_spacing:=0 leaves the wall face bare and does
+  # not touch RViz. The overlay is switched by unticking its display, which
+  # is where an operator looks and needs no restart.
+  reference_grid:
+    spacing_m: 1.0

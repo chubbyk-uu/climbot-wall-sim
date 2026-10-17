@@ -1,0 +1,56 @@
+{
+  "initial_cruise_max_mps": 0.21046448658564493,
+  "initial_distinct_failures": [
+    "test_capture_heartbeat_does_not_modulate_scan_speed",
+    "test_executes_three_segments_without_cutting_the_turn"
+  ],
+  "initial_failure_excerpt_sha256": "ccee93e51b3a132ed34a117307f50fab839c827a8bee7add65fa5696d44679cc",
+  "initial_failure_source_log_sha256": "5cb6b66efbb935743d8e120662566598b5b7f173d03774a8088986e345841909",
+  "kind": "baseline_regression_audit_not_vacuum_acceptance",
+  "open_issues": [
+    {
+      "id": "baseline-executor-cruise-overspeed",
+      "observation": "Cruise assertion exceeded 0.205 m/s; isolated and later full runs passed. Root cause unconfirmed; rerun does not close issue.",
+      "status": "open"
+    },
+    {
+      "id": "baseline-executor-failure-cleanup",
+      "observation": "Speed assertion occurs before goal cancellation. Next test was rejected because another task was active; source and log agree. No fix applied.",
+      "status": "open"
+    }
+  ],
+  "runs": [
+    {
+      "errors": 0,
+      "failures": 3,
+      "log_basename_under_tmp": "climbot_suction_s0_suite_20261017T122330Z.log",
+      "log_sha256": "cb685ac30d6f790d454474a784b4a63f11cf11728b216273da39f94c49b577c5",
+      "run": "initial_full_j8",
+      "skipped": 67,
+      "source_revision_context": "8dc303086be716b272e082a6a19025c8b35752df",
+      "tests": 1391
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_executor_isolated_20261017c.log",
+      "log_sha256": "431ea37f6abb9225b2e0aa9c5a25837e9589399880262b244abf62615bcc9893",
+      "run": "isolated_executor",
+      "skipped": 32,
+      "source_revision_context": "8dc303086be716b272e082a6a19025c8b35752df",
+      "tests": 332
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_suite_final_20261017.log",
+      "log_sha256": "7ca56712dcd05787a6e3c6da8e395066d545f728f084ff133bcaf25673095863",
+      "run": "full_j8_with_analysis_tests",
+      "skipped": 67,
+      "source_revision_context": "fb4d9e1",
+      "tests": 1433
+    }
+  ],
+  "schema_version": 1,
+  "scope": "No controller or legacy physical-model implementation changed in this audit."
+}

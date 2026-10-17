@@ -1,0 +1,260 @@
+{
+  "all_legacy_inputs_match_reference_and_install": true,
+  "contact": {
+    "caster_mu": 0.35,
+    "contact_rate_hz": 1000.0,
+    "drive_mu": 1.1,
+    "wheel_slip": {
+      "mu": 1.1,
+      "nominal_normal_force_n": 133.3,
+      "slip_lateral": 0.208,
+      "slip_longitudinal": 0.069
+    }
+  },
+  "generator_sha256": "8dda7139a26c37a24bcb3c2908f4d313f42837e726584b3f10733c155864cc1e",
+  "git": {
+    "branch": "feature/pressure-suction",
+    "commit": "78cc1f051138bac67c76b5dd04245ebf739ad70a",
+    "source_status": [],
+    "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "historical_evidence_sha256": {
+    "results/normal_loads_400N.csv": "32bb1d5d7865c767bc042b248559d7dd31222ee2b84c6f9532aae39311ebbbaa",
+    "results/normal_loads_g1_camera_2026-08-24.csv": "63c024d22c3ddb80ba998e7e14d0f216d48339b04adafd8dd2374c0fc9f44bfe",
+    "results/normal_loads_g1_camera_2026-08-24_summary.json": "7f8ebc14a0029f0b6a4b84b28427e2e35cb075e43411a2f440db557e1d696562"
+  },
+  "input_sha256": {
+    "src/climbot_control/config/control.yaml": "789b8b3276b0876f78bebfe03d18d66c35001a494b4a0e579d3271627001b07a",
+    "src/climbot_description/config/inspection_camera.yaml": "f76bb343e0ebcf8cab65354a135a42ff413bbd7198a845cd727fa0c15138eabb",
+    "src/climbot_description/config/robot.yaml": "8e324b1e2f00cfdfd787327fbb38e343bea09046ddade871cd3728c2d05f9013",
+    "src/climbot_description/config/wall.yaml": "39426794fc0b8c0b33f207cbdf497901d5822e22923ab90ecd7f2f6c0f6db049",
+    "src/climbot_description/urdf/climbot.urdf.xacro": "3344bda50acd474c3922365bb4e3a90f42684555866ceab25d6bc7562f621171",
+    "src/climbot_gazebo/config/ekf_wall.yaml": "18df173b4d0b1ba8d1e180f90420bd0f06102e540e3476cf0c03c8ac2344a9b1",
+    "src/climbot_gazebo/config/simulation.yaml": "b23d56b8c2c0a4b82e718b430a76690158e535912ddec70325a46afa2043c25d",
+    "src/climbot_gazebo/launch/climbot_wall.launch.py": "a85aa961de7354404290fb6bf1069707eeb176074cbea6d4b9f71444e96ec3c0",
+    "src/climbot_gazebo/models/climbot/model.config": "b8918ca3e9a5b22236345b30419b5c8e62b8664169813594c99c6bed6d256045",
+    "src/climbot_gazebo/models/climbot/model.sdf.xacro": "ad04eab3fe9d3a9d7bcd1658290fd30ce87f7c5339c343d8ceca76fb7e58d03e",
+    "src/climbot_gazebo/scripts/measure_normal_loads.py": "e0c0a86605eb8e84dc17b90cedbb2503d928243538352ce27710657da8c65961",
+    "src/climbot_gazebo/worlds/climbot_wall.sdf.xacro": "077d78dc55cdc51f060e6caf10de3612a4d1e6e9e21073988a6a2b98ea217b55"
+  },
+  "kind": "legacy_source_and_analytical_baseline_not_gazebo_measurement",
+  "legacy_reference": "c2acf17",
+  "rendered_sha256": {
+    "model.sdf": "0ed049f9420358a8e16ad5478374237837ce47d35612b1b2b8445c4f384ce42f",
+    "robot.urdf": "cddbdabc8511cff68c8fc717a06d7edf8ac9fbac3729dfafbb88df614197e1d6",
+    "world.sdf": "fba3445be63c0e74401b326eb05e4e5d14472e570b445ae33f22cacb63fd49fd"
+  },
+  "rendered_xml_normalization": "ElementTree, no comments/indentation/host paths",
+  "robot": {
+    "centre_xyz_m": [
+      -0.05242424242424242,
+      0.0,
+      0.10915151515151517
+    ],
+    "inertia_at_centre_kg_m2": [
+      [
+        0.3886517878787879,
+        0.0,
+        -0.1617860606060606
+      ],
+      [
+        0.0,
+        0.727633984848485,
+        -1.4016565685892601e-14
+      ],
+      [
+        -0.1617860606060606,
+        -1.4016565685892601e-14,
+        0.918357196969697
+      ]
+    ],
+    "mass_kg": 16.5,
+    "parts": [
+      {
+        "centre_xyz_m": [
+          -0.11,
+          0.0,
+          0.085
+        ],
+        "inertia_at_part_centre_in_base_kg_m2": [
+          [
+            0.2036,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.28040000000000004,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.464
+          ]
+        ],
+        "link": "chassis_link",
+        "mass_kg": 12.0
+      },
+      {
+        "centre_xyz_m": [
+          0.0,
+          0.215,
+          0.08
+        ],
+        "inertia_at_part_centre_in_base_kg_m2": [
+          [
+            0.0017687499999999997,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0032,
+            -7.008242806085034e-15
+          ],
+          [
+            0.0,
+            -7.008242806085034e-15,
+            0.0017687499999999997
+          ]
+        ],
+        "link": "left_wheel_link",
+        "mass_kg": 1.0
+      },
+      {
+        "centre_xyz_m": [
+          0.0,
+          -0.215,
+          0.08
+        ],
+        "inertia_at_part_centre_in_base_kg_m2": [
+          [
+            0.0017687499999999997,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0032,
+            -7.008242806085034e-15
+          ],
+          [
+            0.0,
+            -7.008242806085034e-15,
+            0.0017687499999999997
+          ]
+        ],
+        "link": "right_wheel_link",
+        "mass_kg": 1.0
+      },
+      {
+        "centre_xyz_m": [
+          -0.33,
+          0.0,
+          0.05
+        ],
+        "inertia_at_part_centre_in_base_kg_m2": [
+          [
+            0.0005000000000000001,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0005000000000000001,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0005000000000000001
+          ]
+        ],
+        "link": "caster_ball_link",
+        "mass_kg": 0.5
+      },
+      {
+        "centre_xyz_m": [
+          0.22,
+          0.0,
+          0.247
+        ],
+        "inertia_at_part_centre_in_base_kg_m2": [
+          [
+            0.0018041666666666668,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.002870833333333334,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.002266666666666667
+          ]
+        ],
+        "link": "inspection_camera_bracket_link",
+        "mass_kg": 0.5
+      },
+      {
+        "centre_xyz_m": [
+          0.34,
+          0.0,
+          0.315
+        ],
+        "inertia_at_part_centre_in_base_kg_m2": [
+          [
+            0.0032500000000000007,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.00205,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0037000000000000006
+          ]
+        ],
+        "link": "inspection_camera_link",
+        "mass_kg": 1.5
+      }
+    ]
+  },
+  "schema_version": 1,
+  "software_packages": [
+    "ros-jazzy-gz-dartsim-vendor 0.0.3-1noble.20260225.232143",
+    "ros-jazzy-gz-physics-vendor 0.0.9-1noble.20260905.065116",
+    "ros-jazzy-gz-sim-vendor 0.0.13-1noble.20260905.073557",
+    "ros-jazzy-rclcpp 28.1.22-1noble.20260911.105434",
+    "ros-jazzy-rclpy 7.1.12-1noble.20260912.162354",
+    "ros-jazzy-ros-gz-bridge 1.0.24-1noble.20260920.234644"
+  ],
+  "world": {
+    "canonical_link": "chassis_link",
+    "gravity_xyz_mps2": [
+      0.0,
+      0.0,
+      -9.81
+    ],
+    "persistent_force_world_n": [
+      -400.0,
+      0,
+      0
+    ],
+    "pressure_point_in_base_m": [
+      -0.11,
+      0.0,
+      0.085
+    ],
+    "step_s": 0.001,
+    "weight_n": 161.865
+  }
+}
