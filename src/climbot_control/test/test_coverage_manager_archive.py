@@ -258,7 +258,8 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 27,
                    'ready preview')
         mark = len(self.statuses)
-        self.assertTrue(self._call(self.start, self._start_request()).success)
+        started = self._call(self.start, self._start_request())
+        self.assertTrue(started.success, started.message)
         self._wait(
             lambda item: item.state == CoverageStatus.EXECUTING and
             item.archive_run_id == 'run-27',
