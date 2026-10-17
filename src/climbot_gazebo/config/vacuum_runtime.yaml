@@ -1,0 +1,16 @@
+# S3 integration choices. The legacy launch does not read this file.
+vacuum_runtime:
+  schema_version: 1
+  pressure_mode: fan_ode
+  fixed_delta_pa: 8404.442641162896  # B: C steady calibration at total 180 mm2
+  controlled_opening_multiplier: 2.0
+  maximum_pressure_substep_s: 0.00005
+  fixture_preload_n: 80.0
+  ready_margin: 1.05
+  ready_dwell_s: 0.5
+  startup_timeout_s: 10.0
+  fixture_velocity_tolerance_mps: 0.002
+  fixture_angular_tolerance_rps: 0.01
+  spawn_gap_m: 0.0
+  # Pure physics measurements at every step. No image rendering is needed.
+  camera_enabled: false

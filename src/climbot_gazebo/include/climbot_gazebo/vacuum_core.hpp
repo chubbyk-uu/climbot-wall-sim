@@ -85,6 +85,8 @@ struct SkirtSample
   // has connected=false and adds no through-flow merely by being deep.
   double channel_height_m{};
   bool connected{};
+  // S3 finite-wall contact coverage, from the same surface as collisions.
+  double support_fraction{1.0};
 };
 struct SkirtResult
 {

@@ -112,3 +112,25 @@ def environment(mode, prefix, inherited):
         Path(identity['prefix']) / 'share/glvnd/egl_vendor.d/50_mesa.json')
     env['__GLX_VENDOR_LIBRARY_NAME'] = 'mesa'
     return env
+
+
+def rendering_environment(backend='auto', mode='private', inherited=None):
+    """Resolve the shared runtime for new Gazebo entries and native probes."""
+    original = os.environ if inherited is None else inherited
+    if backend == 'auto':
+        backend = 'wsl_d3d12' if 'microsoft' in Path('/proc/version').read_text().lower() \
+            else 'native'
+    if backend not in ('wsl_d3d12', 'software', 'native'):
+        raise ValueError('invalid rendering backend')
+    if mode not in ('private', 'system'):
+        raise ValueError('mesa must be private or system')
+    prefix = default_prefix(original)
+    env = environment(mode if backend == 'wsl_d3d12' else 'system', prefix, original)
+    identity = validate(prefix) if backend == 'wsl_d3d12' and mode == 'private' else None
+    if backend == 'wsl_d3d12':
+        env.update(GALLIUM_DRIVER='d3d12', MESA_D3D12_DEFAULT_ADAPTER_NAME='NVIDIA')
+    elif backend == 'software':
+        env['GALLIUM_DRIVER'] = 'llvmpipe'
+        env.pop('MESA_D3D12_DEFAULT_ADAPTER_NAME', None)
+    return env, {'backend': backend, 'mesa': mode if backend == 'wsl_d3d12' else 'system',
+                 'gallium_sha256': identity['gallium_sha256'] if identity else None}

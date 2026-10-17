@@ -11,6 +11,12 @@ find_package(pybind11 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 ament_python_install_package(${PROJECT_NAME})
+# The offline design and the runtime renderer install the same source files.
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vacuum_layout.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vacuum_preview.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vacuum_loads.py
+  DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}")
 
 # The wall transform has one implementation. C++ nodes link the library and
 # the Python package binds to it, so the convention cannot drift between them.

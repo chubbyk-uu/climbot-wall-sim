@@ -13,6 +13,22 @@ find_package(geometry_msgs REQUIRED)
 # Linked explicitly: the wall transform is a static library, so its yaml-cpp
 # symbols have to be resolved again by whoever links it.
 find_package(yaml-cpp REQUIRED)
+find_package(gz_sim_vendor REQUIRED)
+find_package(gz-sim8 REQUIRED)
+find_package(gz_plugin_vendor REQUIRED)
+find_package(gz-plugin2 REQUIRED COMPONENTS register)
+
+add_library(climbot_vacuum_system SHARED src/vacuum_system.cpp)
+target_compile_features(climbot_vacuum_system PUBLIC cxx_std_17)
+target_link_libraries(climbot_vacuum_system PRIVATE vacuum_core
+  gz-sim8::gz-sim8 gz-plugin2::register)
+target_include_directories(climbot_vacuum_system PRIVATE include)
+install(TARGETS climbot_vacuum_system LIBRARY DESTINATION lib)
+add_executable(vacuum_sim_probe src/vacuum_sim_probe.cpp)
+target_compile_features(vacuum_sim_probe PRIVATE cxx_std_17)
+target_include_directories(vacuum_sim_probe PRIVATE include)
+target_link_libraries(vacuum_sim_probe PRIVATE gz-sim8::gz-sim8 yaml-cpp::yaml-cpp)
+install(TARGETS vacuum_sim_probe RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 # S2 physics core deliberately has no ROS, Gazebo or YAML dependencies.
 add_library(vacuum_core src/vacuum_core.cpp)
@@ -132,6 +148,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   ament_add_gtest(test_vacuum_core test/test_vacuum_core.cpp)
   target_link_libraries(test_vacuum_core vacuum_core)
+  ament_add_pytest_test(test_vacuum_assets test/test_vacuum_assets.py)
+  ament_add_pytest_test(test_vacuum_native test/test_vacuum_native.py TIMEOUT 90)
   ament_add_gtest(test_wall_wheel_odom_adapter test/test_wall_wheel_odom_adapter.cpp)
   target_link_libraries(test_wall_wheel_odom_adapter wall_wheel_odom_adapter_core)
   target_include_directories(test_wall_wheel_odom_adapter PRIVATE include)

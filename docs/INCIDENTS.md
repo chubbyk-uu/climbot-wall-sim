@@ -247,6 +247,21 @@
   未就绪→就绪流程，然后仍验证请求未答复窗口的 SIGKILL、强制放弃与人工重新使能。
   产品服务逻辑和超时门限均未修改。
 
+### 19. 原生 Gazebo 测量夹具在 reset 后不再执行 PreUpdate
+
+- **现象**：新吸附模型的首次运行和暂停正常，reset 后整车动量观测报非主连杆速度缺失。
+  给观测组件补一次初始化仍复现，不能据此判定球轮、压力核心或 Mesa 失效。
+- **根因**：gz-sim 8.15.0 的 TestFixture helper 是内存系统、未实现 `ISystemReset`。
+  SystemManager reset 会移除这类无法重建的系统；旧并行 PostUpdate worker 还可能调用
+  已有 observer，而 PreUpdate 集合已没有它。故后续反馈申请不再执行，测量链先失效。
+- **修复**：S3 原生测量器使用自行持有且实现 `ISystemReset` 的观测系统，reset 时重新
+  申请反馈，另存初始压力／转速／夹具代次快照，继续完整逐步观测。源代码与官方
+  [SystemManager::Reset](https://raw.githubusercontent.com/gazebosim/gz-sim/gz-sim8_8.15.0/src/SystemManager.cc)
+  的明确拒绝分支一致，不通过增加等待或编造零速度绕过。
+- **回归**：`test_vacuum_native.py::test_native_observer_and_vacuum_survive_reset` 分别实际
+  运行 B/C，验证暂停、reset、重新抽气、支撑撤除及 4000 个有效物理样本。
+  发布时的精确修复提交可由该测试与 `vacuum_sim_probe.cpp` 的 Git 历史追溯。
+
 ## 新增案例的规则
 
 只有根因已经被代码、受控 A/B 或不可歧义的运行证据确认，才把案例写成“已解决”。尚未定位的

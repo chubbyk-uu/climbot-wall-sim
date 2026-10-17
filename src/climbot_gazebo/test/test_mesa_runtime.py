@@ -22,7 +22,7 @@ import subprocess
 import sys
 from types import SimpleNamespace
 
-from climbot_gazebo.mesa_runtime import environment, GALLIUM, validate
+from climbot_gazebo.mesa_runtime import environment, GALLIUM, rendering_environment, validate
 
 from launch import LaunchContext
 
@@ -47,6 +47,24 @@ def _fake_install(root):
             'libraries_sha256': {GALLIUM: digest},
         }), encoding='utf-8')
     return prefix
+
+
+def test_new_entries_use_validated_shared_mesa_without_system_fallback(tmp_path):
+    """Native probes and the candidate launch use the same WSL runtime rule."""
+    prefix = _fake_install(tmp_path)
+    original = {'CLIMBOT_MESA_PREFIX': str(prefix), 'DISPLAY': ':0'}
+    env, identity = rendering_environment('wsl_d3d12', 'private', original)
+    assert identity['gallium_sha256'] == validate(prefix)['gallium_sha256']
+    assert env['GALLIUM_DRIVER'] == 'd3d12'
+    assert str(prefix / 'lib' / GALLIUM) in env['LD_PRELOAD']
+    assert original == {'CLIMBOT_MESA_PREFIX': str(prefix), 'DISPLAY': ':0'}
+    software, identity = rendering_environment('software', 'private', env)
+    assert software['GALLIUM_DRIVER'] == 'llvmpipe'
+    assert 'LD_PRELOAD' not in software
+    assert identity['gallium_sha256'] is None
+    (prefix / 'lib' / GALLIUM).unlink()
+    with pytest.raises(ValueError, match='missing'):
+        rendering_environment('wsl_d3d12', 'private', original)
 
 
 def test_missing_or_changed_patch_fails_before_launch(tmp_path):

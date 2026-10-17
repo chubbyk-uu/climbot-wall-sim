@@ -6,7 +6,10 @@ that require independent Gazebo validation in S3. Units are SI throughout.
 """
 import numpy as np
 
-from vacuum_layout import skirt_points
+if __package__:
+    from .vacuum_layout import skirt_points
+else:
+    from vacuum_layout import skirt_points
 
 
 def states(headings, v=0., a=0., omega=0., alpha=0.):
@@ -94,9 +97,15 @@ def evaluate(model, state, pressure, gravity=9.81, mu=1.1, margin=1.5,
     dn = normals[:, :2]
     denominator = np.maximum(dn.sum(axis=1), 1e-12)
     lat = ty[:, None]*dn/denominator[:, None]
+    if lateral == 'equal':
+        lat = np.tile(ty[:, None]/2, (1, 2))
     demand = np.sqrt(longs**2+lat**2)
     capacity = mu*dn/margin
-    if lateral == 'normal_proportional':
+    if lateral in ('normal_proportional', 'equal'):
+        traction = np.min(capacity-demand, axis=1)
+    elif lateral == 'conservative':
+        equal_demand = np.hypot(longs, ty[:, None]/2)
+        demand = np.maximum(demand, equal_demand)
         traction = np.min(capacity-demand, axis=1)
     elif lateral == 'feasible':
         room = np.sqrt(np.maximum(capacity**2-longs**2, 0)).sum(axis=1)
@@ -165,7 +174,13 @@ limits are not folded into a monotonic pressure search (drag can raise effort).
                      >= np.abs(total_lat[:, 0])))
             else:
                 lat = total_lat*dn/np.maximum(dn.sum(axis=1)[:, None], 1e-12)
-                traction = (capacity >= np.hypot(longitudinal, lat)).all(axis=1)
+                allocation = kwargs.get('lateral', 'normal_proportional')
+                if allocation == 'equal':
+                    lat = total_lat/2
+                demand = np.hypot(longitudinal, lat)
+                if allocation == 'conservative':
+                    demand = np.maximum(demand, np.hypot(longitudinal, total_lat/2))
+                traction = (capacity >= demand).all(axis=1)
             ok = (traction & (dn >= model['config']['analysis']['drive_floor_n']).all(axis=1)
                   & (normal[:, 2] >= floor))
         else:

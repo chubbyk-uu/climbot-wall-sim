@@ -216,6 +216,8 @@ SkirtResult skirt(
     if (p.free_height_m - s.gap_m > p.maximum_compression_m + 1e-12) {
       throw std::domain_error("skirt compression hard limit: invalid prescribed pose");
     }
+    require(nonnegative(s.support_fraction) && s.support_fraction <= 1,
+      "invalid finite-wall support fraction");
     perimeter += s.length_m;
   }
   SkirtResult out;
@@ -224,7 +226,7 @@ SkirtResult skirt(
     double z = s.gap_m - p.free_height_m;
     double t = std::clamp(z / p.transition_m, 0.0, 1.0);
     double contact = 1 - t * t * (3 - 2 * t);
-    double lip = p.lip_weight * p.band_m * s.length_m * contact;
+    double lip = p.lip_weight * p.band_m * s.length_m * contact * s.support_fraction;
     out.weighted_lip_area_m2 += lip; ax += lip * s.x_m; ay += lip * s.y_m;
     // Through-channel and local lift share an aperture; max prevents counting
     // the same physical opening twice. Disconnected depressions do not leak.
@@ -238,6 +240,7 @@ SkirtResult skirt(
       mech = std::max(0.0, (-p.stiffness_n_m * z -
           p.damping_ns_m * s.gap_rate_mps * damping_weight) * s.length_m / perimeter);
     }
+    mech *= s.support_fraction;
     double lip_n = dp * lip, normal = std::max(0.0, mech + lip_n);
     out.mechanical_n += mech; out.pressure_lip_n += lip_n; out.normal_n += normal;
     double speed = std::sqrt(s.velocity_x_mps * s.velocity_x_mps + s.velocity_y_mps *

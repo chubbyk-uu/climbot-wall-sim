@@ -24,6 +24,18 @@ def model(data):
     return build(c,cam,r)
 
 
+@pytest.mark.parametrize('heading', [0., 41.8, 90., 180., 270.])
+def test_revised_lateral_envelope_preserves_both_allocation_hypotheses(model, heading):
+    state = states([heading], v=.189, a=.7, omega=-1.2)
+    proportional = minimum_pressure(model, state, lateral='normal_proportional')
+    equal = minimum_pressure(model, state, lateral='equal')
+    envelope = minimum_pressure(model, state, lateral='conservative')
+    np.testing.assert_allclose(envelope, np.maximum(equal, proportional), atol=1e-5)
+    for allocation in ['normal_proportional', 'equal', 'conservative']:
+        assert evaluate(model, state, envelope+1e-3, lateral=allocation)['slack_n'][0] >= 0
+    assert evaluate(model, state, envelope-1e-3, lateral='conservative')['slack_n'][0] < 0
+
+
 def test_hollow_beam_matches_independent_outer_minus_inner_volume():
     outer=np.array([.02,.04,.3]);inner=np.array([.016,.036,.3]);rho=2700
     p=hollow_beam('beam',outer,[.03,.01,.2],.002,2,rho)

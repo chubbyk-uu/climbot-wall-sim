@@ -20,6 +20,22 @@
 
 namespace v = climbot_gazebo::vacuum;
 
+TEST(VacuumSkirt, OutsideWallCoverageCannotCarryLipOrMechanicalLoad)
+{
+  v::SkirtParameters p; p.inner_area_m2 = .1;
+  std::vector<v::SkirtSample> points(1);
+  points[0].length_m = 1; points[0].gap_m = .018;
+  auto full = v::skirt(p, points, 6000);
+  points[0].support_fraction = .5;
+  auto half = v::skirt(p, points, 6000);
+  EXPECT_NEAR(half.normal_n, full.normal_n / 2, 1e-12);
+  EXPECT_NEAR(half.weighted_lip_area_m2, full.weighted_lip_area_m2 / 2, 1e-12);
+  points[0].support_fraction = 0;
+  EXPECT_DOUBLE_EQ(v::skirt(p, points, 6000).normal_n, 0);
+  points[0].support_fraction = 1.01;
+  EXPECT_THROW(v::skirt(p, points, 6000), std::invalid_argument);
+}
+
 TEST(VacuumCore, RejectsInvalidGasCurvesAndStates)
 {
   v::Gas gas; gas.temperature_k = 0;
