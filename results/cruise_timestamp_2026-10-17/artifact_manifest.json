@@ -1,0 +1,57 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "REPORT.md": {
+      "bytes": 4446,
+      "sha256": "9858bedc751257693e2a451477a098164da8079ad1ed91b328e6b43215793e92"
+    },
+    "before/delayed_odometry.json": {
+      "bytes": 194433,
+      "sha256": "c637e15370131e8139128887a8a55dd4606b2c8c3303abc76261753fd3459c82"
+    },
+    "before/normal.json": {
+      "bytes": 195885,
+      "sha256": "f255df51960b0e09aa4c7330dc16b991d2d815f09590b1b10c01e61501b61756"
+    },
+    "before/summary.json": {
+      "bytes": 454,
+      "sha256": "0208290e9284800a147caa0e16af2667545074cfd6341f5db275422c4ca319c6"
+    },
+    "delayed_odometry.json": {
+      "bytes": 195279,
+      "sha256": "1e1af46fd6c23d834858728dbcafa1812ce9ab85f43ea701c20b8a5cd8aa6555"
+    },
+    "execution.json": {
+      "bytes": 133,
+      "sha256": "730fa555c87016bb9eac0cda48790be41fe0978da09c2893ee0525842e5d2668"
+    },
+    "normal.json": {
+      "bytes": 198521,
+      "sha256": "1e03ba25e0910913a904e8cba2728ba91bb773429db80738d61e959a78f32f53"
+    },
+    "parameters.json": {
+      "bytes": 536,
+      "sha256": "6505a3547fc880c319f51c28bcbaf099e3c45158b11da35c3a3026b7e383afca"
+    },
+    "red_regression.json": {
+      "bytes": 636,
+      "sha256": "91b7b6576cecd6254299344b1dbdc7075be2dec84c7bec680b96d5ca012b87a3"
+    },
+    "regression_validation.json": {
+      "bytes": 427,
+      "sha256": "6140268c42868804e0fc715414dec08d668180da1ae28d3e17aa8049a6e8dfa1"
+    },
+    "source_manifest.json": {
+      "bytes": 1013,
+      "sha256": "fd28e86b94a591600167545398d3b0904001bfcafd964e5261922485696e1b5a"
+    },
+    "summary.json": {
+      "bytes": 395,
+      "sha256": "65b45dc84f3003c77b94f46313a687ece08979bfc4098ef5de563293b1e1f0fe"
+    },
+    "validation.json": {
+      "bytes": 283,
+      "sha256": "d6d863788b4d93399b641d4d86508edad6228c5e72c154f4b84567d65d401255"
+    }
+  }
+}

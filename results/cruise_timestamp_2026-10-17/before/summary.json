@@ -1,0 +1,16 @@
+[
+  {
+    "mode": "normal",
+    "original_assertion_failure": null,
+    "maximum_command_mps": 0.20499882429078448,
+    "dropped_odom_steps": 0,
+    "maximum_schedule_lag_s": 0.00999764858156893
+  },
+  {
+    "mode": "delayed_odometry",
+    "original_assertion_failure": "0.218992267759128 not less than or equal to 0.205",
+    "maximum_command_mps": 0.218992267759128,
+    "dropped_odom_steps": 6,
+    "maximum_schedule_lag_s": 0.04998453551825599
+  }
+]

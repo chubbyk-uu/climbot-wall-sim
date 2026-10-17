@@ -1,0 +1,11 @@
+{
+  "checks": {
+    "pre_fix_delay_exceeds_unchanged_limit": true,
+    "post_fix_both_original_checks_pass": true,
+    "post_fix_limit_unchanged": true,
+    "controlled_delay_applied": true,
+    "red_test_failed": true,
+    "two_full_suites_passed": true
+  },
+  "all_passed": true
+}

@@ -1,0 +1,15 @@
+{
+  "after_revision": "c44b3188aa29906ff79e7fea650b87c50e7748ff",
+  "tracked_worktree_clean": true,
+  "source_sha256": {
+    "src/climbot_control/src/line_tracker_node.cpp": "1fcd7f205836aeaff4379550e0c832ddbac74d5270628842e700b6671c0d618b",
+    "src/climbot_control/src/coverage_manager_node.cpp": "e21dccad49a1982734380c228062c6e5e6c7e4b082291f8e7f0fede5db61662b",
+    "src/climbot_control/test/test_coverage_executor.py": "11a706a276846d62b39986cade920d2a090a296d14bba62cec4f4dfce21190c0",
+    "src/climbot_control/test/test_coverage_manager_forced_recovery.py": "c44da6a582656f17f8baf08784f822e3c1f21bb18c2ebb1b50e40439f601ad12",
+    "tools/probe_cruise_timestamps.py": "630a5e966eebcf24e5c4d089a9034428ab8fb40be569752a86fa7dbd28b0791b"
+  },
+  "before_source_revision": "7f4cc2d",
+  "before_tracker_source_sha256": "f9fbbb310d846ba1bdffde3893d7988ce809eb203418a5c85f666d07669bce3a",
+  "before_binary_sha256": null,
+  "after_binary_sha256": "7afcb59d41f8999c41f0a6cb5fc0bd77b330a9cd220e559d2363b5ead28c505b"
+}

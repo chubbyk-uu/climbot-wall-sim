@@ -1,0 +1,7 @@
+{
+  "baseline": "7f4cc2d",
+  "failing_tests": [
+    "Traceback (most recent call last):\n  File \"$WORKSPACE/src/climbot_control/test/test_coverage_executor.py\", line 450, in test_delayed_odometry_does_not_create_false_cruise_catchup\n    self.test_capture_heartbeat_does_not_modulate_scan_speed()\n  File \"$WORKSPACE/src/climbot_control/test/test_coverage_executor.py\", line 407, in test_capture_heartbeat_does_not_modulate_scan_speed\n    self.assertLessEqual(max(cruise_samples), 0.205)\nAssertionError: 0.2187985275900678 not less than or equal to 0.205\n"
+  ],
+  "log_name": "climbot_cruise_timestamp_red_actual_20261017.log"
+}

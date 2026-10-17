@@ -1,0 +1,18 @@
+{
+  "standalone_mode": false,
+  "use_sim_time": true,
+  "odometry_timeout_s": 2.0,
+  "odometry_future_tolerance_s": 1.0,
+  "segment_timeout_s": 15.0,
+  "capture_gate_timeout_s": 0.15,
+  "capture_gate_start_timeout_s": 0.15,
+  "alignment_settle_duration_s": 0.05,
+  "goal_settle_duration_s": 0.05,
+  "final_approach_distance_m": 0.08,
+  "final_approach_speed_mps": 0.06,
+  "max_turn_angular_speed": 0.8,
+  "max_turn_angular_acceleration": 2.0,
+  "wheel_separation": 0.43,
+  "wheel_speed_limit": 0.45,
+  "wheel_acceleration_limit": 0.4
+}
