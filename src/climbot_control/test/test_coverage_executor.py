@@ -20,6 +20,7 @@ from threading import Lock
 from threading import Thread
 import time
 import unittest
+from unittest.mock import patch
 
 from action_msgs.msg import GoalStatus
 from climbot_interfaces.action import ExecuteCoverage
@@ -132,12 +133,17 @@ def _task():
 class TestCoverageExecutor(unittest.TestCase):
     """Close a planar kinematic plant around the Action server."""
 
+    # The launch keeps one tracker alive for all test methods. Its clock must
+    # therefore keep one epoch too: resetting only the publisher to zero races
+    # the tracker's old odometry against its new /clock subscription samples.
+    _suite_sim_time = 0.0
+
     def setUp(self):
         rclpy.init()
         self.node = rclpy.create_node('coverage_executor_test')
         self.command = Twist()
         self.command_time = None
-        self.sim_time = 0.0
+        self.sim_time = type(self)._suite_sim_time
         self.feedback_segments = set()
         self.feedback_state = ExecuteCoverage.Feedback.WAITING
         self.lock = Lock()
@@ -155,6 +161,16 @@ class TestCoverageExecutor(unittest.TestCase):
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
+        deadline = time.monotonic() + REAL_TIME_MARGIN_S
+        while time.monotonic() < deadline:
+            if (self.publisher.get_subscription_count() > 0 and
+                    self.clock_publisher.get_subscription_count() > 0 and
+                    self.gate_publisher.get_subscription_count() > 0):
+                break
+            time.sleep(0.01)
+        else:
+            self.tearDown()
+            self.fail('Tracker input subscriptions were not discovered.')
 
     def tearDown(self):
         self.stop_spin.set()
@@ -202,9 +218,10 @@ class TestCoverageExecutor(unittest.TestCase):
         with self.lock:
             self.sim_time += step
             now = self.sim_time
+            type(self)._suite_sim_time = now
         message = Clock()
-        message.clock.sec = int(now)
-        message.clock.nanosec = int(round((now - int(now)) * 1e9))
+        message.clock.sec, message.clock.nanosec = divmod(
+            int(round(now * 1e9)), 1_000_000_000)
         self.clock_publisher.publish(message)
         time.sleep(step / TIME_SCALE)
 
@@ -376,30 +393,57 @@ class TestCoverageExecutor(unittest.TestCase):
         # cap this otherwise straight, long scan.
         x = 0.0
         cruise_samples = []
-        for step in range(800):
-            linear, angular, _ = self._current_command()
-            x += linear * SIM_STEP_S
-            self._publish_capture_gate()
-            self._publish_odometry(x, 0.0, 0.0, linear, angular)
-            self._advance()
-            if 0.60 < x < 2.50 and step > 100:
-                cruise_samples.append(self._current_command()[0])
-        self.assertGreater(len(cruise_samples), 20)
-        self.assertGreater(min(cruise_samples), 0.18)
-        self.assertLessEqual(max(cruise_samples), 0.205)
+        try:
+            for step in range(800):
+                linear, angular, _ = self._current_command()
+                x += linear * SIM_STEP_S
+                self._publish_capture_gate()
+                self._publish_odometry(x, 0.0, 0.0, linear, angular)
+                self._advance()
+                if 0.60 < x < 2.50 and step > 100:
+                    cruise_samples.append(self._current_command()[0])
+            self.assertGreater(len(cruise_samples), 20)
+            self.assertGreater(min(cruise_samples), 0.18)
+            self.assertLessEqual(max(cruise_samples), 0.205)
+        finally:
+            # A failed speed assertion must still retire this task, otherwise
+            # the next test fails only because the server remains occupied.
+            cancel_future = handle.cancel_goal_async()
+            for _ in self._pending(cancel_future, 5.0):
+                self._publish_capture_gate()
+                self._publish_odometry(x, 0.0, 0.0)
+                self._advance()
+            self.assertTrue(cancel_future.done())
+            result_future = handle.get_result_async()
+            for _ in self._pending(result_future, 5.0):
+                self._publish_capture_gate()
+                self._publish_odometry(x, 0.0, 0.0)
+                self._advance()
+            self.assertTrue(result_future.done())
+            self._cruise_cleanup_result = result_future.result()
 
-        cancel_future = handle.cancel_goal_async()
-        for _ in self._pending(cancel_future, 5.0):
-            self._publish_capture_gate()
-            self._publish_odometry(x, 0.0, 0.0)
-            self._advance()
-        self.assertTrue(cancel_future.done())
-        result_future = handle.get_result_async()
-        for _ in self._pending(result_future, 5.0):
-            self._publish_capture_gate()
-            self._publish_odometry(x, 0.0, 0.0)
-            self._advance()
-        self.assertTrue(result_future.done())
+    def test_cruise_assertion_failure_still_retires_the_goal(self):
+        """A deliberate failed check must not leave the shared server occupied."""
+        with patch.object(
+                self, 'assertLessEqual',
+                side_effect=AssertionError('injected cruise check')):
+            with self.assertRaisesRegex(AssertionError, 'injected cruise check'):
+                self.test_capture_heartbeat_does_not_modulate_scan_speed()
+        self.assertEqual(
+            self._cruise_cleanup_result.status, GoalStatus.STATUS_CANCELED)
+        self.assertEqual(self._cruise_cleanup_result.result.result_code,
+                         ExecuteCoverage.Result.CANCELED)
+
+    def test_clock_epoch_survives_recreating_the_test_client(self):
+        """Recreate ROS clients against the same tracker, preserving its clock."""
+        self._advance(0.02)
+        previous = self.sim_time
+        self.tearDown()
+        self.setUp()
+        self.assertEqual(self.sim_time, previous)
+        self._publish_odometry(0.0, 0.0, 0.0)
+        self._advance(0.02)
+        self.assertGreater(self.sim_time, previous)
 
     def test_approaches_first_waypoint_before_counting_scan_segments(self):
         """A distant start enters the first scan only after turn-slip recovery."""
@@ -462,9 +506,8 @@ class TestCoverageExecutor(unittest.TestCase):
         # string off the small-string buffer, so any read after the task is
         # released touches returned heap memory, not stale inline bytes.
         self.assertTrue(self.client.wait_for_server(timeout_sec=3.0))
-        # This test resets /clock while keeping the tracker process alive.
-        # Give its clock and odometry subscriptions time to enter the new epoch
-        # before testing the task's motion-region rejection.
+        # Establish this scenario's fresh pose before testing the task's
+        # motion-region rejection; the shared tracker clock remains monotonic.
         for _ in range(50):
             self._advance(0.02)
             self._publish_odometry(10.0, 10.0, 0.0)
