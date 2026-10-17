@@ -1,0 +1,68 @@
+physics:
+  schema_version: 1
+  gas:
+    ambient_pa: 101325.0
+    temperature_k: 293.15
+    specific_r: 287.05
+    gamma: 1.4
+    regularization_pa: 0.1
+    discharge_coefficient: 0.65
+  fans:
+  - free_flow_m3_s: 0.012
+    shutoff_pa: 14000.0
+    time_constant_s: 0.15
+    port_area_m2: 0.0025
+    reverse_fraction: 0.05
+  - free_flow_m3_s: 0.012
+    shutoff_pa: 14000.0
+    time_constant_s: 0.15
+    port_area_m2: 0.0025
+    reverse_fraction: 0.05
+  - free_flow_m3_s: 0.012
+    shutoff_pa: 14000.0
+    time_constant_s: 0.15
+    port_area_m2: 0.0025
+    reverse_fraction: 0.05
+  calibration:
+    reference_area_m2: 8.0e-05
+    residual_area_m2: 2.0e-05
+    opening_multipliers:
+    - 0.0
+    - 1.0
+    - 2.0
+    holdout_multipliers:
+    - 0.5
+    - 1.5
+    - 3.0
+    maximum_normal_opening_multiplier: 2.0
+    requirement_source: results/suction_s1_rearward_2026-10-17/summary.json
+  skirt:
+    damping_ns_m: 40.0
+    maximum_compression_m: 0.01
+    transition_m: 0.001
+  acceptance:
+    mass_flow_residual_kg_s: 1.0e-09
+    independent_pressure_error_pa: 0.01
+    steady_relative_error: 0.02
+    response_relative_error: 0.02
+    response_absolute_error_s: 0.0001
+    transition_relative_increment: 0.01
+    transition_samples_per_width: 1000
+cases:
+- id: fan_start_ode_0.0005
+  kind: transient
+  mode: ode
+  dt_s: 0.0005
+  duration_s: 1.5
+  initial_speeds:
+  - 0.0
+  - 0.0
+  - 0.0
+  targets:
+  - 1.0
+  - 1.0
+  - 1.0
+  area_m2: 2.0e-05
+  volume_m3: 0.0023553618058715403
+  previous_pa: 101325.0
+  area_events: []

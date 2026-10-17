@@ -1,0 +1,80 @@
+{
+  "source_commit": "4f8bd49667e18f0921118d0c5ce27cadbe6c7e4e",
+  "full_test_exit_code": 0,
+  "test_result_exit_code": 0,
+  "full_suite": {
+    "tests": 1513,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 71,
+    "elapsed_s": 43.5,
+    "executor": "parallel",
+    "parallel_workers": 8
+  },
+  "skips": "all cppcheck 2.13 performance rule already present; new four files increase count by four",
+  "cpp_tests": 16,
+  "adapter_tests": 9,
+  "s1_analysis_tests": 79,
+  "isolation_assertions": 25,
+  "initial_full_suite_failures": {
+    "file_checks": 8,
+    "ctest_wrappers": 2,
+    "type": "copyright headers and uncrustify formatting"
+  },
+  "initial_core_wait": {
+    "settling_wait_old_s": 0.05,
+    "settling_wait_new_s": 0.5,
+    "pressure_tolerance_pa_unchanged": 0.01
+  },
+  "logs": {
+    "first_core_wait_failure": {
+      "filename": "climbot_s2_core_unit_20261017.log",
+      "sha256": "00284c0a3da30eb7f099ba3afdf2d6adef506168fad9762275736224a24b7c67"
+    },
+    "initial_full_regression": {
+      "filename": "climbot_s2_full_regression_20261017.log",
+      "sha256": "fbf9c2a754f806e7fe31751d2ff01c204dca70e51bdd0d52bb0857201bf11158"
+    },
+    "initial_test_result": {
+      "filename": "climbot_s2_full_result_20261017.log",
+      "sha256": "e2384334d606af8ecf71211b9467172f645dfd2cbe9c6c5d242c3a35ed05eb3c"
+    },
+    "full_regression": {
+      "filename": "climbot_s2_full_regression_final_20261017.log",
+      "sha256": "ddf9e929ddcf1000a81e736a027ebbb3f0331ba68fb0b3232f0fb1f5f6eb7cbb"
+    },
+    "full_result": {
+      "filename": "climbot_s2_full_result_final_20261017.log",
+      "sha256": "b23fbd522b929b9f9cf8dc3f29937729b0a6d26829bf84540221b6149a1f278c"
+    },
+    "standalone_build": {
+      "filename": "climbot_s2_standalone_build_final_20261017.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "standalone_test": {
+      "filename": "climbot_s2_standalone_test_final_20261017.log",
+      "sha256": "90840ad2bfa279f423b80a0caa5aadc1ebc85210b4c50f9dde03a3d9ebe2322e"
+    },
+    "build": {
+      "filename": "climbot_s2_build_20261017d.log",
+      "sha256": "d54dabe7cb96053dcdddbae99fa3cc7e95728425cfbfffe72b05410782ff1e28"
+    },
+    "formal_isolation": {
+      "filename": "climbot_s2_formal_20261017.log",
+      "sha256": "f6b4ec783e796cc3c620bcda52fff607fd0e1171e475aa231d2119db97645d12"
+    },
+    "rearward_sdf": {
+      "filename": "climbot_s1_rearward_sdf_20261017.log",
+      "sha256": "581e1adf70bd048b67b37b74d7e86c4914095ff3f6ca4164e452e18465907d34"
+    },
+    "rearward_urdf": {
+      "filename": "climbot_s1_rearward_urdf_20261017.log",
+      "sha256": "85b4c21b15e0296501492f3b1703054c67c47f024e4f17cc2847a53cccad9c14"
+    }
+  },
+  "runtime_inputs_equal_s0": 12,
+  "rearward_s1_parser_checks": {
+    "sdf_exit_code": 0,
+    "urdf_exit_code": 0
+  }
+}
