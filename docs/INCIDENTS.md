@@ -270,6 +270,21 @@
   运行 B/C，验证暂停、reset、重新抽气、支撑撤除及 4000 个有效物理样本。
   修复提交 `9a51f50`；失败短测及重启后的正式证据另列在 S3 报告。
 
+### 20. 等待首个采集心跳时反复发布参考，污染后续“无心跳”断言
+
+- **现象**：S3 的 -j8 诊断第 6 轮中，`test_noninspection_reference_does_not_heartbeat_the_next_scan`
+  期望空列表，却收到 6 个 segment=13 的 `inspection capture in flight`，下一段为 14。
+  后续两轮通过仍不能据此忽略该失败。
+- **根因**：夹具每 10 ms 重发有效段 13，直至异步收到第一个 gate；清空 Python 列表
+  不等于排空 DDS 中已发布的参考／gate。生产节点只在有效 onReference 中发心跳，
+  无效段 14 清空 reference 后立即返回；迟到 13 来自此前队列，不能当作它给 14 续命。
+- **修复**：两项严格“随后不再有心跳”的测试，在已确认可靠 reader 匹配后只发布一次
+  有效参考，等待其唯一对应心跳形成观测屏障，再开始无效参考阶段。保留 `gates == []`
+  及原时间窗口，不屏蔽旧段消息、不延长固定睡眠、不修改产品心跳／监督期限。
+- **回归**：`test_camera_mount_mismatch_withholds_the_gate_heartbeat` 与上述
+  `test_noninspection_reference_does_not_heartbeat_the_next_scan` 的实际节点测试，以及
+  修复后的完整 -j8 套件。精确修复提交和运行记录见 S3 报告。
+
 ## 新增案例的规则
 
 只有根因已经被代码、受控 A/B 或不可歧义的运行证据确认，才把案例写成“已解决”。尚未定位的
