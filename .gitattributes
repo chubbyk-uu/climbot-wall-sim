@@ -1,0 +1,6 @@
+# These evidence files retain captured/source bytes, including CSV CRLF and
+# blank lines in the frozen inputs and diagnostic log excerpts.
+results/suction_s0_2026-10-17/*.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+results/suction_s0_2026-10-17/static_screening/*.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+results/suction_s0_2026-10-17/inputs/** -whitespace
+results/suction_s0_2026-10-17/regression*_failure.txt -whitespace
