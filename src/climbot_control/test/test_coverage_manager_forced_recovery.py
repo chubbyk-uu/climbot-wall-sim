@@ -119,19 +119,22 @@ class TestCoverageManagerForcedRecovery(unittest.TestCase):
             self.node, ExecuteCoverage, '/coverage/execute')
         self.spin_thread = Thread(target=rclpy.spin, args=(self.node,))
         self.spin_thread.start()
+        self.executor_process = None
+        self.assertTrue(self.start_client.wait_for_service(timeout_sec=10.0))
 
+    def _spawn_executor(self):
         fixture = os.path.join(
             os.path.dirname(__file__), 'fixtures', 'unanswering_executor.py')
         self.executor_process = subprocess.Popen(
             [sys.executable, fixture], stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL, start_new_session=True)
         self.assertTrue(self.action_client.wait_for_server(timeout_sec=10.0))
-        self.assertTrue(self.start_client.wait_for_service(timeout_sec=10.0))
 
     def tearDown(self):
-        if self.executor_process.poll() is None:
-            self.executor_process.kill()
-        self.executor_process.wait(timeout=5.0)
+        if self.executor_process is not None:
+            if self.executor_process.poll() is None:
+                self.executor_process.kill()
+            self.executor_process.wait(timeout=5.0)
         rclpy.shutdown()
         self.spin_thread.join(timeout=5.0)
         self.node.destroy_node()
@@ -159,7 +162,23 @@ class TestCoverageManagerForcedRecovery(unittest.TestCase):
         self.hold_publisher.publish(Bool(data=False))
         self.task_publisher.publish(_task())
         self._wait(lambda s: s.state == CoverageStatus.READY, 'READY')
-        self.assertTrue(self._call(self.start_client).success)
+        # READY means a valid preview, not that this manager's Action client
+        # has discovered the executor. Prove the unavailable branch first.
+        unavailable = self._call(self.start_client)
+        self.assertFalse(unavailable.success)
+        self.assertIn('Action server is unavailable', unavailable.message)
+        self._spawn_executor()
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline:
+            started = self._call(self.start_client)
+            if started.success:
+                break
+            # Only retry a refusal before any Goal was sent. Any different
+            # failure remains a real failure rather than a discovery wait.
+            self.assertIn('Action server is unavailable', started.message)
+            time.sleep(0.05)
+        else:
+            self.fail('Manager did not discover the executor Action server.')
         stopping = self._wait(
             lambda s: s.state == CoverageStatus.STOPPING and
             s.can_force_abandon,
