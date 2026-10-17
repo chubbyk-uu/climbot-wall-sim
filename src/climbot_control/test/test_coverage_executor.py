@@ -434,6 +434,22 @@ class TestCoverageExecutor(unittest.TestCase):
         self.assertEqual(self._cruise_cleanup_result.result.result_code,
                          ExecuteCoverage.Result.CANCELED)
 
+    def test_delayed_odometry_does_not_create_false_cruise_catchup(self):
+        """Fresh-enough delayed poses must use their own schedule timestamps."""
+        publish = self._publish_odometry
+        withheld = 0
+
+        def delayed(x, y, yaw, linear=0.0, angular=0.0):
+            nonlocal withheld
+            if 0.8 < x < 1.0 and withheld < 6:
+                withheld += 1
+                return
+            publish(x, y, yaw, linear, angular)
+
+        with patch.object(self, '_publish_odometry', side_effect=delayed):
+            self.test_capture_heartbeat_does_not_modulate_scan_speed()
+        self.assertEqual(withheld, 6)
+
     def test_clock_epoch_survives_recreating_the_test_client(self):
         """Recreate ROS clients against the same tracker, preserving its clock."""
         self._advance(0.02)

@@ -1069,7 +1069,15 @@ private:
   {
     const double elapsed = (current_time - travel_start_).seconds() - travel_stretch_credit_;
     const auto sample = climbot_control::sampleTravel(travel_profile_, elapsed);
-    schedule_lag_ = sample.distance - (command.along - travel_start_along_);
+    // The pose belongs to its source timestamp, not this timer callback.
+    // Comparing it with the current plan invents v*transport_age of lag and
+    // commands a catch-up burst even when the robot follows the plan exactly.
+    // Keep feedforward on the current clock and align only the feedback error.
+    const auto source_now = current_time.get_clock_type() == RCL_ROS_TIME ? current_time : now();
+    const double pose_age = std::max(0.0, (source_now - *last_pose_source_time_).seconds());
+    const auto observed_sample = climbot_control::sampleTravel(
+      travel_profile_, elapsed - pose_age);
+    schedule_lag_ = observed_sample.distance - (command.along - travel_start_along_);
 
     // Holding the reference clock while the robot is far behind turns an
     // unrecoverable schedule into a recoverable one, at the cost of no longer

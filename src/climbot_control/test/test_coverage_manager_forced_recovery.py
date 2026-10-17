@@ -157,7 +157,7 @@ class TestCoverageManagerForcedRecovery(unittest.TestCase):
         self.fail('Timed out waiting for {}; last status was {}'.format(
             description, self.statuses[-1] if self.statuses else None))
 
-    def test_operator_can_recover_without_calling_an_unknown_goal_finished(self):
+    def test_operator_can_recover_without_calling_an_unknown_goal_finished(self, proc_output):
         """SIGKILL after send but before response must have an explicit escape."""
         self.hold_publisher.publish(Bool(data=False))
         self.task_publisher.publish(_task())
@@ -167,6 +167,9 @@ class TestCoverageManagerForcedRecovery(unittest.TestCase):
         unavailable = self._call(self.start_client)
         self.assertFalse(unavailable.success)
         self.assertIn('Action server is unavailable', unavailable.message)
+        proc_output.assertWaitFor(
+            'Coverage start refused: Coverage executor Action server is unavailable.',
+            timeout=5.0)
         self._spawn_executor()
         deadline = time.monotonic() + 10.0
         while time.monotonic() < deadline:
