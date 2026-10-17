@@ -14,6 +14,18 @@ find_package(geometry_msgs REQUIRED)
 # symbols have to be resolved again by whoever links it.
 find_package(yaml-cpp REQUIRED)
 
+# S2 physics core deliberately has no ROS, Gazebo or YAML dependencies.
+add_library(vacuum_core src/vacuum_core.cpp)
+target_compile_features(vacuum_core PUBLIC cxx_std_17)
+target_include_directories(vacuum_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_options(vacuum_core PRIVATE -Wall -Wextra -Wpedantic)
+set_target_properties(vacuum_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_executable(vacuum_core_probe src/vacuum_core_probe.cpp)
+target_compile_features(vacuum_core_probe PRIVATE cxx_std_17)
+target_link_libraries(vacuum_core_probe vacuum_core yaml-cpp::yaml-cpp)
+
 add_library(total_station_model_core src/total_station_model.cpp)
 target_compile_features(total_station_model_core PUBLIC cxx_std_17)
 target_include_directories(total_station_model_core PUBLIC
@@ -73,6 +85,8 @@ install(
 )
 
 install(TARGETS
+  vacuum_core
+  vacuum_core_probe
   total_station_model_core
   total_station_sim_node
   clock_throttle_core
@@ -116,6 +130,8 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  ament_add_gtest(test_vacuum_core test/test_vacuum_core.cpp)
+  target_link_libraries(test_vacuum_core vacuum_core)
   ament_add_gtest(test_wall_wheel_odom_adapter test/test_wall_wheel_odom_adapter.cpp)
   target_link_libraries(test_wall_wheel_odom_adapter wall_wheel_odom_adapter_core)
   target_include_directories(test_wall_wheel_odom_adapter PRIVATE include)
@@ -154,6 +170,8 @@ if(BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_suction_analysis.py)
   ament_add_pytest_test(test_vacuum_design
     ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_vacuum_design.py)
+  ament_add_pytest_test(test_vacuum_physics
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_vacuum_physics.py)
   ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
   ament_add_pytest_test(
     test_total_station_model test/test_total_station_model.py)
