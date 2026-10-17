@@ -247,6 +247,14 @@
   未就绪→就绪流程，然后仍验证请求未答复窗口的 SIGKILL、强制放弃与人工重新使能。
   产品服务逻辑和超时门限均未修改。
 
+- **S3 归档夹具补查**：另一份 `test_coverage_manager_archive.py` 首个 Start 在 -j8 下
+  返回 false。原断言没记录 response.message，不能再区分 Action 与 archive 两个未就绪
+  端点；单跑连续通过也不构成根因证明。代码核对确认其仅等待测试客户端发现 executor，
+  仍缺管理器自身依赖的发现屏障。夹具现只对 `requestStart` 在任何状态变更／预检／Goal
+  之前返回的两种明确 unavailable 拒绝做有期限等待，其他拒绝立即失败，接受后绝不重发。
+  `TestStartDependencyDiscovery` 用确定性响应序列验证两端点、接受后停止、其他失败和
+  到期不派发；不把原观测写成某个端点已被实测定位。该测试及最终 -j8 复验另见 S3 记录。
+
 ### 19. 原生 Gazebo 测量夹具在 reset 后不再执行 PreUpdate
 
 - **现象**：新吸附模型的首次运行和暂停正常，reset 后整车动量观测报非主连杆速度缺失。
@@ -260,7 +268,7 @@
   的明确拒绝分支一致，不通过增加等待或编造零速度绕过。
 - **回归**：`test_vacuum_native.py::test_native_observer_and_vacuum_survive_reset` 分别实际
   运行 B/C，验证暂停、reset、重新抽气、支撑撤除及 4000 个有效物理样本。
-  发布时的精确修复提交可由该测试与 `vacuum_sim_probe.cpp` 的 Git 历史追溯。
+  修复提交 `9a51f50`；失败短测及重启后的正式证据另列在 S3 报告。
 
 ## 新增案例的规则
 
