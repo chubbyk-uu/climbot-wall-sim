@@ -1,0 +1,20 @@
+{
+  "delivered": 362,
+  "error_mean_pa": 28.21669607258729,
+  "error_variance_pa2": 180.934467789517,
+  "maximum_delay_error_s": 4.2674197509029455e-16,
+  "all_stamps_on_10ms_grid": true,
+  "end_delta_pa": 8404.442634413135,
+  "end_fan_speeds": [
+    0.9999999999973738,
+    0.9999999999973738,
+    0.9999999999973738
+  ],
+  "command_revision_max": 4,
+  "sensor_fault_modes": [
+    0,
+    1,
+    2
+  ],
+  "runtime_failed": false
+}

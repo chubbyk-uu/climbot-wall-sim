@@ -1,0 +1,32 @@
+{
+  "revision": "c2ef15cf30436d7daf4661dac5bb0e2a6722809a",
+  "tracked_dirty": false,
+  "binary_sha256": {
+    "plugin": "7a14c17bab965fc96400f58f52bf4994a0f866d49e2ea7c79f416bc809395f30",
+    "probe": "dc6496bdcadae22fe876f54249cf69fba8c74caf79cf28503fc1a55e5b3a5cf6"
+  },
+  "source_sha256": {
+    "docs/INTERFACES.md": "7ccd22d460f3460854f89bc18244a75841ec63d11075c15458c6e5decdd4ba3e",
+    "src/climbot_bringup/test/test_workspace_consistency.py": "d7411e0cf6c1a7f21721c514d26fa5d4314cf20af40c70b87a8b88d4feeb0b3d",
+    "src/climbot_gazebo/CMakeLists.txt": "96317658a1df4c43faa4ce4aea4b85a284c2e882fc0bb880a1ddfdfcee8a0368",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "a82a53b01d40580c223455e056571455dac422b61fbd75eaad4b8aa6dae29962",
+    "src/climbot_gazebo/config/vacuum_io.yaml": "9e61c95bd9e6d78c0ca398fd7bf1559112cc8df2d83f2a84465adb505e3a34a0",
+    "src/climbot_gazebo/include/climbot_gazebo/pressure_sensor.hpp": "0d7ae4fedd6cc47024add7c57e1ec9cdd09115be8dc11df6d0691c136cd2e4ea",
+    "src/climbot_gazebo/include/climbot_gazebo/vacuum_io.hpp": "c02ca70342d210c364f70987b6c378d0fd2d2ed8f858c2c95006d8ec90bf6264",
+    "src/climbot_gazebo/include/climbot_gazebo/vacuum_state.hpp": "8f156815730761b09e665d2624407eb891aab377c765b07a7d59741896d0ab5c",
+    "src/climbot_gazebo/launch/climbot_vacuum.launch.py": "55ef1e62386348953e2be616c101def22b87afb2f05f278034e289050d961122",
+    "src/climbot_gazebo/package.xml": "5c737bcc8426be317148b8ad7f335fbba6d8b5de22784d3f56ddf8d738ca574a",
+    "src/climbot_gazebo/src/pressure_sensor.cpp": "abe08f8198b0676f9090e4af5fb5b7ce4e3667841e53073194d054dd97829c34",
+    "src/climbot_gazebo/src/vacuum_io.cpp": "e3fd9564a90deae22e696b0a10778716c46a59bb3036dccd1dc040a54387e1a3",
+    "src/climbot_gazebo/src/vacuum_system.cpp": "dc302e069c7d51cf611a4d1e5a576452cb947cc75975b6b535cbfb98e713dc47",
+    "src/climbot_gazebo/test/test_pressure_sensor.cpp": "5688d63285f339d2a69e9916832f118301399a1f03f07e41ab3c555e7693a853",
+    "src/climbot_gazebo/test/test_vacuum_assets.py": "24ebe5c526d563190e0aa33ea6abab7e1bd14f5d4eb0c19fa9b4baccc3fdda82",
+    "src/climbot_gazebo/test/test_vacuum_bridge.py": "f102f3c15eaf5fd366d188f5cc733b0dcc27d4ef92bfd7c475a756d9d38f8f95",
+    "src/climbot_gazebo/test/test_vacuum_native.py": "69b1b7d5df59eca1bb6e6defacec54e53b2e221ab7c83078b11873e76e72cf50",
+    "tools/validate_vacuum_bridge.py": "bbf3f38bcd570bed09a73284852434c1a49f5215c5b57cf11d2617346fa19b4a",
+    "tools/validate_vacuum_io.py": "1bd4b2d21fcc45d50a52a4db740046fdf511ca8b1368b5ce993db31db7176382",
+    "src/climbot_gazebo/config/vacuum_physics.yaml": "c5a1aa6b6d8630fd6f90e376eb90a40935b2e6f61cb52e7df01d8ee027577e07",
+    "src/climbot_gazebo/config/vacuum_runtime.yaml": "02a633bcf4335aa43612477f78db7adb86b6cdcedbc384ed07a59629204a6fc5",
+    "src/climbot_description/config/vacuum_chassis.yaml": "cf750c8500ba9e6d3f52703af39b80d7a41a7eac6599580b83adf868661da324"
+  }
+}

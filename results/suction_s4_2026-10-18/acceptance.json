@@ -1,0 +1,10 @@
+{
+  "native_checks": 63,
+  "bridge_B_checks": 31,
+  "bridge_C_checks": 31,
+  "native_nonpaused_frames": 40000,
+  "strict_json_files_audited": 42,
+  "strict_jsonl_records_audited": 580,
+  "source_hashes_verified": 22,
+  "all_passed": true
+}

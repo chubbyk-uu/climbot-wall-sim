@@ -18,7 +18,8 @@
 
 | 范围 | 证据 | 地位 |
 | --- | --- | --- |
-| 三风机吸附 S3 | [平墙原生集成报告](suction_s3_2026-10-17/REPORT.md) | 八朝向 B/C、60 s 保持、逐轮轮载与暂停/reset；231 项主检查及 3 项原始复核通过，S4～S7／M2 待验收 |
+| 三风机吸附 S4 | [压力测量与故障接口报告](suction_s4_2026-10-18/REPORT.md) | 原生九组 63 项、B/C 真实 ROS bridge 各 31 项通过；1590 项完整回归零失败，运动／故障边界仍待 S5 |
+| 三风机吸附 S3 | [平墙原生集成报告](suction_s3_2026-10-17/REPORT.md) | 八朝向 B/C、60 s 保持、逐轮轮载与暂停/reset；231 项主检查及 3 项原始复核通过；传感器后续证据另见 S4，S5～S7／M2 待验收 |
 | 控制反馈时戳专项 | [受控红绿对照](cruise_timestamp_2026-10-17/REPORT.md) | 延迟里程计引起的虚假追赶已修复，原速度门槛不变；Start 拒绝诊断补齐，两轮完整 -j8 各 1555 项零失败；ROS 测试不替代 S5/S6 整车验收 |
 | 覆盖任务与控制 | `coverage_{bigH,bigTH,bigTV,bigV,horizontal,trapezoid_horizontal,trapezoid_vertical,vertical}_2026-08-20_summary.json` | 默认 `time` 控制的八工况正式仿真基线 |
 | 距离控制对照 | 对应的 `*_2026-08-20d_summary.json` | 与默认控制律同口径的对照，不替代默认基线 |

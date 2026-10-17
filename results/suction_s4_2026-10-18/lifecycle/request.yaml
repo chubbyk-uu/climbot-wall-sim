@@ -1,0 +1,6 @@
+duration_s: 4
+pause_at_s: 0.3
+pause_iterations: 20
+reset_at_s: 1.5
+step_s: 0.001
+world: world.sdf

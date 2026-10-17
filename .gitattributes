@@ -6,3 +6,4 @@ results/suction_s0_2026-10-17/inputs/** -whitespace
 results/suction_s0_2026-10-17/regression*_failure.txt -whitespace
 # Matplotlib SVG paths contain intentional line-end spaces; keep archived bytes.
 results/suction_s3_2026-10-17/static_loads.svg -whitespace
+results/suction_s4_2026-10-18/sensor_and_fans.svg -whitespace

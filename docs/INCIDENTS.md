@@ -310,6 +310,23 @@
   确认这一缺陷机制；S0 最初 `0.210464 m/s` 的逐包时序未留存，不能倒推其唯一原因。
   本项为 ROS 控制测试，实际 Gazebo 运动及新吸附配置仍须 S5/S6 验收。
 
+### 22. APPEND_ENV 拼接 ROS_DOMAIN_ID，破坏测试域隔离
+
+- **现象**：S4 新增真实桥接测试在单跑时通过，完整 -j8 下却在 `rclpy.init()` 报
+  `ROS_DOMAIN_ID is not an integral number`，尚未进入压力／风机验证。
+- **误导线索**：归为 DDS discovery、Gazebo／Mesa 并发失败，或用再次单跑通过关闭；
+  实际错误发生在 ROS 上下文初始化之前。
+- **根因**：新 CMake 使用 `APPEND_ENV ROS_DOMAIN_ID=96`。ament 按路径列表规则拼接：
+  继承空值时产生 `:96` 并明确失败；继承 17 时产生 `17:96`，本机 RCL 取成 17，
+  即使初始化成功也丢失预期的域隔离。该参数必须覆盖，不能追加。
+- **修复**：提交 `c2ef15c` 改为 `ENV ROS_DOMAIN_ID=96`，新增失败诊断日志保存到独立
+  临时文件；仓库域检查禁止这种 APPEND_ENV 用法，并继续核对测试域唯一性。
+- **回归**：`test_launch_test_domain_ids_are_unique_across_the_workspace` 和 B/C
+  `test_pressure_bridge_and_all_live_fault_inputs`；显式继承 `ROS_DOMAIN_ID=17` 的
+  完整 -j8 为 1590 tests、0 errors、0 failures、79 skipped。实际 ament wrapper 的
+  两种负对照／覆盖正对照见 [S4 证据](../results/suction_s4_2026-10-18/domain_environment.json)。
+  第一次失败未保留充分诊断，补强日志后完整复现相同初始化错误；不靠猜测消息队列归因。
+
 ## 新增案例的规则
 
 只有根因已经被代码、受控 A/B 或不可歧义的运行证据确认，才把案例写成“已解决”。尚未定位的

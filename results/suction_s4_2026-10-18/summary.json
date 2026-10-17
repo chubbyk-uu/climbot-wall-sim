@@ -1,0 +1,240 @@
+{
+  "cases": {
+    "normal": {
+      "delivered": 398,
+      "error_mean_pa": 25.741059256202284,
+      "error_variance_pa2": 109.16732226658813,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.442634413135,
+      "end_fan_speeds": [
+        0.9999999999973738,
+        0.9999999999973738,
+        0.9999999999973738
+      ],
+      "command_revision_max": 0,
+      "sensor_fault_modes": [
+        0
+      ],
+      "runtime_failed": false
+    },
+    "repeat": {
+      "delivered": 398,
+      "error_mean_pa": 25.741059256202284,
+      "error_variance_pa2": 109.16732226658813,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.442634413135,
+      "end_fan_speeds": [
+        0.9999999999973738,
+        0.9999999999973738,
+        0.9999999999973738
+      ],
+      "command_revision_max": 0,
+      "sensor_fault_modes": [
+        0
+      ],
+      "runtime_failed": false
+    },
+    "zero_error": {
+      "delivered": 398,
+      "error_mean_pa": 0.0,
+      "error_variance_pa2": 0.0,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.442634413135,
+      "end_fan_speeds": [
+        0.9999999999973738,
+        0.9999999999973738,
+        0.9999999999973738
+      ],
+      "command_revision_max": 0,
+      "sensor_fault_modes": [
+        0
+      ],
+      "runtime_failed": false
+    },
+    "sensor_faults": {
+      "delivered": 362,
+      "error_mean_pa": 28.21669607258729,
+      "error_variance_pa2": 180.934467789517,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.442634413135,
+      "end_fan_speeds": [
+        0.9999999999973738,
+        0.9999999999973738,
+        0.9999999999973738
+      ],
+      "command_revision_max": 4,
+      "sensor_fault_modes": [
+        0,
+        1,
+        2
+      ],
+      "runtime_failed": false
+    },
+    "fans": {
+      "delivered": 398,
+      "error_mean_pa": 25.741059256202284,
+      "error_variance_pa2": 109.16732226658813,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.442630266189,
+      "end_fan_speeds": [
+        0.9999999999852065,
+        0.9999999999074487,
+        0.9999999993328924
+      ],
+      "command_revision_max": 6,
+      "sensor_fault_modes": [
+        0
+      ],
+      "runtime_failed": false
+    },
+    "fixed_fans": {
+      "delivered": 398,
+      "error_mean_pa": 25.741059256202284,
+      "error_variance_pa2": 109.16732226658813,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.442641162896,
+      "end_fan_speeds": [
+        0.9999999999852063,
+        0.9999999999074485,
+        0.9999999993328915
+      ],
+      "command_revision_max": 6,
+      "sensor_fault_modes": [
+        0
+      ],
+      "runtime_failed": false
+    },
+    "lifecycle": {
+      "delivered": 343,
+      "error_mean_pa": 25.886842239256985,
+      "error_variance_pa2": 99.26569848553211,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.344244316977,
+      "end_fan_speeds": [
+        0.999999674150043,
+        0.9999979614199861,
+        0.9999853059615201
+      ],
+      "command_revision_max": 8,
+      "sensor_fault_modes": [
+        0,
+        1
+      ],
+      "runtime_failed": false
+    },
+    "saturation": {
+      "delivered": 398,
+      "error_mean_pa": 1827.2954718281048,
+      "error_variance_pa2": 418936.35453604057,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.442634413135,
+      "end_fan_speeds": [
+        0.9999999999973738,
+        0.9999999999973738,
+        0.9999999999973738
+      ],
+      "command_revision_max": 0,
+      "sensor_fault_modes": [
+        0
+      ],
+      "runtime_failed": false
+    },
+    "half_step": {
+      "delivered": 398,
+      "error_mean_pa": 25.741059256202284,
+      "error_variance_pa2": 109.16732226658813,
+      "maximum_delay_error_s": 4.2674197509029455e-16,
+      "all_stamps_on_10ms_grid": true,
+      "end_delta_pa": 8404.442695142992,
+      "end_fan_speeds": [
+        0.9999999999973738,
+        0.9999999999973738,
+        0.9999999999973738
+      ],
+      "command_revision_max": 0,
+      "sensor_fault_modes": [
+        0
+      ],
+      "runtime_failed": false
+    }
+  },
+  "checks": {
+    "normal_no_runtime_failure": true,
+    "normal_timestamp_grid": true,
+    "normal_delay": true,
+    "normal_mesa": true,
+    "repeat_no_runtime_failure": true,
+    "repeat_timestamp_grid": true,
+    "repeat_delay": true,
+    "repeat_mesa": true,
+    "zero_error_no_runtime_failure": true,
+    "zero_error_timestamp_grid": true,
+    "zero_error_delay": true,
+    "zero_error_mesa": true,
+    "sensor_faults_no_runtime_failure": true,
+    "sensor_faults_timestamp_grid": true,
+    "sensor_faults_delay": true,
+    "sensor_faults_mesa": true,
+    "fans_no_runtime_failure": true,
+    "fans_timestamp_grid": true,
+    "fans_delay": true,
+    "fans_mesa": true,
+    "fixed_fans_no_runtime_failure": true,
+    "fixed_fans_timestamp_grid": true,
+    "fixed_fans_delay": true,
+    "fixed_fans_mesa": true,
+    "lifecycle_no_runtime_failure": true,
+    "lifecycle_timestamp_grid": true,
+    "lifecycle_delay": true,
+    "lifecycle_mesa": true,
+    "pause_unchanged": true,
+    "reset_restored": true,
+    "reset_generation_0_clears_commands": true,
+    "reset_generation_1_clears_commands": true,
+    "reset_random_sequence_replays": true,
+    "reset_scheduled_commands_replay": true,
+    "reset_clears_active_sensor_fault": true,
+    "saturation_no_runtime_failure": true,
+    "saturation_timestamp_grid": true,
+    "saturation_delay": true,
+    "saturation_mesa": true,
+    "half_step_no_runtime_failure": true,
+    "half_step_timestamp_grid": true,
+    "half_step_delay": true,
+    "half_step_mesa": true,
+    "fixed_seed_identical_sensor": true,
+    "bias_mean_within_2Pa": true,
+    "variance_within_15percent": true,
+    "zero_error_matches_physics": true,
+    "repeat_physics_isolated": true,
+    "zero_error_physics_isolated": true,
+    "sensor_faults_physics_isolated": true,
+    "saturation_physics_isolated": true,
+    "dropout_suppresses_and_flushes": true,
+    "stuck_value_fresh_stamps": true,
+    "sensor_recovers": true,
+    "fan_0_spins_down_independently": true,
+    "fan_1_spins_down_independently": true,
+    "fan_2_spins_down_independently": true,
+    "fan_commands_change_cavity": true,
+    "fan_recovery": true,
+    "B_ideal_pressure_ignores_fan_fault_as_declared": true,
+    "range_saturation_reported": true,
+    "half_step_same_acquisition_times": true,
+    "half_step_same_random_errors": true
+  },
+  "all_passed": true,
+  "mesa": {
+    "backend": "wsl_d3d12",
+    "mesa": "private",
+    "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
+  }
+}

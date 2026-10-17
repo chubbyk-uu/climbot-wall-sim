@@ -1,0 +1,140 @@
+{
+  "mode": "fan_ode",
+  "checks": {
+    "absolute_pressure_units": true,
+    "ambient_available": true,
+    "frame_and_variance": true,
+    "fan_0_disable_ack": true,
+    "fan_0_disable_physical_speed": true,
+    "fan_0_enable_ack": true,
+    "fan_0_fail_ack": true,
+    "fan_0_recover_ack": true,
+    "fan_1_disable_ack": true,
+    "fan_1_disable_physical_speed": true,
+    "fan_1_enable_ack": true,
+    "fan_1_fail_ack": true,
+    "fan_1_recover_ack": true,
+    "fan_2_disable_ack": true,
+    "fan_2_disable_physical_speed": true,
+    "fan_2_enable_ack": true,
+    "fan_2_fail_ack": true,
+    "fan_2_recover_ack": true,
+    "dropout_ack": true,
+    "dropout_reaches_ros": true,
+    "sensor_normal_ack": true,
+    "stuck_ack": true,
+    "stuck_reaches_ros_with_new_stamps": true,
+    "invalid_fault_rejected": true,
+    "final_recovery_ack": true,
+    "truth_pressure_source_contract": true,
+    "bridge_preserves_acquisition_stamp_and_value": true,
+    "truth_reports_20ms_delay": true,
+    "pressure_reliable_qos": true,
+    "scenario_completed": true,
+    "process_group_cleaned": true
+  },
+  "all_passed": true,
+  "commands": [
+    {
+      "name": "fan_0_disable_ack",
+      "sent_after_sim_s": 0.12,
+      "observed_sim_s": 0.14,
+      "revision": 1
+    },
+    {
+      "name": "fan_0_enable_ack",
+      "sent_after_sim_s": 0.25,
+      "observed_sim_s": 0.26,
+      "revision": 2
+    },
+    {
+      "name": "fan_0_fail_ack",
+      "sent_after_sim_s": 0.26,
+      "observed_sim_s": 0.27,
+      "revision": 3
+    },
+    {
+      "name": "fan_0_recover_ack",
+      "sent_after_sim_s": 0.27,
+      "observed_sim_s": 0.28,
+      "revision": 4
+    },
+    {
+      "name": "fan_1_disable_ack",
+      "sent_after_sim_s": 0.28,
+      "observed_sim_s": 0.29,
+      "revision": 5
+    },
+    {
+      "name": "fan_1_enable_ack",
+      "sent_after_sim_s": 0.39,
+      "observed_sim_s": 0.4,
+      "revision": 6
+    },
+    {
+      "name": "fan_1_fail_ack",
+      "sent_after_sim_s": 0.4,
+      "observed_sim_s": 0.41,
+      "revision": 7
+    },
+    {
+      "name": "fan_1_recover_ack",
+      "sent_after_sim_s": 0.41,
+      "observed_sim_s": 0.42,
+      "revision": 8
+    },
+    {
+      "name": "fan_2_disable_ack",
+      "sent_after_sim_s": 0.42,
+      "observed_sim_s": 0.43,
+      "revision": 9
+    },
+    {
+      "name": "fan_2_enable_ack",
+      "sent_after_sim_s": 0.53,
+      "observed_sim_s": 0.54,
+      "revision": 10
+    },
+    {
+      "name": "fan_2_fail_ack",
+      "sent_after_sim_s": 0.54,
+      "observed_sim_s": 0.55,
+      "revision": 11
+    },
+    {
+      "name": "fan_2_recover_ack",
+      "sent_after_sim_s": 0.55,
+      "observed_sim_s": 0.56,
+      "revision": 12
+    },
+    {
+      "name": "dropout_ack",
+      "sent_after_sim_s": 0.56,
+      "observed_sim_s": 0.57,
+      "revision": 13
+    },
+    {
+      "name": "sensor_normal_ack",
+      "sent_after_sim_s": 0.77,
+      "observed_sim_s": 0.78,
+      "revision": 14
+    },
+    {
+      "name": "stuck_ack",
+      "sent_after_sim_s": 0.84,
+      "observed_sim_s": 0.86,
+      "revision": 15
+    },
+    {
+      "name": "final_recovery_ack",
+      "sent_after_sim_s": 0.97,
+      "observed_sim_s": 0.98,
+      "revision": 16
+    }
+  ],
+  "truth_samples": 107,
+  "pressure_samples": 76,
+  "ambient_samples": 106,
+  "launch_exit_code": 0,
+  "log_name": "climbot_s4_bridge_db04c42061f8475e89234f34822b1a53.log"
+}

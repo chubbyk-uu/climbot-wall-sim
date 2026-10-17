@@ -1,0 +1,4 @@
+vacuum_io:
+  sensor:
+    bias_pa: 0
+    noise_pa: 0
