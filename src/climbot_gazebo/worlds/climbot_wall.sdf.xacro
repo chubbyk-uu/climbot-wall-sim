@@ -13,7 +13,6 @@
   <xacro:arg name="height" default="8.0"/>
   <xacro:arg name="mu" default="1.1"/>
   <xacro:arg name="grid_spacing" default="1.0"/>
-  <xacro:arg name="suction_force" default="400.0"/>
   <xacro:arg name="spawn_gap" default="0.001"/>
   <xacro:arg name="spawn_lateral" default="0.0"/>
   <xacro:arg name="spawn_height" default="2.0"/>
@@ -172,16 +171,6 @@
     <plugin filename="gz-sim-sensors-system"
             name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
-    </plugin>
-    <plugin filename="gz-sim-apply-link-wrench-system"
-            name="gz::sim::systems::ApplyLinkWrench">
-      <persistent>
-        <entity_name>climbot</entity_name>
-        <entity_type>model</entity_type>
-        <!-- Along the inward wall normal, which is world -X for this wall. -->
-        <force>${-1.0 * float("$(arg suction_force)")} 0 0</force>
-        <torque>0 0 0</torque>
-      </persistent>
     </plugin>
 
     <!-- One physical moonlight, weaker than the robot LED but with real
@@ -356,7 +345,8 @@
         </gz-gui>
         <engine>ogre2</engine>
         <scene>scene</scene>
-        <ambient_light>$(arg ambient_r) $(arg ambient_g) $(arg ambient_b)</ambient_light>
+        <!-- Editor lighting only: keep night-time sensor lighting in <scene>. -->
+        <ambient_light>0.30 0.30 0.30</ambient_light>
         <background_color>0.005 0.005 0.008</background_color>
         <!-- Front-on view centred on the robot's initial pose. -->
         <camera_pose>${face_x + 2.75} $(arg spawn_lateral) $(arg spawn_height) 0 0 3.14159265359</camera_pose>
@@ -428,6 +418,22 @@
         <play_pause>true</play_pause>
         <step>true</step>
         <start_paused>false</start_paused>
+      </plugin>
+      <plugin filename="ClimbotWorldStats" name="Realtime factor">
+        <gz-gui>
+          <title>Realtime factor</title>
+          <property type="string" key="cardBackground">transparent</property>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">32</property>
+          <property type="double" key="width">132</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="Climbot Wall Simulation">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
       </plugin>
       <plugin filename="EntityTree" name="Entity tree">
         <gz-gui>

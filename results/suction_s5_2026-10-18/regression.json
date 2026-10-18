@@ -1,0 +1,13 @@
+{
+  "source_revision": "9f3da0f",
+  "tests": 1598,
+  "errors": 0,
+  "failures": 0,
+  "skipped": 79,
+  "executor": "parallel",
+  "parallel_workers": 8,
+  "test_log_name": "climbot_s5_final_entry_full_20261018.log",
+  "result_log_name": "climbot_s5_final_entry_full_result_20261018.log",
+  "pause_discovery_failure_log_name": "climbot_s5_pause_discovery_failure_20261018.log",
+  "skip_scope": "cppcheck"
+}

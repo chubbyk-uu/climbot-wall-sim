@@ -158,7 +158,27 @@ class TestCoverageManagerStates(unittest.TestCase):
         self.fail('Timed out waiting for {}; last status was {}'.format(
             what, self._latest()))
 
+    def _observe_with_fresh_odometry(self, duration_s):
+        """Keep the synthetic sensor alive while observing manager state."""
+        deadline = time.monotonic() + duration_s
+        while time.monotonic() < deadline:
+            self._publish_odom()
+            time.sleep(0.01)
+
     def _reach_executing(self, revision):
+        # Service discovery can finish before this case's recreated sensor
+        # publisher matches the tracker. Its previous case's pose may still
+        # be fresh enough to accept a goal, then expire during observation.
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline:
+            self._publish_odom()
+            if (self.odom_publisher.get_subscription_count() > 0 and
+                    self.odom_publisher.wait_for_all_acked(
+                        rclpy.duration.Duration(seconds=0.05))):
+                break
+            time.sleep(0.01)
+        else:
+            self.fail('Tracker odometry input was not matched and acknowledged.')
         self.task_publisher.publish(_task(revision))
         self._wait_until(
             lambda s: s.state == CoverageStatus.READY and s.revision == revision,
@@ -184,7 +204,8 @@ class TestCoverageManagerStates(unittest.TestCase):
         """Replan during a run must not report the new task as the live one."""
         self._reach_executing(21)
         self.task_publisher.publish(_task(22))
-        time.sleep(0.8)
+        # Observe beyond the 2 s watchdog without simulating sensor loss.
+        self._observe_with_fresh_odometry(2.2)
         latest = self._latest()
         self.assertEqual(
             latest.state, CoverageStatus.EXECUTING,
@@ -198,11 +219,41 @@ class TestCoverageManagerStates(unittest.TestCase):
         self.assertTrue(latest.can_cancel)
         self.assertFalse(latest.can_start)
 
+    def test_a_restart_waits_for_the_new_sensor_endpoint(self):
+        """Do not start on the previous endpoint's still-fresh cached pose."""
+        self._reach_executing(61)
+        self.assertTrue(self._call(self.cancel_client).success)
+        self._wait_until(
+            lambda s: s.state == CoverageStatus.FINISHED, 'the cancel to land')
+        connected = self.odom_publisher
+        unmatched = self.node.create_publisher(
+            Odometry, '/test/unmatched_odometry', 10)
+        self.odom_publisher = unmatched
+
+        def restore_input():
+            # Longer than the unchanged 2 s watchdog. Merely publishing to
+            # an unmatched endpoint cannot renew the tracker's cached pose.
+            time.sleep(3.0)
+            self.odom_publisher = connected
+
+        reconnect = Thread(target=restore_input)
+        reconnect.start()
+        try:
+            self._reach_executing(62)
+            self._observe_with_fresh_odometry(2.2)
+            self.assertEqual(self._latest().state, CoverageStatus.EXECUTING)
+            self.assertEqual(self._latest().revision, 62)
+        finally:
+            reconnect.join()
+            self.odom_publisher = connected
+            self.node.destroy_publisher(unmatched)
+
     def test_clearing_points_during_a_run_keeps_the_stop_button(self):
         """Clearing only drops the preview; the run still has to be stoppable."""
         self._reach_executing(31)
         self.task_publisher.publish(_cleared_task(32))
-        time.sleep(0.8)
+        # Observe beyond the 2 s watchdog without simulating sensor loss.
+        self._observe_with_fresh_odometry(2.2)
         latest = self._latest()
         self.assertEqual(
             latest.state, CoverageStatus.EXECUTING,

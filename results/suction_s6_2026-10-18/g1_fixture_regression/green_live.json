@@ -1,0 +1,42 @@
+{
+  "source_revision": "eaa71b752089970ad552c730727a03aeaa5404bc",
+  "g1_checks": 24,
+  "all_g1_checks_passed": true,
+  "obstruction_metrics": {
+    "checks": {
+      "effective_roi_has_no_modelled_obstruction": true
+    },
+    "minimum_brightest_channel": 147,
+    "minimum_brightest_channel_after_one_pixel_edge_allowance": 247,
+    "pixel_count": 1607052,
+    "raw_unknown_pixel_count": 2119,
+    "rectified_inset_roi_xyxy_px": [
+      107,
+      69,
+      1812,
+      1010
+    ],
+    "unknown_after_one_pixel_edge_allowance": 0,
+    "unknown_ratio": 0.0
+  },
+  "gui_visual_review": {
+    "actual_native_window": true,
+    "body_uses_legacy_orange_palette": true,
+    "camera_uses_legacy_blue_palette": true,
+    "image_has_complete_grid_and_three_markers": true,
+    "sha256": {
+      "observation/gui.png": "62693a8f5c6a6926ec6598568a95812edd90d9dae845a72b67639837091bc125",
+      "frame.png": "4934946a612f02b04302b48c2115d9d75055911f3267823b1a0094e9cb0a0edc"
+    }
+  },
+  "prior_failures": [
+    "g1_camera_initial_failure/summary.json",
+    "g1_camera_emission_failure/summary.json"
+  ],
+  "red_unit_log": "climbot_s6_g1_brightness_red_20261018.log",
+  "green_unit_log": "climbot_s6_g1_brightness_green_20261018.log",
+  "red_unit_summary": "1 failed, 4 passed",
+  "green_unit_summary": "5 passed",
+  "brightness_threshold_unchanged": 150,
+  "one_pixel_brightness_rule_is_an_implementation_correction": true
+}

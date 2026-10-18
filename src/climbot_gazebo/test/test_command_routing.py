@@ -21,10 +21,13 @@ import signal
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
+
+import pytest
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
-LAUNCH_PATH = PACKAGE_ROOT / 'launch' / 'climbot_wall.launch.py'
+LAUNCH_PATH = PACKAGE_ROOT / 'climbot_gazebo' / 'simulation_stack.py'
 
 
 def _wall_launch_module():
@@ -158,3 +161,139 @@ def test_rendered_launch_assets_are_removed_on_shutdown(tmp_path):
 
     assert not world_path.exists()
     assert not model_root.exists()
+
+
+def _supervisor_module():
+    spec = importlib.util.spec_from_file_location(
+        'supervisor_readiness_test', PACKAGE_ROOT / 'scripts/gz_sim_supervisor.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _transport(monkeypatch, on_subscribe):
+    removed = []
+
+    class Node:
+        def subscribe(self, kind, topic, callback):
+            on_subscribe(callback)
+            return True
+
+        def unsubscribe(self, topic):
+            removed.append(topic)
+
+    monkeypatch.setitem(sys.modules, 'gz.transport13', SimpleNamespace(Node=Node))
+    monkeypatch.setitem(sys.modules, 'gz.msgs10.world_stats_pb2',
+                        SimpleNamespace(WorldStatistics=object))
+    monkeypatch.setitem(sys.modules, 'gz.msgs10.pose_pb2', SimpleNamespace(Pose=object))
+    return removed
+
+
+def test_gui_wait_requires_initialized_server_and_unsubscribes(monkeypatch):
+    """Early discovery/iteration messages cannot release GUI initialization."""
+    module = _supervisor_module()
+    supervisor = module.GazeboSupervisor(['unused'], wait_for_render_ready=True)
+    removed = _transport(monkeypatch, lambda callback:
+                         callback(SimpleNamespace(iterations=99)))
+    clock = iter([0., 181.])
+    monkeypatch.setattr(module.time, 'monotonic', lambda: next(clock))
+    with pytest.raises(RuntimeError, match='180s'):
+        supervisor._wait_for_server()
+    assert removed == ['/world/climbot_wall/stats']
+    removed.clear()
+    _transport(monkeypatch, lambda callback:
+               callback(SimpleNamespace(iterations=100)))
+    monkeypatch.setattr(module.time, 'monotonic', lambda: 0.)
+    assert supervisor._wait_for_server()
+
+
+def test_shutdown_while_waiting_never_starts_a_gui_child(monkeypatch):
+    """Closing launch during a stalled server must leave no late GUI process."""
+    module = _supervisor_module()
+    supervisor = module.GazeboSupervisor(['unused'], wait_for_render_ready=True)
+    supervisor._stopping = True
+    removed = _transport(monkeypatch, lambda callback: None)
+    monkeypatch.setattr(module.signal, 'signal', lambda *args: None)
+    monkeypatch.setattr(module.subprocess, 'Popen',
+                        lambda *a, **k: pytest.fail('GUI spawned after shutdown'))
+    assert supervisor.run() == 0
+    assert removed == ['/world/climbot_wall/stats']
+
+
+@pytest.mark.parametrize('failure,rendered,expected_attempts,expected_exit', [
+    ('both_once', False, 2, 0),
+    ('both', False, 3, 250),
+    ('both', True, 1, 250),
+    ('device_only', False, 1, 250),
+    ('unrelated', False, 1, 250),
+])
+def test_gui_recovery_is_bounded_and_only_before_first_frame(
+        monkeypatch, tmp_path, capsys, failure, rendered, expected_attempts, expected_exit):
+    """Real failed children may recover without hiding a rendered-client crash."""
+    module = _supervisor_module()
+    removed = _transport(monkeypatch, lambda callback: callback(object()) if rendered else None)
+    monkeypatch.setattr(module.signal, 'signal', lambda *args: None)
+    attempts = tmp_path / 'attempts'
+    child = f"""
+import os
+from pathlib import Path
+p = Path({str(attempts)!r})
+n = int(p.read_text()) + 1 if p.exists() else 1
+p.write_text(str(n))
+assert os.environ['GALLIUM_DRIVER'] == 'd3d12'
+if {failure!r} == 'both_once' and n > 1:
+    raise SystemExit(0)
+if {failure!r} != 'unrelated':
+    print('D3D12: Removing Device.', flush=True)
+if {failure!r} in ('both_once', 'both'):
+    print('Failed to create OpenGL context for format QSurfaceFormat', flush=True)
+raise SystemExit(250)
+"""
+    supervisor = module.GazeboSupervisor(
+        [sys.executable, '-c', child], dict(os.environ, GALLIUM_DRIVER='d3d12'),
+        gui_startup_retries=2)
+    assert supervisor.run() == expected_exit
+    assert int(attempts.read_text()) == expected_attempts
+    assert removed == ['/gui/camera/pose']
+    output = capsys.readouterr().out
+    assert output.count('retrying unchanged GPU backend') == expected_attempts - 1
+    if failure == 'both_once':
+        assert 'Failed to create OpenGL context' in output
+
+
+@pytest.mark.parametrize('stopping,elapsed', [(False, 31.), (True, 1.)])
+def test_gui_does_not_retry_late_failures_or_shutdown(monkeypatch, stopping, elapsed):
+    """The recovery window cannot cover steady operation or requested shutdown."""
+    module = _supervisor_module()
+    removed = _transport(monkeypatch, lambda callback: None)
+    monkeypatch.setattr(module.signal, 'signal', lambda *args: None)
+    clock = iter([0., elapsed])
+    monkeypatch.setattr(module.time, 'monotonic', lambda: next(clock))
+    supervisor = module.GazeboSupervisor(['unused'], gui_startup_retries=2)
+    calls = []
+
+    def child():
+        calls.append(True)
+        supervisor._child = SimpleNamespace(returncode=250)
+        supervisor._stopping = stopping
+        return {'D3D12: Removing Device.', 'Failed to create OpenGL context'}
+
+    monkeypatch.setattr(supervisor, '_run_child', child)
+    assert supervisor.run() == (0 if stopping else 250)
+    assert len(calls) == 1
+    assert removed == ['/gui/camera/pose']
+
+
+def test_rviz_wait_requires_a_rendered_gui_pose_and_releases_subscription(monkeypatch):
+    """Require a rendered GUI rather than only a server or empty window."""
+    path = PACKAGE_ROOT.parents[1] / 'tools/with_mesa_runtime.py'
+    spec = importlib.util.spec_from_file_location('mesa_client_test', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    removed = _transport(monkeypatch, lambda callback: None)
+    with pytest.raises(RuntimeError, match='did not render'):
+        module.wait_for_gazebo_gui(timeout=0.)
+    assert removed == ['/gui/camera/pose']
+    removed = _transport(monkeypatch, lambda callback: callback(object()))
+    module.wait_for_gazebo_gui(timeout=0.)
+    assert removed == ['/gui/camera/pose']

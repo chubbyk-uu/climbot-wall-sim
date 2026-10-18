@@ -1,0 +1,25 @@
+{
+  "maximum_world_vertex_difference_m": 6.680211939169567e-13,
+  "meshes": {
+    "fan_0_link_outlet.obj": 0.0,
+    "fan_0_link_blades.obj": 0.0,
+    "fan_0_link_guard.obj": 0.0,
+    "fan_1_link_outlet.obj": 0.0,
+    "fan_1_link_blades.obj": 0.0,
+    "fan_1_link_guard.obj": 0.0,
+    "fan_2_link_outlet.obj": 0.0,
+    "fan_2_link_blades.obj": 0.0,
+    "fan_2_link_guard.obj": 0.0,
+    "skirt_outward_cloth.obj": 0.0,
+    "camera_housing.obj": 0.0,
+    "right_lamp_housing.obj": 0.0,
+    "left_lamp_housing.obj": 0.0,
+    "camera_main_arm.obj": 5.32018873400375e-13,
+    "left_carry_handle.obj": 6.679934383413411e-13,
+    "left_handle_grip.obj": 3.3199831772634525e-13,
+    "right_carry_handle.obj": 6.679934383413411e-13,
+    "right_handle_grip.obj": 3.3199831772634525e-13,
+    "handle_rear_support.obj": 6.680211939169567e-13,
+    "handle_rear_foot.obj": 1.1102230246251565e-16
+  }
+}

@@ -13,7 +13,9 @@
   还有 `reference_grid.spacing_m`：参考网格线间距，`0` 表示不画。真实墙面上没有
   网格，它是绘图辅助；放在这里是因为 Gazebo 墙面和 RViz 叠加层两个视图都要画它，
   各存一份默认值迟早会变成两套不同的网格；
-- `urdf/climbot.urdf.xacro`：`robot_state_publisher` 使用的 URDF；
+- `config/vacuum_chassis.yaml`：新底盘、圈外轮、圈内球座、密封圈、三风机和双管提手的机械来源；
+- `climbot_description/robot_geometry.py`：load_robot() 默认且只接受 vacuum_chassis，同源生成消费参数；
+- `urdf/sensor_frames.urdf.xacro`：共享 IMU 帧；完整 URDF 与 SDF 由底盘生成器同源输出，旧底盘模板已删除；
 - `include/climbot_description/geometry.hpp`、`src/geometry.cpp`：四元数和角度通用函数；
 - `include/climbot_description/wall_frame.hpp`、`src/wall_frame.cpp`：世界坐标与墙面工作
   坐标转换。**这是唯一实现**，C++ 节点直接链接 `climbot_description_core`；

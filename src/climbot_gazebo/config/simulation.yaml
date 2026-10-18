@@ -61,18 +61,6 @@ simulation:
     lateral_m: 0.0
     height_m: 2.0
 
-  suction:
-    # Sized against sliding, not against peeling. The drive wheels carry 66.7%
-    # of this (measured, results/normal_loads_400N.csv), so their Coulomb limit
-    # is mu * 0.667 * force_n and the static safety factor against a 142 N robot
-    # is force_n / 194. At the old 220 N that factor was 1.13, and turning on
-    # the spot - which shifts load onto the freely rolling caster - pushed the
-    # instantaneous limit below the robot's own weight for part of the heading
-    # circle. 400 N gives 2.06, and 1.81 once a 2 kg camera is fitted. Below
-    # 225 N the slip band comes back and below 215 N the robot falls off the
-    # wall outright: see results/band_variants/ and docs/STATUS.md.
-    force_n: 400.0
-
   drive_wheel:
     mu: 1.1
     # Quoted at nominal_normal_force_n below. WheelSlip only ever uses the
@@ -95,6 +83,8 @@ simulation:
     odom_publish_frequency_hz: 50.0
 
   imu:
+    # Preserve the S6 physical IMU mount when changing the chassis defaults.
+    mount_xyz_m: [-0.11, 0.0, 0.085]
     update_rate_hz: 100.0
     angular_velocity_stddev: 0.0002
     linear_acceleration_stddev: 0.017

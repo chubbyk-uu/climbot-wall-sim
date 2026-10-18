@@ -1,10 +1,10 @@
 # Climbot Sim
 
-基于 ROS 2 Jazzy 与 Gazebo Harmonic 的垂直壁面爬壁机器人仿真。系统保留真实重力，以持续
-法向吸附力贴墙；覆盖规划、直线闭环控制、位置触发采集、离线图像处理和全局墙面拼接均在本仓库
-内完成。控制不依赖 Nav2，拼接算法不读取 Gazebo 真值或墙面纹理。
+基于 ROS 2 Jazzy 与 Gazebo Harmonic 的垂直壁面爬壁机器人仿真。系统保留真实重力，由三个
+固定档位风机对同一底部腔体持续抽气，结合柔性密封圈形成负压贴墙。覆盖规划、直线闭环控制、
+位置触发采集、离线图像处理和全局墙面拼接均在本仓库内完成。控制不依赖 Nav2，拼接算法不读取 Gazebo 真值或墙面纹理。
 
-![Gazebo 中的墙面与机器人](docs/images/gazebo_wall.png)
+![三风机负压底盘在真实纹理墙面上采集](docs/images/gazebo_pressure_chassis.png)
 
 ## 你能做什么
 
@@ -15,7 +15,8 @@
 - 用诊断墙真值和原尺寸 tile 检查拼接的绝对偏差、接缝和缺陷细节。
 
 A～G4、P1 和 P2 的仿真链路均已完成；P2-06 的门限已由三组数据推导、由一组独立数据检验，
-并完成人工全分辨率复核。当前状态与实机边界见 [STATUS](docs/STATUS.md)。
+人工复核范围见 [STATUS](docs/STATUS.md)。三风机平墙＋刚性轮模型已完成 S6／S7 验收并成为默认；
+当前巡航仍为 0.20 m/s，0.30 m/s 提速、起伏墙和柔性轮另行实施。
 
 ## 环境要求
 
@@ -210,7 +211,8 @@ source ~/robot_ws/climbot_sim/install/setup.bash
 
 ### 1. 只看仿真
 
-想先确认机器人、墙面和传感器是否正常，运行：
+默认是新底盘、三风机单腔负压、平墙和刚性轮。风机从环境压启动，压力就绪后自动撤除安装支撑；
+无需传新旧模型开关。想先确认机器人、墙面和传感器是否正常，运行：
 
 ```bash
 ros2 launch climbot_gazebo climbot_wall.launch.py
@@ -249,16 +251,11 @@ launch 参数、`CLIMBOT_DATA_ROOT` 或 `$HOME/climbot_data` 解析出的保存�
 其中包含原始图像、每张图的拍摄位姿、相机标定和 `manifest.json`。想让它停一下再接着跑，按
 **Pause**，恢复按 **Resume**——任务和归档都不会因此结束；确定不跑了才按 **Stop**。
 
-![Gazebo 与 RViz 中同步执行的覆盖任务](docs/images/coverage_run.gif)
+![新默认底盘执行中等范围采集](docs/images/rviz_pressure_capture.png)
 
-左边是 Gazebo，右边是 RViz；机器人正在跑一条梯形区的横向弓字路径，面板同步显示段进度和已保存
-的照片数。
-
-![RViz 中执行覆盖任务](docs/images/rviz_coverage_task.png)
-
-绿色虚线是安全工作区，橙色是选定任务区，蓝线是机器人中心路径，黄色带是相机预测足迹。这张是
-纵向扫描（上面的动图是横向），任务正处于 **Paused**：段进度、任务号和归档 run 都还在，Resume
-会从当前位姿继续同一段。
+图中是新底盘实际运行的 3×2 m 任务：5 条扫描线、70 张照片。RViz 同时显示墙面、参考网格、
+绿色安全边界、扫描路径和实时相机；Gazebo 右下角显示瞬时 RTF。正式性能要求是在两个 GUI
+同时打开并正常采集时，完整任务平均实时率 ≥0.95，本次实测 0.98845。
 
 改成纵向扫描：
 
@@ -342,7 +339,7 @@ ros2 run climbot_mosaic build_wall_mosaic \
 ```
 
 上面的命令是本项目 CUDA 开发机的标准拼接测试方式；运行后应检查
-`mosaic_manifest.json` 中 `execution.backend.effective` 为 `cuda`。CLI 默认仍是 `--backend cpu`，
+`mosaic_manifest.json` 中 `execution.effective` 为 `cuda`，且 `execution.fallback=false`。CLI 默认仍是 `--backend cpu`，
 因此普通 ROS 2 机器可把最后一个参数改为 `--backend cpu`。`--backend auto` 会在 CUDA 不可用或运行失败时清理
 临时目录并从头改跑 CPU，但不会用回退掩盖输入、哈希或共享磁盘错误。CUDA 只加速第 4 步的
 hard-cut 融合，不改变前面的特征匹配和位姿图。

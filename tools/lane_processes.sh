@@ -24,14 +24,25 @@
 # writes its logs on the way out and a run that ends in KILL -9 throws that
 # away, so this is generous by default; the tests shorten it.
 LANE_TERM_GRACE_S=${LANE_TERM_GRACE_S:-20}
+LANE_INT_GRACE_S=${LANE_INT_GRACE_S:-8}
+LANE_PARTITION_PREFIX=${LANE_PARTITION_PREFIX:-lane}
 
 # Record a process group this lane created, so teardown has something precise
 # to signal. setsid usually execs rather than forks here, but "usually" is not
 # a thing to build a kill on: the group id is read back from the kernel.
 lane_remember() {
-  local lane=$1 pid=$2 pgid mine
-  pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')
+  local lane=$1 pid=$2 pgid mine attempt
   mine=$(ps -o pgid= -p "$BASHPID" 2>/dev/null | tr -d ' ')
+  # The parent resumes after fork before the child necessarily calls setsid.
+  # Wait for the actual session transition, not just for a readable PID.
+  # Never wait for our own process to leave its group: that is caller misuse.
+  for ((attempt=0; attempt<50; attempt++)); do
+    pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')
+    [ -z "$pgid" ] && break
+    [ "$pgid" != "$mine" ] && break
+    [ "$pid" = "$BASHPID" ] && break
+    sleep 0.1
+  done
   if [ -z "$pgid" ]; then
     echo "[lane$lane] could not read a process group for pid $pid" >> "$RUN_DIR/teardown"
     return
@@ -58,16 +69,36 @@ lane_groups_alive() {
   return 1
 }
 
+# A launch root forwards INT to its children itself. Sending INT to the whole
+# group also interrupts those children directly, then launch sends it again
+# while their middleware is already being destroyed. Escalation remains group
+# scoped so uncooperative roots and orphaned descendants cannot escape cleanup.
+lane_signal_group() {
+  local stop_signal=$1 pgid=$2
+  if [ "$stop_signal" = INT ]; then
+    kill -INT -- "$pgid" 2>/dev/null
+  else
+    kill -"$stop_signal" -- "-$pgid" 2>/dev/null
+  fi
+}
+
 lane_teardown() {
-  local lane=$1 pid pgid caught=0 unaccounted=0
+  local lane=$1 pid pgid caught=0 unaccounted=0 stop_signal grace
   local file=$RUN_DIR/lane${lane}.pgids
   if [ -s "$file" ]; then
-    while read -r pgid; do
-      [ -n "$pgid" ] && kill -TERM -- "-$pgid" 2>/dev/null
-    done < "$file"
-    local deadline=$((SECONDS + LANE_TERM_GRACE_S))
-    while [ $SECONDS -lt $deadline ] && lane_groups_alive "$file"; do
-      sleep 1
+    # Let each root forward one orderly INT; group TERM/KILL remains bounded.
+    # GZ's supervisor translates INT to its own safe child shutdown.
+    for stop_signal in INT TERM; do
+      grace=$LANE_TERM_GRACE_S
+      [ "$stop_signal" = INT ] && grace=$LANE_INT_GRACE_S
+      while read -r pgid; do
+        [ -n "$pgid" ] && lane_signal_group "$stop_signal" "$pgid"
+      done < "$file"
+      local deadline=$((SECONDS + grace))
+      while [ $SECONDS -lt $deadline ] && lane_groups_alive "$file"; do
+        sleep 1
+      done
+      lane_groups_alive "$file" || break
     done
     while read -r pgid; do
       [ -n "$pgid" ] || continue
@@ -84,7 +115,7 @@ lane_teardown() {
   for pid in $(ls /proc 2>/dev/null | grep -E '^[0-9]+$'); do
     [ "$pid" = "$BASHPID" ] && continue
     if cat "/proc/$pid/environ" 2>/dev/null | tr '\0' '\n' |
-       grep -qx "GZ_PARTITION=lane${lane}"; then
+       grep -qx "GZ_PARTITION=${LANE_PARTITION_PREFIX}${lane}"; then
       caught=1
       # The ros2 daemon is expected here and is not a leak of this script's
       # making: `ros2 topic list` starts it, it daemonizes itself into its own
@@ -110,7 +141,7 @@ lane_teardown() {
     for pid in $(ls /proc 2>/dev/null | grep -E '^[0-9]+$'); do
       [ "$pid" = "$BASHPID" ] && continue
       if cat "/proc/$pid/environ" 2>/dev/null | tr '\0' '\n' |
-         grep -qx "GZ_PARTITION=lane${lane}"; then
+         grep -qx "GZ_PARTITION=${LANE_PARTITION_PREFIX}${lane}"; then
         echo "[lane$lane] pid $pid outlived its process group; killed" >> "$RUN_DIR/teardown"
         kill -KILL "$pid" 2>/dev/null
       fi

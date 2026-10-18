@@ -9,6 +9,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  ament_add_pytest_test(test_geometry_consumers test/test_geometry_consumers.py)
   # This package owns no node and nothing depends on it, so it is the only
   # place a test may read across every package without creating an edge.
   ament_add_pytest_test(

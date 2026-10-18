@@ -18,6 +18,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 
 
 VERSION = '25.2.8'
@@ -25,7 +26,20 @@ GALLIUM = f'libgallium-{VERSION}.so'
 SNAPSHOT = 'CLIMBOT_MESA_ORIGINAL_ENV'
 KEYS = ('LD_LIBRARY_PATH', 'LD_PRELOAD', 'LIBGL_DRIVERS_PATH',
         'GBM_BACKENDS_PATH', '__EGL_VENDOR_LIBRARY_FILENAMES',
-        '__GLX_VENDOR_LIBRARY_NAME')
+        '__GLX_VENDOR_LIBRARY_NAME', 'GLIBC_TUNABLES')
+
+
+def copy_tunables(value):
+    """Avoid glibc REP MOVSB on WSL D3D12 upload mappings; preserve other tuning."""
+    entries, caps = [], []
+    for entry in value.split(':'):
+        if entry.startswith('glibc.cpu.hwcaps='):
+            caps.extend(cap for cap in entry.split('=', 1)[1].split(',')
+                        if cap and cap.lstrip('-') not in ('ERMS', 'FSRM'))
+        elif entry:
+            entries.append(entry)
+    entries.append('glibc.cpu.hwcaps=' + ','.join([*caps, '-ERMS', '-FSRM']))
+    return ':'.join(entries)
 
 
 def default_prefix(environ=None):
@@ -86,7 +100,8 @@ def environment(mode, prefix, inherited):
     saved = env.pop(SNAPSHOT, None)
     if saved is not None:
         original = json.loads(saved)
-        if set(original) != set(KEYS):
+        # Accept snapshots made before copy tuning was introduced.
+        if set(original) not in (set(KEYS), set(KEYS) - {'GLIBC_TUNABLES'}):
             raise ValueError('Invalid inherited Mesa environment snapshot')
         for key, value in original.items():
             if value is None:
@@ -111,4 +126,34 @@ def environment(mode, prefix, inherited):
     env['__EGL_VENDOR_LIBRARY_FILENAMES'] = str(
         Path(identity['prefix']) / 'share/glvnd/egl_vendor.d/50_mesa.json')
     env['__GLX_VENDOR_LIBRARY_NAME'] = 'mesa'
+    # WSL upload buffers are very slow under REP MOVSB. Keep original assets
+    # and pixels; select the vector copy path only for this private runtime.
+    copy_mode = env.get('CLIMBOT_MEMCPY_MODE', 'auto')
+    if copy_mode not in ('auto', 'default'):
+        raise ValueError('CLIMBOT_MEMCPY_MODE must be auto or default')
+    if (copy_mode == 'auto' and platform.machine() == 'x86_64' and
+            'microsoft' in Path('/proc/version').read_text().lower()):
+        env['GLIBC_TUNABLES'] = copy_tunables(env.get('GLIBC_TUNABLES', ''))
     return env
+
+
+def rendering_environment(backend='auto', mode='private', inherited=None):
+    """Resolve the shared runtime for new Gazebo entries and native probes."""
+    original = os.environ if inherited is None else inherited
+    if backend == 'auto':
+        backend = 'wsl_d3d12' if 'microsoft' in Path('/proc/version').read_text().lower() \
+            else 'native'
+    if backend not in ('wsl_d3d12', 'software', 'native'):
+        raise ValueError('invalid rendering backend')
+    if mode not in ('private', 'system'):
+        raise ValueError('mesa must be private or system')
+    prefix = default_prefix(original)
+    env = environment(mode if backend == 'wsl_d3d12' else 'system', prefix, original)
+    identity = validate(prefix) if backend == 'wsl_d3d12' and mode == 'private' else None
+    if backend == 'wsl_d3d12':
+        env.update(GALLIUM_DRIVER='d3d12', MESA_D3D12_DEFAULT_ADAPTER_NAME='NVIDIA')
+    elif backend == 'software':
+        env['GALLIUM_DRIVER'] = 'llvmpipe'
+        env.pop('MESA_D3D12_DEFAULT_ADAPTER_NAME', None)
+    return env, {'backend': backend, 'mesa': mode if backend == 'wsl_d3d12' else 'system',
+                 'gallium_sha256': identity['gallium_sha256'] if identity else None}

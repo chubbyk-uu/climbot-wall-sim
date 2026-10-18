@@ -1,0 +1,14 @@
+{
+  "checks": {
+    "model.sdf_nonvisual_equal": true,
+    "robot.urdf_nonvisual_equal": true,
+    "main_rail_mesh_unchanged": true,
+    "handle_lowered_20mm": true,
+    "tube_centres_80mm_apart": true,
+    "tail_remains_slanted_through_lower_end": true
+  },
+  "handle_drop_m": 0.019999999999988492,
+  "tube_centre_spacing_m": 0.08000000000000002,
+  "mass_kg": 14.869704049819479,
+  "scope": "Visual-only revision; handle mass/inertia and fan-flow obstruction are not modeled by this change."
+}

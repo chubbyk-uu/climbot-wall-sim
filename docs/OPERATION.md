@@ -45,6 +45,30 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
 `sweep_direction` 覆盖配置里的对应项；可用的演示配置见
 [climbot_coverage README](../src/climbot_coverage/README.md)。
 
+### 固定压差与压力故障诊断
+
+正常入口已默认新底盘＋vacuum，见根 README。需要同插件 B 对照时才显式传入：
+
+```bash
+ros2 launch climbot_bringup coverage_mission.launch.py \
+  adhesion_mode:=fixed_pressure input_mode:=parameters
+```
+
+vacuum 与 fixed_pressure 共享几何、裙边、传感器和施力点，仅压力源不同。
+`auto` 等价于 vacuum；旧 `legacy` 几何和 `legacy_constant` 模式已删除，不会静默回退。
+旧 A/B0 对照从冻结 Git 版本（如 `cb3fbda`）复现，不向当前运行链重新引入旧底盘。
+
+压力观测和三机／传感器故障 topic 见 [INTERFACES](INTERFACES.md#吸附与压力接口)。
+C 从环境压启动，压力就绪后撤安装支撑；失败后不会自动转为理想恒力。
+默认已通过 [S6](../results/suction_s6_2026-10-18/REPORT.md) 与
+[S7](../results/suction_s7_2026-10-18/REPORT.md)。Gazebo 和 RViz 双开、正常采集完整任务
+平均 RTF ≥0.95；右下角显示的是瞬时 RTF，不能用单次截图替代完整任务统计。
+
+控制回归默认已选新底盘，GUI 使用 `COVERAGE_HEADLESS=false`、`COVERAGE_RVIZ=true` 和 `-j 1`；
+采集工具使用 `G2_HEADLESS=false G2_RVIZ=true`。完整输出写 /tmp，各组独立记录原生时钟、
+窗口、Mesa 映射和 TF。world reset 或 RViz Reset 后，可视化缓存约 1 s 内自动恢复，
+不触发重规划或重新发布执行任务；正在执行时不进行 world reset。
+
 ### P2-06 近绿框诊断采集
 
 先从仓库根目录运行一次采集前预检；它按真实离散触发合同检查横、竖任务的**联合**覆盖，
@@ -139,6 +163,35 @@ G4 对高帧数任务采用每 32 张一次的耐久提交，避免逐图 `fsync
 
 ## 覆盖回归与定位对照
 
+### 负压专项的旧模型基线与静力诊断
+
+在已经按根 README 加载 ROS 和工作区环境的终端中执行。先提交 `src/` 与 `tools/` 的修改，
+选择未被其他仿真实例使用的 ROS 域号；输出目录必须不存在，不覆盖历史批次：
+
+```bash
+bash tools/run_suction_baseline.sh results/suction_A_<tag> 187
+python3 tools/screen_suction_layouts.py \
+  --baseline results/suction_A_<tag>/baseline_summary.json \
+  --observations results/suction_A_<tag>/a_loads_summary.json \
+  --output-dir results/suction_A_<tag>/static_screening
+```
+
+第一条冻结旧输入并与 `c2acf17` 和安装区比较，自动创建独立 Gazebo partition／进程组，
+复测 34 个 A 组轮压工况，清理后写 `run_summary.json`。返回非零时保留失败批次、查 `/tmp`
+下分离的模拟器／测量日志；`cleanup_passed`、实际测量退出码和原有测量器 `passed` 分别核对。
+日志路径与命令摘要在结果中留存，不把完整调试日志提交到仓库。
+
+第二条仅按冻结的**旧质量／重心**扫描压力中心和球位，输出 1° 全航向及极值附近 0.1°
+采样。包含静态偏航，分别报告按法向比例分配的需求和摩擦圆可行域下限，不计裙边或动态。
+不能将其输出命名为新结构 `F_design`，也不能把可行域下限当作真实接触分配已验证。
+旧几何删除后需从保存该基线工具及 legacy 描述的 Git 版本复现，不重新引入第二套活动模型。
+
+合同见 [SUCTION_CONTRACT](SUCTION_CONTRACT.md)，正式批次入口见
+[结果索引](../results/README.md)。原有轮压测量器只保存事件统计，未留逐步原始接触时序；
+这批结果不能替代新模型对缺失采样、启动撤架和短时失载的时序验收。
+
+### 既有覆盖与定位入口
+
 ```bash
 tools/run_coverage_regression.sh -t <tag> -j 4
 
@@ -185,7 +238,7 @@ ros2 run climbot_mosaic summarize_archive_content \
 [`climbot_mosaic`](../src/climbot_mosaic/README.md) 的 README 及 `--help` 为准。
 
 本项目 CUDA 开发机上的完整拼接、性能和验收运行，`build_wall_mosaic` 必须显式传
-`--backend cuda`，结束后核对 `mosaic_manifest.json` 的 `execution.backend.effective` 为 `cuda`。
+`--backend cuda`，结束后核对 `mosaic_manifest.json` 的 `execution.effective` 为 `cuda` 且 `execution.fallback=false`。
 不要用 `auto` 生成 GPU 性能或验收证据；它可能按设计回退 CPU。CPU 只用于明确的基线或 A/B。
 
 ## 诊断墙后验检查

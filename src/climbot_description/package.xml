@@ -13,6 +13,7 @@
   <depend>yaml-cpp</depend>
   <test_depend>ament_cmake_gtest</test_depend>
   <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
   <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_cmake_pytest</test_depend>

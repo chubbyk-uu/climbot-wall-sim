@@ -1,0 +1,29 @@
+{
+  "scope": "Fan visual component experiment only; Goal paused, S6 not closed.",
+  "source_head": "1bb48c143d5ffeb99d56dbf3f0c1d4ee509c9159",
+  "source_dirty": true,
+  "source_sha256": {
+    "src/climbot_gazebo/CMakeLists.txt": "55152c228a73130882f6b2c0c106f79b1010be6d36176e68b8c5e7b5f1244196",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "a0a3c4bd88ce95b06a8d0dbdab9537f507c2e7a7f449055e1b93b7d496e12705",
+    "src/climbot_gazebo/launch/climbot_vacuum_stack.launch.py": "f7f78478a1b9f2cd52438756d65007b0e6b0cbd2c17b90d5983ee6341a4cbaae",
+    "src/climbot_gazebo/package.xml": "b3c0a14a45bdbc7770354e57171940bb85e40acc47f5830a818a0abe0be74e02",
+    "tools/vacuum_preview.py": "6134d6d5e9dbb545118b9fa07a868b8528f3930414dd8240c7dd0e5fc1e6d827",
+    "tools/vacuum_visuals.py": "aaaaf57ffdac6d16106daee1b3b51f06f65dd4baa7f567f6f01d19a54e478b20",
+    "src/climbot_gazebo/gui/ClimbotFanVisuals.qml": "da115185a05ba406e1f620b503ea2c7c96574898a522d7c793fe3f3707e69b1d",
+    "src/climbot_gazebo/gui/ClimbotFanVisuals.qrc": "30a7090a4c153f091607aacbfc5111f2d4f599be5f1d6310500f4f41fdb91a19",
+    "src/climbot_gazebo/include/climbot_gazebo/fan_visuals_gui.hpp": "b45550df038266928c9eefa80a1b9e01d4ed7a7fedd3f41dfa62120a811d190e",
+    "src/climbot_gazebo/src/fan_visuals_gui.cpp": "ea8ad54b1eb57c026cbc6466c60386529ea4c32aeeb747019dc2eda7c8b4fdda"
+  },
+  "final_build_exit": 0,
+  "final_build_log": "/tmp/climbot_fan_animation_final_build_20261018.log",
+  "parallel_workers": 8,
+  "final_test_exit": 0,
+  "final_summary": "Summary: 1678 tests, 0 errors, 0 failures, 83 skipped",
+  "final_suite_log": "/tmp/climbot_fan_animation_final_suite_20261018.log",
+  "final_result_log": "/tmp/climbot_fan_animation_final_result_20261018.log",
+  "initial_suite_exit": 1,
+  "initial_failure_boundary": "Only I101 import order and uncrustify continuation indentation; corrected before final rebuild and complete -j8 rerun.",
+  "initial_suite_log": "/tmp/climbot_fan_animation_full_suite_20261018.log",
+  "nonvisual_invariance_and_actual_gui_trial": "summary.json",
+  "worktree_not_committed": true
+}

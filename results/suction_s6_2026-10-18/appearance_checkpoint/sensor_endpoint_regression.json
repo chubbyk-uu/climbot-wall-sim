@@ -1,0 +1,20 @@
+{
+  "red": {
+    "tests": 7,
+    "failures": 1,
+    "log": "/tmp/climbot_sensor_endpoint_red_20261018.log",
+    "xml_sha256": "ae47b02d0a46be553174aaf5faa918a704d181e90b44bcdae0862731da65d0af"
+  },
+  "green": {
+    "tests": 7,
+    "failures": 0,
+    "log": "/tmp/climbot_sensor_endpoint_green_20261018.log",
+    "xml_sha256": "0b602cc61a87c46c81df7eb9649ad87772d3c7b86b642e4228577e4933532e3f"
+  },
+  "controlled_scenario": "Input publisher remains unmatched for 3 s after a previous valid pose; watchdog unchanged at 2 s, observation 2.2 s. Red lacks only the input-match/ack barrier.",
+  "source_file": "src/climbot_control/test/test_coverage_manager_states.py",
+  "source_sha256": "122d5aca5ec180077c63a8bcdbeea1c75d6ce2ed74cd60fcbced5180e5edd1d3",
+  "red_source_sha256": "edc9046e9bc504072d22a1ac7b588791591de73a9d459593ed994a9a715aa836",
+  "original_parallel_failure_log": "/tmp/climbot_appearance_commit_checks_20261018/test.log",
+  "original_failure_boundary": "No new odometry callback was observed in the new case; underlying original discovery event was not sampled, so the controlled reproduction does not prove a unique DDS cause."
+}

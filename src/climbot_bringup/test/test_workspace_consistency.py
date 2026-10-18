@@ -121,7 +121,10 @@ def test_launch_test_domain_ids_are_unique_across_the_workspace():
     """
     owners: dict[int, list[str]] = {}
     for cmake in sorted(_source_root().glob('*/CMakeLists.txt')):
-        for domain in re.findall(r'ROS_DOMAIN_ID=(\d+)', cmake.read_text(encoding='utf-8')):
+        text = cmake.read_text(encoding='utf-8')
+        assert not re.search(r'APPEND_ENV\s+ROS_DOMAIN_ID=', text), (
+            f'{cmake.parent.name}: ROS_DOMAIN_ID must replace the inherited value with ENV')
+        for domain in re.findall(r'ROS_DOMAIN_ID=(\d+)', text):
             owners.setdefault(int(domain), []).append(cmake.parent.name)
     assert owners, 'no ROS_DOMAIN_ID assignments were found to check'
     clashes = {domain: sorted(set(names)) for domain, names in owners.items() if len(names) > 1}

@@ -1,0 +1,169 @@
+{
+  "executed": true,
+  "authorization": "User instruction to clean temporary acquisition data after acceptance; scope recorded in docs/DATA_RETENTION.md before deletion.",
+  "removed": [
+    {
+      "path": "$CLIMBOT_DATA_ROOT/suction_s7_small_20261018",
+      "reason": "Superseded RViz-reset display failure; metadata retained, PNG bytes deleted",
+      "files": 24,
+      "bytes": 8363571,
+      "png_count": 10,
+      "inventory": {
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/manifest.json": {
+          "bytes": 4059,
+          "sha256": "6a9aa0923250f4501834104b343b4a5c5fa91a413268f85c4bae1f665e0c3a65"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000007.json": {
+          "bytes": 1969,
+          "sha256": "a6d60445dfcd41f667bfc25f45b6f3c4745911cb13188f74ab092b39ff65ef82"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000006.json": {
+          "bytes": 1971,
+          "sha256": "19107510f7bf97b9bf3a69b6886263867312f8e0d932b4e4c87334ce2763e880"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000001.json": {
+          "bytes": 1942,
+          "sha256": "cc993483d3edeabb77f95a8d82cf9ddfe0323e7c2503de1215807683dab802b7"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000008.json": {
+          "bytes": 1971,
+          "sha256": "c4a4555e134b0cab291efae7ab4148fc90a267d2ae0485c390d95a31a178356c"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000002.json": {
+          "bytes": 1945,
+          "sha256": "ed5f7121a603ca115e031e6630a1591c5b0a3e324b58a9ba0374fbbb491f19c8"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000000.json": {
+          "bytes": 1939,
+          "sha256": "5a3b2cd7ae7dd70ffc37f32dcc54bec24b3c61211322cd28191cdb96a781ae7d"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000004.json": {
+          "bytes": 1966,
+          "sha256": "717542ee0a9bcd99a8ab786fa63f8c0e9e91f144338cd1c6cc76900eea17bdd2"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000005.json": {
+          "bytes": 1963,
+          "sha256": "886449c50fbb4d669f60eb6299afaefd76ff03ad4b88b5d49cb932850aace72e"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000003.json": {
+          "bytes": 1945,
+          "sha256": "a5b7a0f94596c79726f0209f66ea2e320a4045525ee1c84fb5db6f68be60a331"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000009.json": {
+          "bytes": 1967,
+          "sha256": "9826577871d61ad91f6f5425a01ad5239a97db637476db99de32ee21a7d6b82c"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/calibration/camera_info.yaml": {
+          "bytes": 459,
+          "sha256": "9ad83bc77d4c6c21549de63bd1e70aef8cabca2d2e949051524b71ce2809ba11"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/calibration/camera_extrinsics.yaml": {
+          "bytes": 203,
+          "sha256": "f94bde81bc60bf704e0d514e35b3ab473fe63436f1a1faced43edfb27561b11b"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/calibration/flat_field_reference.json": {
+          "bytes": 25,
+          "sha256": "6168bac2c6c0bd0537b75693e1ca5777aba27653f948929d4f972786f724f05c"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000003.png": {
+          "bytes": 828742,
+          "sha256": "62dfca4f8fbfd7adec2f17329f81af00f2ce7de6add24f095f602168a86a1d3a"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000002.png": {
+          "bytes": 816286,
+          "sha256": "7f43c741629b96024ccac39a215dbd6b190cf92b08c2a215be8d139d406747bb"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000007.png": {
+          "bytes": 814181,
+          "sha256": "88cb57b1c77ef28fc9427307c561a1fb4e96c07b9861db11592b801aa74a95d1"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000004.png": {
+          "bytes": 855899,
+          "sha256": "23b2852f649bc30ef5f9618a8b692feae0feaf92c1eae23699e5a0b2d861dc83"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000005.png": {
+          "bytes": 830541,
+          "sha256": "07a5ffd79fcb473b8628f3edcbac264156e81ba675aee0eac33781700ba939cc"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000009.png": {
+          "bytes": 850296,
+          "sha256": "407d7eb6669c26870902c7909f4e6b4469d3394509cc44614830b8ad3afd3faf"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000008.png": {
+          "bytes": 834472,
+          "sha256": "6ccde6892974fff08df20c327e4fd3642f39e42019540f6988ed0735db0f280e"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000000.png": {
+          "bytes": 856191,
+          "sha256": "5337d47ef74d49c65e2f81a2cad6a339c30cd08dbe0626a55102b5896fbfdb69"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000001.png": {
+          "bytes": 835239,
+          "sha256": "da748b7b064833ccd05fa276506a4c1e4178f283245c57399a555361d31faea3"
+        },
+        "g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/images/raw/000006.png": {
+          "bytes": 817400,
+          "sha256": "0598a7c271a31856dc7a7c79530d37d71aa150eeaa7a2070233d91054c337b22"
+        }
+      }
+    },
+    {
+      "path": "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_feature-work",
+      "reason": "rebuildable offline cache after accepted output",
+      "files": 70,
+      "bytes": 2145554
+    },
+    {
+      "path": "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_cuda-work",
+      "reason": "rebuildable offline cache after accepted output",
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/climbot_s7_frozen_s6_20261018",
+      "reason": "byte-verified archived working duplicate",
+      "files": 25,
+      "bytes": 1249819
+    },
+    {
+      "path": "/tmp/climbot_s7_compare_final_20261018",
+      "reason": "byte-verified archived working duplicate",
+      "files": 24,
+      "bytes": 1247345
+    },
+    {
+      "path": "/tmp/climbot_g2_p5hodY/horizontal/loaded_assets",
+      "reason": "byte-verified archived working duplicate",
+      "files": 24,
+      "bytes": 1477827
+    },
+    {
+      "path": "/tmp/climbot_g2_p5hodY/horizontal/observation/vacuum.jsonl.gz",
+      "reason": "byte-verified archived pressure duplicate",
+      "files": 1,
+      "bytes": 7532716
+    },
+    {
+      "path": "/tmp/climbot_s7_new_20261018",
+      "reason": "superseded intermediate diagnostic, formal summaries retained",
+      "files": 24,
+      "bytes": 1246797
+    },
+    {
+      "path": "/tmp/climbot_g2_oymCH1/horizontal/observation/vacuum.jsonl.gz",
+      "reason": "superseded intermediate diagnostic, formal summaries retained",
+      "files": 1,
+      "bytes": 2188288
+    }
+  ],
+  "removed_logical_bytes": 25451917,
+  "retained": [
+    "70 original final images and exposure metadata",
+    "all S6 evidence and original data",
+    "S7 processed, matches, pose graph, full-resolution mosaics and coverage",
+    "S7 pressure and generated scenes in acceptance_evidence",
+    "calibration and private Mesa"
+  ],
+  "temporary_log_policy": "Stage/debug logs remain only under /tmp, never committed.",
+  "scope_note": "logical byte totals include working duplicates; no claim about physical WSL VHD shrinkage"
+}

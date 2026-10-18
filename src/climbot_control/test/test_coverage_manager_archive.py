@@ -18,6 +18,7 @@ import math
 from threading import Event, Thread
 import time
 import unittest
+from unittest.mock import Mock
 
 from climbot_interfaces.action import ExecuteCoverage
 from climbot_interfaces.msg import CoverageStatus, CoverageTask, InspectionArchiveStatus
@@ -77,6 +78,54 @@ def generate_test_description():
 # was never set for. That is how the cancellable-preflight test below came to
 # fail carrying the failure test's own 'disk preflight failed'.
 FAILING_PREFLIGHT_REVISION = 22
+
+
+def _start_after_dependency_discovery(call, timeout=10.0):
+    """Retry only refusals that have not dispatched preflight or a motion Goal."""
+    deadline = time.monotonic() + timeout
+    last = None
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        last = call(remaining)
+        if last.success:
+            return last
+        if last.message not in (
+                'Coverage executor Action server is unavailable.',
+                'Inspection archive recorder is unavailable.'):
+            raise AssertionError(last.message)
+        time.sleep(.01)
+    raise AssertionError(f'Manager dependency discovery timed out; last={last}')
+
+
+class TestStartDependencyDiscovery(unittest.TestCase):
+    """Exercise the readiness barrier without relying on DDS timing."""
+
+    def test_only_predispatch_discovery_refusals_are_retried(self):
+        """Each manager dependency can appear after the test client's match."""
+        action = StartCoverage.Response(
+            success=False, message='Coverage executor Action server is unavailable.')
+        archive = StartCoverage.Response(
+            success=False, message='Inspection archive recorder is unavailable.')
+        accepted = StartCoverage.Response(success=True, message='accepted')
+        call = Mock(side_effect=[action, archive, accepted])
+        self.assertIs(_start_after_dependency_discovery(call), accepted)
+        self.assertEqual(call.call_count, 3)
+
+    def test_other_refusal_is_never_retried(self):
+        """Busy, task validation or application failures remain failures."""
+        call = Mock(return_value=StartCoverage.Response(success=False, message='busy'))
+        with self.assertRaisesRegex(AssertionError, 'busy'):
+            _start_after_dependency_discovery(call)
+        self.assertEqual(call.call_count, 1)
+
+    def test_deadline_does_not_dispatch_a_request_after_expiry(self):
+        """There is no unbounded start retry loop."""
+        call = Mock()
+        with self.assertRaisesRegex(AssertionError, 'discovery timed out'):
+            _start_after_dependency_discovery(call, timeout=0)
+        call.assert_not_called()
 
 
 def pose(x, y, yaw):
@@ -155,10 +204,9 @@ class TestCoverageManagerArchive(unittest.TestCase):
         # preflight test fail once other launch tests ran before it.
         for client in (self.start, self.cancel, self.pause, self.resume):
             self.assertTrue(client.wait_for_service(timeout_sec=15.0))
-        # The manager service can be discovered before its separate Action
-        # client has discovered the already-running executor. The first test
-        # then receives a legitimate "Action server is unavailable" refusal;
-        # later tests pass only because they inherit that discovery time.
+        # This client's match is not a barrier for the manager's independent
+        # Action / archive clients. Successful starts below additionally wait
+        # for their explicit pre-dispatch readiness refusals to disappear.
         self.assertTrue(self.execute.wait_for_server(timeout_sec=15.0))
 
     def tearDown(self):
@@ -249,6 +297,10 @@ class TestCoverageManagerArchive(unittest.TestCase):
         request.output_root = '/tmp/g4-root'
         return request
 
+    def _start_discovered(self):
+        return _start_after_dependency_discovery(
+            lambda remaining: self._call(self.start, self._start_request(), timeout=remaining))
+
     def test_a_pause_holds_the_archive_open_on_the_same_run(self):
         """A pause is not an ending: nothing is finalized and nothing reopens."""
         self.assertTrue(self.start.wait_for_service(timeout_sec=10.0))
@@ -258,7 +310,8 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 27,
                    'ready preview')
         mark = len(self.statuses)
-        self.assertTrue(self._call(self.start, self._start_request()).success)
+        started = self._start_discovered()
+        self.assertTrue(started.success, started.message)
         self._wait(
             lambda item: item.state == CoverageStatus.EXECUTING and
             item.archive_run_id == 'run-27',
@@ -317,7 +370,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 21,
                    'ready preview')
         mark = len(self.statuses)
-        started = self._call(self.start, self._start_request())
+        started = self._start_discovered()
         self.assertTrue(started.success, started.message)
         preparing = self._wait(
             lambda item: item.state == CoverageStatus.STARTING and
@@ -359,7 +412,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
             lambda item: item.state == CoverageStatus.READY and
             item.revision == FAILING_PREFLIGHT_REVISION, 'ready preview')
         mark = len(self.statuses)
-        self.assertTrue(self._call(self.start, self._start_request()).success)
+        self.assertTrue(self._start_discovered().success)
         failed = self._wait(
             lambda item: item.state == CoverageStatus.READY and
             item.revision == FAILING_PREFLIGHT_REVISION and
@@ -403,7 +456,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 23,
                    'ready preview')
         mark = len(self.statuses)
-        self.assertTrue(self._call(self.start, self._start_request()).success)
+        self.assertTrue(self._start_discovered().success)
         self._wait(lambda item: item.state == CoverageStatus.EXECUTING and item.revision == 23,
                    'archive-backed execution', since=mark)
         self._publish_archive(
@@ -428,7 +481,7 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self._wait(lambda item: item.state == CoverageStatus.READY and item.revision == 25,
                    'ready preview')
         mark = len(self.statuses)
-        self.assertTrue(self._call(self.start, self._start_request()).success)
+        self.assertTrue(self._start_discovered().success)
         self._wait(lambda item: item.state == CoverageStatus.EXECUTING and item.revision == 25,
                    'archive-backed execution', since=mark)
         canceled = self._call(self.cancel, Trigger.Request())

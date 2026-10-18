@@ -16,7 +16,6 @@
 """Capture reproducible Gazebo camera frames from a textured wall manifest."""
 
 import argparse
-import importlib.util
 import json
 import math
 import os
@@ -39,13 +38,8 @@ import yaml
 
 def load_wall_launch():
     """Load render_world from the package launch file without copying it."""
-    share = get_package_share_directory('climbot_gazebo')
-    path = os.path.join(share, 'launch', 'climbot_wall.launch.py')
-    specification = importlib.util.spec_from_file_location(
-        'climbot_wall_launch_for_capture', path)
-    module = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(module)
-    return module
+    from climbot_gazebo import simulation_stack
+    return simulation_stack
 
 
 def camera_fragment(index, work_x, work_y, distance, yaw_error, width, height,

@@ -1,0 +1,445 @@
+{
+  "root": "$CLIMBOT_DATA_ROOT/acceptance_evidence/suction_s7_20261018",
+  "files": [
+    {
+      "file": "vacuum.jsonl.gz",
+      "bytes": 7532716,
+      "sha256": "a4c92663506041c62d01c5edace49dbd7adf9d4b0a22f7b16c542b82aed74591"
+    },
+    {
+      "file": "frozen_s6_expansion/consumer.json",
+      "bytes": 2714,
+      "sha256": "48f830b58d7d1a8af97af1ab0011e17b9b999d3272b978719ef15f59dd96725c"
+    },
+    {
+      "file": "frozen_s6_expansion/model.sdf",
+      "bytes": 134738,
+      "sha256": "ab7d4448a1e8467437fda12717474d906754ba5f169cef674ca086d354800fb4"
+    },
+    {
+      "file": "frozen_s6_expansion/robot.urdf",
+      "bytes": 84964,
+      "sha256": "5d3ac5f25fd17bfc976ac18ab30d3d081ebcffd6685fcdbfcfc8dfdef069eaa4"
+    },
+    {
+      "file": "frozen_s6_expansion/resolved.json",
+      "bytes": 88596,
+      "sha256": "47cf8f6264f29e4e78f668c5858fa2cc83a740fa4b78d53d1e16f445001615b9"
+    },
+    {
+      "file": "frozen_s6_expansion/world.sdf",
+      "bytes": 151677,
+      "sha256": "efd3b33366c28b458fb42f1d61853bd8d4281a1a38b76c4b89ec4bd4ec6ec1ce"
+    },
+    {
+      "file": "loaded_assets/model.sdf",
+      "bytes": 134738,
+      "sha256": "eb3f091c6ec3da0a93e8c33443de4473d2803b11de1dd956aecd5c00bfa2a8d9"
+    },
+    {
+      "file": "loaded_assets/robot.urdf",
+      "bytes": 84964,
+      "sha256": "114aefe98de3bbb7d4031e96791a9d3c5881ff7065663d04dfe93e9d6d581713"
+    },
+    {
+      "file": "loaded_assets/resolved.json",
+      "bytes": 88596,
+      "sha256": "47cf8f6264f29e4e78f668c5858fa2cc83a740fa4b78d53d1e16f445001615b9"
+    },
+    {
+      "file": "loaded_assets/world.sdf",
+      "bytes": 382399,
+      "sha256": "b3e3e4273e2f6eb749945065f7796cd2185ed1b28a36a93067b82b38b103175f"
+    },
+    {
+      "file": "s7_equivalent_expansion/model.sdf",
+      "bytes": 134818,
+      "sha256": "dc71c51124100382f1bbf5bbb698ff1847c579e14b22de6e9008da7c78012aed"
+    },
+    {
+      "file": "s7_equivalent_expansion/robot.urdf",
+      "bytes": 85044,
+      "sha256": "78f435e10792a6c97ec26e57aceea65f55113b1407404dde0e23032f8d9d130e"
+    },
+    {
+      "file": "s7_equivalent_expansion/resolved.json",
+      "bytes": 88596,
+      "sha256": "47cf8f6264f29e4e78f668c5858fa2cc83a740fa4b78d53d1e16f445001615b9"
+    },
+    {
+      "file": "s7_equivalent_expansion/world.sdf",
+      "bytes": 151757,
+      "sha256": "5fb4a0bab83370ca7a4b17052718c737f32281e456e6902b91c82b89b437d046"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_0_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_2_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/skirt_outward_cloth.obj",
+      "bytes": 93221,
+      "sha256": "07b629d4d9b6979af63d8d46bda72d7330feacde85fce4fff8aef1129b30d0cd"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/right_carry_handle.obj",
+      "bytes": 92427,
+      "sha256": "60f89c689297c34f4dc52b8396209b8480529789bf490ed6aa2185b34b11b1d5"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_0_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/right_handle_grip.obj",
+      "bytes": 5698,
+      "sha256": "be791442a34a95f950d402440401944895599e7afade42fb7ad346dcb4f40cd2"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/left_lamp_housing.obj",
+      "bytes": 1473,
+      "sha256": "f866c4856f020f0d48195a3f343895c0d34d826f3ac5bf1928efe24a71ce4972"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/camera_housing.obj",
+      "bytes": 1481,
+      "sha256": "4dc432118f349d42d5c1485964c5d45cbe6e635b67cf99d87762e80976db1eab"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_1_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_1_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_2_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/left_carry_handle.obj",
+      "bytes": 91825,
+      "sha256": "876c80630ab8d23585b47a76230c69113cda97cee0d52f5dc0ec3e3303cdcefd"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_2_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_1_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/fan_0_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/camera_main_arm.obj",
+      "bytes": 80990,
+      "sha256": "71591616561c69cbe414eef0dddcfb2a61669b2659da4c63dc0adcf2c3243c32"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/left_handle_grip.obj",
+      "bytes": 5658,
+      "sha256": "1a068135ec32e77ef5cec66c1e16ca6a5f29c303b359d63094d074490954bb5f"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/right_lamp_housing.obj",
+      "bytes": 1473,
+      "sha256": "f866c4856f020f0d48195a3f343895c0d34d826f3ac5bf1928efe24a71ce4972"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/handle_rear_foot.obj",
+      "bytes": 1481,
+      "sha256": "1111631506eefaa8404f3cf897c5174f3680068c98c8d1fd159d7c601ca7bfa7"
+    },
+    {
+      "file": "frozen_s6_expansion/visual_meshes/handle_rear_support.obj",
+      "bytes": 74566,
+      "sha256": "f6edc483844e4615edaac0c2fe99689e80002f93fe729ee05de14963dd66b25d"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/manifest.json",
+      "bytes": 4059,
+      "sha256": "6a9aa0923250f4501834104b343b4a5c5fa91a413268f85c4bae1f665e0c3a65"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000007.json",
+      "bytes": 1969,
+      "sha256": "a6d60445dfcd41f667bfc25f45b6f3c4745911cb13188f74ab092b39ff65ef82"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000006.json",
+      "bytes": 1971,
+      "sha256": "19107510f7bf97b9bf3a69b6886263867312f8e0d932b4e4c87334ce2763e880"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000001.json",
+      "bytes": 1942,
+      "sha256": "cc993483d3edeabb77f95a8d82cf9ddfe0323e7c2503de1215807683dab802b7"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000008.json",
+      "bytes": 1971,
+      "sha256": "c4a4555e134b0cab291efae7ab4148fc90a267d2ae0485c390d95a31a178356c"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000002.json",
+      "bytes": 1945,
+      "sha256": "ed5f7121a603ca115e031e6630a1591c5b0a3e324b58a9ba0374fbbb491f19c8"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000000.json",
+      "bytes": 1939,
+      "sha256": "5a3b2cd7ae7dd70ffc37f32dcc54bec24b3c61211322cd28191cdb96a781ae7d"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000004.json",
+      "bytes": 1966,
+      "sha256": "717542ee0a9bcd99a8ab786fa63f8c0e9e91f144338cd1c6cc76900eea17bdd2"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000005.json",
+      "bytes": 1963,
+      "sha256": "886449c50fbb4d669f60eb6299afaefd76ff03ad4b88b5d49cb932850aace72e"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000003.json",
+      "bytes": 1945,
+      "sha256": "a5b7a0f94596c79726f0209f66ea2e320a4045525ee1c84fb5db6f68be60a331"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/metadata/000009.json",
+      "bytes": 1967,
+      "sha256": "9826577871d61ad91f6f5425a01ad5239a97db637476db99de32ee21a7d6b82c"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/calibration/camera_info.yaml",
+      "bytes": 459,
+      "sha256": "9ad83bc77d4c6c21549de63bd1e70aef8cabca2d2e949051524b71ce2809ba11"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/calibration/camera_extrinsics.yaml",
+      "bytes": 203,
+      "sha256": "f94bde81bc60bf704e0d514e35b3ab473fe63436f1a1faced43edfb27561b11b"
+    },
+    {
+      "file": "initial_small_metadata/g2-acceptance-horizontal/r000001_20261018T113053Z_15f3b69d838c4a748b7f2b699232837a/calibration/flat_field_reference.json",
+      "bytes": 25,
+      "sha256": "6168bac2c6c0bd0537b75693e1ca5777aba27653f948929d4f972786f724f05c"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_0_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_2_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/skirt_outward_cloth.obj",
+      "bytes": 93221,
+      "sha256": "07b629d4d9b6979af63d8d46bda72d7330feacde85fce4fff8aef1129b30d0cd"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/right_carry_handle.obj",
+      "bytes": 92427,
+      "sha256": "60f89c689297c34f4dc52b8396209b8480529789bf490ed6aa2185b34b11b1d5"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_0_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/right_handle_grip.obj",
+      "bytes": 5698,
+      "sha256": "be791442a34a95f950d402440401944895599e7afade42fb7ad346dcb4f40cd2"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/left_lamp_housing.obj",
+      "bytes": 1473,
+      "sha256": "f866c4856f020f0d48195a3f343895c0d34d826f3ac5bf1928efe24a71ce4972"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/camera_housing.obj",
+      "bytes": 1481,
+      "sha256": "4dc432118f349d42d5c1485964c5d45cbe6e635b67cf99d87762e80976db1eab"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_1_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_1_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_2_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/left_carry_handle.obj",
+      "bytes": 91825,
+      "sha256": "876c80630ab8d23585b47a76230c69113cda97cee0d52f5dc0ec3e3303cdcefd"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_2_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_1_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/fan_0_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/camera_main_arm.obj",
+      "bytes": 80990,
+      "sha256": "71591616561c69cbe414eef0dddcfb2a61669b2659da4c63dc0adcf2c3243c32"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/left_handle_grip.obj",
+      "bytes": 5658,
+      "sha256": "1a068135ec32e77ef5cec66c1e16ca6a5f29c303b359d63094d074490954bb5f"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/right_lamp_housing.obj",
+      "bytes": 1473,
+      "sha256": "f866c4856f020f0d48195a3f343895c0d34d826f3ac5bf1928efe24a71ce4972"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/handle_rear_foot.obj",
+      "bytes": 1481,
+      "sha256": "1111631506eefaa8404f3cf897c5174f3680068c98c8d1fd159d7c601ca7bfa7"
+    },
+    {
+      "file": "loaded_assets/visual_meshes/handle_rear_support.obj",
+      "bytes": 74566,
+      "sha256": "f6edc483844e4615edaac0c2fe99689e80002f93fe729ee05de14963dd66b25d"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_0_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_2_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/skirt_outward_cloth.obj",
+      "bytes": 93221,
+      "sha256": "07b629d4d9b6979af63d8d46bda72d7330feacde85fce4fff8aef1129b30d0cd"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/right_carry_handle.obj",
+      "bytes": 92427,
+      "sha256": "60f89c689297c34f4dc52b8396209b8480529789bf490ed6aa2185b34b11b1d5"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_0_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/right_handle_grip.obj",
+      "bytes": 5698,
+      "sha256": "be791442a34a95f950d402440401944895599e7afade42fb7ad346dcb4f40cd2"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/left_lamp_housing.obj",
+      "bytes": 1473,
+      "sha256": "f866c4856f020f0d48195a3f343895c0d34d826f3ac5bf1928efe24a71ce4972"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/camera_housing.obj",
+      "bytes": 1481,
+      "sha256": "4dc432118f349d42d5c1485964c5d45cbe6e635b67cf99d87762e80976db1eab"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_1_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_1_link_outlet.obj",
+      "bytes": 26338,
+      "sha256": "0cf879752d4f7855abe9bab2df5cf1c759949a7bc5fb8fefe148902d6378b934"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_2_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/left_carry_handle.obj",
+      "bytes": 91825,
+      "sha256": "876c80630ab8d23585b47a76230c69113cda97cee0d52f5dc0ec3e3303cdcefd"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_2_link_blades.obj",
+      "bytes": 1639,
+      "sha256": "42df3277c82d448bfb587226dc29b80d7fadcac1c993c3889540598529ce71c3"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_1_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/fan_0_link_guard.obj",
+      "bytes": 84302,
+      "sha256": "df755408b4675ca9fd693fd07beb3e74e0c5603aa20ddf96b91a9345f4dda8c2"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/camera_main_arm.obj",
+      "bytes": 80990,
+      "sha256": "71591616561c69cbe414eef0dddcfb2a61669b2659da4c63dc0adcf2c3243c32"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/left_handle_grip.obj",
+      "bytes": 5658,
+      "sha256": "1a068135ec32e77ef5cec66c1e16ca6a5f29c303b359d63094d074490954bb5f"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/right_lamp_housing.obj",
+      "bytes": 1473,
+      "sha256": "f866c4856f020f0d48195a3f343895c0d34d826f3ac5bf1928efe24a71ce4972"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/handle_rear_foot.obj",
+      "bytes": 1481,
+      "sha256": "1111631506eefaa8404f3cf897c5174f3680068c98c8d1fd159d7c601ca7bfa7"
+    },
+    {
+      "file": "s7_equivalent_expansion/visual_meshes/handle_rear_support.obj",
+      "bytes": 74566,
+      "sha256": "f6edc483844e4615edaac0c2fe99689e80002f93fe729ee05de14963dd66b25d"
+    }
+  ]
+}

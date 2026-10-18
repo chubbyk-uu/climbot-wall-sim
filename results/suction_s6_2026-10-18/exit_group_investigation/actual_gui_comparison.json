@@ -1,0 +1,24 @@
+{
+  "same_private_mesa_and_model": true,
+  "same_real_gui_and_rviz_launch_commands": true,
+  "term": {
+    "last_sample_s": 25.944266932012397,
+    "live_at_20s": [
+      {
+        "pid": 382654,
+        "ppid": 316,
+        "pgid": 382248,
+        "state": "Sl",
+        "comm": "rviz2"
+      }
+    ],
+    "required_forced_cleanup": true
+  },
+  "int": {
+    "all_known_group_members_gone_s": 0.31779401301173493,
+    "remaining": [],
+    "required_forced_cleanup": false
+  },
+  "passed": true,
+  "scope": "actual untextured startup and orderly-exit diagnostic; not a control or RTF acceptance run"
+}

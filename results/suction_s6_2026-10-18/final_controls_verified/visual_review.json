@@ -1,0 +1,159 @@
+{
+  "passed": true,
+  "cases": {
+    "horizontal_legacy": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "915eaabe2b49af4e2df83b8c5efde712d4f2e85039cff56b7a414c501e569d60",
+        "rviz.png": "9755ba6c158f6cc10ecf766b1d00a7f3b02ec7a58d708892472a093041be1a36"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r6/horizontal_legacy",
+      "source_revision": "9a1cdf675555d031841e586a1714c12e21142a2c"
+    },
+    "horizontal_vacuum_chassis": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "79815ce44f89ea1d462431fb4b3bd604262505b31baca2d20d66d4793805f1d2",
+        "rviz.png": "a8cf98d9136a41fda85b619414b60689698b62e60d2d9df3a17b58ec22413a3c"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r6/horizontal_vacuum_chassis",
+      "source_revision": "9a1cdf675555d031841e586a1714c12e21142a2c"
+    },
+    "vertical_vacuum_chassis": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "74c269d84285d3f610ee231ed4e8103f38ea7f71fe3763631db1b033fca7ea89",
+        "rviz.png": "9bb2266c6383d716283d6a89d95a259a3326ea4239706b67a84e8e14d2e233f8"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r6/vertical_vacuum_chassis",
+      "source_revision": "9a1cdf675555d031841e586a1714c12e21142a2c"
+    },
+    "trapezoid_horizontal_vacuum_chassis": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "8ef04ae4bc9bcd4dff6b99f9e2242d0f3aab452cba6d98c553c6284564bbc09f",
+        "rviz.png": "ed2ba41ca6e830a8947ec320118109c4a9571b29ac60f8d2d1227278f635a9fe"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r7/trapezoid_horizontal_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "trapezoid_vertical_vacuum_chassis": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "cd9ded84e71d137df030b964d7047fbf3b080d1e3fba22ef75d407e0af8630f7",
+        "rviz.png": "5a3255fcffab8366f8eb1682f16b244e23c4cbb4b59359435a371d7893e87a80"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r7/trapezoid_vertical_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "bigH_vacuum_chassis": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "c2edc23157d51a33bb5cd31fe67c762357eb66a8fb14686494413d403e262ce4",
+        "rviz.png": "10300bf715985d08919054b75b2a2f0d5d5a19c1bdb4a1122177c25797786617"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r7/bigH_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "bigTH_vacuum_chassis": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "5636bb5f9e29e701c342a52a0e1b27387b15f5a2bd4ee966dd54047897ace476",
+        "rviz.png": "0cde6a281f123b1b669d317659e5b72f99b1b89db66993aca9778208c3c41c31"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r7/bigTH_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "bigV_vacuum_chassis": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "aea7e3c29a20276fb2f639b6ee8c8d446c1ade0e7d474424923ec0338c711fb7",
+        "rviz.png": "63ed7231f64dc094a25bc31f3f22497c9d05ac4c7577eee046610b7ba7080b80"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r7/bigV_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "bigTV_vacuum_chassis": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_geometry_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_scene_and_task_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "532af6d97c1bef08bbb9dab3e08d837cb6a8d228b242aa61d652bc501b3cbc3e",
+        "rviz.png": "c543934140073a346bf17f7cbf9bd7a382e97c0a8e8a2aea06c98b8d9780610c"
+      },
+      "camera_preview": "No Image expected: control-only task does not trigger capture",
+      "evidence_relative_path": "final_controls_r7/bigTV_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    }
+  },
+  "scope": "Nine original actual GUI/RViz screenshot pairs were opened and reviewed individually. Three R6 complete passing tasks retained with src-byte equality audit; failed R6 trapezoid excluded. Six R7 reviews refer to new complete tasks. This compiler only validates existing manual flags and pixel hashes; it performs no automatic visual acceptance."
+}

@@ -1,0 +1,26 @@
+{
+  "source_revision_before_fix": "7f92e74",
+  "scope": "Deterministic observation-tool regression using a controlled ROS spin/signal schedule; this is not a live simulator or GUI crash.",
+  "red_log_names": [
+    "climbot_s6_observer_shutdown_red_20261018.log",
+    "climbot_s6_observer_shutdown_red2_20261018.log"
+  ],
+  "red_tests": {
+    "requested_stop": false,
+    "unexpected_gui_exit": true
+  },
+  "red_summary": "1 failed, 1 passed",
+  "green_evidence": {
+    "log_name": "climbot_s6_observers_green_final_20261018.log",
+    "summary": "5 passed",
+    "requested_stop": true,
+    "unexpected_gui_exit": true,
+    "source_sha256": {
+      "tools/observe_gui_acceptance.py": "91b1e4f638073337505a90c86ca4482f55d45cbe5a051f29a13c54cb70b23c20",
+      "src/climbot_gazebo/test/test_gui_observer_shutdown.py": "47e5c74dcfc457aeba315ff8ae3d337ddebcd6569371c2a635b5bf6846700b24",
+      "tools/observe_native_stats.py": "08c9fadbbc61812f48e535634c96450c9d26d1c0c440f34c0b62663a11490008",
+      "src/climbot_gazebo/test/test_native_clock_observer.py": "c8382bf3927f83ffc5432a06c0bf49683441428446fada9c7ed2b2fe66fc2042"
+    }
+  },
+  "fix_revision": "045673e2050d25f4d23b7fb7e5070be3aa5573cc"
+}

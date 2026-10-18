@@ -1,0 +1,236 @@
+{
+  "scope": "Gazebo GUI-only fan animation component trial; not S6 movement/capture acceptance.",
+  "display_speed_rev_s_at_normalized_1": 0.6,
+  "physical_rpm_known": false,
+  "rviz_rotor_animation": false,
+  "state_trial": {
+    "running": {
+      "time_s": 76.16,
+      "delta_pa": 8404.442641180882,
+      "fixture_active": 0,
+      "runtime_failed": 0,
+      "fan_speed_0": 0.9999999999998335,
+      "fan_speed_1": 0.9999999999998335,
+      "fan_speed_2": 0.9999999999998335,
+      "fan_enabled_0": 1,
+      "fan_enabled_1": 1,
+      "fan_enabled_2": 1,
+      "fan_failed_0": 0,
+      "fan_failed_1": 0,
+      "fan_failed_2": 0
+    },
+    "fan_0_off": {
+      "time_s": 77.62,
+      "delta_pa": 4177.282985727652,
+      "fixture_active": 0,
+      "runtime_failed": 0,
+      "fan_speed_0": 6.336070607456903e-05,
+      "fan_speed_1": 0.9999999999998335,
+      "fan_speed_2": 0.9999999999998335,
+      "fan_enabled_0": 0,
+      "fan_enabled_1": 1,
+      "fan_enabled_2": 1,
+      "fan_failed_0": 0,
+      "fan_failed_1": 0,
+      "fan_failed_2": 0
+    },
+    "restarted": {
+      "time_s": 81.17,
+      "delta_pa": 8404.072255773295,
+      "fixture_active": 0,
+      "runtime_failed": 0,
+      "fan_speed_0": 0.999935788827338,
+      "fan_speed_1": 0.9999999999998335,
+      "fan_speed_2": 0.9999999999998335,
+      "fan_enabled_0": 1,
+      "fan_enabled_1": 1,
+      "fan_enabled_2": 1,
+      "fan_failed_0": 0,
+      "fan_failed_1": 0,
+      "fan_failed_2": 0
+    },
+    "paused_before": {
+      "time_s": 83.43,
+      "delta_pa": 8404.442641098372,
+      "fixture_active": 0,
+      "runtime_failed": 0,
+      "fan_speed_0": 0.999999999981624,
+      "fan_speed_1": 0.9999999999998335,
+      "fan_speed_2": 0.9999999999998335,
+      "fan_enabled_0": 1,
+      "fan_enabled_1": 1,
+      "fan_enabled_2": 1,
+      "fan_failed_0": 0,
+      "fan_failed_1": 0,
+      "fan_failed_2": 0
+    },
+    "paused_after": {
+      "time_s": 83.43,
+      "delta_pa": 8404.442641098372,
+      "fixture_active": 0,
+      "runtime_failed": 0,
+      "fan_speed_0": 0.999999999981624,
+      "fan_speed_1": 0.9999999999998335,
+      "fan_speed_2": 0.9999999999998335,
+      "fan_enabled_0": 1,
+      "fan_enabled_1": 1,
+      "fan_enabled_2": 1,
+      "fan_failed_0": 0,
+      "fan_failed_1": 0,
+      "fan_failed_2": 0
+    }
+  },
+  "native_static_clock_observation": {
+    "samples": 348,
+    "scored_samples": 150,
+    "warmup_excluded_callback_wall_s": 20.0,
+    "checks": {
+      "samples_after_warmup": true,
+      "all_values_finite": true,
+      "no_pause_after_warmup": true,
+      "source_clocks_monotonic": true,
+      "all_step_sizes_1ms": true
+    },
+    "native_clock_ratio": 1.0000000142085252,
+    "scored_endpoints": [
+      [
+        20.00279280799441,
+        31.195,
+        35.380227341,
+        0.0,
+        false,
+        31195,
+        1.0001990396088822,
+        0.001
+      ],
+      [
+        34.99375401999714,
+        46.186,
+        50.371227128,
+        0.0,
+        false,
+        46186,
+        1.0004612126190173,
+        0.001
+      ]
+    ],
+    "method": "delta sim_time / delta real_time embedded together in Gazebo WorldStatistics; receive times select the warmup window only.",
+    "source_script_sha256": "08c9fadbbc61812f48e535634c96450c9d26d1c0c440f34c0b62663a11490008"
+  },
+  "image_change_threshold_dn": 15,
+  "roi_centres_px": [
+    [
+      285,
+      523
+    ],
+    [
+      405,
+      523
+    ],
+    [
+      526,
+      523
+    ]
+  ],
+  "roi_annulus_radii_px": [
+    13,
+    36
+  ],
+  "compared_frame_indices": [
+    8,
+    13,
+    19
+  ],
+  "changed_pixels_per_roi": {
+    "fans_running": [
+      [
+        514,
+        770
+      ],
+      [
+        1135,
+        1734
+      ],
+      [
+        1134,
+        1867
+      ]
+    ],
+    "fan_0_off": [
+      [
+        638,
+        737
+      ],
+      [
+        1494,
+        1718
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "fans_restarted": [
+      [
+        583,
+        801
+      ],
+      [
+        1358,
+        1788
+      ],
+      [
+        1315,
+        1760
+      ]
+    ],
+    "simulation_paused": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ]
+  },
+  "scope_limits": [
+    "Short static trial only; fan_0 disable also affects real cavity pressure. This is not a fault safety acceptance.",
+    "Original angular velocity is normalized; displayed motion is deliberately slowed for readability.",
+    "Physics, camera sensor rendering and RViz do not use this GUI-local rotation."
+  ],
+  "nonvisual_equal": {
+    "model.sdf": true,
+    "robot.urdf": true
+  },
+  "video_sha256": "afb4ec667dce0865cf2b1d59abf672c37878a70d3cec139f2c0a0abc64cbff45",
+  "build_log": "/tmp/climbot_fan_animation_build_20261018.log",
+  "suite_log": "/tmp/climbot_fan_animation_full_suite_20261018.log",
+  "native_recordings": {
+    "fans_running": {
+      "relative_file": "fans_running.mp4",
+      "bytes": 1150293,
+      "sha256": "afb4ec667dce0865cf2b1d59abf672c37878a70d3cec139f2c0a0abc64cbff45"
+    },
+    "fan_0_off": {
+      "relative_file": "fan_0_off.mp4",
+      "bytes": 508284,
+      "sha256": "3a248e922d28605099e61c25c0c4835332c3831b78078baf4c10b3add49b29be"
+    },
+    "fans_restarted": {
+      "relative_file": "fans_restarted.mp4",
+      "bytes": 603514,
+      "sha256": "486780097d36c6d7528507d368f3fb16fcf3b70bf8bf86e9b71ac09576f14987"
+    },
+    "simulation_paused": {
+      "relative_file": "simulation_paused.mp4",
+      "bytes": 594975,
+      "sha256": "71e8e42126de3eaac46f7bde685d13afa3b6f70ace5a8332084a60ab4e7cd05b"
+    }
+  }
+}

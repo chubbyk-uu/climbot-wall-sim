@@ -59,7 +59,8 @@ NOISE_SOURCES = (
 #: ladder that error is then judged against.
 CONTROL_SOURCES = (
     ('/line_tracker',
-     ('tracking_mode', 'cruise_speed', 'turn_slip_per_degree_m',
+     ('robot_geometry', 'wheel_separation', 'wheel_speed_limit',
+      'wheel_acceleration_limit', 'tracking_mode', 'cruise_speed', 'turn_slip_per_degree_m',
       'arc_entry_finish_offset_m', 'parallel_scan_offset_m',
       'maximum_scan_offset_m')),
 )

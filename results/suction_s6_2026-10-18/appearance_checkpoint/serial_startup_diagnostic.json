@@ -1,0 +1,65 @@
+{
+  "1": {
+    "exit": 0,
+    "summary": {
+      "scope": "diagnostic; all captured views require human image review",
+      "copy_mode": "auto",
+      "started_monotonic": 60493.737381141,
+      "partition": "climbot_serial_startup_20261018_1",
+      "gui_window_seen_s": 8.596104903001105,
+      "server_first_100_iterations_s": 5.110633643002075,
+      "native_image": {
+        "width": 1920,
+        "height": 1080,
+        "step": 5760,
+        "raw_sha256": "d69977c364e8bdfc195844d28e5556ebef2b0c8c9e0509e5c16b5d70a6409f20"
+      },
+      "diagnostic_operations_completed": true,
+      "simulator_exit": 0,
+      "planner_exit": 0,
+      "elapsed_s": 13.469084295000357
+    }
+  },
+  "2": {
+    "exit": 0,
+    "summary": {
+      "scope": "diagnostic; all captured views require human image review",
+      "copy_mode": "auto",
+      "started_monotonic": 60507.272697327,
+      "partition": "climbot_serial_startup_20261018_2",
+      "gui_window_seen_s": 8.586138994003704,
+      "server_first_100_iterations_s": 5.117954279005062,
+      "native_image": {
+        "width": 1920,
+        "height": 1080,
+        "step": 5760,
+        "raw_sha256": "d69977c364e8bdfc195844d28e5556ebef2b0c8c9e0509e5c16b5d70a6409f20"
+      },
+      "diagnostic_operations_completed": true,
+      "simulator_exit": 0,
+      "planner_exit": 0,
+      "elapsed_s": 13.432118276003166
+    }
+  },
+  "3": {
+    "exit": 0,
+    "summary": {
+      "scope": "diagnostic; all captured views require human image review",
+      "copy_mode": "auto",
+      "started_monotonic": 60520.768110974,
+      "partition": "climbot_serial_startup_20261018_3",
+      "gui_window_seen_s": 8.804084709001472,
+      "server_first_100_iterations_s": 5.185889797001437,
+      "native_image": {
+        "width": 1920,
+        "height": 1080,
+        "step": 5760,
+        "raw_sha256": "d69977c364e8bdfc195844d28e5556ebef2b0c8c9e0509e5c16b5d70a6409f20"
+      },
+      "diagnostic_operations_completed": true,
+      "simulator_exit": 0,
+      "planner_exit": 0,
+      "elapsed_s": 13.74937183399743
+    }
+  }
+}

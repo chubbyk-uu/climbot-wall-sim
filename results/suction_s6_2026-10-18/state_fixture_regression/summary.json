@@ -1,0 +1,18 @@
+{
+  "fix_revision": "7d217e662f191e87d91be8bf3aa7de13da23cc3c",
+  "scope": "Real executor and manager with synthetic odometry; product watchdog unchanged at 2 s. Controlled observation duration 2.2 s before and after fix.",
+  "red": {
+    "log_name": "climbot_s6_states_red_20261018.log",
+    "main_tests": 5,
+    "failures": 2,
+    "script_sha256": "394ab7806d90de2452099f683ce73b9dd75738cc793019f54395e4e4c85b3a53"
+  },
+  "green": {
+    "log_name": "climbot_s6_states_green_20261018.log",
+    "main_tests": 5,
+    "failures": 0,
+    "post_shutdown_tests": 1,
+    "source_sha256": "e92ea8fdabc98f31d922cf9f4ac044a96b543e4b10801dba6f87547d4fc61202"
+  },
+  "invariant": "Both EXECUTING/cancel-button assertions remain; fresh sensor input is sustained during the observation rather than raising the timeout."
+}

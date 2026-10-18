@@ -1,0 +1,16 @@
+[
+  {
+    "run": 0,
+    "exit_code": 0,
+    "result_exit": 0,
+    "summary": "Summary: 1555 tests, 0 errors, 0 failures, 74 skipped",
+    "log_name": "climbot_cruise_timestamp_final_regression_0_20261017.log"
+  },
+  {
+    "run": 1,
+    "exit_code": 0,
+    "result_exit": 0,
+    "summary": "Summary: 1555 tests, 0 errors, 0 failures, 74 skipped",
+    "log_name": "climbot_cruise_timestamp_final_regression_1_20261017.log"
+  }
+]

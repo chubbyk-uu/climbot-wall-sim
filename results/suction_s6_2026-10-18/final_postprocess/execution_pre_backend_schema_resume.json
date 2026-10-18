@@ -1,0 +1,190 @@
+{
+  "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b",
+  "driver_sha256": "63320cbc718424f6b855c9cf6c9a669cec2a2520b1981da027161ef6616fc842",
+  "stages": {
+    "content_horizontal": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_content_horizontal_1792320520852328719.log",
+      "offline_elapsed_wall_s": 35.25301618699996,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "summarize_archive_content",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/suction_s6_candidate_dual_gui_20261018_final/vacuum-diagnostic-full-horizontal-025mm-20261018/r000001_20261018T100950Z_73c1949ae71f4b8fb606c5c4c80a395a",
+        "--reference-run",
+        "${CLIMBOT_DATA_ROOT}/suction_s6_legacy_dual_gui_20261018_final/vacuum-diagnostic-full-horizontal-025mm-20261018/r000001_20261018T093156Z_55169a74e3824a84959a0ea030dc1d67",
+        "--output-dir",
+        "${CLIMBOT_DATA_ROOT}/archive-content-suction-s6-final-horizontal-20261018"
+      ]
+    },
+    "processing_horizontal": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_processing_horizontal_1792320556758585244.log",
+      "offline_elapsed_wall_s": 12.407289630000378,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_image_processing",
+        "process_inspection_archive",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/suction_s6_candidate_dual_gui_20261018_final/vacuum-diagnostic-full-horizontal-025mm-20261018/r000001_20261018T100950Z_73c1949ae71f4b8fb606c5c4c80a395a",
+        "--output-dir",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-horizontal-20261018",
+        "--flat-field-file",
+        "${CLIMBOT_DATA_ROOT}/calibration/flat_field_sim_pbr_exp065_20260901.npz",
+        "--denoise",
+        "none",
+        "--jobs",
+        "auto",
+        "--memory-budget-gb",
+        "4"
+      ]
+    },
+    "content_vertical": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_content_vertical_1792320569166309403.log",
+      "offline_elapsed_wall_s": 33.803305309998905,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "summarize_archive_content",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/suction_s6_candidate_dual_gui_20261018_final/vacuum-diagnostic-full-vertical-025mm-20261018/r000001_20261018T102817Z_e8f1b005c22e429fb99813bee9e4184e",
+        "--reference-run",
+        "${CLIMBOT_DATA_ROOT}/suction_s6_legacy_dual_gui_20261018_final/vacuum-diagnostic-full-vertical-025mm-20261018/r000001_20261018T095014Z_51100f9aad5140b8acd0a8eba66a786d",
+        "--output-dir",
+        "${CLIMBOT_DATA_ROOT}/archive-content-suction-s6-final-vertical-20261018"
+      ]
+    },
+    "processing_vertical": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_processing_vertical_1792320603594696499.log",
+      "offline_elapsed_wall_s": 12.251801015998353,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_image_processing",
+        "process_inspection_archive",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/suction_s6_candidate_dual_gui_20261018_final/vacuum-diagnostic-full-vertical-025mm-20261018/r000001_20261018T102817Z_e8f1b005c22e429fb99813bee9e4184e",
+        "--output-dir",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-vertical-20261018",
+        "--flat-field-file",
+        "${CLIMBOT_DATA_ROOT}/calibration/flat_field_sim_pbr_exp065_20260901.npz",
+        "--denoise",
+        "none",
+        "--jobs",
+        "auto",
+        "--memory-budget-gb",
+        "4"
+      ]
+    },
+    "validate_inputs": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_validate_inputs_1792320616489254007.log",
+      "offline_elapsed_wall_s": 15.264428308999413,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "validate_mosaic_inputs",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-horizontal-20261018",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-vertical-20261018"
+      ]
+    },
+    "candidates": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_candidates_1792320631754379969.log",
+      "offline_elapsed_wall_s": 16.686724318000415,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "build_overlap_candidates",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-horizontal-20261018",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-vertical-20261018",
+        "--output-dir",
+        "${CLIMBOT_DATA_ROOT}/mosaic-suction-s6-final-joint-20261018-candidates"
+      ]
+    },
+    "matches": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_matches_1792320648442914821.log",
+      "offline_elapsed_wall_s": 57.01664728999822,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "build_local_matches",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-horizontal-20261018",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-vertical-20261018",
+        "--output-dir",
+        "${CLIMBOT_DATA_ROOT}/mosaic-suction-s6-final-joint-20261018-matches",
+        "--work-dir",
+        "${CLIMBOT_DATA_ROOT}/mosaic-suction-s6-final-joint-20261018-feature-work",
+        "--jobs",
+        "auto"
+      ]
+    },
+    "pose_graph": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_pose_graph_1792320706813671057.log",
+      "offline_elapsed_wall_s": 23.369696013000066,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "build_pose_graph",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-horizontal-20261018",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-vertical-20261018",
+        "--local-matches",
+        "${CLIMBOT_DATA_ROOT}/mosaic-suction-s6-final-joint-20261018-matches/local_matches.json",
+        "--output-dir",
+        "${CLIMBOT_DATA_ROOT}/mosaic-suction-s6-final-joint-20261018-pose-graph"
+      ]
+    },
+    "mosaic_cuda": {
+      "exit_code": 0,
+      "log_name": "climbot_s6_mosaic_cuda_1792320730808375631.log",
+      "offline_elapsed_wall_s": 59.70770663500116,
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "build_wall_mosaic",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-horizontal-20261018",
+        "--input-run",
+        "${CLIMBOT_DATA_ROOT}/processed-suction-s6-final-vertical-20261018",
+        "--pose-graph-dir",
+        "${CLIMBOT_DATA_ROOT}/mosaic-suction-s6-final-joint-20261018-pose-graph",
+        "--output-dir",
+        "${CLIMBOT_DATA_ROOT}/mosaic-suction-s6-final-joint-20261018-cuda",
+        "--work-dir",
+        "${CLIMBOT_DATA_ROOT}/mosaic-suction-s6-final-joint-20261018-cuda-work",
+        "--backend",
+        "cuda",
+        "--resolution-mm-per-pixel",
+        "0.25",
+        "--jobs",
+        "auto",
+        "--memory-budget-gb",
+        "4"
+      ]
+    }
+  },
+  "automated_checks_complete": false,
+  "visual_review_complete": false,
+  "active_stage": "mosaic_cuda"
+}

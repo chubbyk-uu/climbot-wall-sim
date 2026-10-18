@@ -1,0 +1,29 @@
+{
+  "negative_empty": {
+    "inherited_domain": "",
+    "override_argument": "--append-env ROS_DOMAIN_ID=96",
+    "return_code": 1,
+    "observed_domain": ":96",
+    "actual_domain": null,
+    "non_integral_error": true,
+    "log_name": "climbot_s4_domain_negative_empty_20261018.log"
+  },
+  "negative_numeric": {
+    "inherited_domain": "17",
+    "override_argument": "--append-env ROS_DOMAIN_ID=96",
+    "return_code": 0,
+    "observed_domain": "17:96",
+    "actual_domain": "17",
+    "non_integral_error": false,
+    "log_name": "climbot_s4_domain_negative_numeric_20261018.log"
+  },
+  "positive": {
+    "inherited_domain": "17",
+    "override_argument": "--env ROS_DOMAIN_ID=96",
+    "return_code": 0,
+    "observed_domain": "96",
+    "actual_domain": "96",
+    "non_integral_error": false,
+    "log_name": "climbot_s4_domain_positive_20261018.log"
+  }
+}

@@ -26,6 +26,7 @@ import time
 from ament_index_python.packages import get_package_share_directory
 from climbot_description.geometry import quaternion_tuple
 from climbot_description.geometry import yaw_from_quaternion
+from climbot_description.robot_geometry import load_robot
 from climbot_description.wall_frame import WallFrame
 from climbot_gazebo.coverage_metrics import footprint_coverage
 from climbot_gazebo.execution_metrics import count_visible_reversals
@@ -95,6 +96,7 @@ class CoverageExecutionEvaluator(Node):
     #: exact values it was judged against (PROJECT_GUIDE 12 and 14.6).
     PARAMETERS = (
         ('case', 'short_top_trapezoid'),
+        ('robot_geometry', 'vacuum_chassis'),
         ('startup_timeout_s', 10.0),
         ('execution_timeout_s', 120.0),
         ('execution_timeout_wall_factor', 4.0),
@@ -148,7 +150,8 @@ class CoverageExecutionEvaluator(Node):
             get_package_share_directory('climbot_description'),
             'config', 'wall.yaml')
         self.wall = WallFrame.from_yaml(wall_path)
-        self.motion_region_corners = self._reachable_rectangle(wall_path)
+        self.motion_region_corners = self._reachable_rectangle(
+            wall_path, self.get_parameter('robot_geometry').value)
         self.filtered = None
         self.planned_task = None
         self.reference = None
@@ -298,7 +301,7 @@ class CoverageExecutionEvaluator(Node):
         })
 
     @staticmethod
-    def _reachable_rectangle(wall_path):
+    def _reachable_rectangle(wall_path, robot_geometry='vacuum_chassis'):
         """Derive the rectangle the planner would hand out."""
         # This used to be four literals for a 10 x 8 m wall inset by 0.4 m,
         # which was neither the wall nor the planner's margin:
@@ -307,11 +310,7 @@ class CoverageExecutionEvaluator(Node):
         # fail once it reached the tracker.
         with open(wall_path) as handle:
             surface = yaml.safe_load(handle)['wall']['surface']
-        robot_path = os.path.join(
-            get_package_share_directory('climbot_description'),
-            'config', 'robot.yaml')
-        with open(robot_path) as handle:
-            footprint = yaml.safe_load(handle)['robot']['footprint']
+        footprint = load_robot(robot_geometry)['footprint']
         margin = 0.5 * math.hypot(
             float(footprint['length_m']), float(footprint['width_m'])
         ) + float(footprint['edge_clearance_m'])

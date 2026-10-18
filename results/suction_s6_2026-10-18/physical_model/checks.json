@@ -1,0 +1,25 @@
+{
+  "full_suite": {
+    "summary": "1685 tests, 0 errors, 0 failures, 83 skipped",
+    "build_log": "/tmp/climbot_s6_gate2_build_20261018.log",
+    "test_log": "/tmp/climbot_s6_gate2_full_20261018.log",
+    "result_log": "/tmp/climbot_s6_gate2_result_20261018.log"
+  },
+  "first_suite_failure": {
+    "summary": "1685 tests, 0 errors, 2 failures, 83 skipped",
+    "reason": "Contact proxy padded the tangent axis and inflated the planner envelope. Replaced isotropic padding with projected section extent; existing 0.780 x 0.482 m contract passes unchanged.",
+    "log": "/tmp/climbot_s6_gate_full_20261018.log"
+  },
+  "mechanical_tests": {
+    "summary": "48 passed",
+    "log": "/tmp/climbot_s6_support_bounds_tests_20261018.log"
+  },
+  "scope": "This source checkpoint does not close S6; native movement/fault revalidation and final dual-GUI controls/capture/CUDA chain remain.",
+  "legacy_guard_suite": {
+    "summary": "1689 tests, 0 errors, 0 failures, 83 skipped",
+    "test_log": "/tmp/climbot_s6_guard_full_20261018.log",
+    "result_log": "/tmp/climbot_s6_guard_result_20261018.log",
+    "targeted_summary": "46 passed",
+    "targeted_log": "/tmp/climbot_s6_legacy_guard_tests_20261018.log"
+  }
+}

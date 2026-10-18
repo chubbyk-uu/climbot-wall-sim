@@ -1,0 +1,97 @@
+{
+  "horizontal_legacy": {
+    "exit_code": 0,
+    "log_name": "climbot_horizontal_legacy_1792301448988357505.log",
+    "checks": {
+      "evaluator_passed": true,
+      "visible_gui_recorded": true,
+      "visible_rviz_recorded": true,
+      "native_clock_integrity": true,
+      "task_average_rtf_at_least_095": true,
+      "imu_localization_and_joint_streams_present": true,
+      "all_sensor_tf_connected": true,
+      "private_mesa_actual_server_and_gui": true,
+      "candidate_pressure_released_without_failure": true,
+      "no_observation_error": true,
+      "no_cleanup_failure": true
+    },
+    "rtf": 1.0000016838016053,
+    "native_rtf": 0.9999999949281793
+  },
+  "horizontal_vacuum_chassis": {
+    "exit_code": 0,
+    "log_name": "climbot_horizontal_vacuum_chassis_1792301448988357505.log",
+    "checks": {
+      "evaluator_passed": true,
+      "visible_gui_recorded": true,
+      "visible_rviz_recorded": true,
+      "native_clock_integrity": true,
+      "task_average_rtf_at_least_095": true,
+      "imu_localization_and_joint_streams_present": true,
+      "all_sensor_tf_connected": true,
+      "private_mesa_actual_server_and_gui": true,
+      "candidate_pressure_released_without_failure": true,
+      "no_observation_error": true,
+      "no_cleanup_failure": true
+    },
+    "rtf": 0.9998867725625106,
+    "native_rtf": 0.9998869582999389
+  },
+  "vertical_vacuum_chassis": {
+    "exit_code": 0,
+    "log_name": "climbot_vertical_vacuum_chassis_1792301849721972918.log",
+    "checks": {
+      "evaluator_passed": true,
+      "visible_gui_recorded": true,
+      "visible_rviz_recorded": true,
+      "native_clock_integrity": true,
+      "task_average_rtf_at_least_095": true,
+      "imu_localization_and_joint_streams_present": true,
+      "all_sensor_tf_connected": true,
+      "private_mesa_actual_server_and_gui": true,
+      "candidate_pressure_released_without_failure": true,
+      "no_observation_error": true,
+      "no_cleanup_failure": true
+    },
+    "rtf": 0.9998817146052524,
+    "native_rtf": 0.999882155623376
+  },
+  "trapezoid_horizontal_vacuum_chassis": {
+    "exit_code": 0,
+    "log_name": "climbot_trapezoid_horizontal_vacuum_chassis_1792301849721972918.log",
+    "checks": {
+      "evaluator_passed": true,
+      "visible_gui_recorded": true,
+      "visible_rviz_recorded": true,
+      "native_clock_integrity": true,
+      "task_average_rtf_at_least_095": true,
+      "imu_localization_and_joint_streams_present": true,
+      "all_sensor_tf_connected": true,
+      "private_mesa_actual_server_and_gui": true,
+      "candidate_pressure_released_without_failure": true,
+      "no_observation_error": true,
+      "no_cleanup_failure": true
+    },
+    "rtf": 0.9999004363581302,
+    "native_rtf": 0.9999011713200083
+  },
+  "trapezoid_vertical_vacuum_chassis": {
+    "exit_code": 1,
+    "log_name": "climbot_trapezoid_vertical_vacuum_chassis_1792301849721972918.log",
+    "checks": {
+      "evaluator_passed": false,
+      "visible_gui_recorded": false,
+      "visible_rviz_recorded": false,
+      "native_clock_integrity": true,
+      "task_average_rtf_at_least_095": true,
+      "imu_localization_and_joint_streams_present": true,
+      "all_sensor_tf_connected": true,
+      "private_mesa_actual_server_and_gui": false,
+      "candidate_pressure_released_without_failure": true,
+      "no_observation_error": false,
+      "no_cleanup_failure": true
+    },
+    "rtf": null,
+    "native_rtf": 0.999975607790717
+  }
+}

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 jerry. Licensed under the Apache License, Version 2.0.
+     Local control participants use only loopback UDP. RMW's LOCALHOST mode
+     appends a stock SHM transport, so pair this with ROS_LOCALHOST_ONLY=0 and
+     ROS_AUTOMATIC_DISCOVERY_RANGE=SYSTEM_DEFAULT. The explicit locators and
+     interface whitelist retain local-only discovery and data traffic. -->
+<dds xmlns="http://www.eprosima.com">
+  <profiles>
+    <transport_descriptors>
+      <transport_descriptor>
+        <transport_id>climbot_control_loopback_udp</transport_id>
+        <type>UDPv4</type>
+        <interfaceWhiteList><address>127.0.0.1</address></interfaceWhiteList>
+        <maxInitialPeersRange>32</maxInitialPeersRange>
+        <sendBufferSize>1048576</sendBufferSize>
+        <receiveBufferSize>1048576</receiveBufferSize>
+      </transport_descriptor>
+    </transport_descriptors>
+    <participant profile_name="climbot_control_loopback_udp" is_default_profile="true">
+      <rtps>
+        <defaultUnicastLocatorList>
+          <locator><udpv4><address>127.0.0.1</address></udpv4></locator>
+        </defaultUnicastLocatorList>
+        <builtin>
+          <metatrafficUnicastLocatorList>
+            <locator><udpv4><address>127.0.0.1</address></udpv4></locator>
+          </metatrafficUnicastLocatorList>
+          <initialPeersList>
+            <locator><udpv4><address>127.0.0.1</address></udpv4></locator>
+          </initialPeersList>
+        </builtin>
+        <userTransports><transport_id>climbot_control_loopback_udp</transport_id></userTransports>
+        <useBuiltinTransports>false</useBuiltinTransports>
+      </rtps>
+    </participant>
+  </profiles>
+</dds>

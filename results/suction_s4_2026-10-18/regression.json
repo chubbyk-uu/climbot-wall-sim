@@ -1,0 +1,36 @@
+{
+  "revision": "c2ef15cf30436d7daf4661dac5bb0e2a6722809a",
+  "inherited_ROS_DOMAIN_ID": "17",
+  "test_command": "colcon test --executor parallel --parallel-workers 8",
+  "exit_code": 0,
+  "result_exit_code": 0,
+  "summary": "Summary: 1590 tests, 0 errors, 0 failures, 79 skipped",
+  "skips": [
+    {
+      "result": "climbot_inspection/test_results/climbot_inspection/cppcheck.xunit.xml",
+      "count": 2
+    },
+    {
+      "result": "climbot_rviz_plugins/test_results/climbot_rviz_plugins/cppcheck.xunit.xml",
+      "count": 6
+    },
+    {
+      "result": "climbot_description/test_results/climbot_description/cppcheck.xunit.xml",
+      "count": 7
+    },
+    {
+      "result": "climbot_coverage/test_results/climbot_coverage/cppcheck.xunit.xml",
+      "count": 4
+    },
+    {
+      "result": "climbot_control/test_results/climbot_control/cppcheck.xunit.xml",
+      "count": 32
+    },
+    {
+      "result": "climbot_gazebo/test_results/climbot_gazebo/cppcheck.xunit.xml",
+      "count": 28
+    }
+  ],
+  "test_log": "climbot_s4_domain_full_20261018.log",
+  "result_log": "climbot_s4_domain_full_result_20261018.log"
+}

@@ -1,0 +1,1490 @@
+{
+  "audit_script_sha256": "61e1e7c292eed50b248fa0613e8812a53fadf9147de753b0cc390161f86a632c",
+  "native_source_revision": "1cd16ba2d98725cd3ff8b9778728ca6f154ed5ad",
+  "cases": {
+    "straight_000_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 1.9890397134669138,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3703.3474177360767,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "straight_000_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 1.9889533524625758,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3703.2833852198382,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557567498174
+    },
+    "straight_045_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.6610752637746864,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2930.977081391611,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "straight_045_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.6610701147841294,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2930.985263090988,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557542151415
+    },
+    "straight_090_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 3.024332486649079,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3919.2187221260974,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "straight_090_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 3.024379172691163,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3919.3022450239805,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557535206688
+    },
+    "straight_135_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.661075263614591,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2930.977081391611,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "straight_135_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.6610701158365906,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2930.985263092327,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557542169634
+    },
+    "straight_180_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 1.9890397122486445,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3703.3474177360767,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "straight_180_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 1.9889533513233404,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3703.2833852250187,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557567425298
+    },
+    "straight_225_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 3.453548865607637,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 4984.083143040189,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "straight_225_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 3.453508181446035,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 4984.0636882872495,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557585436058
+    },
+    "straight_270_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 3.6008869516538478,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 5354.919850337901,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "straight_270_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 3.600886950823046,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 5354.919850307691,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557593728874
+    },
+    "straight_315_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 3.4535488639794543,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 4984.083143040189,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "straight_315_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 3.4535081797899725,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 4984.063688308583,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557585410097
+    },
+    "turn_000_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.3868436104166983,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2922.6835147483507,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "turn_000_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.386171117295929,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2922.683504014436,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557406496066
+    },
+    "turn_045_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 1.9656801250814713,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2922.6834588689962,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "turn_045_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 1.9656126631867723,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2922.6835005434405,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557387187604
+    },
+    "turn_090_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.393688398661097,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2922.6834868086735,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "turn_090_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.3936884014896784,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2922.683537089222,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557387188477
+    },
+    "turn_135_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.040539835716642,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2864.6848746348405,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "turn_135_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.0405586117006065,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2864.6831670621905,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557387188244
+    },
+    "turn_180_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.5295226900343746,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3621.6855264274636,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "turn_180_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.529499881198786,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3639.717586593615,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557404378364
+    },
+    "turn_225_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.1906037366765836,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 4152.800394199439,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "turn_225_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.1907211509188023,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 4152.898651079013,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557428444496
+    },
+    "turn_270_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.0368101536921475,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2877.976701106527,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "turn_270_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.0368101522810083,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2877.976701055217,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557410075817
+    },
+    "turn_315_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.3673899074595073,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2922.6834169594804,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "turn_315_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 10001,
+      "minimum_native_friction_margin": 2.367409978519951,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2922.6834393111203,
+      "maximum_command_error_mps_rps": 1.1102230246251565e-16,
+      "maximum_head_margin_pa": 5595.557387188273
+    },
+    "mixed_000_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.285665501513093,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3192.7156320080394,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "mixed_000_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.2856652540472098,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3192.7156301074574,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.55745432902
+    },
+    "mixed_045_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.3454935358441302,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3180.1931228028843,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "mixed_045_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.3455008629518606,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3180.2030249961535,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557442048877
+    },
+    "mixed_090_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.2151712754272177,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2935.014436347992,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "mixed_090_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.2152392508889966,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2935.0144470175437,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557439667049
+    },
+    "mixed_135_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.037944075884065,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2832.790006045834,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "mixed_135_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.0379623177251784,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 2832.7950647355465,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557454457936
+    },
+    "mixed_180_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.6945089682335728,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3662.818509596982,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "mixed_180_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.6883713766443824,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3662.733444812213,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.5574719195065
+    },
+    "mixed_225_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.7221034436519385,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 5063.679033169174,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "mixed_225_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 2.722153997920636,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 5063.70480223975,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557495894325
+    },
+    "mixed_270_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 1.625014705560301,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 4068.228747905814,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "mixed_270_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 1.6250147050736945,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 4068.2287514219643,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.55749505385
+    },
+    "mixed_315_fixed_pressure": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 1.999809694754617,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3262.501505064429,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557358836872
+    },
+    "mixed_315_fan_ode": {
+      "frames": 16000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ],
+      "scored_samples": 12001,
+      "minimum_native_friction_margin": 1.9998309322604908,
+      "native_drive_requirement_pass": true,
+      "native_ball_floor_pass": true,
+      "all_fixture_wrench_zero": true,
+      "inverse_rows_same_native_time": true,
+      "raw_inverse_pressure_slack_pa": 3262.49542815506,
+      "maximum_command_error_mps_rps": 0.0,
+      "maximum_head_margin_pa": 5595.557478674098
+    },
+    "bench_r0_a0_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a0_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a0_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a40_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a40_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a40_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a160_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a160_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a160_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a400_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a400_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0_a400_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a0_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a0_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a0_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a40_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a40_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a40_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a160_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a160_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a160_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a400_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a400_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.05_a400_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a0_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a0_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a0_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a40_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a40_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a40_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a160_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a160_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a160_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a400_off1": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a400_off2": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "bench_r0.2_a400_off3": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "free_off1_hold1": {
+      "frames": 7000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "free_off2_hold0.15": {
+      "frames": 7000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "free_off3_hold0.02": {
+      "frames": 7000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "free_off3_hold1": {
+      "frames": 7000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "free_port_pulse": {
+      "frames": 7000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "numeric_0.001": {
+      "frames": 9000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    },
+    "numeric_0.0005": {
+      "frames": 18000,
+      "all_finite": true,
+      "maximum_absolute_pressure_identity_error_pa": 0.0,
+      "all_samples_1_generation": true,
+      "all_loaded_mass_kg": [
+        14.869704049819477,
+        14.869704049819477
+      ]
+    }
+  },
+  "checks": {
+    "straight_000_fixed_pressure/finite_and_pressure_identity": true,
+    "straight_000_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "straight_000_fan_ode/finite_and_pressure_identity": true,
+    "straight_000_fan_ode/raw_phase_contact_and_command_audit": true,
+    "straight_045_fixed_pressure/finite_and_pressure_identity": true,
+    "straight_045_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "straight_045_fan_ode/finite_and_pressure_identity": true,
+    "straight_045_fan_ode/raw_phase_contact_and_command_audit": true,
+    "straight_090_fixed_pressure/finite_and_pressure_identity": true,
+    "straight_090_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "straight_090_fan_ode/finite_and_pressure_identity": true,
+    "straight_090_fan_ode/raw_phase_contact_and_command_audit": true,
+    "straight_135_fixed_pressure/finite_and_pressure_identity": true,
+    "straight_135_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "straight_135_fan_ode/finite_and_pressure_identity": true,
+    "straight_135_fan_ode/raw_phase_contact_and_command_audit": true,
+    "straight_180_fixed_pressure/finite_and_pressure_identity": true,
+    "straight_180_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "straight_180_fan_ode/finite_and_pressure_identity": true,
+    "straight_180_fan_ode/raw_phase_contact_and_command_audit": true,
+    "straight_225_fixed_pressure/finite_and_pressure_identity": true,
+    "straight_225_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "straight_225_fan_ode/finite_and_pressure_identity": true,
+    "straight_225_fan_ode/raw_phase_contact_and_command_audit": true,
+    "straight_270_fixed_pressure/finite_and_pressure_identity": true,
+    "straight_270_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "straight_270_fan_ode/finite_and_pressure_identity": true,
+    "straight_270_fan_ode/raw_phase_contact_and_command_audit": true,
+    "straight_315_fixed_pressure/finite_and_pressure_identity": true,
+    "straight_315_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "straight_315_fan_ode/finite_and_pressure_identity": true,
+    "straight_315_fan_ode/raw_phase_contact_and_command_audit": true,
+    "turn_000_fixed_pressure/finite_and_pressure_identity": true,
+    "turn_000_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "turn_000_fan_ode/finite_and_pressure_identity": true,
+    "turn_000_fan_ode/raw_phase_contact_and_command_audit": true,
+    "turn_045_fixed_pressure/finite_and_pressure_identity": true,
+    "turn_045_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "turn_045_fan_ode/finite_and_pressure_identity": true,
+    "turn_045_fan_ode/raw_phase_contact_and_command_audit": true,
+    "turn_090_fixed_pressure/finite_and_pressure_identity": true,
+    "turn_090_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "turn_090_fan_ode/finite_and_pressure_identity": true,
+    "turn_090_fan_ode/raw_phase_contact_and_command_audit": true,
+    "turn_135_fixed_pressure/finite_and_pressure_identity": true,
+    "turn_135_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "turn_135_fan_ode/finite_and_pressure_identity": true,
+    "turn_135_fan_ode/raw_phase_contact_and_command_audit": true,
+    "turn_180_fixed_pressure/finite_and_pressure_identity": true,
+    "turn_180_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "turn_180_fan_ode/finite_and_pressure_identity": true,
+    "turn_180_fan_ode/raw_phase_contact_and_command_audit": true,
+    "turn_225_fixed_pressure/finite_and_pressure_identity": true,
+    "turn_225_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "turn_225_fan_ode/finite_and_pressure_identity": true,
+    "turn_225_fan_ode/raw_phase_contact_and_command_audit": true,
+    "turn_270_fixed_pressure/finite_and_pressure_identity": true,
+    "turn_270_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "turn_270_fan_ode/finite_and_pressure_identity": true,
+    "turn_270_fan_ode/raw_phase_contact_and_command_audit": true,
+    "turn_315_fixed_pressure/finite_and_pressure_identity": true,
+    "turn_315_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "turn_315_fan_ode/finite_and_pressure_identity": true,
+    "turn_315_fan_ode/raw_phase_contact_and_command_audit": true,
+    "mixed_000_fixed_pressure/finite_and_pressure_identity": true,
+    "mixed_000_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "mixed_000_fan_ode/finite_and_pressure_identity": true,
+    "mixed_000_fan_ode/raw_phase_contact_and_command_audit": true,
+    "mixed_045_fixed_pressure/finite_and_pressure_identity": true,
+    "mixed_045_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "mixed_045_fan_ode/finite_and_pressure_identity": true,
+    "mixed_045_fan_ode/raw_phase_contact_and_command_audit": true,
+    "mixed_090_fixed_pressure/finite_and_pressure_identity": true,
+    "mixed_090_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "mixed_090_fan_ode/finite_and_pressure_identity": true,
+    "mixed_090_fan_ode/raw_phase_contact_and_command_audit": true,
+    "mixed_135_fixed_pressure/finite_and_pressure_identity": true,
+    "mixed_135_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "mixed_135_fan_ode/finite_and_pressure_identity": true,
+    "mixed_135_fan_ode/raw_phase_contact_and_command_audit": true,
+    "mixed_180_fixed_pressure/finite_and_pressure_identity": true,
+    "mixed_180_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "mixed_180_fan_ode/finite_and_pressure_identity": true,
+    "mixed_180_fan_ode/raw_phase_contact_and_command_audit": true,
+    "mixed_225_fixed_pressure/finite_and_pressure_identity": true,
+    "mixed_225_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "mixed_225_fan_ode/finite_and_pressure_identity": true,
+    "mixed_225_fan_ode/raw_phase_contact_and_command_audit": true,
+    "mixed_270_fixed_pressure/finite_and_pressure_identity": true,
+    "mixed_270_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "mixed_270_fan_ode/finite_and_pressure_identity": true,
+    "mixed_270_fan_ode/raw_phase_contact_and_command_audit": true,
+    "mixed_315_fixed_pressure/finite_and_pressure_identity": true,
+    "mixed_315_fixed_pressure/raw_phase_contact_and_command_audit": true,
+    "mixed_315_fan_ode/finite_and_pressure_identity": true,
+    "mixed_315_fan_ode/raw_phase_contact_and_command_audit": true,
+    "bench_r0_a0_off1/finite_and_pressure_identity": true,
+    "bench_r0_a0_off2/finite_and_pressure_identity": true,
+    "bench_r0_a0_off3/finite_and_pressure_identity": true,
+    "bench_r0_a40_off1/finite_and_pressure_identity": true,
+    "bench_r0_a40_off2/finite_and_pressure_identity": true,
+    "bench_r0_a40_off3/finite_and_pressure_identity": true,
+    "bench_r0_a160_off1/finite_and_pressure_identity": true,
+    "bench_r0_a160_off2/finite_and_pressure_identity": true,
+    "bench_r0_a160_off3/finite_and_pressure_identity": true,
+    "bench_r0_a400_off1/finite_and_pressure_identity": true,
+    "bench_r0_a400_off2/finite_and_pressure_identity": true,
+    "bench_r0_a400_off3/finite_and_pressure_identity": true,
+    "bench_r0.05_a0_off1/finite_and_pressure_identity": true,
+    "bench_r0.05_a0_off2/finite_and_pressure_identity": true,
+    "bench_r0.05_a0_off3/finite_and_pressure_identity": true,
+    "bench_r0.05_a40_off1/finite_and_pressure_identity": true,
+    "bench_r0.05_a40_off2/finite_and_pressure_identity": true,
+    "bench_r0.05_a40_off3/finite_and_pressure_identity": true,
+    "bench_r0.05_a160_off1/finite_and_pressure_identity": true,
+    "bench_r0.05_a160_off2/finite_and_pressure_identity": true,
+    "bench_r0.05_a160_off3/finite_and_pressure_identity": true,
+    "bench_r0.05_a400_off1/finite_and_pressure_identity": true,
+    "bench_r0.05_a400_off2/finite_and_pressure_identity": true,
+    "bench_r0.05_a400_off3/finite_and_pressure_identity": true,
+    "bench_r0.2_a0_off1/finite_and_pressure_identity": true,
+    "bench_r0.2_a0_off2/finite_and_pressure_identity": true,
+    "bench_r0.2_a0_off3/finite_and_pressure_identity": true,
+    "bench_r0.2_a40_off1/finite_and_pressure_identity": true,
+    "bench_r0.2_a40_off2/finite_and_pressure_identity": true,
+    "bench_r0.2_a40_off3/finite_and_pressure_identity": true,
+    "bench_r0.2_a160_off1/finite_and_pressure_identity": true,
+    "bench_r0.2_a160_off2/finite_and_pressure_identity": true,
+    "bench_r0.2_a160_off3/finite_and_pressure_identity": true,
+    "bench_r0.2_a400_off1/finite_and_pressure_identity": true,
+    "bench_r0.2_a400_off2/finite_and_pressure_identity": true,
+    "bench_r0.2_a400_off3/finite_and_pressure_identity": true,
+    "free_off1_hold1/finite_and_pressure_identity": true,
+    "free_off2_hold0.15/finite_and_pressure_identity": true,
+    "free_off3_hold0.02/finite_and_pressure_identity": true,
+    "free_off3_hold1/finite_and_pressure_identity": true,
+    "free_port_pulse/finite_and_pressure_identity": true,
+    "numeric_0.001/finite_and_pressure_identity": true,
+    "numeric_0.0005/finite_and_pressure_identity": true
+  },
+  "all_passed": true
+}

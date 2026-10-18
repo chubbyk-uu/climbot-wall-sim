@@ -1,0 +1,82 @@
+{
+  "scope": "Controlled old/new VacuumSystem A/B, same current IO/core/physics and new mechanical budget; not complete impact/chamber validation",
+  "diagnostic_pose": {
+    "time_s": 2.2,
+    "xyz_m": [
+      2,
+      0,
+      2
+    ],
+    "rpy_rad": [
+      0,
+      0,
+      0
+    ]
+  },
+  "red_exit": 1,
+  "green_exit": 0,
+  "red_assertion": "vac_time_s failed to keep up with native sim_time_s after failure",
+  "logs_root": "/tmp/climbot_s6_failure_truth_red_green_v2_20261018",
+  "variants": {
+    "red": {
+      "failure_native_samples": 2601,
+      "fault_transport_messages": 0,
+      "max_fault_state_age_s": 1.5999999999999996,
+      "generation_count": 2,
+      "last_fault_fan_speed": 0.001263750872928098,
+      "reset": {
+        "native_frames": 7000,
+        "paused_frames": 1,
+        "pause_state_equal": true,
+        "pause_pose_equal": true,
+        "pause_boundary_refresh_m": 0,
+        "pause_boundary_refresh_rad": 0,
+        "reset_restored": true,
+        "reset_requested": true,
+        "reset_snapshots": 1,
+        "state_present": true,
+        "last_runtime_failed": true,
+        "last_startup_failed": false,
+        "elapsed_wall_s": 5.790179982
+      }
+    },
+    "green": {
+      "failure_native_samples": 2601,
+      "fault_transport_messages": 260,
+      "max_fault_state_age_s": 0.0,
+      "generation_count": 2,
+      "last_fault_fan_speed": 0.999828941794119,
+      "reset": {
+        "native_frames": 7000,
+        "paused_frames": 1,
+        "pause_state_equal": true,
+        "pause_pose_equal": true,
+        "pause_boundary_refresh_m": 0,
+        "pause_boundary_refresh_rad": 0,
+        "reset_restored": true,
+        "reset_requested": true,
+        "reset_snapshots": 1,
+        "state_present": true,
+        "last_runtime_failed": true,
+        "last_startup_failed": false,
+        "elapsed_wall_s": 5.796120415
+      }
+    }
+  },
+  "artifact_sha256": {
+    "red_vacuum_system.cpp": "2dc045fb0fe2acb95ec223f13dcae9f9d372429163fdfa4323c82dd37090a3b7",
+    "green_test.log": "88190e6a02236dfedbba05dd6ab7aa55943380eb23c2876a9c378f636e7058a7",
+    "red_test.log": "1420a1dc6e6effda3197c57afcc18e262927d28a8705855f868f127e2b63a42d",
+    "green_vacuum_system.cpp": "773d0efd547b5638e5faee6cb781754dc632611608d559cb54a8487f3d93db9b",
+    "green/request.yaml": "a0b3598e2c6a09b3bb908ee90818035117c7a727da023bf958b3714520a7729d",
+    "green/frames.csv.gz": "85957c4bb9c752b0a4b0b4f2c3682be34a5dd17e22de4705987a8e86dc43fc22",
+    "green/resolved.json": "0a98a3cbba59d7fd66496db4233f41d159f48ec844ea4bffba88d9ec5e2131a0",
+    "green/transport_truth.jsonl.gz": "d6a9e40b259732d95d9a313a296140f5da90bf14483dfc842b7febc75b17cc17",
+    "green/run.json": "13c09220bc97c1adc81290fa435f5b0648279eb8ed7e045417d1a768e90aba76",
+    "red/request.yaml": "a0b3598e2c6a09b3bb908ee90818035117c7a727da023bf958b3714520a7729d",
+    "red/frames.csv.gz": "3c877c9c3d913dc9523cd5548ca92f6a9c78f65d20c73c21825b742915b992c3",
+    "red/resolved.json": "0a98a3cbba59d7fd66496db4233f41d159f48ec844ea4bffba88d9ec5e2131a0",
+    "red/transport_truth.jsonl.gz": "81b6093020971480be1347dfeeb4e84fd8e9b8db5e94c80816c504d3da16cddb",
+    "red/run.json": "21ca1d5d578db0cd63b4a0d3f750dc7ddfdb3e3cabbc3c190b02c470a298bd67"
+  }
+}

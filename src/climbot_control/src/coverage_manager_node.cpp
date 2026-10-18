@@ -793,6 +793,9 @@ private:
   {
     response->success = requestStart(
       inspection_default_enabled_, inspection_output_root_, response->message);
+    if (!response->success) {
+      RCLCPP_WARN(get_logger(), "Coverage start refused: %s", response->message.c_str());
+    }
   }
 
   void startConfigured(
@@ -801,6 +804,9 @@ private:
   {
     const auto root = request.output_root.empty() ? inspection_output_root_ : request.output_root;
     response->success = requestStart(request.inspection_enabled, root, response->message);
+    if (!response->success) {
+      RCLCPP_WARN(get_logger(), "Coverage start refused: %s", response->message.c_str());
+    }
     // Archive preparation is intentionally asynchronous: the manager must not
     // block a ROS service callback waiting for another service on the same
     // executor. The resolved run id and directory are published in status as

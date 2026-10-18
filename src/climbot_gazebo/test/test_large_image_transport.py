@@ -27,7 +27,7 @@ import pytest
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
-LAUNCH_PATH = PACKAGE_ROOT / 'launch' / 'climbot_wall.launch.py'
+LAUNCH_PATH = PACKAGE_ROOT / 'climbot_gazebo' / 'simulation_stack.py'
 INSPECTION_LAUNCH_PATH = (
     PACKAGE_ROOT.parent / 'climbot_inspection' / 'launch' /
     'inspection.launch.py')
@@ -55,11 +55,11 @@ def _node_environments(path=LAUNCH_PATH, profile_in_environment=None):
         f'large_image_launch_{path.stem}', str(path))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    context = LaunchContext()
     previous = os.environ.pop(PROFILE_VARIABLE, None)
     if profile_in_environment is not None:
         os.environ[PROFILE_VARIABLE] = profile_in_environment
     try:
+        context = LaunchContext()
         description = module.generate_launch_description()
         for entity in description.entities:
             if isinstance(entity, DeclareLaunchArgument):
@@ -130,7 +130,7 @@ def test_only_the_exposure_hop_pays_for_the_larger_segment():
     environments = _node_environments()
     carrying = {
         name for name, environment in environments.items()
-        if PROFILE_VARIABLE in environment}
+        if environment.get(PROFILE_VARIABLE, '').endswith('fastdds_inspection_image.xml')}
     assert carrying == LARGE_IMAGE_NODES, carrying
     for name in LARGE_IMAGE_NODES:
         assert environments[name][PROFILE_VARIABLE] == str(

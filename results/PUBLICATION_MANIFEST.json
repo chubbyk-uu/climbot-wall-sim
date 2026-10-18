@@ -1,0 +1,1236 @@
+{
+  "unpublished_full_local_revision": "6dbaec3356fc9e042d2fe4197373ae26e97b3a31",
+  "remote_base_revision": "c2acf17db767919bb5f3ece2d3afca98cb318849",
+  "local_backup_branch": "archive/pressure-suction-full-evidence-20261018",
+  "readme_images": [
+    "docs/images/gazebo_pressure_chassis.png",
+    "docs/images/rviz_pressure_capture.png"
+  ],
+  "public_results_reports": 35,
+  "public_results_json": 98,
+  "externalized_document_links": {
+    "docs/DATA_RETENTION.md": [
+      "results/suction_s6_2026-10-18/CLEANUP.json",
+      "results/suction_s6_2026-10-18/failed_capture_cleanup.json"
+    ],
+    "docs/SUCTION_PLAN.md": [
+      "results/suction_s0_2026-10-17/inputs/src/climbot_description/config/robot.yaml",
+      "results/suction_s0_2026-10-17/inputs/src/climbot_gazebo/config/simulation.yaml",
+      "results/suction_s0_2026-10-17/inputs/src/climbot_gazebo/models/climbot/model.sdf.xacro",
+      "results/suction_s0_2026-10-17/inputs/src/climbot_gazebo/worlds/climbot_wall.sdf.xacro"
+    ],
+    "results/suction_retention_2026-10-18/REPORT.md": [
+      "results/suction_retention_2026-10-18/deleted_image_inventory.jsonl.gz",
+      "results/suction_retention_2026-10-18/retained_metadata.json"
+    ],
+    "results/suction_s0_2026-10-17/REPORT.md": [
+      "results/suction_s0_2026-10-17/a_loads.csv",
+      "results/suction_s0_2026-10-17/regression_clock_failure.txt",
+      "results/suction_s0_2026-10-17/regression_discovery_failure.txt",
+      "results/suction_s0_2026-10-17/regression_initial_failure.txt",
+      "results/suction_s0_2026-10-17/static_screening/headings.csv"
+    ],
+    "results/suction_s1_2026-10-17/REPORT.md": [
+      "results/suction_s1_2026-10-17/candidate.sdf",
+      "results/suction_s1_2026-10-17/candidate.urdf",
+      "results/suction_s1_2026-10-17/layout.png",
+      "results/suction_s1_2026-10-17/nominal.json",
+      "results/suction_s1_2026-10-17/per_state_loads.csv",
+      "results/suction_s1_2026-10-17/sensitivity.json",
+      "results/suction_s1_2026-10-17/startup_ready.csv",
+      "results/suction_s1_2026-10-17/static_loads.png"
+    ],
+    "results/suction_s1_rearward_2026-10-17/REPORT.md": [
+      "results/suction_s1_rearward_2026-10-17/layout.png",
+      "results/suction_s1_rearward_2026-10-17/static_loads.png"
+    ],
+    "results/suction_s2_2026-10-17/REPORT.md": [
+      "results/suction_s2_2026-10-17/frozen_physics.yaml",
+      "results/suction_s2_2026-10-17/pressure_and_transition.png"
+    ],
+    "results/suction_s3_2026-10-17/REPORT.md": [
+      "results/suction_s3_2026-10-17/static_loads.png"
+    ],
+    "results/suction_s4_2026-10-18/REPORT.md": [
+      "results/suction_s4_2026-10-18/sensor_and_fans.png"
+    ],
+    "results/suction_s5_2026-10-18/REPORT.md": [
+      "results/suction_s5_2026-10-18/motion_and_failure_boundary.png"
+    ],
+    "results/suction_s6_2026-10-18/APPEARANCE_CHECKPOINT.md": [
+      "results/suction_s6_2026-10-18/appearance_checkpoint/oblique.png",
+      "results/suction_s6_2026-10-18/appearance_checkpoint/side_profile.png",
+      "results/suction_s6_2026-10-18/appearance_checkpoint/top.png",
+      "results/suction_s6_2026-10-18/data_artifact_index.json",
+      "results/suction_s6_2026-10-18/solver_native_motion/summary.json"
+    ],
+    "results/suction_s6_2026-10-18/REPORT.md": [
+      "results/suction_s6_2026-10-18/CLEANUP.json",
+      "results/suction_s6_2026-10-18/data_artifact_index.json",
+      "results/suction_s6_2026-10-18/failed_capture_cleanup.json",
+      "results/suction_s6_2026-10-18/final_input_audit.json"
+    ],
+    "results/suction_s6_2026-10-18/all_fans_off_trial/REPORT.md": [
+      "results/suction_s6_2026-10-18/all_fans_off_trial/after.png",
+      "results/suction_s6_2026-10-18/all_fans_off_trial/all_fans_off.mp4",
+      "results/suction_s6_2026-10-18/all_fans_off_trial/before.png",
+      "results/suction_s6_2026-10-18/all_fans_off_trial/error_excerpt.log",
+      "results/suction_s6_2026-10-18/all_fans_off_trial/reproduce.py"
+    ],
+    "results/suction_s6_2026-10-18/fan_visual_trial/REPORT.md": [
+      "results/suction_s6_2026-10-18/fan_visual_trial/fans_running.mp4"
+    ],
+    "results/suction_s6_2026-10-18/gui_startup_recovery/REPORT.md": [
+      "results/suction_s6_2026-10-18/gui_startup_recovery/failure_extract.txt"
+    ],
+    "results/suction_s6_2026-10-18/physical_motion/REPORT.md": [
+      "results/suction_s6_2026-10-18/data_artifact_index.json",
+      "results/suction_s6_2026-10-18/physical_motion/motion_and_failure_boundary.png",
+      "results/suction_s6_2026-10-18/physical_motion/summary.json"
+    ],
+    "results/suction_s7_2026-10-18/REPORT.md": [
+      "results/suction_s7_2026-10-18/live_capture/rviz.png"
+    ]
+  },
+  "omitted_new_result_files": 4535,
+  "runtime_source_identical": true,
+  "new_or_updated_files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 751
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 3629
+    },
+    {
+      "path": "PROJECT_GUIDE.md",
+      "bytes": 5447
+    },
+    {
+      "path": "README.md",
+      "bytes": 19546
+    },
+    {
+      "path": "docs/ACCEPTANCE.md",
+      "bytes": 34807
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "bytes": 21478
+    },
+    {
+      "path": "docs/DATA_RETENTION.md",
+      "bytes": 10169
+    },
+    {
+      "path": "docs/INCIDENTS.md",
+      "bytes": 45887
+    },
+    {
+      "path": "docs/INTERFACES.md",
+      "bytes": 19846
+    },
+    {
+      "path": "docs/LOCALIZATION_GAP_PLAN.md",
+      "bytes": 4920
+    },
+    {
+      "path": "docs/OPERATION.md",
+      "bytes": 20154
+    },
+    {
+      "path": "docs/README.md",
+      "bytes": 6436
+    },
+    {
+      "path": "docs/STATUS.md",
+      "bytes": 9399
+    },
+    {
+      "path": "docs/SUCTION_CONTRACT.md",
+      "bytes": 10220
+    },
+    {
+      "path": "docs/SUCTION_PLAN.md",
+      "bytes": 68651
+    },
+    {
+      "path": "docs/SUCTION_S1_METHOD.md",
+      "bytes": 8692
+    },
+    {
+      "path": "docs/SUCTION_S2_METHOD.md",
+      "bytes": 8461
+    },
+    {
+      "path": "docs/SUCTION_S3_METHOD.md",
+      "bytes": 7485
+    },
+    {
+      "path": "docs/SUCTION_S5_METHOD.md",
+      "bytes": 6125
+    },
+    {
+      "path": "docs/SUCTION_S6_METHOD.md",
+      "bytes": 14711
+    },
+    {
+      "path": "docs/WALL_TEXTURE_PLAN.md",
+      "bytes": 10309
+    },
+    {
+      "path": "docs/images/gazebo_pressure_chassis.png",
+      "bytes": 704950
+    },
+    {
+      "path": "docs/images/rviz_pressure_capture.png",
+      "bytes": 161640
+    },
+    {
+      "path": "results/README.md",
+      "bytes": 12709
+    },
+    {
+      "path": "results/cruise_timestamp_2026-10-17/REPORT.md",
+      "bytes": 4446
+    },
+    {
+      "path": "results/cruise_timestamp_2026-10-17/red_regression.json",
+      "bytes": 636
+    },
+    {
+      "path": "results/cruise_timestamp_2026-10-17/regression_validation.json",
+      "bytes": 427
+    },
+    {
+      "path": "results/cruise_timestamp_2026-10-17/source_manifest.json",
+      "bytes": 1013
+    },
+    {
+      "path": "results/cruise_timestamp_2026-10-17/validation.json",
+      "bytes": 283
+    },
+    {
+      "path": "results/suction_retention_2026-10-18/PLAN.json",
+      "bytes": 3614
+    },
+    {
+      "path": "results/suction_retention_2026-10-18/REPORT.md",
+      "bytes": 3185
+    },
+    {
+      "path": "results/suction_retention_2026-10-18/RESULT.json",
+      "bytes": 3876
+    },
+    {
+      "path": "results/suction_s0_2026-10-17/REPORT.md",
+      "bytes": 12412
+    },
+    {
+      "path": "results/suction_s0_2026-10-17/a_loads_summary.json",
+      "bytes": 33356
+    },
+    {
+      "path": "results/suction_s0_2026-10-17/baseline_summary.json",
+      "bytes": 7176
+    },
+    {
+      "path": "results/suction_s0_2026-10-17/regression_summary.json",
+      "bytes": 2221
+    },
+    {
+      "path": "results/suction_s0_2026-10-17/regression_validation_summary.json",
+      "bytes": 5761
+    },
+    {
+      "path": "results/suction_s0_2026-10-17/run_summary.json",
+      "bytes": 1517
+    },
+    {
+      "path": "results/suction_s0_2026-10-17/static_screening/screening_summary.json",
+      "bytes": 18715
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/400n_diagnostic.json",
+      "bytes": 43479
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/REPORT.md",
+      "bytes": 14770
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/artifact_manifest.json",
+      "bytes": 1628
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/interior_audit.json",
+      "bytes": 265
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/layout.json",
+      "bytes": 44511
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/motion_profiles.json",
+      "bytes": 22549
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/sensitivity_worst_refined.json",
+      "bytes": 93848
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/summary.json",
+      "bytes": 95189
+    },
+    {
+      "path": "results/suction_s1_2026-10-17/validation.json",
+      "bytes": 1787
+    },
+    {
+      "path": "results/suction_s1_rearward_2026-10-17/REPORT.md",
+      "bytes": 3888
+    },
+    {
+      "path": "results/suction_s1_rearward_2026-10-17/artifact_manifest.json",
+      "bytes": 1539
+    },
+    {
+      "path": "results/suction_s1_rearward_2026-10-17/layout.json",
+      "bytes": 47610
+    },
+    {
+      "path": "results/suction_s1_rearward_2026-10-17/summary.json",
+      "bytes": 95090
+    },
+    {
+      "path": "results/suction_s2_2026-10-17/REPORT.md",
+      "bytes": 11425
+    },
+    {
+      "path": "results/suction_s2_2026-10-17/artifact_manifest.json",
+      "bytes": 8779
+    },
+    {
+      "path": "results/suction_s2_2026-10-17/summary.json",
+      "bytes": 87515
+    },
+    {
+      "path": "results/suction_s2_2026-10-17/validation.json",
+      "bytes": 2846
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/REPORT.md",
+      "bytes": 12158
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/binary_identities.json",
+      "bytes": 292
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/mutual_guard/guard_summary.json",
+      "bytes": 252
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/raw_audit.json",
+      "bytes": 7599
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/regression_validation.json",
+      "bytes": 1400
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/revised_design.json",
+      "bytes": 986
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/s3_summary.json",
+      "bytes": 37326
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/source_manifest.json",
+      "bytes": 4359
+    },
+    {
+      "path": "results/suction_s3_2026-10-17/validation.json",
+      "bytes": 59
+    },
+    {
+      "path": "results/suction_s4_2026-10-18/REPORT.md",
+      "bytes": 9605
+    },
+    {
+      "path": "results/suction_s4_2026-10-18/domain_environment.json",
+      "bytes": 859
+    },
+    {
+      "path": "results/suction_s4_2026-10-18/regression.json",
+      "bytes": 1119
+    },
+    {
+      "path": "results/suction_s4_2026-10-18/source_manifest.json",
+      "bytes": 2920
+    },
+    {
+      "path": "results/suction_s4_2026-10-18/summary.json",
+      "bytes": 7082
+    },
+    {
+      "path": "results/suction_s5_2026-10-18/REPORT.md",
+      "bytes": 6656
+    },
+    {
+      "path": "results/suction_s5_2026-10-18/regression.json",
+      "bytes": 404
+    },
+    {
+      "path": "results/suction_s5_pressure_2026-10-18/REPORT.md",
+      "bytes": 1572
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/APPEARANCE_CHECKPOINT.md",
+      "bytes": 7222
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/CAPTURE_PROTOCOL.md",
+      "bytes": 2964
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/CAPTURE_R2_REPORT.md",
+      "bytes": 4622
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/FINAL_GATE.json",
+      "bytes": 43458
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/PERFORMANCE_INVESTIGATION_PENDING.md",
+      "bytes": 2463
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/REPORT.md",
+      "bytes": 14868
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/REPORT_DRAFT.md",
+      "bytes": 9459
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/SENSOR_PROGRESS.md",
+      "bytes": 1527
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/SOLVER_OPTIMIZATION.md",
+      "bytes": 3230
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/all_fans_off_trial/REPORT.md",
+      "bytes": 2985
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/all_fans_off_trial/summary.json",
+      "bytes": 14669
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/appearance_checkpoint/appearance_invariance.json",
+      "bytes": 495
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/appearance_checkpoint/commit_checks.json",
+      "bytes": 8698
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/appearance_checkpoint/dual_gui_startup_smoke.json",
+      "bytes": 572
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/appearance_checkpoint/dual_gui_static_observation.json",
+      "bytes": 3050
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/appearance_checkpoint/sensor_endpoint_regression.json",
+      "bytes": 1145
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/appearance_checkpoint/serial_startup_diagnostic.json",
+      "bytes": 2063
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/cleanup_space_observation.json",
+      "bytes": 380
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/control_reuse_preflight.json",
+      "bytes": 522
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/controls/REPORT.md",
+      "bytes": 5301
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/diagnostic_archive.json",
+      "bytes": 103748
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/exit_group_investigation/REPORT.md",
+      "bytes": 1326
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/exit_group_investigation/actual_gui_comparison.json",
+      "bytes": 601
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/failure_observability/REPORT.md",
+      "bytes": 2288
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/failure_observability/summary.json",
+      "bytes": 3242
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/fan_visual_trial/REPORT.md",
+      "bytes": 2816
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/fan_visual_trial/checks.json",
+      "bytes": 2092
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/fan_visual_trial/summary.json",
+      "bytes": 5590
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_archive.json",
+      "bytes": 262
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_capture_numeric_audit.json",
+      "bytes": 105431
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_capture_review.json",
+      "bytes": 3185
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_controls_verified/source_manifest.json",
+      "bytes": 59087
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_controls_verified/summary.json",
+      "bytes": 8500
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_controls_verified/visual_review.json",
+      "bytes": 7064
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_log_retention.json",
+      "bytes": 1035
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_postprocess/diagnostic_inspection_summary.json",
+      "bytes": 95284
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_postprocess/diagnostic_truth_summary.json",
+      "bytes": 17191
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_postprocess/execution.json",
+      "bytes": 11071
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_postprocess/execution_pre_backend_schema_resume.json",
+      "bytes": 7117
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_postprocess/mosaic_manifest.json",
+      "bytes": 7089
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_postprocess/native_review_samples.json",
+      "bytes": 15777
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_postprocess/paths.json",
+      "bytes": 878
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_postprocess/visual_review.json",
+      "bytes": 2589
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/final_sensors/visual_review.json",
+      "bytes": 2346
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/g1_fixture_regression/green_live.json",
+      "bytes": 1417
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/gui_startup_recovery/REPORT.md",
+      "bytes": 1752
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/gui_startup_recovery/failed_observer.json",
+      "bytes": 1516
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/gui_startup_recovery/pre_recovery_controls.json",
+      "bytes": 3453
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/gui_startup_recovery/scope.json",
+      "bytes": 592
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/lane_setsid_regression/REPORT.md",
+      "bytes": 1078
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/lane_setsid_regression/scope.json",
+      "bytes": 645
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/localization_gap_investigation/HISTORY_REVIEW.md",
+      "bytes": 10235
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/localization_gap_investigation/PENDING.md",
+      "bytes": 843
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/localization_gap_investigation/RESTART_CHECKPOINT.md",
+      "bytes": 2956
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/localization_gap_investigation/native_evidence_applicability.json",
+      "bytes": 2234
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/localization_gap_investigation/post_restart_replay/README.md",
+      "bytes": 979
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/localization_gap_investigation/verification.json",
+      "bytes": 1467
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/observer_shutdown_regression.json",
+      "bytes": 1192
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/physical_model/REPORT.md",
+      "bytes": 3886
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/physical_model/checks.json",
+      "bytes": 1207
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/physical_model/summary.json",
+      "bytes": 95099
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/physical_model/visual_invariance.json",
+      "bytes": 886
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/physical_motion/REPORT.md",
+      "bytes": 3716
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/physical_motion/independent_audit.json",
+      "bytes": 54187
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/shutdown_signal_investigation/REPORT.md",
+      "bytes": 1905
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/signal_inheritance_regression/REPORT.md",
+      "bytes": 1661
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/solver_native_motion/independent_audit.json",
+      "bytes": 54545
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/solver_native_static/raw_audit.json",
+      "bytes": 7599
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/solver_native_static/validation.json",
+      "bytes": 59
+    },
+    {
+      "path": "results/suction_s6_2026-10-18/state_fixture_regression/summary.json",
+      "bytes": 809
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/CLEANUP.json",
+      "bytes": 8295
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/FINAL_GATE.json",
+      "bytes": 973
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/REPORT.md",
+      "bytes": 7391
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/RUNTIME_GATE.json",
+      "bytes": 562
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/capture/audit.json",
+      "bytes": 24661
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/initial_small_display_failure/assessment.json",
+      "bytes": 472
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/postprocess/execution.json",
+      "bytes": 5065
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/postprocess/mosaic_manifest.json",
+      "bytes": 6889
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/postprocess/visual_review.json",
+      "bytes": 1226
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/retained_data_index.json",
+      "bytes": 17469
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/s6_equivalence.json",
+      "bytes": 506
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/source_manifest.json",
+      "bytes": 1091
+    },
+    {
+      "path": "results/suction_s7_2026-10-18/targeted_checks.json",
+      "bytes": 2345
+    },
+    {
+      "path": "src/climbot_bringup/CMakeLists.txt",
+      "bytes": 663
+    },
+    {
+      "path": "src/climbot_bringup/README.md",
+      "bytes": 2031
+    },
+    {
+      "path": "src/climbot_bringup/launch/coverage_mission.launch.py",
+      "bytes": 11631
+    },
+    {
+      "path": "src/climbot_bringup/launch/coverage_sim.launch.py",
+      "bytes": 8990
+    },
+    {
+      "path": "src/climbot_bringup/test/test_geometry_consumers.py",
+      "bytes": 5576
+    },
+    {
+      "path": "src/climbot_bringup/test/test_workspace_consistency.py",
+      "bytes": 5632
+    },
+    {
+      "path": "src/climbot_common/CMakeLists.txt",
+      "bytes": 757
+    },
+    {
+      "path": "src/climbot_common/README.md",
+      "bytes": 2919
+    },
+    {
+      "path": "src/climbot_common/climbot_common/dds.py",
+      "bytes": 1849
+    },
+    {
+      "path": "src/climbot_common/config/fastdds_control_local.xml",
+      "bytes": 1709
+    },
+    {
+      "path": "src/climbot_common/test/test_dds.py",
+      "bytes": 2672
+    },
+    {
+      "path": "src/climbot_control/launch/coverage_executor.launch.py",
+      "bytes": 4051
+    },
+    {
+      "path": "src/climbot_control/launch/line_tracker.launch.py",
+      "bytes": 3112
+    },
+    {
+      "path": "src/climbot_control/package.xml",
+      "bytes": 1326
+    },
+    {
+      "path": "src/climbot_control/src/coverage_manager_node.cpp",
+      "bytes": 62014
+    },
+    {
+      "path": "src/climbot_control/src/line_tracker_node.cpp",
+      "bytes": 107182
+    },
+    {
+      "path": "src/climbot_control/test/test_coverage_executor.py",
+      "bytes": 29296
+    },
+    {
+      "path": "src/climbot_control/test/test_coverage_manager_archive.py",
+      "bytes": 25150
+    },
+    {
+      "path": "src/climbot_control/test/test_coverage_manager_forced_recovery.py",
+      "bytes": 8750
+    },
+    {
+      "path": "src/climbot_control/test/test_coverage_manager_pause.py",
+      "bytes": 15544
+    },
+    {
+      "path": "src/climbot_control/test/test_coverage_manager_states.py",
+      "bytes": 12484
+    },
+    {
+      "path": "src/climbot_coverage/CMakeLists.txt",
+      "bytes": 3566
+    },
+    {
+      "path": "src/climbot_coverage/config/coverage_vacuum_diagnostic_full_horizontal.yaml",
+      "bytes": 1347
+    },
+    {
+      "path": "src/climbot_coverage/config/coverage_vacuum_diagnostic_full_vertical.yaml",
+      "bytes": 1509
+    },
+    {
+      "path": "src/climbot_coverage/launch/coverage_planner.launch.py",
+      "bytes": 5258
+    },
+    {
+      "path": "src/climbot_coverage/package.xml",
+      "bytes": 1333
+    },
+    {
+      "path": "src/climbot_coverage/src/coverage_planner_node.cpp",
+      "bytes": 45380
+    },
+    {
+      "path": "src/climbot_coverage/test/test_coverage_visual_refresh.py",
+      "bytes": 4367
+    },
+    {
+      "path": "src/climbot_description/CMakeLists.txt",
+      "bytes": 3119
+    },
+    {
+      "path": "src/climbot_description/README.md",
+      "bytes": 2984
+    },
+    {
+      "path": "src/climbot_description/climbot_description/robot_geometry.py",
+      "bytes": 5210
+    },
+    {
+      "path": "src/climbot_description/config/robot.yaml",
+      "bytes": 1943
+    },
+    {
+      "path": "src/climbot_description/config/vacuum_chassis.yaml",
+      "bytes": 3486
+    },
+    {
+      "path": "src/climbot_description/package.xml",
+      "bytes": 900
+    },
+    {
+      "path": "src/climbot_description/test/test_inspection_camera_config.py",
+      "bytes": 5351
+    },
+    {
+      "path": "src/climbot_description/test/test_robot_description_defaults.py",
+      "bytes": 1288
+    },
+    {
+      "path": "src/climbot_description/test/test_robot_geometry.py",
+      "bytes": 3110
+    },
+    {
+      "path": "src/climbot_description/urdf/sensor_frames.urdf.xacro",
+      "bytes": 249
+    },
+    {
+      "path": "src/climbot_gazebo/CMakeLists.txt",
+      "bytes": 11819
+    },
+    {
+      "path": "src/climbot_gazebo/README.md",
+      "bytes": 5802
+    },
+    {
+      "path": "src/climbot_gazebo/climbot_gazebo/calibration_target.py",
+      "bytes": 1378
+    },
+    {
+      "path": "src/climbot_gazebo/climbot_gazebo/execution_metrics.py",
+      "bytes": 12616
+    },
+    {
+      "path": "src/climbot_gazebo/climbot_gazebo/geometry_launch.py",
+      "bytes": 1362
+    },
+    {
+      "path": "src/climbot_gazebo/climbot_gazebo/launch_entry.py",
+      "bytes": 6617
+    },
+    {
+      "path": "src/climbot_gazebo/climbot_gazebo/mesa_runtime.py",
+      "bytes": 7235
+    },
+    {
+      "path": "src/climbot_gazebo/climbot_gazebo/provenance.py",
+      "bytes": 4569
+    },
+    {
+      "path": "src/climbot_gazebo/climbot_gazebo/simulation_stack.py",
+      "bytes": 43306
+    },
+    {
+      "path": "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py",
+      "bytes": 17876
+    },
+    {
+      "path": "src/climbot_gazebo/config/simulation.yaml",
+      "bytes": 5346
+    },
+    {
+      "path": "src/climbot_gazebo/config/vacuum_io.yaml",
+      "bytes": 667
+    },
+    {
+      "path": "src/climbot_gazebo/config/vacuum_physics.yaml",
+      "bytes": 1596
+    },
+    {
+      "path": "src/climbot_gazebo/config/vacuum_runtime.yaml",
+      "bytes": 659
+    },
+    {
+      "path": "src/climbot_gazebo/gui/ClimbotFanVisuals.qml",
+      "bytes": 261
+    },
+    {
+      "path": "src/climbot_gazebo/gui/ClimbotFanVisuals.qrc",
+      "bytes": 108
+    },
+    {
+      "path": "src/climbot_gazebo/gui/ClimbotWorldStats.qml",
+      "bytes": 433
+    },
+    {
+      "path": "src/climbot_gazebo/gui/ClimbotWorldStats.qrc",
+      "bytes": 108
+    },
+    {
+      "path": "src/climbot_gazebo/include/climbot_gazebo/compact_stats_gui.hpp",
+      "bytes": 1224
+    },
+    {
+      "path": "src/climbot_gazebo/include/climbot_gazebo/fan_visuals_gui.hpp",
+      "bytes": 1876
+    },
+    {
+      "path": "src/climbot_gazebo/include/climbot_gazebo/pressure_sensor.hpp",
+      "bytes": 1838
+    },
+    {
+      "path": "src/climbot_gazebo/include/climbot_gazebo/vacuum_core.hpp",
+      "bytes": 3625
+    },
+    {
+      "path": "src/climbot_gazebo/include/climbot_gazebo/vacuum_io.hpp",
+      "bytes": 1892
+    },
+    {
+      "path": "src/climbot_gazebo/include/climbot_gazebo/vacuum_state.hpp",
+      "bytes": 3798
+    },
+    {
+      "path": "src/climbot_gazebo/launch/climbot_vacuum.launch.py",
+      "bytes": 6196
+    },
+    {
+      "path": "src/climbot_gazebo/launch/climbot_vacuum_stack.launch.py",
+      "bytes": 707
+    },
+    {
+      "path": "src/climbot_gazebo/launch/climbot_wall.launch.py",
+      "bytes": 718
+    },
+    {
+      "path": "src/climbot_gazebo/models/climbot/components.sdf.xacro",
+      "bytes": 11301
+    },
+    {
+      "path": "src/climbot_gazebo/package.xml",
+      "bytes": 2351
+    },
+    {
+      "path": "src/climbot_gazebo/scripts/evaluate_coverage_execution.py",
+      "bytes": 37170
+    },
+    {
+      "path": "src/climbot_gazebo/scripts/evaluate_g1_camera.py",
+      "bytes": 25278
+    },
+    {
+      "path": "src/climbot_gazebo/scripts/evaluate_g2_inspection.py",
+      "bytes": 18166
+    },
+    {
+      "path": "src/climbot_gazebo/scripts/gz_sim_supervisor.py",
+      "bytes": 8952
+    },
+    {
+      "path": "src/climbot_gazebo/src/compact_stats_gui.cpp",
+      "bytes": 1687
+    },
+    {
+      "path": "src/climbot_gazebo/src/fan_visuals_gui.cpp",
+      "bytes": 3939
+    },
+    {
+      "path": "src/climbot_gazebo/src/pressure_sensor.cpp",
+      "bytes": 3162
+    },
+    {
+      "path": "src/climbot_gazebo/src/vacuum_core.cpp",
+      "bytes": 12186
+    },
+    {
+      "path": "src/climbot_gazebo/src/vacuum_core_probe.cpp",
+      "bytes": 13206
+    },
+    {
+      "path": "src/climbot_gazebo/src/vacuum_io.cpp",
+      "bytes": 7665
+    },
+    {
+      "path": "src/climbot_gazebo/src/vacuum_sim_probe.cpp",
+      "bytes": 22813
+    },
+    {
+      "path": "src/climbot_gazebo/src/vacuum_system.cpp",
+      "bytes": 25079
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_calibration_target.py",
+      "bytes": 4030
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_command_routing.py",
+      "bytes": 12717
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_execution_metrics.py",
+      "bytes": 9470
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_gui_observer_shutdown.py",
+      "bytes": 2810
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_large_image_transport.py",
+      "bytes": 7377
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_mesa_runtime.py",
+      "bytes": 12998
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_model_defaults.py",
+      "bytes": 4783
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_native_clock_observer.py",
+      "bytes": 2125
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_pressure_sensor.cpp",
+      "bytes": 3989
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_small_message_transport.py",
+      "bytes": 7502
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_startup_readiness.py",
+      "bytes": 3194
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_vacuum_assets.py",
+      "bytes": 5764
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_vacuum_bridge.py",
+      "bytes": 1498
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_vacuum_core.cpp",
+      "bytes": 11476
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_vacuum_native.py",
+      "bytes": 13041
+    },
+    {
+      "path": "src/climbot_gazebo/test/test_wall_world_matches_description.py",
+      "bytes": 11454
+    },
+    {
+      "path": "src/climbot_gazebo/worlds/climbot_wall.sdf.xacro",
+      "bytes": 22870
+    },
+    {
+      "path": "src/climbot_inspection/test/test_automatic_capture_node.py",
+      "bytes": 21108
+    },
+    {
+      "path": "tools/audit_vacuum_motion.py",
+      "bytes": 6304
+    },
+    {
+      "path": "tools/audit_vacuum_sim.py",
+      "bytes": 5560
+    },
+    {
+      "path": "tools/capture_wall_texture.py",
+      "bytes": 11574
+    },
+    {
+      "path": "tools/design_vacuum_chassis.py",
+      "bytes": 21720
+    },
+    {
+      "path": "tools/freeze_suction_baseline.py",
+      "bytes": 11903
+    },
+    {
+      "path": "tools/lane_processes.sh",
+      "bytes": 6375
+    },
+    {
+      "path": "tools/observe_gui_acceptance.py",
+      "bytes": 10544
+    },
+    {
+      "path": "tools/observe_native_stats.py",
+      "bytes": 4800
+    },
+    {
+      "path": "tools/probe_cruise_timestamps.py",
+      "bytes": 3396
+    },
+    {
+      "path": "tools/probe_vacuum_pressure_boundary.py",
+      "bytes": 5785
+    },
+    {
+      "path": "tools/run_coverage_regression.sh",
+      "bytes": 22953
+    },
+    {
+      "path": "tools/run_g2_inspection_acceptance.sh",
+      "bytes": 15301
+    },
+    {
+      "path": "tools/run_suction_baseline.sh",
+      "bytes": 3878
+    },
+    {
+      "path": "tools/run_vacuum_gui_regression.py",
+      "bytes": 6869
+    },
+    {
+      "path": "tools/screen_suction_layouts.py",
+      "bytes": 10992
+    },
+    {
+      "path": "tools/start_session.sh",
+      "bytes": 850
+    },
+    {
+      "path": "tools/test_lane_processes.sh",
+      "bytes": 8385
+    },
+    {
+      "path": "tools/test_suction_analysis.py",
+      "bytes": 8324
+    },
+    {
+      "path": "tools/test_vacuum_design.py",
+      "bytes": 15460
+    },
+    {
+      "path": "tools/test_vacuum_physics.py",
+      "bytes": 4456
+    },
+    {
+      "path": "tools/vacuum_layout.py",
+      "bytes": 20949
+    },
+    {
+      "path": "tools/vacuum_loads.py",
+      "bytes": 10376
+    },
+    {
+      "path": "tools/vacuum_preview.py",
+      "bytes": 7845
+    },
+    {
+      "path": "tools/vacuum_visuals.py",
+      "bytes": 16537
+    },
+    {
+      "path": "tools/validate_vacuum_bridge.py",
+      "bytes": 8816
+    },
+    {
+      "path": "tools/validate_vacuum_io.py",
+      "bytes": 13458
+    },
+    {
+      "path": "tools/validate_vacuum_motion.py",
+      "bytes": 21002
+    },
+    {
+      "path": "tools/validate_vacuum_physics.py",
+      "bytes": 20376
+    },
+    {
+      "path": "tools/validate_vacuum_sim.py",
+      "bytes": 16882
+    },
+    {
+      "path": "tools/wait_gazebo_ready.py",
+      "bytes": 6943
+    },
+    {
+      "path": "tools/with_mesa_runtime.py",
+      "bytes": 1945
+    }
+  ],
+  "policy": "No new raw image/video/pressure/contact/scene data; exactly two approved README PNGs; remote main fast-forward from original base; original complete local history retained."
+}

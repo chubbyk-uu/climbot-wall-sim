@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="ClimbotWorldStats">
+    <file>ClimbotWorldStats.qml</file>
+  </qresource>
+</RCC>

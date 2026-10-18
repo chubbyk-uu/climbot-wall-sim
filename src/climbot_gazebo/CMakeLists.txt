@@ -13,6 +13,60 @@ find_package(geometry_msgs REQUIRED)
 # Linked explicitly: the wall transform is a static library, so its yaml-cpp
 # symbols have to be resolved again by whoever links it.
 find_package(yaml-cpp REQUIRED)
+find_package(gz_sim_vendor REQUIRED)
+find_package(gz-sim8 REQUIRED)
+find_package(gz_plugin_vendor REQUIRED)
+find_package(gz-plugin2 REQUIRED COMPONENTS register)
+find_package(gz_transport_vendor REQUIRED)
+find_package(gz-transport13 REQUIRED)
+find_package(gz_gui_vendor REQUIRED)
+find_package(gz-gui8 REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Core Qml Quick)
+find_package(gz_rendering_vendor REQUIRED)
+find_package(gz-rendering8 REQUIRED)
+
+add_library(ClimbotFanVisuals SHARED src/fan_visuals_gui.cpp
+  include/climbot_gazebo/fan_visuals_gui.hpp gui/ClimbotFanVisuals.qrc)
+set_target_properties(ClimbotFanVisuals PROPERTIES AUTOMOC ON AUTORCC ON)
+target_compile_features(ClimbotFanVisuals PRIVATE cxx_std_17)
+target_include_directories(ClimbotFanVisuals PRIVATE include)
+target_link_libraries(ClimbotFanVisuals PRIVATE gz-gui8::gz-gui8
+  gz-rendering8::gz-rendering8 gz-transport13::core gz-plugin2::register
+  Qt5::Core Qt5::Qml Qt5::Quick)
+install(TARGETS ClimbotFanVisuals LIBRARY DESTINATION lib)
+
+add_library(ClimbotWorldStats SHARED src/compact_stats_gui.cpp
+  include/climbot_gazebo/compact_stats_gui.hpp gui/ClimbotWorldStats.qrc)
+set_target_properties(ClimbotWorldStats PROPERTIES AUTOMOC ON AUTORCC ON)
+target_compile_features(ClimbotWorldStats PRIVATE cxx_std_17)
+target_include_directories(ClimbotWorldStats PRIVATE include)
+target_link_libraries(ClimbotWorldStats PRIVATE gz-gui8::gz-gui8
+  gz-transport13::core gz-plugin2::register Qt5::Core Qt5::Qml Qt5::Quick)
+install(TARGETS ClimbotWorldStats LIBRARY DESTINATION lib)
+
+add_library(climbot_vacuum_system SHARED src/vacuum_system.cpp src/vacuum_io.cpp)
+target_compile_features(climbot_vacuum_system PUBLIC cxx_std_17)
+target_link_libraries(climbot_vacuum_system PRIVATE vacuum_core
+  gz-sim8::gz-sim8 gz-plugin2::register gz-transport13::core)
+target_include_directories(climbot_vacuum_system PRIVATE include)
+install(TARGETS climbot_vacuum_system LIBRARY DESTINATION lib)
+add_executable(vacuum_sim_probe src/vacuum_sim_probe.cpp)
+target_compile_features(vacuum_sim_probe PRIVATE cxx_std_17)
+target_include_directories(vacuum_sim_probe PRIVATE include)
+target_link_libraries(vacuum_sim_probe PRIVATE gz-sim8::gz-sim8 yaml-cpp::yaml-cpp)
+install(TARGETS vacuum_sim_probe RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+# S2 physics core deliberately has no ROS, Gazebo or YAML dependencies.
+add_library(vacuum_core src/vacuum_core.cpp src/pressure_sensor.cpp)
+target_compile_features(vacuum_core PUBLIC cxx_std_17)
+target_include_directories(vacuum_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_options(vacuum_core PRIVATE -Wall -Wextra -Wpedantic)
+set_target_properties(vacuum_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_executable(vacuum_core_probe src/vacuum_core_probe.cpp)
+target_compile_features(vacuum_core_probe PRIVATE cxx_std_17)
+target_link_libraries(vacuum_core_probe vacuum_core yaml-cpp::yaml-cpp)
 
 add_library(total_station_model_core src/total_station_model.cpp)
 target_compile_features(total_station_model_core PUBLIC cxx_std_17)
@@ -73,6 +127,8 @@ install(
 )
 
 install(TARGETS
+  vacuum_core
+  vacuum_core_probe
   total_station_model_core
   total_station_sim_node
   clock_throttle_core
@@ -88,8 +144,7 @@ install(DIRECTORY include/ DESTINATION include)
 
 install(
   FILES
-    models/climbot/model.config
-    models/climbot/model.sdf.xacro
+    models/climbot/components.sdf.xacro
   DESTINATION share/${PROJECT_NAME}/models/climbot
 )
 
@@ -116,6 +171,18 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  ament_add_gtest(test_vacuum_core test/test_vacuum_core.cpp)
+  target_link_libraries(test_vacuum_core vacuum_core)
+  ament_add_gtest(test_pressure_sensor test/test_pressure_sensor.cpp)
+  target_link_libraries(test_pressure_sensor vacuum_core)
+  ament_add_pytest_test(test_startup_readiness test/test_startup_readiness.py)
+  ament_add_pytest_test(test_calibration_target test/test_calibration_target.py)
+  ament_add_pytest_test(test_gui_observer_shutdown test/test_gui_observer_shutdown.py)
+  ament_add_pytest_test(test_native_clock_observer test/test_native_clock_observer.py)
+  ament_add_pytest_test(test_vacuum_assets test/test_vacuum_assets.py)
+  ament_add_pytest_test(test_vacuum_native test/test_vacuum_native.py TIMEOUT 90)
+  ament_add_pytest_test(test_vacuum_bridge test/test_vacuum_bridge.py TIMEOUT 120
+    ENV ROS_DOMAIN_ID=96)
   ament_add_gtest(test_wall_wheel_odom_adapter test/test_wall_wheel_odom_adapter.cpp)
   target_link_libraries(test_wall_wheel_odom_adapter wall_wheel_odom_adapter_core)
   target_include_directories(test_wall_wheel_odom_adapter PRIVATE include)
@@ -149,6 +216,14 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_model_defaults test/test_model_defaults.py)
   ament_add_pytest_test(
     test_normal_load_statistics test/test_normal_load_statistics.py)
+  # Offline design tools live at repository level, outside the runtime package.
+  ament_add_pytest_test(test_suction_analysis
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_suction_analysis.py)
+  ament_add_pytest_test(test_vacuum_design
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_vacuum_design.py)
+  ament_add_pytest_test(test_vacuum_physics
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_vacuum_physics.py)
+  ament_add_pytest_test(test_small_message_transport test/test_small_message_transport.py)
   ament_add_pytest_test(test_safe_stop test/test_safe_stop.py)
   ament_add_pytest_test(
     test_total_station_model test/test_total_station_model.py)

@@ -1,0 +1,24 @@
+{
+  "revision": "1846f6ade1781ef48ab129864733d1d3fcc5c802",
+  "recorded": "during formal medium capture, source/tools clean and unchanged since build",
+  "source_tree_sha256": "b428cce5504a36e59e4a86f10ad3bc3fae2375274dbfbe5af83f7df1315f09a3",
+  "dirty_runtime_source": false,
+  "scope": "one 3x2 m horizontal capture and offline mosaic; no largest H/V pair",
+  "geometry_argument_passed": false,
+  "adhesion_argument_passed": false,
+  "cruise_speed_mps": 0.2,
+  "image_size": [
+    1920,
+    1080
+  ],
+  "wall_resolution_mm_per_pixel": 0.25,
+  "dual_gui": true,
+  "backend": "wsl_d3d12 private Mesa",
+  "wall_manifest_sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c",
+  "replay_sha256": {
+    "medium_capture.sh": "b28177ea7971ebaf2a9d9d5ece29518a3184b7de574cc811c9fea3baaf0e3c4a",
+    "small_capture.sh": "ef96200232fa9bbc26e9a9e4a564696cb48571f0af341971d5d273c5d00da701",
+    "medium_task.yaml": "add0cc623cfe7332bd0771888733b5a8084c67393f6bda8d93d08670ed4a8580",
+    "reset_default.py": "d0f30f42208b61b6924e3c59e6b73367e72e033aa6147f0123a8e220708bfaba"
+  }
+}

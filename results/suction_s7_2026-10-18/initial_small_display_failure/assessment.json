@@ -1,0 +1,9 @@
+{
+  "accepted": false,
+  "reason": "Capture completed, but RViz cleared wall/grid/path after world reset; confirmed visually and reported by user.",
+  "captures": 10,
+  "native_rtf": 0.9923000230875774,
+  "regression_before_fix": "visual_refresh_red: expected failure in 4.254 s; cached visualization never republished.",
+  "scope_after_user_update": "Replace small final capture with one 3 x 2 m capture and offline mosaic, no maximum-size pair.",
+  "scan_segments": 2
+}

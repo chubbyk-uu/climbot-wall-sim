@@ -30,7 +30,7 @@ from climbot_gazebo.inspection_contract import (
     DEFAULT_MINIMUM_ACTUAL_OVERLAP_RATIO,
     DEFAULT_NOMINAL_OVERLAP_RATIO,
 )
-from climbot_gazebo.provenance import git_state
+from climbot_gazebo.provenance import CONTROL_SOURCES, git_state
 from climbot_gazebo.provenance import NOISE_SOURCES, parameter_groups
 from climbot_interfaces.msg import CoverageStatus, CoverageTask, InspectionCapture
 from nav_msgs.msg import Odometry
@@ -346,6 +346,7 @@ class G2InspectionEvaluator(Node):
                 'recorded_utc': datetime.now(timezone.utc).isoformat(),
                 'git': git_state(),
                 'noise_sources': parameter_groups(self, NOISE_SOURCES),
+                'control_parameters': parameter_groups(self, CONTROL_SOURCES),
             },
         }
         path = str(self.get_parameter('summary_path').value)

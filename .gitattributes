@@ -1,0 +1,10 @@
+# These evidence files retain captured/source bytes, including CSV CRLF and
+# blank lines in the frozen inputs and diagnostic log excerpts.
+results/suction_s0_2026-10-17/*.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+results/suction_s0_2026-10-17/static_screening/*.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+results/suction_s0_2026-10-17/inputs/** -whitespace
+results/suction_s0_2026-10-17/regression*_failure.txt -whitespace
+# Matplotlib SVG paths contain intentional line-end spaces; keep archived bytes.
+results/suction_s3_2026-10-17/static_loads.svg -whitespace
+results/suction_s4_2026-10-18/sensor_and_fans.svg -whitespace
+results/suction_s5_2026-10-18/motion_and_failure_boundary.svg -whitespace

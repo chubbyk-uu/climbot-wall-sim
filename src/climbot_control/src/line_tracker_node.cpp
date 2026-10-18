@@ -176,6 +176,10 @@ public:
     // catch_up_* limits are the room the correction has to work in above that
     // rated point; they are what makes a late robot able to catch up instead
     // of only able to observe that it is late.
+    const auto robot_geometry = declare_parameter("robot_geometry", std::string("vacuum_chassis"));
+    if (robot_geometry != "vacuum_chassis") {
+      throw std::invalid_argument("robot_geometry must be vacuum_chassis");
+    }
     const auto tracking_mode = parseTrackingMode(
       declare_parameter("tracking_mode", std::string("time")));
     if (!tracking_mode.has_value()) {
@@ -1069,7 +1073,15 @@ private:
   {
     const double elapsed = (current_time - travel_start_).seconds() - travel_stretch_credit_;
     const auto sample = climbot_control::sampleTravel(travel_profile_, elapsed);
-    schedule_lag_ = sample.distance - (command.along - travel_start_along_);
+    // The pose belongs to its source timestamp, not this timer callback.
+    // Comparing it with the current plan invents v*transport_age of lag and
+    // commands a catch-up burst even when the robot follows the plan exactly.
+    // Keep feedforward on the current clock and align only the feedback error.
+    const auto source_now = current_time.get_clock_type() == RCL_ROS_TIME ? current_time : now();
+    const double pose_age = std::max(0.0, (source_now - *last_pose_source_time_).seconds());
+    const auto observed_sample = climbot_control::sampleTravel(
+      travel_profile_, elapsed - pose_age);
+    schedule_lag_ = observed_sample.distance - (command.along - travel_start_along_);
 
     // Holding the reference clock while the robot is far behind turns an
     // unrecoverable schedule into a recoverable one, at the cost of no longer

@@ -1,0 +1,367 @@
+{
+  "samples": [
+    {
+      "feature_id": "construction_seam_01",
+      "kind": "construction_seam",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/construction_seam_01/r0000_c0000.png",
+      "source_native_sha256": "0eab63399f4be1991cb5365e68a64a79c484ccc7346a2150cd715550d12c2d19",
+      "source_window_xywh": [
+        0,
+        384,
+        444,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/construction_seam_01.png",
+      "sha256": "b45c3e77552573dc2e78418594a2907fb17edb2050a06179d4bce14415cb3e8a",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "construction_seam_02",
+      "kind": "construction_seam",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/construction_seam_02/r0000_c0000.png",
+      "source_native_sha256": "69d5be16cb91ff641d943a93b4dc28b4a9b0de83b3a1a858d53b49d13b4f02cd",
+      "source_window_xywh": [
+        0,
+        384,
+        444,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/construction_seam_02.png",
+      "sha256": "2ec4f74b10d6792a321e0b12e2d3fd9deb496c336c707be137e70f33875751fd",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "construction_seam_03",
+      "kind": "construction_seam",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/construction_seam_03/r0000_c0000.png",
+      "source_native_sha256": "59ea3d71d23e6d3d20ee12ad7e8581326b789674ef436ffb2f46c87bca85e3da",
+      "source_window_xywh": [
+        768,
+        0,
+        512,
+        444
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/construction_seam_03.png",
+      "sha256": "7aa8cdad611a6eee3f981ed230998ce5af72d427c9f2feaed42cad7f66c2c308",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "crack_decal_01",
+      "kind": "crack_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/crack_decal_01/r0001_c0001.png",
+      "source_native_sha256": "78897bcf12d0a08aeeb6b5a291430b90f09ceb818e53b2cd0293c852d5ce3718",
+      "source_window_xywh": [
+        998,
+        998,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/crack_decal_01.png",
+      "sha256": "91bfb8a52bfd012fd158649d8ba0a3dd032d08d85bc43ea54fd03c7ea7a2fc94",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "crack_decal_02",
+      "kind": "crack_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/crack_decal_02/r0001_c0001.png",
+      "source_native_sha256": "128af433282226e7b7835e6336c030c91e2e083770055f15ca86d24290de782e",
+      "source_window_xywh": [
+        811,
+        811,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/crack_decal_02.png",
+      "sha256": "f015ec0991cbda88901b7dc09abf99f3a5b78e88cfda5526dcc151a3cbf637ec",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "crack_decal_03",
+      "kind": "crack_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/crack_decal_03/r0001_c0001.png",
+      "source_native_sha256": "04e8cc997e993b8e4f6538a9e197d5d1e19c36623bff034a24732e8619c4f812",
+      "source_window_xywh": [
+        421,
+        421,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/crack_decal_03.png",
+      "sha256": "81fbf1e2fdcfbc08d78eece5eabb31462fe6ce638678fccf961cf2b5071de654",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "crack_decal_04",
+      "kind": "crack_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/crack_decal_04/r0001_c0001.png",
+      "source_native_sha256": "ba0eac7cb4d294dcbe0fb52758d99084e85c8375db250df5a0ae01c4712a89ac",
+      "source_window_xywh": [
+        789,
+        789,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/crack_decal_04.png",
+      "sha256": "e357367c8347fbd3ea80b4429e94748e5d27b38c164747dedb5e6bc5042df374",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "crack_decal_05",
+      "kind": "crack_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/crack_decal_05/r0001_c0001.png",
+      "source_native_sha256": "02f099aa2ba8c3251e5ba35e49e4c9b05435bb2f39df8c7985768fad7681df05",
+      "source_window_xywh": [
+        343,
+        343,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/crack_decal_05.png",
+      "sha256": "923616121a554f9e24360c3702c662c1cdfc835c40bc75018975a2acc1368bc8",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "crack_decal_06",
+      "kind": "crack_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/crack_decal_06/r0001_c0001.png",
+      "source_native_sha256": "099c3a9d524fef0d5e7dbcc67fcb14441a3f76d64305fd2bd3dd078ec7d0b97d",
+      "source_window_xywh": [
+        743,
+        743,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/crack_decal_06.png",
+      "sha256": "1c95d4ccd4c345f3d0a607b3eac9ac3ed3d391d7bbad937ce0542305110ecb1c",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "crack_decal_07",
+      "kind": "crack_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/crack_decal_07/r0001_c0001.png",
+      "source_native_sha256": "50341155ce70071f35e6ba7d3b67880ed2d5b740ab7bb7255f1a9ce28f2344df",
+      "source_window_xywh": [
+        205,
+        205,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/crack_decal_07.png",
+      "sha256": "4cc8c7a5a4b023a877623845319e52b57f48835caa7320e70fd3860a7aa336c8",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "crack_decal_08",
+      "kind": "crack_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/crack_decal_08/r0001_c0001.png",
+      "source_native_sha256": "eb760bbef18bc1d680c2fb15a1f12153880b14c087f8420f075946af3b697589",
+      "source_window_xywh": [
+        46,
+        159,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/crack_decal_08.png",
+      "sha256": "6c8f180fc6034f437be5f4585f11a20aa0956838071f7a731d7f5cc9d8b9193e",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "repair_patch_01",
+      "kind": "repair_patch",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/repair_patch_01/r0000_c0000.png",
+      "source_native_sha256": "3582fc472c02e4592556ba4d15988f59e58ff306674dad48629bc949d1c1599b",
+      "source_window_xywh": [
+        896,
+        0,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/repair_patch_01.png",
+      "sha256": "9654aae0c12ecb37550890f45cb3ad7d42587686b0df5f5ac753507ede8f6c8e",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "repair_patch_02",
+      "kind": "repair_patch",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/repair_patch_02/r0000_c0000.png",
+      "source_native_sha256": "cc74d769318919058206adf88bc8ddbd964bdf7730e03496c19c159d2da02b85",
+      "source_window_xywh": [
+        0,
+        512,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/repair_patch_02.png",
+      "sha256": "4b0b0d44ae447c1d9e23cb95c51e7b57eb8b0e7cded7129e0ea8c985262d171e",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "repair_patch_03",
+      "kind": "repair_patch",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/repair_patch_03/r0000_c0000.png",
+      "source_native_sha256": "8ec6891a5f1689eef5c0922b85052166c9b9d0e61354c6439b602a99bd39719c",
+      "source_window_xywh": [
+        256,
+        0,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/repair_patch_03.png",
+      "sha256": "006bb3a946a4223600d5d41e4cc06d8235d10038c98caced21866a8b3351c7ba",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "repair_patch_04",
+      "kind": "repair_patch",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/repair_patch_04/r0000_c0000.png",
+      "source_native_sha256": "1b44045d6760e2aa4927259e352663ad9bcef62efe05a6fd52f9ca133d831941",
+      "source_window_xywh": [
+        1536,
+        1103,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/repair_patch_04.png",
+      "sha256": "88b854fe8f8a198f86a90ea0218e4773c0043d539f0e2e8934280664dc6d3230",
+      "covered_fraction_in_all_three_panels": 0.998046875,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "repair_patch_05",
+      "kind": "repair_patch",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/repair_patch_05/r0000_c0000.png",
+      "source_native_sha256": "8a809a82863af629cd505215efef1f73ef389b5c4b8b8853ce36d665fea28d26",
+      "source_window_xywh": [
+        1140,
+        839,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/repair_patch_05.png",
+      "sha256": "34e916aa51507a230c9c2541e6fca8ee759fcf890fd54019ec742626b954c1a5",
+      "covered_fraction_in_all_three_panels": 0.998046875,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "repair_patch_06",
+      "kind": "repair_patch",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/repair_patch_06/r0000_c0000.png",
+      "source_native_sha256": "a3fd48eacf61f5d29392cb4ad9b6ac4b91a44e50e85f1d2c374aa5b9bbf496d7",
+      "source_window_xywh": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/repair_patch_06.png",
+      "sha256": "6b9a79267ee1531ac19dfbe15639810a0d93315bc8f2e6a266839ba617446a2d",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "high-gradient covered window in first native tile",
+      "resampled": false
+    },
+    {
+      "feature_id": "graffiti_decal_01",
+      "kind": "graffiti_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/graffiti_decal_01/r0000_c0000.png",
+      "source_native_sha256": "895682c3ae2108e07337315829a3e0a5099dc194d25dfb80fa95cd00ec2e586a",
+      "source_window_xywh": [
+        1500,
+        1500,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/graffiti_decal_01.png",
+      "sha256": "248f909b81ca493d98b7df429a1dea94fefc298d245b3ac427f01a8b29149f0b",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "graffiti_decal_02",
+      "kind": "graffiti_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/graffiti_decal_02/r0000_c0000.png",
+      "source_native_sha256": "2e47532cba5b910ff0cff593fd88626831e3ceff7981a4f2ca45e023dba44b22",
+      "source_window_xywh": [
+        1536,
+        1536,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/graffiti_decal_02.png",
+      "sha256": "e5f779e4566ce9efee7e7f811ee0525433bfd88cff5f31a719e67db0d7780d53",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "graffiti_decal_03",
+      "kind": "graffiti_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/graffiti_decal_03/r0000_c0000.png",
+      "source_native_sha256": "1954deaf319a374d5e3afe15d482cc52227028f3194a212cbf991db604801a25",
+      "source_window_xywh": [
+        1536,
+        1536,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/graffiti_decal_03.png",
+      "sha256": "2826b987615e6ae71abc27ebd903e375e7721d3a420710eacd8f80958fd5d941",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    },
+    {
+      "feature_id": "graffiti_decal_04",
+      "kind": "graffiti_decal",
+      "source_native_tile": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles/graffiti_decal_04/r0000_c0000.png",
+      "source_native_sha256": "0935e1db1055b1f81087b39cab63ea52a4df6728466f502404d554fa8099a131",
+      "source_window_xywh": [
+        1270,
+        1358,
+        512,
+        512
+      ],
+      "data_relative_image": "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois/graffiti_decal_04.png",
+      "sha256": "0e0cf0c519ac1c0850c6e9387801dd95867d838985ebb01a8013f0995925a57b",
+      "covered_fraction_in_all_three_panels": 1.0,
+      "selection": "decal centre",
+      "resampled": false
+    }
+  ],
+  "sample_count": 21,
+  "native_tiles_available": 170,
+  "layout": "immutable truth | pose-only | optimized",
+  "pixel_scale_m_per_pixel": 0.00025,
+  "selection": "Decal-centre windows for cracks/graffiti; high-gradient covered windows from the first native tile for seams/patches. This samples all 21 features, not all 170 native tiles or the entire mosaic.",
+  "human_review_still_required": true
+}

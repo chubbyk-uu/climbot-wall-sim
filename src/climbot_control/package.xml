@@ -19,6 +19,7 @@
   <depend>std_srvs</depend>
 
   <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>climbot_common</exec_depend>
   <exec_depend>climbot_description</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>

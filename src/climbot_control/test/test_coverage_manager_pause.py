@@ -28,6 +28,7 @@ import math
 from threading import Event, Thread
 import time
 import unittest
+from unittest.mock import Mock
 
 from climbot_interfaces.msg import CoverageStatus, CoverageTask
 from geometry_msgs.msg import Point32, Pose
@@ -69,6 +70,47 @@ def generate_test_description():
 _revisions = iter(range(61, 200))
 
 PAUSE_STATES = (CoverageStatus.PAUSING, CoverageStatus.PAUSED)
+
+
+def _start_after_executor_discovery(call, timeout=10.0):
+    """Wait only on the manager's explicit refusal before dispatching a Goal."""
+    deadline = time.monotonic() + timeout
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise AssertionError('Manager executor discovery timed out')
+        response = call(remaining)
+        if response.success:
+            return response
+        if response.message != 'Coverage executor Action server is unavailable.':
+            raise AssertionError(response.message)
+        time.sleep(.01)
+
+
+class TestPauseExecutorDiscovery(unittest.TestCase):
+    """Keep the readiness barrier bounded and avoid resending accepted Starts."""
+
+    def test_only_predispatch_refusal_is_retried(self):
+        """An accepted Goal ends the loop immediately."""
+        accepted = Trigger.Response(success=True, message='accepted')
+        call = Mock(side_effect=[Trigger.Response(
+            success=False, message='Coverage executor Action server is unavailable.'), accepted])
+        self.assertIs(_start_after_executor_discovery(call), accepted)
+        self.assertEqual(call.call_count, 2)
+
+    def test_other_failure_is_not_retried(self):
+        """A busy or application refusal remains an immediate failure."""
+        call = Mock(return_value=Trigger.Response(success=False, message='busy'))
+        with self.assertRaisesRegex(AssertionError, 'busy'):
+            _start_after_executor_discovery(call)
+        self.assertEqual(call.call_count, 1)
+
+    def test_expired_deadline_does_not_send_start(self):
+        """The barrier cannot dispatch after its deadline."""
+        call = Mock()
+        with self.assertRaisesRegex(AssertionError, 'discovery timed out'):
+            _start_after_executor_discovery(call, timeout=0)
+        call.assert_not_called()
 
 
 def _pose(x, y, yaw):
@@ -145,9 +187,9 @@ class TestCoverageManagerPause(unittest.TestCase):
         while rclpy.ok() and not self.stop_spin.is_set():
             rclpy.spin_once(self.node, timeout_sec=0.01)
 
-    def _call(self, client):
+    def _call(self, client, timeout=5.0):
         future = client.call_async(Trigger.Request())
-        deadline = time.monotonic() + 5.0
+        deadline = time.monotonic() + timeout
         while not future.done() and time.monotonic() < deadline:
             self._publish_odom()
             time.sleep(0.01)
@@ -188,7 +230,8 @@ class TestCoverageManagerPause(unittest.TestCase):
         self._wait_until(
             lambda s: s.state == CoverageStatus.READY and
             s.revision == self.revision, 'the preview to be accepted')
-        self.assertTrue(self._call(self.start_client).success)
+        _start_after_executor_discovery(
+            lambda remaining: self._call(self.start_client, timeout=min(5.0, remaining)))
         return self._wait_until(
             lambda s: s.state == CoverageStatus.EXECUTING, 'execution to start')
 

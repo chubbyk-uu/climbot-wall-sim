@@ -1,0 +1,44 @@
+{
+  "profiles": 149,
+  "gravity_mps2": 9.81,
+  "area_m2": 0.13129300000000002,
+  "worst": {
+    "normal_proportional": {
+      "profile": "rated_grid_137",
+      "state": [
+        49.90000000000001,
+        0.189,
+        0.7,
+        -1.2,
+        0.0
+      ],
+      "minimum_pressure_pa": 5591.856446117163,
+      "pressure_force_n": 734.1716083800608
+    },
+    "equal": {
+      "profile": "rated_grid_112",
+      "state": [
+        41.80000000000001,
+        0.0,
+        0.7,
+        -1.2,
+        0.0
+      ],
+      "minimum_pressure_pa": 5756.200147443451,
+      "pressure_force_n": 755.7487859582932
+    },
+    "conservative": {
+      "profile": "rated_grid_112",
+      "state": [
+        41.80000000000001,
+        0.0,
+        0.7,
+        -1.2,
+        0.0
+      ],
+      "minimum_pressure_pa": 5756.200147443451,
+      "pressure_force_n": 755.7487859582932
+    }
+  },
+  "interpretation": "Equal and proportional allocation envelope; motion still requires S5 validation."
+}

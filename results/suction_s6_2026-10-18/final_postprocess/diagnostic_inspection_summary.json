@@ -1,0 +1,3214 @@
+{
+  "camera_footprint_m": {
+    "detection_forward_offset_m": 0.34,
+    "detection_length_m": 0.28125,
+    "detection_width_m": 0.5
+  },
+  "diagnostic_inspection_format_version": 4,
+  "diagnostic_wall_manifest": "/home/jerry/robot_ws/climbot_sim/textures/wall_diagnostic_025/wall_texture.json",
+  "diagnostic_wall_manifest_sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c",
+  "feature_counts": {
+    "declared": 21,
+    "fully_visible": 17,
+    "intersecting_mosaic_domain": 21,
+    "outside_mosaic_domain": 0,
+    "partially_visible": 4
+  },
+  "features": [
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 1210880,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 1199731,
+        "pixel_count": 1276220,
+        "single_source_pixel_count": 69625,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 6864,
+        "uncovered_outside_region_inside_planned_scan_footprint": 6864,
+        "uncovered_outside_region_inside_safe_pose_envelope": 6864,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 6864
+      },
+      "crop_bounds_m": [
+        3.3445000000000005,
+        0.3744002878665924,
+        3.4555000000000002,
+        7.625650287866592
+      ],
+      "feature_bounds_m": [
+        3.3945000000000003,
+        0.0,
+        3.4055000000000004,
+        8.0
+      ],
+      "id": "construction_seam_01",
+      "kind": "construction_seam",
+      "native_tiles": [
+        {
+          "bytes": 1212940,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 0,
+          "sha256": "0eab63399f4be1991cb5365e68a64a79c484ccc7346a2150cd715550d12c2d19"
+        },
+        {
+          "bytes": 1277355,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 2048,
+          "sha256": "02e3969cf5fe21d1f702610baf2bb8531d259f648d76394a2592c38dd661c9e8"
+        },
+        {
+          "bytes": 1234664,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0002_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 4096,
+          "sha256": "35c808574b9b9b50defec1ac8c27a73a03f43078f46523a0e7ef9b2aa3493d9e"
+        },
+        {
+          "bytes": 1292860,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0003_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 6144,
+          "sha256": "754525ec4a6ad96fcde704a73a8f18a52bae1568f140b3b899828009f817881c"
+        },
+        {
+          "bytes": 1317440,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0004_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 8192,
+          "sha256": "2515ad4ecff02e0b5c797bc2bcd8e150984b504e17b93a4dfeda6136bbbb1a29"
+        },
+        {
+          "bytes": 1109074,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0005_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 10240,
+          "sha256": "3304405ff7e6a7eece9964d0ef7ddaf1a043d846e4ce30aa63dd17384e0b3952"
+        },
+        {
+          "bytes": 1273908,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0006_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 12288,
+          "sha256": "2e2830ff684fc66a0baa8afc36eb1134eb742221627e57c47e1af65bb68b4470"
+        },
+        {
+          "bytes": 1234134,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0007_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 14336,
+          "sha256": "0b4cd90be284dc43119db8ce2038c24c5fd3d8dac2dc984be99a35d9a030e87c"
+        },
+        {
+          "bytes": 1178232,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0008_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 16384,
+          "sha256": "6e598efdd05185bee966f9514f6c52ddf9e9be5aec8262987c92b26859656be0"
+        },
+        {
+          "bytes": 1288948,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0009_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 18432,
+          "sha256": "bfffd57fa71088e31f96a142fcdfde4e45925757e49e16f9fc903a01aa406e0f"
+        },
+        {
+          "bytes": 1311429,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0010_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 20480,
+          "sha256": "4a46806f2263863044311b7d332915e6c34dd53c72171b66ca292cb57ea39092"
+        },
+        {
+          "bytes": 1276429,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0011_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 22528,
+          "sha256": "25392e4f7565ea825e0797920f0d7c1867b1ed30998cd053102dc808aa624307"
+        },
+        {
+          "bytes": 1279352,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0012_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 24576,
+          "sha256": "d809f264d093277890c3917e87602c5cf529a4f71ce53cb5f6c510fa697b8f4e"
+        },
+        {
+          "bytes": 1297761,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0013_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 26624,
+          "sha256": "f6dab958c98ba569668830017991e1f516244e0edd220e18482d91467ff4a0df"
+        },
+        {
+          "bytes": 192411,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_01/r0014_c0000.png",
+          "height_px": 333,
+          "panel_width_px": 444,
+          "row_px": 28672,
+          "sha256": "c1b6a6e93452f3b4bd10bb603e22c08752a0f423a15fb365821e2e28f99e743a"
+        }
+      ],
+      "visibility": "partially_visible",
+      "visible_feature_bounds_m": [
+        3.3945000000000003,
+        0.3744002878665924,
+        3.4055000000000004,
+        7.625650287866592
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 1210880,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 1201334,
+        "pixel_count": 1276220,
+        "single_source_pixel_count": 68330,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 6556,
+        "uncovered_outside_region_inside_planned_scan_footprint": 6556,
+        "uncovered_outside_region_inside_safe_pose_envelope": 6556,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 6556
+      },
+      "crop_bounds_m": [
+        6.944500000000001,
+        0.3744002878665924,
+        7.055499999999999,
+        7.625650287866592
+      ],
+      "feature_bounds_m": [
+        6.9945,
+        0.0,
+        7.0055,
+        8.0
+      ],
+      "id": "construction_seam_02",
+      "kind": "construction_seam",
+      "native_tiles": [
+        {
+          "bytes": 1225562,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 0,
+          "sha256": "69d5be16cb91ff641d943a93b4dc28b4a9b0de83b3a1a858d53b49d13b4f02cd"
+        },
+        {
+          "bytes": 1191225,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 2048,
+          "sha256": "e0343f9496a4a6476da9183c9db90ceb38b104548bfc65ff7066647e2d02565a"
+        },
+        {
+          "bytes": 1157428,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0002_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 4096,
+          "sha256": "b3dafcc27289c8a78a012d7f7d533cdc24e30dd0af0924cc019664d1e53a3e33"
+        },
+        {
+          "bytes": 1237367,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0003_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 6144,
+          "sha256": "8a4cb3908391e497b226ad87d28da69941ceda9e020723ff76b2be3afb439624"
+        },
+        {
+          "bytes": 1299092,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0004_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 8192,
+          "sha256": "ee1598fa600fb1d05c2421049516ce6a641aec1d8672cbbc789f470628b37320"
+        },
+        {
+          "bytes": 1162575,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0005_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 10240,
+          "sha256": "919c15fdc752b1b5174f015f863882da77f63c32358e79ca99233de538e04051"
+        },
+        {
+          "bytes": 1221231,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0006_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 12288,
+          "sha256": "4c4745e0e82cd1485b4a5ec072c09538a96194c7f4d501637be6574b9326545b"
+        },
+        {
+          "bytes": 1100650,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0007_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 14336,
+          "sha256": "8769a4d9dd8f5e1ae97d33deaaaebbb9f75cf76141e177969796136024286e92"
+        },
+        {
+          "bytes": 1198988,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0008_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 16384,
+          "sha256": "0e86c02302581f81015f74740c4feec5bc412583ebbf5428e767ed66ed4af64d"
+        },
+        {
+          "bytes": 1196480,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0009_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 18432,
+          "sha256": "15edf78c41dd5a3994c284a36d0ec9064ad8131359ef39130638a636958715c3"
+        },
+        {
+          "bytes": 1186309,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0010_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 20480,
+          "sha256": "81da7b1cd555aa5a3fd265371e4917f92242f666fb7366794bfe27019bd6e900"
+        },
+        {
+          "bytes": 1162086,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0011_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 22528,
+          "sha256": "c9d3895fbe1408372e37c74805a307beedc145ea0ad01b17f12af4bb11b5c435"
+        },
+        {
+          "bytes": 1163956,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0012_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 24576,
+          "sha256": "4883b6f8fba7798312a36c5b9ce6a28538e4bc51a39106ff58c9cb6a2aa4fd90"
+        },
+        {
+          "bytes": 1215531,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0013_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 444,
+          "row_px": 26624,
+          "sha256": "03679a93f0fa4615d3e39c353c2ec4bc348a59e800ce2c9c5f8835a513e8034b"
+        },
+        {
+          "bytes": 175824,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_02/r0014_c0000.png",
+          "height_px": 333,
+          "panel_width_px": 444,
+          "row_px": 28672,
+          "sha256": "6488fce81a80fbf13262fd67875519fa655cd495eaf021d6b00ccdcd69b82ad0"
+        }
+      ],
+      "visibility": "partially_visible",
+      "visible_feature_bounds_m": [
+        6.9945,
+        0.3744002878665924,
+        7.0055,
+        7.625650287866592
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 1562880,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 1582387,
+        "pixel_count": 1675740,
+        "single_source_pixel_count": 73942,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 19411,
+        "uncovered_outside_region_inside_planned_scan_footprint": 19411,
+        "uncovered_outside_region_inside_safe_pose_envelope": 19411,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 19411
+      },
+      "crop_bounds_m": [
+        0.23807652294635773,
+        4.184500000000001,
+        9.759326522946358,
+        4.2955
+      ],
+      "feature_bounds_m": [
+        0.0,
+        4.234500000000001,
+        10.0,
+        4.2455
+      ],
+      "id": "construction_seam_03",
+      "kind": "construction_seam",
+      "native_tiles": [
+        {
+          "bytes": 1148999,
+          "column_px": 0,
+          "file": "native_tiles/construction_seam_03/r0000_c0000.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "59ea3d71d23e6d3d20ee12ad7e8581326b789674ef436ffb2f46c87bca85e3da"
+        },
+        {
+          "bytes": 1200819,
+          "column_px": 2048,
+          "file": "native_tiles/construction_seam_03/r0000_c0001.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "dbbd0cd8e81990ae23e9a567036f15fc485923fe8f3edec37f9aca000535da19"
+        },
+        {
+          "bytes": 1259437,
+          "column_px": 4096,
+          "file": "native_tiles/construction_seam_03/r0000_c0002.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "5cb7292e76ee6f15028f6131557c8aef9d71c809c7ac8873471de5d770308120"
+        },
+        {
+          "bytes": 1156141,
+          "column_px": 6144,
+          "file": "native_tiles/construction_seam_03/r0000_c0003.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "17d555986456ea7b75f33c50064306d257e4c92ef5796fbdcc969e46f55e59ff"
+        },
+        {
+          "bytes": 1247154,
+          "column_px": 8192,
+          "file": "native_tiles/construction_seam_03/r0000_c0004.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "442e9e05a85b7e7fd924e85e1d3419f77fc18200a74dee83052443aad11ecf4f"
+        },
+        {
+          "bytes": 1155673,
+          "column_px": 10240,
+          "file": "native_tiles/construction_seam_03/r0000_c0005.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "8978b61424d8b949573ba87c3b3662a39b834a635c45466916aa139b9bad434f"
+        },
+        {
+          "bytes": 1345478,
+          "column_px": 12288,
+          "file": "native_tiles/construction_seam_03/r0000_c0006.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "111da25bed9bb9270e6ada4344174a9560a54f8989cfc959fc544b09737c04ed"
+        },
+        {
+          "bytes": 1203640,
+          "column_px": 14336,
+          "file": "native_tiles/construction_seam_03/r0000_c0007.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "b983bf45b0e44f619eaea3e6c28cf852b268ffacdc763db548a785e79734e930"
+        },
+        {
+          "bytes": 1245841,
+          "column_px": 16384,
+          "file": "native_tiles/construction_seam_03/r0000_c0008.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "141807f4dff94ae1df07abd744492553cd7d9ef6fca147cfd4ce9385882c320c"
+        },
+        {
+          "bytes": 1217671,
+          "column_px": 18432,
+          "file": "native_tiles/construction_seam_03/r0000_c0009.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "cd577d0184c7babf8bb9e1d2587d076e4edc01a76d32189cce5e99f7d5d7a0c6"
+        },
+        {
+          "bytes": 1170273,
+          "column_px": 20480,
+          "file": "native_tiles/construction_seam_03/r0000_c0010.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "23f0c63a09ecf925b0cd65f841b3f764f5b36df882406bf0572f2f8e162da034"
+        },
+        {
+          "bytes": 1196929,
+          "column_px": 22528,
+          "file": "native_tiles/construction_seam_03/r0000_c0011.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "29d45fd62486320e27ba16dbdce018bd6eff0d7b4c1f16968b9cd3880d065f36"
+        },
+        {
+          "bytes": 1183754,
+          "column_px": 24576,
+          "file": "native_tiles/construction_seam_03/r0000_c0012.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "7fd45ba25d17239d95294ad2346ef83f427ac493132691bd1c62173c94d6bf9b"
+        },
+        {
+          "bytes": 1195584,
+          "column_px": 26624,
+          "file": "native_tiles/construction_seam_03/r0000_c0013.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "a7301d49099295cc930c4856b1ac0e0786fcd0d191498ddd90b0b519ade630c2"
+        },
+        {
+          "bytes": 1190787,
+          "column_px": 28672,
+          "file": "native_tiles/construction_seam_03/r0000_c0014.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "e9fe14c8a23ed5a2c7ac14b09197ae4bef1bdb62cbc17b8c67ba7fe73add58a8"
+        },
+        {
+          "bytes": 1251115,
+          "column_px": 30720,
+          "file": "native_tiles/construction_seam_03/r0000_c0015.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "de7c8e7f45e9eeea6bcc1b14f046c19be160f09571aa171a828edb1d9133e514"
+        },
+        {
+          "bytes": 1240124,
+          "column_px": 32768,
+          "file": "native_tiles/construction_seam_03/r0000_c0016.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "30e4146cd55ee56f0cfe20ba8d2174a0acd681c2b667858d0191f70acb572a67"
+        },
+        {
+          "bytes": 1216708,
+          "column_px": 34816,
+          "file": "native_tiles/construction_seam_03/r0000_c0017.png",
+          "height_px": 444,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "23b62bd765d8efe7dbd9bc764960970953344c788f96ed08fe82557fe3b18e13"
+        },
+        {
+          "bytes": 623498,
+          "column_px": 36864,
+          "file": "native_tiles/construction_seam_03/r0000_c0018.png",
+          "height_px": 444,
+          "panel_width_px": 1221,
+          "row_px": 0,
+          "sha256": "d408b6c132a6b658f5c0676556a8ba50f42d31b826334fdcf2a82a69f8142838"
+        }
+      ],
+      "visibility": "partially_visible",
+      "visible_feature_bounds_m": [
+        0.23807652294635773,
+        4.234500000000001,
+        9.759326522946358,
+        4.2455
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 12760002,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 12754464,
+        "pixel_count": 12760002,
+        "single_source_pixel_count": 5538,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        0.4745968790364589,
+        0.6145968790364588,
+        2.125403120963541,
+        2.265403120963541
+      ],
+      "feature_bounds_m": [
+        0.5245968790364589,
+        0.6645968790364588,
+        2.075403120963541,
+        2.215403120963541
+      ],
+      "id": "crack_decal_01",
+      "kind": "crack_decal",
+      "native_tiles": [
+        {
+          "bytes": 5616015,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_01/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "feb7e5be23583f36808dc03f733948236642361d787d8d84e398c84edf1489a3"
+        },
+        {
+          "bytes": 5810644,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_01/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "f1373debc250c46560b791a5ea41f2eeced0432b0e8513743ddd7cd87126fada"
+        },
+        {
+          "bytes": 5815525,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_01/r0000_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "700ab1d733342ab149a4e926a1b02e7109b3a44a042abb79a8277a5a2a829276"
+        },
+        {
+          "bytes": 1289648,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_01/r0000_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 460,
+          "row_px": 0,
+          "sha256": "4c9dae8b3c9614067e458e637655d3234b53332aaa70c457c85741a741abe8b8"
+        },
+        {
+          "bytes": 5438625,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_01/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "6fb8c62d856ce945d9480b6bec92bec1ce0c359ad370929469f4eb02d8fc8af3"
+        },
+        {
+          "bytes": 5912520,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_01/r0001_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "78897bcf12d0a08aeeb6b5a291430b90f09ceb818e53b2cd0293c852d5ce3718"
+        },
+        {
+          "bytes": 5502460,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_01/r0001_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "47e569c178256de10dcea1d1a87e35ad5a82e68bb92434ca05ada795a29afacd"
+        },
+        {
+          "bytes": 1258442,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_01/r0001_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 460,
+          "row_px": 2048,
+          "sha256": "f3771b7682373b9c281bb25bb502ec6088d3103f1ee0282d80b77da555d6b07e"
+        },
+        {
+          "bytes": 5230622,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_01/r0002_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "b47d20dfa7fe79d9197d9ee6b9e21e39aa2be2e31c05eda6cdd9acae7d9fe88d"
+        },
+        {
+          "bytes": 5794713,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_01/r0002_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "9453fb32dbf8f269b9abf3b50b73c0a80221bb970050138354434819e8cb557a"
+        },
+        {
+          "bytes": 5669697,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_01/r0002_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "2427b8909c4342048267d477722155e5b69a6bc39ac1644394c0cf2f2226b0fe"
+        },
+        {
+          "bytes": 1287176,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_01/r0002_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 460,
+          "row_px": 4096,
+          "sha256": "58b3a41e0e10e03d7afd83aeb84e9a791eb92383195152358ff05af3bc70da78"
+        },
+        {
+          "bytes": 886943,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_01/r0003_c0000.png",
+          "height_px": 460,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "d672fa29ced4f9f2317d4d97780b3a5d0fea34cd5ca98fe6b935b789601e9dfb"
+        },
+        {
+          "bytes": 1260452,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_01/r0003_c0001.png",
+          "height_px": 460,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "ce6f4124c1b1255ac348c48d36012696667cc7c6233c3ed85d0c94e2e17044b3"
+        },
+        {
+          "bytes": 1237017,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_01/r0003_c0002.png",
+          "height_px": 460,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "c89e94d72fd90b057c2cacf8b7e7b686fa3503d1ad5721a4f8aad346d7697406"
+        },
+        {
+          "bytes": 252960,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_01/r0003_c0003.png",
+          "height_px": 460,
+          "panel_width_px": 460,
+          "row_px": 6144,
+          "sha256": "49c59608b37fd7d796a1633635f2b68724745ee4fc86c71a084c8a5f140536ed"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        0.5245968790364589,
+        0.6645968790364588,
+        2.075403120963541,
+        2.215403120963541
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 14999999,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 14999999,
+        "pixel_count": 14999999,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        1.7211310131443374,
+        5.541131013144338,
+        3.278868986855662,
+        7.0988689868556625
+      ],
+      "feature_bounds_m": [
+        1.7711310131443374,
+        5.591131013144338,
+        3.2288689868556624,
+        7.048868986855663
+      ],
+      "id": "crack_decal_02",
+      "kind": "crack_decal",
+      "native_tiles": [
+        {
+          "bytes": 5709519,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_02/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "84c8e6f4a7f43f051b2d6db8a4228314b0737d0d9bae67ab0a8eef7c89b1b776"
+        },
+        {
+          "bytes": 5854574,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_02/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "5e4cbcdb05b5a447225c907f56d48b57cafcb5118161cc70fef52047a8e538c2"
+        },
+        {
+          "bytes": 5891287,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_02/r0000_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "9d5172c69b0d4bfcba124655cacdfad030aa0716f1f6ab41a594c60191d811d0"
+        },
+        {
+          "bytes": 242829,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_02/r0000_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 87,
+          "row_px": 0,
+          "sha256": "e9d9b21fd03fda059fd6c90481cd849465c205b7b7ccc7b94193bb36eec4c3ea"
+        },
+        {
+          "bytes": 5811859,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_02/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "4dc9766e7c661ffc2ae0f1ed1a9e56e467c0078698468bd795711b8a205a90f4"
+        },
+        {
+          "bytes": 5373763,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_02/r0001_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "128af433282226e7b7835e6336c030c91e2e083770055f15ca86d24290de782e"
+        },
+        {
+          "bytes": 5601506,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_02/r0001_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "6e14b46e9be7ba6fd913e3d3491ef2db6a55701c90f32aed8e419cbeec03f045"
+        },
+        {
+          "bytes": 243938,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_02/r0001_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 87,
+          "row_px": 2048,
+          "sha256": "2b0e290c1280f0d0f18befee31099eaba8d1b547775a1b32deafd549966a788a"
+        },
+        {
+          "bytes": 5725428,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_02/r0002_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "59398709dedfaefc84a2f79c8d75e44e05c32058649f5a2cc35829e284963d68"
+        },
+        {
+          "bytes": 5778938,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_02/r0002_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "ab742e7a6128e82105383aecf95bed0e925411841b853e6f4d3ef884f59d44e7"
+        },
+        {
+          "bytes": 5756163,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_02/r0002_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "f34ca8503ddab9c80c7666127d8747f67ba64be26152063227030617d6c89172"
+        },
+        {
+          "bytes": 241072,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_02/r0002_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 87,
+          "row_px": 4096,
+          "sha256": "17e4e3271a3cef236ef2f0bac21d9cc70e90fd3a2cd1c41846360b59c192e932"
+        },
+        {
+          "bytes": 245090,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_02/r0003_c0000.png",
+          "height_px": 87,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "17bd1ca5955b52b3e2e9dca4ea478b99959be568dc091754399fc4473361d471"
+        },
+        {
+          "bytes": 242619,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_02/r0003_c0001.png",
+          "height_px": 87,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "851359c608d6ca1025ac11e14e4b6456c662ef0834eb22662c8d60cfa1640f65"
+        },
+        {
+          "bytes": 243426,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_02/r0003_c0002.png",
+          "height_px": 87,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "31584be3d06ccd982026fdc5ae40d77a85a9461ed7be7ccde0ab7daa92ea0165"
+        },
+        {
+          "bytes": 10184,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_02/r0003_c0003.png",
+          "height_px": 87,
+          "panel_width_px": 87,
+          "row_px": 6144,
+          "sha256": "ca38e41e7a208fb4910de32a24150cb193f0f027d25d0f2f57c250e71fb7ee31"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        1.7711310131443374,
+        5.591131013144338,
+        3.2288689868556624,
+        7.048868986855663
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 10911999,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 10911999,
+        "pixel_count": 10911999,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        3.618652235293416,
+        2.118652235293416,
+        4.981347764706584,
+        3.481347764706584
+      ],
+      "feature_bounds_m": [
+        3.6686522352934157,
+        2.1686522352934157,
+        4.931347764706584,
+        3.431347764706584
+      ],
+      "id": "crack_decal_03",
+      "kind": "crack_decal",
+      "native_tiles": [
+        {
+          "bytes": 5830757,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_03/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "3e45b9cdfa362a2cf307ee26568688768d1be43fd1eecb7292d92b89d244aba6"
+        },
+        {
+          "bytes": 5813349,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_03/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "c9d412516192283f77b1cbe484b8b90a3c50b92ce12a1064ffa9778f41d7f3f2"
+        },
+        {
+          "bytes": 3724399,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_03/r0000_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 1355,
+          "row_px": 0,
+          "sha256": "91157f51fbf83e1eaf8c8d172429dd0a816c3a86d43e051d1d07b00acc280c5d"
+        },
+        {
+          "bytes": 5580647,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_03/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "cd9475e64d1178eacbda7d1d40468e69c83fbc68492d7f53d20f95d2f30970ce"
+        },
+        {
+          "bytes": 5825859,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_03/r0001_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "04e8cc997e993b8e4f6538a9e197d5d1e19c36623bff034a24732e8619c4f812"
+        },
+        {
+          "bytes": 3722600,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_03/r0001_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 1355,
+          "row_px": 2048,
+          "sha256": "14b6a57188fdc01e70b391ef3f304f11b6c2336606dd0f06d6e4e83656046a5d"
+        },
+        {
+          "bytes": 3960113,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_03/r0002_c0000.png",
+          "height_px": 1355,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "ab10d0ffacea4d8a1e782ac1468ffeaf0c2e0a31385ec8a7e78509879b14b1ae"
+        },
+        {
+          "bytes": 3936673,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_03/r0002_c0001.png",
+          "height_px": 1355,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "48bf5207741bac90275c3ce4c9ef92734c97c696d088c7e1ced0c4e0a06a7a37"
+        },
+        {
+          "bytes": 2377338,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_03/r0002_c0002.png",
+          "height_px": 1355,
+          "panel_width_px": 1355,
+          "row_px": 4096,
+          "sha256": "a9019a20a1c81aa6384ab3fc0cd0d25be498378571d73bae2201fa35a72b19ca"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        3.6686522352934157,
+        2.1686522352934157,
+        4.931347764706584,
+        3.431347764706584
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 11232004,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 11232004,
+        "pixel_count": 11232004,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        4.926657066115939,
+        4.9866570661159395,
+        6.47334293388406,
+        6.53334293388406
+      ],
+      "feature_bounds_m": [
+        4.976657066115939,
+        5.036657066115939,
+        6.42334293388406,
+        6.48334293388406
+      ],
+      "id": "crack_decal_04",
+      "kind": "crack_decal",
+      "native_tiles": [
+        {
+          "bytes": 5689765,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_04/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "edbf5d7fb7e9fef8d0b2ff5fdfa6648a53b827c5486d67c3dcbfe3ccb1872a54"
+        },
+        {
+          "bytes": 5721152,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_04/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "938ef0e5d1deda6eaa8775fe0ec6c1c43367757c46e07ed3d1b7cc23eb958abd"
+        },
+        {
+          "bytes": 5652056,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_04/r0000_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "c1df644d732723dded5c17b28b27af29017d4102c91aecf139509407607e5c9a"
+        },
+        {
+          "bytes": 114819,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_04/r0000_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 43,
+          "row_px": 0,
+          "sha256": "c36cd91a3e6ae7584b23ff28dc044f99ce66dffbd7af286cfc7b166d0b348810"
+        },
+        {
+          "bytes": 5697482,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_04/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "1073559eb4972fbc56e44f1e1a117140f619551f9a46ce50470ff32758ed4abd"
+        },
+        {
+          "bytes": 5773377,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_04/r0001_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "ba0eac7cb4d294dcbe0fb52758d99084e85c8375db250df5a0ae01c4712a89ac"
+        },
+        {
+          "bytes": 5786574,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_04/r0001_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "02db2bd63930b999d8d17a444ea42adfbb342a30643b2f678a810230072978fe"
+        },
+        {
+          "bytes": 122234,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_04/r0001_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 43,
+          "row_px": 2048,
+          "sha256": "1e1e8b60a4ae3f3ca8024d8397c23970ebf0c1ea9b59f8a4b2c27c6637df04a3"
+        },
+        {
+          "bytes": 5804163,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_04/r0002_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "8efde32bf51e976707e79d829406c17ce19c932b5a155464450cc046bdb0e58a"
+        },
+        {
+          "bytes": 5942543,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_04/r0002_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "1a27d8f49725c1f21755a61c99b47f0afd4b4ad7975726e04ae7087d17a690f7"
+        },
+        {
+          "bytes": 5628201,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_04/r0002_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "71c79cbfebdb854f96bfca7ee35c13f6129cc34af115eba2a3e4896bdea5e7c9"
+        },
+        {
+          "bytes": 110375,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_04/r0002_c0003.png",
+          "height_px": 2048,
+          "panel_width_px": 43,
+          "row_px": 4096,
+          "sha256": "a3200c8e0982e1d6fba1d1acdd3c5c3c11266dcf61ba8eaa05a740512a2b88e0"
+        },
+        {
+          "bytes": 113541,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_04/r0003_c0000.png",
+          "height_px": 43,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "8b55f90fc57a0469e4310060ef6c9162f5f4b5c60d17cccb7643d354e6acad97"
+        },
+        {
+          "bytes": 127179,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_04/r0003_c0001.png",
+          "height_px": 43,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "c0eb0fabda68d0168a01722e2b74fe55ba5389e075009287493a7ef8de1fcf67"
+        },
+        {
+          "bytes": 118322,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_04/r0003_c0002.png",
+          "height_px": 43,
+          "panel_width_px": 2048,
+          "row_px": 6144,
+          "sha256": "69b4a038135f76404660defe8c48a2a6b7c11f8c584341b3f65efbdd85b0c157"
+        },
+        {
+          "bytes": 2228,
+          "column_px": 6144,
+          "file": "native_tiles/crack_decal_04/r0003_c0003.png",
+          "height_px": 43,
+          "panel_width_px": 43,
+          "row_px": 6144,
+          "sha256": "64b70fb35e838d9f8f48c2f20805c0ada3fbf5902e57944b6487e428f9f82fbd"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        4.976657066115939,
+        5.036657066115939,
+        6.42334293388406,
+        6.48334293388406
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 11968004,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 11968004,
+        "pixel_count": 11968004,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        5.738260676431538,
+        0.6982606764315376,
+        7.061739323568463,
+        2.0217393235684624
+      ],
+      "feature_bounds_m": [
+        5.788260676431538,
+        0.7482606764315376,
+        7.011739323568463,
+        1.9717393235684626
+      ],
+      "id": "crack_decal_05",
+      "kind": "crack_decal",
+      "native_tiles": [
+        {
+          "bytes": 5684310,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_05/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "9dba0480b89e6509d6517c76142197b8e20d5195f58bed4d9fecfc0f77da8346"
+        },
+        {
+          "bytes": 5700763,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_05/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "0fbc33766c2db6034728115de86a70f61782b4ae3fff5047a4f2d48a0163bd10"
+        },
+        {
+          "bytes": 3132262,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_05/r0000_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 1198,
+          "row_px": 0,
+          "sha256": "0648af52199b863ea861a54ee8d68a6b7d44780b4ca42753c5c6b15f75617a2e"
+        },
+        {
+          "bytes": 5840052,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_05/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "fc823a93cce00388172c827093aeb1733e10f976d103776cfce1c6c47b4de48c"
+        },
+        {
+          "bytes": 5732855,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_05/r0001_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "02f099aa2ba8c3251e5ba35e49e4c9b05435bb2f39df8c7985768fad7681df05"
+        },
+        {
+          "bytes": 3159721,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_05/r0001_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 1198,
+          "row_px": 2048,
+          "sha256": "fc04619fce92efda9b7f245e08c3231d4bc82aaec788887d77277fba9cf3c8a4"
+        },
+        {
+          "bytes": 3358304,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_05/r0002_c0000.png",
+          "height_px": 1198,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "ab574cc596b70876864d50e37df7a50df9d2e2dbdfb12ce80d4363b4351fe8ae"
+        },
+        {
+          "bytes": 3304917,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_05/r0002_c0001.png",
+          "height_px": 1198,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "95c5d3fd963663ea93d9a5885f4d8971cfcde31aaa9ba6c3583aa44768d8998f"
+        },
+        {
+          "bytes": 1974898,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_05/r0002_c0002.png",
+          "height_px": 1198,
+          "panel_width_px": 1198,
+          "row_px": 4096,
+          "sha256": "1bb70406ede0fd59110f1ec0ac06b4ce6da56f315f7bb7752d0a222e944520a0"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        5.788260676431538,
+        0.7482606764315376,
+        7.011739323568463,
+        1.9717393235684626
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 12063995,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 12063995,
+        "pixel_count": 12063995,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        7.138241614029031,
+        2.4382416140290304,
+        8.661758385970971,
+        3.96175838597097
+      ],
+      "feature_bounds_m": [
+        7.188241614029031,
+        2.48824161402903,
+        8.61175838597097,
+        3.91175838597097
+      ],
+      "id": "crack_decal_06",
+      "kind": "crack_decal",
+      "native_tiles": [
+        {
+          "bytes": 5816832,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_06/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "45a77f08a11ad2cd61e90f9f1f979794ecc4352215450cf368726241baad8868"
+        },
+        {
+          "bytes": 5672759,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_06/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "572978cc929ad82deff9cd3bd95bf7e93f78f07ec8576a737cd25719fa1327bc"
+        },
+        {
+          "bytes": 5530673,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_06/r0000_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 1998,
+          "row_px": 0,
+          "sha256": "3cc54381e98706d82c087071e212f7fff29cf3d625b8cf0feca9325af0c6c7b7"
+        },
+        {
+          "bytes": 5612681,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_06/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "5d4ac366ecc8e9410d72e6b8771f6fef3372766ef23ed0829410869b49a624fa"
+        },
+        {
+          "bytes": 5747240,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_06/r0001_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "099c3a9d524fef0d5e7dbcc67fcb14441a3f76d64305fd2bd3dd078ec7d0b97d"
+        },
+        {
+          "bytes": 5533564,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_06/r0001_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 1998,
+          "row_px": 2048,
+          "sha256": "888427649f0319b87bb1b77a819b63b51a604eaf48e4aad8a80189725bf7c6ba"
+        },
+        {
+          "bytes": 5551484,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_06/r0002_c0000.png",
+          "height_px": 1998,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "d86d0bbfb4dd0319e4025e4795e33a2e860503b7b6934bd29645f7797e6726c3"
+        },
+        {
+          "bytes": 5680298,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_06/r0002_c0001.png",
+          "height_px": 1998,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "3c3ced430548a963f8074843c301332bbd1d8f7792ad02fffec93e5c4d432a82"
+        },
+        {
+          "bytes": 5617615,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_06/r0002_c0002.png",
+          "height_px": 1998,
+          "panel_width_px": 1998,
+          "row_px": 4096,
+          "sha256": "7bc0a7d6fa2192831dcd18a02665f73378bc8d2a506add1bd41e5e41ccc38816"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        7.188241614029031,
+        2.48824161402903,
+        8.61175838597097,
+        3.91175838597097
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 8064000,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 8064000,
+        "pixel_count": 8064000,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        8.272743557853184,
+        5.452743557853185,
+        9.527256442146816,
+        6.707256442146815
+      ],
+      "feature_bounds_m": [
+        8.322743557853185,
+        5.502743557853185,
+        9.477256442146816,
+        6.6572564421468154
+      ],
+      "id": "crack_decal_07",
+      "kind": "crack_decal",
+      "native_tiles": [
+        {
+          "bytes": 5727555,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_07/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "a4b6d7494ea55ea3c523444bf7709641b2df62f31dac9d48aa038d9a38320312"
+        },
+        {
+          "bytes": 5825179,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_07/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "12eeff8a276f5b645683d71f3e621121bd494ca6f3153a494f73749a87f6957b"
+        },
+        {
+          "bytes": 2563348,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_07/r0000_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 922,
+          "row_px": 0,
+          "sha256": "39eb87f4454293777646212e77b1642f190fccc012eef864b692814fa59f648d"
+        },
+        {
+          "bytes": 5664962,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_07/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "71c3bc28335adb5bdb00be7563bd1f0140ea87d4099d796cd17cfc5466284fa3"
+        },
+        {
+          "bytes": 5898351,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_07/r0001_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "50341155ce70071f35e6ba7d3b67880ed2d5b740ab7bb7255f1a9ce28f2344df"
+        },
+        {
+          "bytes": 2647867,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_07/r0001_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 922,
+          "row_px": 2048,
+          "sha256": "ecec3a6863e63152d4da983b7e1919ef2ca454796ed2cc1dcd3008df2ee25bb4"
+        },
+        {
+          "bytes": 2456366,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_07/r0002_c0000.png",
+          "height_px": 922,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "bef19d48247a0752af6541106da7694640efcc0395a85795c1d3f4c46793f72d"
+        },
+        {
+          "bytes": 2589877,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_07/r0002_c0001.png",
+          "height_px": 922,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "c8626e5e3515ff9b7de9e6039324c3642e5ee837191c825329014e273fac286d"
+        },
+        {
+          "bytes": 1211006,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_07/r0002_c0002.png",
+          "height_px": 922,
+          "panel_width_px": 922,
+          "row_px": 4096,
+          "sha256": "3cbce6b9af7aeb3e9dd037799b3f702943c70aa2c8e46666bbdfe08c9dfd8e5c"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        8.322743557853185,
+        5.502743557853185,
+        9.477256442146816,
+        6.6572564421468154
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 8337801,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 8903972,
+        "pixel_count": 10233599,
+        "single_source_pixel_count": 1006107,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 323520,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 323520,
+        "uncovered_outside_region_outside_planned_scan_footprint": 323520,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 323520
+      },
+      "crop_bounds_m": [
+        8.584137825968195,
+        0.5041378259681958,
+        9.759326522946358,
+        1.7358621740318043
+      ],
+      "feature_bounds_m": [
+        8.634137825968196,
+        0.5541378259681958,
+        9.765862174031806,
+        1.6858621740318043
+      ],
+      "id": "crack_decal_08",
+      "kind": "crack_decal",
+      "native_tiles": [
+        {
+          "bytes": 5565209,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_08/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "9bc2d563b9fcb2fc555d3f695df83d8202be9d1300a82a446532f5c647e1f4af"
+        },
+        {
+          "bytes": 5583090,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_08/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "9aa4419ac08df19988cf751c4142ba347d5db9055a9409ebe2c8323f084cb88d"
+        },
+        {
+          "bytes": 1422979,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_08/r0000_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 605,
+          "row_px": 0,
+          "sha256": "1ec2febba900f14a023e2e07f8d369c4ad495733d11fb0aa0c161b8ba075d941"
+        },
+        {
+          "bytes": 5508387,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_08/r0001_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "8f5c2c5457b5bdca428abe3eb9def8b437dedbc57e8eefa6d1488aa645c8187f"
+        },
+        {
+          "bytes": 5715586,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_08/r0001_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "eb760bbef18bc1d680c2fb15a1f12153880b14c087f8420f075946af3b697589"
+        },
+        {
+          "bytes": 1401400,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_08/r0001_c0002.png",
+          "height_px": 2048,
+          "panel_width_px": 605,
+          "row_px": 2048,
+          "sha256": "e9d6372fa694eb06ae3686b217369e1fffae6983bfd8c7f0c406290eded6a9e3"
+        },
+        {
+          "bytes": 2042462,
+          "column_px": 0,
+          "file": "native_tiles/crack_decal_08/r0002_c0000.png",
+          "height_px": 831,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "314b3232b3267a1a11d958086cd771dbd35d72fe0e6efd50c0f2809157e571f1"
+        },
+        {
+          "bytes": 2258257,
+          "column_px": 2048,
+          "file": "native_tiles/crack_decal_08/r0002_c0001.png",
+          "height_px": 831,
+          "panel_width_px": 2048,
+          "row_px": 4096,
+          "sha256": "29a8db88990d353d555c123f6f567177336420ef838560fe4603554a520d0be8"
+        },
+        {
+          "bytes": 431659,
+          "column_px": 4096,
+          "file": "native_tiles/crack_decal_08/r0002_c0002.png",
+          "height_px": 831,
+          "panel_width_px": 605,
+          "row_px": 4096,
+          "sha256": "a77cac6d2b213cf9c6110eef0db059a940670a821366ea276454563718feb419"
+        }
+      ],
+      "visibility": "partially_visible",
+      "visible_feature_bounds_m": [
+        8.634137825968196,
+        0.5541378259681958,
+        9.759326522946358,
+        1.6858621740318043
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 1810747,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 1810747,
+        "pixel_count": 1810747,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        1.7139033978094318,
+        3.308351448024625,
+        2.2657071071997827,
+        3.722207827838917
+      ],
+      "feature_bounds_m": [
+        1.7639033978094318,
+        3.358351448024625,
+        2.215707107199783,
+        3.672207827838917
+      ],
+      "id": "repair_patch_01",
+      "kind": "repair_patch",
+      "native_tiles": [
+        {
+          "bytes": 4363357,
+          "column_px": 0,
+          "file": "native_tiles/repair_patch_01/r0000_c0000.png",
+          "height_px": 1656,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "3582fc472c02e4592556ba4d15988f59e58ff306674dad48629bc949d1c1599b"
+        },
+        {
+          "bytes": 376348,
+          "column_px": 2048,
+          "file": "native_tiles/repair_patch_01/r0000_c0001.png",
+          "height_px": 1656,
+          "panel_width_px": 160,
+          "row_px": 0,
+          "sha256": "06780ae4853d37c01c108405a2aff26d6a8a3b07fe46d0d8e830cc6a4d7d2838"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        1.7639033978094318,
+        3.358351448024625,
+        2.215707107199783,
+        3.672207827838917
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 3082813,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 3082813,
+        "pixel_count": 3082813,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        4.030627383192017,
+        1.585492302883493,
+        4.757682985343949,
+        2.0841223993746576
+      ],
+      "feature_bounds_m": [
+        4.080627383192017,
+        1.6354923028834931,
+        4.707682985343949,
+        2.0341223993746578
+      ],
+      "id": "repair_patch_02",
+      "kind": "repair_patch",
+      "native_tiles": [
+        {
+          "bytes": 4929879,
+          "column_px": 0,
+          "file": "native_tiles/repair_patch_02/r0000_c0000.png",
+          "height_px": 1995,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "cc74d769318919058206adf88bc8ddbd964bdf7730e03496c19c159d2da02b85"
+        },
+        {
+          "bytes": 2165344,
+          "column_px": 2048,
+          "file": "native_tiles/repair_patch_02/r0000_c0001.png",
+          "height_px": 1995,
+          "panel_width_px": 860,
+          "row_px": 0,
+          "sha256": "45ca8f72a82179032fcd92afb6d139838b0c4e5ad05c48b1da586e5acd86e870"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        4.080627383192017,
+        1.6354923028834931,
+        4.707682985343949,
+        2.0341223993746578
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 2642998,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 2642998,
+        "pixel_count": 2642998,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        6.121135039298557,
+        4.632669488311744,
+        6.653937534242972,
+        5.265990820672875
+      ],
+      "feature_bounds_m": [
+        6.171135039298557,
+        4.682669488311744,
+        6.603937534242972,
+        5.215990820672875
+      ],
+      "id": "repair_patch_03",
+      "kind": "repair_patch",
+      "native_tiles": [
+        {
+          "bytes": 5467669,
+          "column_px": 0,
+          "file": "native_tiles/repair_patch_03/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "8ec6891a5f1689eef5c0922b85052166c9b9d0e61354c6439b602a99bd39719c"
+        },
+        {
+          "bytes": 223123,
+          "column_px": 2048,
+          "file": "native_tiles/repair_patch_03/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 83,
+          "row_px": 0,
+          "sha256": "f957787138bd729461573643771c6795ea750c648c43aa3cd5d48d619a3f92c9"
+        },
+        {
+          "bytes": 1313789,
+          "column_px": 0,
+          "file": "native_tiles/repair_patch_03/r0001_c0000.png",
+          "height_px": 485,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "095f31206ddfeb7780ad459d7e2c1e7c2633049977c69f89f9f6ee0053737ed2"
+        },
+        {
+          "bytes": 53129,
+          "column_px": 2048,
+          "file": "native_tiles/repair_patch_03/r0001_c0001.png",
+          "height_px": 485,
+          "panel_width_px": 83,
+          "row_px": 2048,
+          "sha256": "241a3a6c7f7aab1b9fa62d2bea8063e80c5ddeb9b4991ec62fc5bf04c179f8c8"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        6.171135039298557,
+        4.682669488311744,
+        6.603937534242972,
+        5.215990820672875
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 1779121,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 1779121,
+        "pixel_count": 1779121,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        8.487978931379901,
+        1.9462984779463928,
+        9.113342840953203,
+        2.349946370913752
+      ],
+      "feature_bounds_m": [
+        8.537978931379902,
+        1.9962984779463928,
+        9.063342840953203,
+        2.299946370913752
+      ],
+      "id": "repair_patch_04",
+      "kind": "repair_patch",
+      "native_tiles": [
+        {
+          "bytes": 4181598,
+          "column_px": 0,
+          "file": "native_tiles/repair_patch_04/r0000_c0000.png",
+          "height_px": 1615,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "1b44045d6760e2aa4927259e352663ad9bcef62efe05a6fd52f9ca133d831941"
+        },
+        {
+          "bytes": 988402,
+          "column_px": 2048,
+          "file": "native_tiles/repair_patch_04/r0000_c0001.png",
+          "height_px": 1615,
+          "panel_width_px": 453,
+          "row_px": 0,
+          "sha256": "17f089a66c1c9e8949cf7e6d0a9de48e1b61af97b65adc332c374c40a97dd363"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        8.537978931379902,
+        1.9962984779463928,
+        9.063342840953203,
+        2.299946370913752
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 932065,
+        "maximum_source_count": 6,
+        "overlap_pixel_count": 932065,
+        "pixel_count": 932065,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        1.3916899710548694,
+        5.427293198518047,
+        1.8045140768636077,
+        5.765118713000296
+      ],
+      "feature_bounds_m": [
+        1.4416899710548694,
+        5.477293198518047,
+        1.7545140768636076,
+        5.7151187130002965
+      ],
+      "id": "repair_patch_05",
+      "kind": "repair_patch",
+      "native_tiles": [
+        {
+          "bytes": 2986728,
+          "column_px": 0,
+          "file": "native_tiles/repair_patch_05/r0000_c0000.png",
+          "height_px": 1351,
+          "panel_width_px": 1652,
+          "row_px": 0,
+          "sha256": "8a809a82863af629cd505215efef1f73ef389b5c4b8b8853ce36d665fea28d26"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        1.4416899710548694,
+        5.477293198518047,
+        1.7545140768636076,
+        5.7151187130002965
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 1651954,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 1651954,
+        "pixel_count": 1651954,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        7.548507969165478,
+        6.506030851271472,
+        8.037416811876783,
+        6.925738264364397
+      ],
+      "feature_bounds_m": [
+        7.598507969165478,
+        6.556030851271472,
+        7.987416811876783,
+        6.875738264364397
+      ],
+      "id": "repair_patch_06",
+      "kind": "repair_patch",
+      "native_tiles": [
+        {
+          "bytes": 4155213,
+          "column_px": 0,
+          "file": "native_tiles/repair_patch_06/r0000_c0000.png",
+          "height_px": 1679,
+          "panel_width_px": 1956,
+          "row_px": 0,
+          "sha256": "a3fd48eacf61f5d29392cb4ad9b6ac4b91a44e50e85f1d2c374aa5b9bbf496d7"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        7.598507969165478,
+        6.556030851271472,
+        7.987416811876783,
+        6.875738264364397
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 4840000,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 4673398,
+        "pixel_count": 4840000,
+        "single_source_pixel_count": 166602,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        0.4610912703473988,
+        4.201091270347399,
+        1.3389087296526012,
+        5.078908729652601
+      ],
+      "feature_bounds_m": [
+        0.5110912703473988,
+        4.251091270347398,
+        1.2889087296526012,
+        5.028908729652601
+      ],
+      "id": "graffiti_decal_01",
+      "kind": "graffiti_decal",
+      "native_tiles": [
+        {
+          "bytes": 5705898,
+          "column_px": 0,
+          "file": "native_tiles/graffiti_decal_01/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "895682c3ae2108e07337315829a3e0a5099dc194d25dfb80fa95cd00ec2e586a"
+        },
+        {
+          "bytes": 3996408,
+          "column_px": 2048,
+          "file": "native_tiles/graffiti_decal_01/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 1464,
+          "row_px": 0,
+          "sha256": "20b1d7483e7624a548dbf6de1dd316eaabb96b81ea854b179d67deeeb3ea5669"
+        },
+        {
+          "bytes": 3973591,
+          "column_px": 0,
+          "file": "native_tiles/graffiti_decal_01/r0001_c0000.png",
+          "height_px": 1464,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "6623d07c0fefee3b0fe493df53489377e174719dfbcea2cb4f61b88b34c51d43"
+        },
+        {
+          "bytes": 2901132,
+          "column_px": 2048,
+          "file": "native_tiles/graffiti_decal_01/r0001_c0001.png",
+          "height_px": 1464,
+          "panel_width_px": 1464,
+          "row_px": 2048,
+          "sha256": "8d6866d6bfdceeddde04572cf9122278207236e0dfaf48efd69c998a21507d46"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        0.5110912703473988,
+        4.251091270347398,
+        1.2889087296526012,
+        5.028908729652601
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 4742399,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 4742399,
+        "pixel_count": 4742399,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        3.216179760730323,
+        6.476179760730323,
+        4.183820239269677,
+        7.443820239269677
+      ],
+      "feature_bounds_m": [
+        3.266179760730323,
+        6.526179760730323,
+        4.133820239269677,
+        7.393820239269677
+      ],
+      "id": "graffiti_decal_02",
+      "kind": "graffiti_decal",
+      "native_tiles": [
+        {
+          "bytes": 5521968,
+          "column_px": 0,
+          "file": "native_tiles/graffiti_decal_02/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "2e47532cba5b910ff0cff593fd88626831e3ceff7981a4f2ca45e023dba44b22"
+        },
+        {
+          "bytes": 5040248,
+          "column_px": 2048,
+          "file": "native_tiles/graffiti_decal_02/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 1823,
+          "row_px": 0,
+          "sha256": "55e76e1891f89b4f55cccdc44c3c704e6c07c9bb0278c8adb89bee8d9c32f02e"
+        },
+        {
+          "bytes": 5094464,
+          "column_px": 0,
+          "file": "native_tiles/graffiti_decal_02/r0001_c0000.png",
+          "height_px": 1823,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "cdd43f6b45e48610f4fc850fbd7be92cf7d073d4d6b1733c2c6d23fa931a040f"
+        },
+        {
+          "bytes": 4542810,
+          "column_px": 2048,
+          "file": "native_tiles/graffiti_decal_02/r0001_c0001.png",
+          "height_px": 1823,
+          "panel_width_px": 1823,
+          "row_px": 2048,
+          "sha256": "1c43eeb9617370080d79eda750579beb348d5f9390b31e6f910ac06ee25cb31f"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        3.266179760730323,
+        6.526179760730323,
+        4.133820239269677,
+        7.393820239269677
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 4815998,
+        "maximum_source_count": 8,
+        "overlap_pixel_count": 4815998,
+        "pixel_count": 4815998,
+        "single_source_pixel_count": 0,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 0,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 0,
+        "uncovered_outside_region_outside_planned_scan_footprint": 0,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 0
+      },
+      "crop_bounds_m": [
+        6.739238512029182,
+        2.0192385120291827,
+        7.660761487970817,
+        2.9407614879708173
+      ],
+      "feature_bounds_m": [
+        6.789238512029182,
+        2.0692385120291825,
+        7.610761487970817,
+        2.8907614879708174
+      ],
+      "id": "graffiti_decal_03",
+      "kind": "graffiti_decal",
+      "native_tiles": [
+        {
+          "bytes": 5731743,
+          "column_px": 0,
+          "file": "native_tiles/graffiti_decal_03/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "1954deaf319a374d5e3afe15d482cc52227028f3194a212cbf991db604801a25"
+        },
+        {
+          "bytes": 4521091,
+          "column_px": 2048,
+          "file": "native_tiles/graffiti_decal_03/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 1638,
+          "row_px": 0,
+          "sha256": "9a326400e905fe96839fcb0c58d07974f04d470302780a81a48ad41d63ce521e"
+        },
+        {
+          "bytes": 4596175,
+          "column_px": 0,
+          "file": "native_tiles/graffiti_decal_03/r0001_c0000.png",
+          "height_px": 1638,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "3aa4cec820ea275066f7f3862d31bfebc1e17855ef73ae383a4cc236dd5c1104"
+        },
+        {
+          "bytes": 3601071,
+          "column_px": 2048,
+          "file": "native_tiles/graffiti_decal_03/r0001_c0001.png",
+          "height_px": 1638,
+          "panel_width_px": 1638,
+          "row_px": 2048,
+          "sha256": "68c011f2aff1d23cce523ff70f66e2c334d3d2e53bc4ab12e6096655dee01f77"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        6.789238512029182,
+        2.0692385120291825,
+        7.610761487970817,
+        2.8907614879708174
+      ]
+    },
+    {
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 2331426,
+        "maximum_source_count": 5,
+        "overlap_pixel_count": 2703909,
+        "pixel_count": 4000006,
+        "single_source_pixel_count": 1177863,
+        "uncovered_inside_inspection_region": 0,
+        "uncovered_outside_inspection_region": 118234,
+        "uncovered_outside_region_inside_planned_scan_footprint": 0,
+        "uncovered_outside_region_inside_safe_pose_envelope": 118234,
+        "uncovered_outside_region_outside_planned_scan_footprint": 118234,
+        "uncovered_outside_region_outside_safe_pose_envelope": 0,
+        "uncovered_pixel_count": 118234
+      },
+      "crop_bounds_m": [
+        8.996446609406725,
+        4.476446609406726,
+        9.759326522946358,
+        5.283553390593274
+      ],
+      "feature_bounds_m": [
+        9.046446609406726,
+        4.526446609406726,
+        9.753553390593272,
+        5.233553390593274
+      ],
+      "id": "graffiti_decal_04",
+      "kind": "graffiti_decal",
+      "native_tiles": [
+        {
+          "bytes": 5662987,
+          "column_px": 0,
+          "file": "native_tiles/graffiti_decal_04/r0000_c0000.png",
+          "height_px": 2048,
+          "panel_width_px": 2048,
+          "row_px": 0,
+          "sha256": "0935e1db1055b1f81087b39cab63ea52a4df6728466f502404d554fa8099a131"
+        },
+        {
+          "bytes": 2102446,
+          "column_px": 2048,
+          "file": "native_tiles/graffiti_decal_04/r0000_c0001.png",
+          "height_px": 2048,
+          "panel_width_px": 1004,
+          "row_px": 0,
+          "sha256": "31d54269e517a7cf7c4b306b7645736fdbadf52f843202df458a6143c6ee8db1"
+        },
+        {
+          "bytes": 3405731,
+          "column_px": 0,
+          "file": "native_tiles/graffiti_decal_04/r0001_c0000.png",
+          "height_px": 1181,
+          "panel_width_px": 2048,
+          "row_px": 2048,
+          "sha256": "8e8c84ff987667188ce2f9a2030b20f7e1bb28efe848d1f2172d239e4d1b5efb"
+        },
+        {
+          "bytes": 1554360,
+          "column_px": 2048,
+          "file": "native_tiles/graffiti_decal_04/r0001_c0001.png",
+          "height_px": 1181,
+          "panel_width_px": 1004,
+          "row_px": 2048,
+          "sha256": "54d64f04125b5813cf3141adefdc0dead6357d3e484318eeaf1bca04add37b99"
+        }
+      ],
+      "visibility": "fully_visible",
+      "visible_feature_bounds_m": [
+        9.046446609406726,
+        4.526446609406726,
+        9.753553390593272,
+        5.233553390593274
+      ]
+    }
+  ],
+  "frozen_tasks": [
+    {
+      "archive_manifest_sha256": "7d3300a8a25d9d2f95e1b45d2c419d8cc664c889e0da24451b5e60e49845fc30",
+      "processing_manifest_sha256": "7c900e760f2d2f5400932ff0e920e28310e52c25121db6260be201636497cae8",
+      "source_run_id": "73c1949ae71f4b8fb606c5c4c80a395a",
+      "task_id": "vacuum-diagnostic-full-horizontal-025mm-20261018"
+    },
+    {
+      "archive_manifest_sha256": "adcc2581f43ccfd09eca6c58da132cd5cb7ea986fb40cef2e8964bca2b6f0bbb",
+      "processing_manifest_sha256": "8e7cd512e9af4a3699ae12ff262b728658228ca71c34976c2950faaa9a49d45c",
+      "source_run_id": "e8f1b005c22e429fb99813bee9e4184e",
+      "task_id": "vacuum-diagnostic-full-vertical-025mm-20261018"
+    }
+  ],
+  "full_resolution_overlap_quality": {
+    "metric": "grayscale standard deviation across source images in >=2-image overlap",
+    "optimized": {
+      "gray_std_mean": 1.8367417510046133,
+      "gray_std_p95": 3.3626373626373627,
+      "overlap_pixel_count": 963420276
+    },
+    "pose_only": {
+      "gray_std_mean": 4.549553019538692,
+      "gray_std_p95": 9.714285714285714,
+      "overlap_pixel_count": 964485029
+    }
+  },
+  "inspection_region_m": [
+    [
+      0.5600000023841858,
+      0.5600000023841858
+    ],
+    [
+      9.4399995803833,
+      0.5600000023841858
+    ],
+    [
+      9.4399995803833,
+      7.440000057220459
+    ],
+    [
+      0.5600000023841858,
+      7.440000057220459
+    ]
+  ],
+  "mosaic_dir": "/home/jerry/climbot_data/mosaic-suction-s6-final-joint-20261018-cuda",
+  "mosaic_manifest_sha256": "1495c5401254256a3a3eb278951043904d576d6fa648f0ec9ddb9904a35d4a92",
+  "native_tile_contract": {
+    "layout": "left-to-right: immutable_truth, pose_only, optimized",
+    "padding_m": 0.05,
+    "resampled": false,
+    "tile_size_px": 2048
+  },
+  "pixel_scale_m_per_pixel": 0.00025,
+  "planned_scan_footprints_m": [
+    [
+      [
+        0.7593750000000001,
+        0.6584550141507889
+      ],
+      [
+        9.920625,
+        0.6584550141507889
+      ],
+      [
+        9.920625,
+        1.158455014150789
+      ],
+      [
+        0.7593750000000001,
+        1.158455014150789
+      ]
+    ],
+    [
+      [
+        0.07937500000000003,
+        1.0448981373819404
+      ],
+      [
+        9.240625,
+        1.0448981373819404
+      ],
+      [
+        9.240625,
+        1.5448981373819404
+      ],
+      [
+        0.07937500000000003,
+        1.5448981373819404
+      ]
+    ],
+    [
+      [
+        0.7593750000000001,
+        1.4313412606130917
+      ],
+      [
+        9.920625,
+        1.4313412606130917
+      ],
+      [
+        9.920625,
+        1.9313412606130917
+      ],
+      [
+        0.7593750000000001,
+        1.9313412606130917
+      ]
+    ],
+    [
+      [
+        0.07937500000000003,
+        1.8177843838442431
+      ],
+      [
+        9.240625,
+        1.8177843838442431
+      ],
+      [
+        9.240625,
+        2.317784383844243
+      ],
+      [
+        0.07937500000000003,
+        2.317784383844243
+      ]
+    ],
+    [
+      [
+        0.7593750000000001,
+        2.2042275070753945
+      ],
+      [
+        9.920625,
+        2.2042275070753945
+      ],
+      [
+        9.920625,
+        2.7042275070753945
+      ],
+      [
+        0.7593750000000001,
+        2.7042275070753945
+      ]
+    ],
+    [
+      [
+        0.07937500000000003,
+        2.590670630306546
+      ],
+      [
+        9.240625,
+        2.590670630306546
+      ],
+      [
+        9.240625,
+        3.090670630306546
+      ],
+      [
+        0.07937500000000003,
+        3.090670630306546
+      ]
+    ],
+    [
+      [
+        0.7593750000000001,
+        2.9771137535376972
+      ],
+      [
+        9.920625,
+        2.9771137535376972
+      ],
+      [
+        9.920625,
+        3.4771137535376972
+      ],
+      [
+        0.7593750000000001,
+        3.4771137535376972
+      ]
+    ],
+    [
+      [
+        0.07937500000000003,
+        3.3635568767688486
+      ],
+      [
+        9.240625,
+        3.3635568767688486
+      ],
+      [
+        9.240625,
+        3.8635568767688486
+      ],
+      [
+        0.07937500000000003,
+        3.8635568767688486
+      ]
+    ],
+    [
+      [
+        0.7593750000000001,
+        3.75
+      ],
+      [
+        9.920625,
+        3.75
+      ],
+      [
+        9.920625,
+        4.25
+      ],
+      [
+        0.7593750000000001,
+        4.25
+      ]
+    ],
+    [
+      [
+        0.07937500000000003,
+        4.136443123231151
+      ],
+      [
+        9.240625,
+        4.136443123231151
+      ],
+      [
+        9.240625,
+        4.636443123231151
+      ],
+      [
+        0.07937500000000003,
+        4.636443123231151
+      ]
+    ],
+    [
+      [
+        0.7593750000000001,
+        4.522886246462303
+      ],
+      [
+        9.920625,
+        4.522886246462303
+      ],
+      [
+        9.920625,
+        5.022886246462303
+      ],
+      [
+        0.7593750000000001,
+        5.022886246462303
+      ]
+    ],
+    [
+      [
+        0.07937500000000003,
+        4.909329369693454
+      ],
+      [
+        9.240625,
+        4.909329369693454
+      ],
+      [
+        9.240625,
+        5.409329369693454
+      ],
+      [
+        0.07937500000000003,
+        5.409329369693454
+      ]
+    ],
+    [
+      [
+        0.7593750000000001,
+        5.2957724929246055
+      ],
+      [
+        9.920625,
+        5.2957724929246055
+      ],
+      [
+        9.920625,
+        5.7957724929246055
+      ],
+      [
+        0.7593750000000001,
+        5.7957724929246055
+      ]
+    ],
+    [
+      [
+        0.07937500000000003,
+        5.682215616155757
+      ],
+      [
+        9.240625,
+        5.682215616155757
+      ],
+      [
+        9.240625,
+        6.182215616155757
+      ],
+      [
+        0.07937500000000003,
+        6.182215616155757
+      ]
+    ],
+    [
+      [
+        0.7593750000000001,
+        6.068658739386908
+      ],
+      [
+        9.920625,
+        6.068658739386908
+      ],
+      [
+        9.920625,
+        6.568658739386908
+      ],
+      [
+        0.7593750000000001,
+        6.568658739386908
+      ]
+    ],
+    [
+      [
+        0.07937500000000003,
+        6.45510186261806
+      ],
+      [
+        9.240625,
+        6.45510186261806
+      ],
+      [
+        9.240625,
+        6.95510186261806
+      ],
+      [
+        0.07937500000000003,
+        6.95510186261806
+      ]
+    ],
+    [
+      [
+        0.7593750000000001,
+        6.841544985849211
+      ],
+      [
+        9.920625,
+        6.841544985849211
+      ],
+      [
+        9.920625,
+        7.341544985849211
+      ],
+      [
+        0.7593750000000001,
+        7.341544985849211
+      ]
+    ],
+    [
+      [
+        0.56,
+        0.8578300141507891
+      ],
+      [
+        1.06,
+        0.8578300141507891
+      ],
+      [
+        1.06,
+        7.822169985849211
+      ],
+      [
+        0.56,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        0.9590476190476189,
+        0.17783001415078897
+      ],
+      [
+        1.459047619047619,
+        0.17783001415078897
+      ],
+      [
+        1.459047619047619,
+        7.142169985849211
+      ],
+      [
+        0.9590476190476189,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        1.358095238095238,
+        0.8578300141507891
+      ],
+      [
+        1.858095238095238,
+        0.8578300141507891
+      ],
+      [
+        1.858095238095238,
+        7.822169985849211
+      ],
+      [
+        1.358095238095238,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        1.7571428571428571,
+        0.17783001415078897
+      ],
+      [
+        2.257142857142857,
+        0.17783001415078897
+      ],
+      [
+        2.257142857142857,
+        7.142169985849211
+      ],
+      [
+        1.7571428571428571,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        2.156190476190476,
+        0.8578300141507891
+      ],
+      [
+        2.656190476190476,
+        0.8578300141507891
+      ],
+      [
+        2.656190476190476,
+        7.822169985849211
+      ],
+      [
+        2.156190476190476,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        2.555238095238095,
+        0.17783001415078897
+      ],
+      [
+        3.055238095238095,
+        0.17783001415078897
+      ],
+      [
+        3.055238095238095,
+        7.142169985849211
+      ],
+      [
+        2.555238095238095,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        2.954285714285714,
+        0.8578300141507891
+      ],
+      [
+        3.454285714285714,
+        0.8578300141507891
+      ],
+      [
+        3.454285714285714,
+        7.822169985849211
+      ],
+      [
+        2.954285714285714,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        3.353333333333333,
+        0.17783001415078897
+      ],
+      [
+        3.853333333333333,
+        0.17783001415078897
+      ],
+      [
+        3.853333333333333,
+        7.142169985849211
+      ],
+      [
+        3.353333333333333,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        3.7523809523809515,
+        0.8578300141507891
+      ],
+      [
+        4.2523809523809515,
+        0.8578300141507891
+      ],
+      [
+        4.2523809523809515,
+        7.822169985849211
+      ],
+      [
+        3.7523809523809515,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        4.151428571428571,
+        0.17783001415078897
+      ],
+      [
+        4.651428571428571,
+        0.17783001415078897
+      ],
+      [
+        4.651428571428571,
+        7.142169985849211
+      ],
+      [
+        4.151428571428571,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        4.550476190476189,
+        0.8578300141507891
+      ],
+      [
+        5.050476190476189,
+        0.8578300141507891
+      ],
+      [
+        5.050476190476189,
+        7.822169985849211
+      ],
+      [
+        4.550476190476189,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        4.949523809523809,
+        0.17783001415078886
+      ],
+      [
+        5.449523809523809,
+        0.17783001415078886
+      ],
+      [
+        5.449523809523809,
+        7.142169985849211
+      ],
+      [
+        4.949523809523809,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        5.348571428571429,
+        0.8578300141507889
+      ],
+      [
+        5.848571428571429,
+        0.8578300141507889
+      ],
+      [
+        5.848571428571429,
+        7.822169985849211
+      ],
+      [
+        5.348571428571429,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        5.747619047619047,
+        0.17783001415078886
+      ],
+      [
+        6.247619047619047,
+        0.17783001415078886
+      ],
+      [
+        6.247619047619047,
+        7.142169985849211
+      ],
+      [
+        5.747619047619047,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        6.1466666666666665,
+        0.8578300141507889
+      ],
+      [
+        6.6466666666666665,
+        0.8578300141507889
+      ],
+      [
+        6.6466666666666665,
+        7.822169985849211
+      ],
+      [
+        6.1466666666666665,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        6.5457142857142845,
+        0.17783001415078886
+      ],
+      [
+        7.0457142857142845,
+        0.17783001415078886
+      ],
+      [
+        7.0457142857142845,
+        7.142169985849211
+      ],
+      [
+        6.5457142857142845,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        6.944761904761904,
+        0.8578300141507889
+      ],
+      [
+        7.444761904761904,
+        0.8578300141507889
+      ],
+      [
+        7.444761904761904,
+        7.822169985849211
+      ],
+      [
+        6.944761904761904,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        7.343809523809522,
+        0.17783001415078886
+      ],
+      [
+        7.843809523809522,
+        0.17783001415078886
+      ],
+      [
+        7.843809523809522,
+        7.142169985849211
+      ],
+      [
+        7.343809523809522,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        7.742857142857142,
+        0.8578300141507889
+      ],
+      [
+        8.242857142857142,
+        0.8578300141507889
+      ],
+      [
+        8.242857142857142,
+        7.822169985849211
+      ],
+      [
+        7.742857142857142,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        8.14190476190476,
+        0.17783001415078886
+      ],
+      [
+        8.64190476190476,
+        0.17783001415078886
+      ],
+      [
+        8.64190476190476,
+        7.142169985849211
+      ],
+      [
+        8.14190476190476,
+        7.142169985849211
+      ]
+    ],
+    [
+      [
+        8.54095238095238,
+        0.8578300141507889
+      ],
+      [
+        9.04095238095238,
+        0.8578300141507889
+      ],
+      [
+        9.04095238095238,
+        7.822169985849211
+      ],
+      [
+        8.54095238095238,
+        7.822169985849211
+      ]
+    ],
+    [
+      [
+        8.94,
+        0.17783001415078886
+      ],
+      [
+        9.44,
+        0.17783001415078886
+      ],
+      [
+        9.44,
+        7.142169985849211
+      ],
+      [
+        8.94,
+        7.142169985849211
+      ]
+    ]
+  ],
+  "purpose": "Post-mosaic 100%-scale visual inspection only; immutable diagnostic wall truth is never available to candidate generation, matching, or pose optimization.",
+  "safe_pose_camera_envelopes_m": [
+    [
+      [
+        0.07782999038696287,
+        0.3084549903869629
+      ],
+      [
+        9.242169532775879,
+        0.3084549903869629
+      ],
+      [
+        9.242169532775879,
+        7.691545009613037
+      ],
+      [
+        0.07782999038696287,
+        7.691545009613037
+      ]
+    ],
+    [
+      [
+        0.757829990386963,
+        0.3084549903869629
+      ],
+      [
+        9.922169532775879,
+        0.3084549903869629
+      ],
+      [
+        9.922169532775879,
+        7.691545009613037
+      ],
+      [
+        0.757829990386963,
+        7.691545009613037
+      ]
+    ],
+    [
+      [
+        0.3084549903869629,
+        0.07782999038696287
+      ],
+      [
+        9.691544532775879,
+        0.07782999038696287
+      ],
+      [
+        9.691544532775879,
+        7.242170009613037
+      ],
+      [
+        0.3084549903869629,
+        7.242170009613037
+      ]
+    ],
+    [
+      [
+        0.3084549903869629,
+        0.757829990386963
+      ],
+      [
+        9.691544532775879,
+        0.757829990386963
+      ],
+      [
+        9.691544532775879,
+        7.922170009613037
+      ],
+      [
+        0.3084549903869629,
+        7.922170009613037
+      ]
+    ]
+  ],
+  "visible_feature_coverage": {
+    "all_inspection_region_feature_pixels_covered": true,
+    "all_visible_feature_pixels_covered": false,
+    "feature_pixels_inside_inspection_region": 122951965,
+    "pixel_count": 126759883,
+    "uncovered_inside_inspection_region": 0,
+    "uncovered_outside_inspection_region": 474585,
+    "uncovered_outside_region_inside_planned_scan_footprint": 32831,
+    "uncovered_outside_region_inside_safe_pose_envelope": 474585,
+    "uncovered_outside_region_outside_planned_scan_footprint": 441754,
+    "uncovered_outside_region_outside_safe_pose_envelope": 0,
+    "uncovered_pixel_count": 474585
+  }
+}

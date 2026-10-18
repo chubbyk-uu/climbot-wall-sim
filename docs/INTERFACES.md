@@ -1,6 +1,6 @@
 # ROS 2 与离线数据接口合同
 
-更新：2026-09-01。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
+更新：2026-10-18。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
 [接口归档](archive/interfaces/INTERFACES_2026-08-27.md)。主线操作步骤见
 [根 README](../README.md#快速启动)，实验变体与故障处置见 [OPERATION](OPERATION.md)，
 架构职责见 [ARCHITECTURE](ARCHITECTURE.md)。
@@ -9,12 +9,14 @@
 
 | 入口 | 合同 |
 | --- | --- |
-| `climbot_wall.launch.py` | Gazebo、桥接、TF、传感器适配、EKF、速度看门狗 |
+| `climbot_wall.launch.py` | 默认新负压底盘、Gazebo、桥接、TF、传感器适配、EKF、速度看门狗 |
+| `climbot_vacuum_stack.launch.py` | 与 climbot_wall 共用实现的兼容入口 |
 | `coverage_planner.launch.py` | 独立规划与可选 RViz，仅预览 |
 | `coverage_sim.launch.py` | 仿真与规划联合预览，不启动执行器 |
 | `coverage_mission.launch.py` | 完整任务：仿真、规划、执行、RViz 和可选巡检 |
 | `coverage_executor.launch.py` | 多段 Action 执行器与跟踪器 |
 | `inspection.launch.py` | G1/G2/G4 相机、触发、归档与可选平场预览 |
+| `climbot_vacuum.launch.py` | 隔离物理诊断入口；正常任务使用完整默认 stack |
 
 带归档的 launch 从 `CLIMBOT_DATA_ROOT` 取得 `inspection_output_root`；调用方也可传入绝对路径。
 未配置时使用记录器主机当前用户的 `$HOME/climbot_data`，绝不把具体用户目录写入仓库。
@@ -36,6 +38,72 @@ bridge 改发 `/clock_raw`，由 `clock_throttle_node` 抽稀后发布 `/clock`�
   输出。`use_sim_time` 为真时节点拒绝启动。
 - 节点退出即整体 `Shutdown()`。所有停滞检测器都按仿真时间老化，时钟一断它们随之冻结，
   系统会安静地停住而没有任何节点报错。
+
+## 吸附与压力接口
+
+默认 `robot_geometry=vacuum_chassis`，当前只接受这一几何；`adhesion_mode=vacuum` 为三机 C，
+`fixed_pressure` 为同插件 B，`auto` 等价于 vacuum。legacy／legacy_constant 已移除且明确拒绝。
+物理配置来自 vacuum_physics.yaml，启动／支撑来自 vacuum_runtime.yaml。
+
+压力与故障配置来源为 `climbot_gazebo/config/vacuum_io.yaml`，启动参数 `io_config:=<YAML>` 可覆盖其中
+`vacuum_io` 下的字段；传感器字段按键覆盖，其余字段整体覆盖，未知键、非法参数和未对齐物理步长
+的采样周期／固定延迟均拒绝启动。默认仍为三台固定档位风机、同一个连通腔体，无压力闭环。
+
+| ROS topic | ROS 类型 / Gazebo 类型 | 方向与语义 |
+| --- | --- | --- |
+| `/suction/pressure` | `sensor_msgs/FluidPressure` / `gz.msgs.FluidPressure` | GZ→ROS；腔内**绝压 Pa**，header 为采样时刻，frame 为 `chassis_link`，variance 单位 Pa² |
+| `/suction/ambient_pressure` | 同上 | GZ→ROS；外界绝压，当前固定取 `vacuum_physics.yaml` 的 `gas.ambient_pa=101325`，带仿真时间戳，variance=0 |
+| `/suction/fans/fan_{0,1,2}/enabled` | `std_msgs/Bool` / `gz.msgs.Boolean` | ROS→GZ；true 为固定档位启用，false 为关闭；不接收连续调速 |
+| `/suction/fans/fan_{0,1,2}/failed` | 同上 | ROS→GZ；true 注入驱动失效，false 恢复；有效目标为 `enabled && !failed`，故恢复不覆盖操作者的关闭命令 |
+| `/suction/sensor/fault` | `std_msgs/Int32` / `gz.msgs.Int32` | ROS→GZ；0 正常、1 丢报、2 卡值；其他值计入拒绝数且不改变状态 |
+| `/suction/ground_truth/state` | `std_msgs/String` / `gz.msgs.StringMsg` | GZ→ROS；严格 JSON 评价快照，含 `time_s`、`generation`、腔压／环境压／压差、力矩、风机命令与实际转速、传感器故障及采样／送达状态 |
+
+以上桥接采用 reliable、volatile、keep-last 10；评价客户端可增大本地队列。订阅者须发现实际
+发布端再开始计数，volatile 不补发历史。单向桥接防止回环；真值 topic 仅供评价，未接入定位、
+规划、控制或拼接输入。业务读取压差应使用 `Δp = p_a - fluid_pressure`，不能将绝压当吸力。
+
+默认传感器 100 Hz、白噪声标准差 10 Pa、固定偏置 +25 Pa、固定延迟 20 ms、量程
+20000～120000 Pa、种子 4817。这是 provisional 仿真配置，尚无真机参数依据。
+采样在绝对仿真时间网格上进行：当前 1 ms 物理步下首次非暂停更新为 1 ms，首个采样为 10 ms，
+首个送达为 30 ms；不会伪造 t=0 的测量。header 始终保留采样时间，送达时间另见真值快照。
+噪声／偏置后按量程截断，`sensor_saturated` 标记饱和；variance 是配置的截断前噪声方差，
+不包含偏置或饱和的误差。种子可复现性限定同一标准库／构建环境。
+
+丢报模式继续推进采样计数与随机源但不发布；卡值冻结最近一次**采集**的值，仍发布新采样时间戳，
+variance=0 仅描述注入的恒定读数，不表示真实压力无误差。切换故障时清空待送达队列，恢复后
+重新经历固定延迟。所有测量误差和传感器故障均不修改物理腔压或施力。
+
+风机关闭／失效采用同一转速一阶衰减，不模拟叶片机械卡死；停转口仍按原曲线倒灌，未增加止回阀。
+B 的理想固定压力源保持设定压差，即使风机关闭；风机故障对腔压的验证必须使用 C。
+Gazebo 传输回调只入队，下一个非暂停 PreUpdate 才应用；命令无源时间戳，生效时间以快照
+`time_s` 与递增 `command_revision` 确认。入队最多 1024 条，溢出／非法故障计入
+`rejected_commands`。不把重复发布当作同步确认。
+
+同源配置的 `events` 支持可重复注入：`{time_s, kind, index, value}`，按 time_s 非降序；
+kind 0=enabled、1=failed、2=sensor fault，风机 index=0..2，传感器 index=0。
+到达事件时间的首个非暂停步执行，同步时刻按配置顺序执行，随后执行已排队的实时命令；
+两入口共用应用函数。暂停不积分、不采样、不发布新状态、不应用队列。reset 恢复环境腔压、
+零转速、三机启用／无失效、传感器正常、随机源、采样计数和延迟队列，并清除已入队命令，
+事件表从头重放，`generation` 增一。无时间戳的实时命令若在 reset 后才到达，仍视为新命令。
+
+独立评价 JSON 字段名来自 `vacuum_state.hpp`；`sensor_stamp_s=-1` 表示本代尚无送达测量。
+物理域异常时 `runtime_failed=1` 锁存至 world reset，不恢复支撑或恒力。真值仍按原频率
+发布递增 `time_s`，风机命令及一阶转速继续更新；`last_valid_time_s` 保留最后成功求解时间。
+此时腔压、间隙及流量等求解字段仅为失效前快照，必须结合故障标志判无效；实际施加的
+压力／裙边／支撑／滚阻力矩字段为零。压力传感器停止采样和送达，不把旧腔压加新时间戳
+伪装为有效测量；保留的 `sensor_stamp_s` 不再推进。暂停规则不变，reset 清除失效状态。
+`sensor_sequence` 是已采样数，`sensor_delivery_s` 是最近实际送达的仿真时刻；卡值、丢报和
+真值变化均须保留原始记录。truth 默认 100 Hz，首步额外发布安装状态，随后按时间网格发布。
+这些输出不新增速度控制通道或运行低压门禁，启动支撑仍只读取物理真值。
+
+S5 原生试验补充：`vacuum_io.opening_schedule` 是独立试验漏口面积时间表，每行
+`{time_s, area_m2}`，非空时从 t=0 开始、时间严格递增、面积在 0～0.02 m² 内；段间线性
+插值，末值保持。它叠加到基础漏气和实际裙边开口上，暂停不推进、reset 重放；不表示墙面
+新增碰撞沟槽。`vacuum_runtime.fixture_bench_hold=true` 显式保持安装支撑，仅供受约束压力／
+流量台架；默认 false，不能作为自由整车保持证据。两项实际值均进入评价快照。
+评价快照另记录施力实际读取的线／角速度（`force_input_*`）、漏气／风机正向／倒灌质量流量
+及实际转速下最高关断压差。评估摩擦功率须使用同一施力输入状态，不能混用物理步后速度。
+
 
 ## 坐标、控制与定位
 

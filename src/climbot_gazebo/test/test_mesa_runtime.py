@@ -22,7 +22,9 @@ import subprocess
 import sys
 from types import SimpleNamespace
 
-from climbot_gazebo.mesa_runtime import environment, GALLIUM, validate
+from climbot_gazebo.mesa_runtime import (
+    copy_tunables, environment, GALLIUM, rendering_environment, validate,
+)
 
 from launch import LaunchContext
 
@@ -47,6 +49,70 @@ def _fake_install(root):
             'libraries_sha256': {GALLIUM: digest},
         }), encoding='utf-8')
     return prefix
+
+
+def test_copy_tuning_preserves_other_glibc_policy_and_is_idempotent():
+    """Change only copy instruction selection, retaining caller configuration."""
+    original = 'glibc.malloc.arena_max=4:glibc.cpu.hwcaps=-AVX512F,ERMS'
+    tuned = copy_tunables(original)
+    assert tuned == 'glibc.malloc.arena_max=4:glibc.cpu.hwcaps=-AVX512F,-ERMS,-FSRM'
+    assert copy_tunables(tuned) == tuned
+
+
+def test_copy_tuning_is_restored_when_leaving_private_mesa(tmp_path):
+    """A nested native/software client must retain the original user tuning."""
+    prefix = _fake_install(tmp_path)
+    original = {'GLIBC_TUNABLES': 'glibc.malloc.arena_max=4'}
+    private = environment('private', prefix, original)
+    restored = environment('system', prefix, private)
+    assert restored == original
+    assert environment('private', prefix, dict(original, CLIMBOT_MEMCPY_MODE='default'))[
+        'GLIBC_TUNABLES'] == original['GLIBC_TUNABLES']
+
+
+def test_copy_tuning_is_scoped_to_private_wsl_and_can_be_disabled(tmp_path, monkeypatch):
+    """Never leak upload tuning into native/software or override explicit opt out."""
+    import climbot_gazebo.mesa_runtime as runtime
+
+    prefix = _fake_install(tmp_path)
+    original_read_text = Path.read_text
+    monkeypatch.setattr(runtime.platform, 'machine', lambda: 'x86_64')
+    monkeypatch.setattr(Path, 'read_text', lambda path, *a, **k:
+                        'Linux microsoft WSL2' if str(path) == '/proc/version'
+                        else original_read_text(path, *a, **k))
+    original = {'GLIBC_TUNABLES': 'glibc.malloc.arena_max=4',
+                'CLIMBOT_MESA_PREFIX': str(prefix)}
+    private, _ = rendering_environment('wsl_d3d12', 'private', original)
+    assert private['GLIBC_TUNABLES'] == (
+        'glibc.malloc.arena_max=4:glibc.cpu.hwcaps=-ERMS,-FSRM')
+    for backend in ['native', 'software']:
+        restored, _ = rendering_environment(backend, 'private', private)
+        assert restored['GLIBC_TUNABLES'] == original['GLIBC_TUNABLES']
+        assert 'LD_PRELOAD' not in restored
+    disabled, _ = rendering_environment(
+        'wsl_d3d12', 'private', dict(original, CLIMBOT_MEMCPY_MODE='default'))
+    assert disabled['GLIBC_TUNABLES'] == original['GLIBC_TUNABLES']
+    monkeypatch.setattr(runtime.platform, 'machine', lambda: 'aarch64')
+    assert environment('private', prefix, original)['GLIBC_TUNABLES'] == (
+        original['GLIBC_TUNABLES'])
+
+
+def test_new_entries_use_validated_shared_mesa_without_system_fallback(tmp_path):
+    """Native probes and the candidate launch use the same WSL runtime rule."""
+    prefix = _fake_install(tmp_path)
+    original = {'CLIMBOT_MESA_PREFIX': str(prefix), 'DISPLAY': ':0'}
+    env, identity = rendering_environment('wsl_d3d12', 'private', original)
+    assert identity['gallium_sha256'] == validate(prefix)['gallium_sha256']
+    assert env['GALLIUM_DRIVER'] == 'd3d12'
+    assert str(prefix / 'lib' / GALLIUM) in env['LD_PRELOAD']
+    assert original == {'CLIMBOT_MESA_PREFIX': str(prefix), 'DISPLAY': ':0'}
+    software, identity = rendering_environment('software', 'private', env)
+    assert software['GALLIUM_DRIVER'] == 'llvmpipe'
+    assert 'LD_PRELOAD' not in software
+    assert identity['gallium_sha256'] is None
+    (prefix / 'lib' / GALLIUM).unlink()
+    with pytest.raises(ValueError, match='missing'):
+        rendering_environment('wsl_d3d12', 'private', original)
 
 
 def test_missing_or_changed_patch_fails_before_launch(tmp_path):
@@ -74,7 +140,7 @@ def test_wsl_launch_rejects_missing_patch_before_rendering_world(
         tmp_path, monkeypatch):
     """Fail before world rendering when D3D12 has no patched Mesa."""
     launch_file = (Path(__file__).resolve().parents[1] /
-                   'launch/climbot_wall.launch.py')
+                   'climbot_gazebo/simulation_stack.py')
     spec = importlib.util.spec_from_file_location(
         'climbot_wall_mesa_test', launch_file)
     module = importlib.util.module_from_spec(spec)

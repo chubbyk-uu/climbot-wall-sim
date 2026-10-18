@@ -1,0 +1,103 @@
+{
+  "executed": true,
+  "passed": true,
+  "deleted_png_count": 4190,
+  "deleted_image_logical_bytes": 3888161320,
+  "groups": [
+    {
+      "path": "suction_s6_legacy_reference_20261018_r2",
+      "png_count": 1340,
+      "image_logical_bytes": 1134082932
+    },
+    {
+      "path": "suction_s6_candidate_20261018_r2",
+      "png_count": 1340,
+      "image_logical_bytes": 1135254082
+    },
+    {
+      "path": "processed-suction-s6-final-horizontal-20261018",
+      "png_count": 680,
+      "image_logical_bytes": 554711019
+    },
+    {
+      "path": "processed-suction-s6-final-vertical-20261018",
+      "png_count": 660,
+      "image_logical_bytes": 550259551
+    },
+    {
+      "path": "mosaic-suction-s6-final-joint-20261018-inspection/native_tiles",
+      "png_count": 170,
+      "image_logical_bytes": 513853736
+    }
+  ],
+  "retained_metadata_files_verified": 4042,
+  "retained_review_samples_verified": 21,
+  "protected_trees_unchanged": true,
+  "protected_after": {
+    "suction_s6_legacy_dual_gui_20261018_final": {
+      "files": 2688,
+      "bytes": 1136789051,
+      "stat_tree_sha256": "f29b886c7ff2be35a5fc227dcb895727f50970a33783e85e8ecd383e70893c34"
+    },
+    "suction_s6_candidate_dual_gui_20261018_final": {
+      "files": 2688,
+      "bytes": 1138311000,
+      "stat_tree_sha256": "bfb1b59007a9c474871a82a9c4fa3e65e314a4e24e926d2fee6282a399083b4b"
+    },
+    "calibration": {
+      "files": 2,
+      "bytes": 26070658,
+      "stat_tree_sha256": "b05621c396f5aaa77db36edd60f1389ccdd91cf43f8a549d97b68c80aca1bcb8"
+    },
+    "acceptance_evidence/suction_s6_20261018": {
+      "files": 3378,
+      "bytes": 2485566145,
+      "stat_tree_sha256": "99c8f4a62eff242ee3a6350b3ad6159d67c328d958d3a81c6ab9be20e10f8619"
+    },
+    "mosaic-suction-s6-final-joint-20261018-cuda": {
+      "files": 12,
+      "bytes": 1482940872,
+      "stat_tree_sha256": "53e64337451e89d407571028f1ca6902cc90e030223623dfeee54a8a0661b28a"
+    },
+    "mosaic-suction-s6-final-joint-20261018-matches": {
+      "files": 2,
+      "bytes": 9575574,
+      "stat_tree_sha256": "3ec9a9ae2a63f0b3c2fa22df42144ac8f5c8ab2ec624971c353531a0421617d7"
+    },
+    "mosaic-suction-s6-final-joint-20261018-pose-graph": {
+      "files": 4,
+      "bytes": 1047657,
+      "stat_tree_sha256": "167c8b8fc7e0cd53fc8444a0d4311fd444a67cc0833488dab2b94cf1a25c6a59"
+    },
+    "mosaic-suction-s6-final-joint-20261018-inspection/manual_review_rois": {
+      "files": 21,
+      "bytes": 6694771,
+      "stat_tree_sha256": "ef0247fa25a8a97fb1f6cf00eed9381155f72b6e5d99a8a703e602ffcc83a264"
+    },
+    "suction_s7_medium_20261018": {
+      "files": 144,
+      "bytes": 58526009,
+      "stat_tree_sha256": "90dbaab4f8a8ba0948d71e41cdf055c3bea8ebac0c0b7ea465fcf5363b243159"
+    },
+    "suction_s7_medium_20261018_processed": {
+      "files": 143,
+      "bytes": 56858300,
+      "stat_tree_sha256": "911eef59e3836a38be001efe0aef49b45a1e531dd676ba885e404b53056cfb80"
+    },
+    "suction_s7_medium_20261018_mosaic": {
+      "files": 12,
+      "bytes": 159609189,
+      "stat_tree_sha256": "e1ba11d4acce4e4a6f1ecd4dd2c0806502a418dcb6ab3472be92be4860a7c8f1"
+    },
+    "acceptance_evidence/suction_s7_20261018": {
+      "files": 88,
+      "bytes": 11532031,
+      "stat_tree_sha256": "41595ae1a360e499ba76539d10c37f40a4e6e3f4505e6a515a1c521da4d93711"
+    }
+  },
+  "final_old_originals_kept": 1340,
+  "final_new_originals_kept": 1340,
+  "observed_available_bytes_delta": 3896852480,
+  "space_note": "Logical deletion and observed filesystem free space are distinct; no claim of WSL VHD shrinking.",
+  "rebuild_note": "R2 image-by-image review no longer possible. Rebuild final processed PNGs from retained new originals + flatfield, and native tiles from retained full mosaic + diagnostic wall assets using frozen source. Saved S6 gates report historical acceptance, not current completeness of pruned derived directories."
+}

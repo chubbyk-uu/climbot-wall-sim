@@ -22,6 +22,7 @@ import os
 import time
 
 from ament_index_python.packages import get_package_share_directory
+from climbot_description.robot_geometry import load_robot
 from climbot_gazebo.camera_distortion import (
     apply_relative_exposure,
     load_calibration,
@@ -347,6 +348,11 @@ def target_obstruction_metrics(raw_array, matrix, distortion, camera):
     pixel_count = int(unknown.size)
     unknown_ratio = unknown_count / pixel_count
     minimum_brightest = int(np.min(maximum))
+    # Apply the same fixed one-pixel raster allowance to photometry. A blend
+    # of two bright complementary colors can have a dimmer maximum channel.
+    # Interior dark occluders still fail both this test and the color mask.
+    edge_brightness = cv2.dilate(maximum, np.ones((3, 3), dtype=np.uint8))
+    minimum_edge_brightness = int(np.min(edge_brightness))
     return {
         'rectified_inset_roi_xyxy_px': [left, top, right, bottom],
         'pixel_count': pixel_count,
@@ -354,9 +360,10 @@ def target_obstruction_metrics(raw_array, matrix, distortion, camera):
         'unknown_after_one_pixel_edge_allowance': unknown_count,
         'unknown_ratio': unknown_ratio,
         'minimum_brightest_channel': minimum_brightest,
+        'minimum_brightest_channel_after_one_pixel_edge_allowance': minimum_edge_brightness,
         'checks': {
             'effective_roi_has_no_modelled_obstruction': (
-                unknown_count == 0 and minimum_brightest >= 150),
+                unknown_count == 0 and minimum_edge_brightness >= 150),
         },
     }
 
@@ -477,6 +484,7 @@ def compare_tf(evaluator, camera, timeout_s):
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', required=True)
+    parser.add_argument('--robot-geometry', default='vacuum_chassis', choices=['vacuum_chassis'])
     parser.add_argument('--idle-seconds', type=float, default=10.0)
     parser.add_argument('--timeout', type=float, default=15.0)
     parser.add_argument('--check-target', action='store_true')
@@ -493,11 +501,9 @@ def main():
     description = get_package_share_directory('climbot_description')
     gazebo = get_package_share_directory('climbot_gazebo')
     camera_path = os.path.join(description, 'config', 'inspection_camera.yaml')
-    robot_path = os.path.join(description, 'config', 'robot.yaml')
     simulation_path = os.path.join(gazebo, 'config', 'simulation.yaml')
     camera = load_calibration(camera_path)
-    with open(robot_path) as handle:
-        robot = yaml.safe_load(handle)['robot']
+    robot = load_robot(args.robot_geometry)
     with open(simulation_path) as handle:
         simulation = yaml.safe_load(handle)['simulation']['inspection_camera']
 

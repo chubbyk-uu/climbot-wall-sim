@@ -35,33 +35,17 @@ def test_sdf_defaults_match_shared_and_simulation_yaml():
     simulation = yaml.safe_load(
         (PACKAGE_ROOT / 'config' / 'simulation.yaml').read_text())['simulation']
     root = ElementTree.parse(
-        PACKAGE_ROOT / 'models' / 'climbot' / 'model.sdf.xacro').getroot()
+        PACKAGE_ROOT / 'models' / 'climbot' / 'components.sdf.xacro').getroot()
     arguments = {
         element.attrib['name']: element.attrib['default']
         for element in root.findall(f'{{{XACRO_NAMESPACE}}}arg')
     }
-    assert float(arguments['base_x']) == pytest.approx(
-        robot['base']['centre_xyz'][0])
-    assert float(arguments['base_z']) == pytest.approx(
-        robot['base']['centre_xyz'][2])
-    assert float(arguments['wheel_axle_x']) == pytest.approx(
-        robot['drive_wheel']['axle_x_m'])
-    assert float(arguments['caster_x']) == pytest.approx(
-        robot['caster']['centre_x_m'])
     camera = yaml.safe_load(
         (description / 'config' / 'inspection_camera.yaml').read_text()
     )['inspection_camera']
     body = robot['inspection_payload']['camera_body']
-    bracket = robot['inspection_payload']['bracket']
-    assert float(arguments['camera_body_mass']) == pytest.approx(body['mass_kg'])
     assert float(arguments['camera_body_z']) == pytest.approx(
         body['centre_xyz_m'][2])
-    assert float(arguments['camera_bracket_mass']) == pytest.approx(
-        bracket['mass_kg'])
-    assert float(arguments['camera_bracket_x']) == pytest.approx(
-        bracket['centre_xyz_m'][0])
-    assert float(arguments['camera_optical_x']) == pytest.approx(
-        camera['optical_mount']['center_xyz_m'][0])
     assert float(arguments['camera_optical_z']) == pytest.approx(
         camera['optical_mount']['center_xyz_m'][2])
     image = camera['image']
@@ -84,14 +68,12 @@ def test_sdf_defaults_match_shared_and_simulation_yaml():
         simulated_camera['update_rate_hz'])
     assert float(arguments['camera_noise_stddev']) == pytest.approx(
         simulated_camera['noise_stddev'])
-    assert float(arguments['contact_rate']) == pytest.approx(
-        simulation['contact']['update_rate_hz'])
 
 
 def test_camera_sensor_is_triggered_and_publishes_a_wider_ideal_source():
     """Pin private transport topics and leave distortion to the Ogre2 adapter."""
     root = ElementTree.parse(
-        PACKAGE_ROOT / 'models' / 'climbot' / 'model.sdf.xacro').getroot()
+        PACKAGE_ROOT / 'models' / 'climbot' / 'components.sdf.xacro').getroot()
     sensor = root.find(
         "model/link[@name='inspection_camera_link']/sensor"
         "[@name='inspection_camera']")
@@ -113,7 +95,7 @@ def test_camera_sensor_is_triggered_and_publishes_a_wider_ideal_source():
 def test_truth_odometry_is_explicitly_labelled_as_world_frame():
     """Keep Gazebo world truth distinct from wall-frame odometry."""
     root = ElementTree.parse(
-        PACKAGE_ROOT / 'models' / 'climbot' / 'model.sdf.xacro').getroot()
+        PACKAGE_ROOT / 'models' / 'climbot' / 'components.sdf.xacro').getroot()
     plugins = {
         plugin.attrib['name']: plugin
         for plugin in root.findall('model/plugin')

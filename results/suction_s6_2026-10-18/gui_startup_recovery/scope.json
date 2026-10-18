@@ -1,0 +1,12 @@
+{
+  "observed_failure": "D3D12 device removal then OpenGL context creation abort before first GUI frame",
+  "upstream_device_removal_root_cause": "not established",
+  "recovery": "at most two retries on same backend, both exact error markers, before first camera pose, within 30 seconds per failed attempt",
+  "steady_state_crashes_retried": false,
+  "physics_changed": false,
+  "source_before": "413cd89",
+  "failed_case": "trapezoid_vertical_vacuum_chassis",
+  "failed_lane": "/tmp/coverage_regression_JVXyjZ",
+  "current_passed_controls": 4,
+  "all_nine_controls_will_be_repeated": true
+}

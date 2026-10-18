@@ -1,0 +1,17 @@
+{
+  "prior_revision": "9a1cdf675555d031841e586a1714c12e21142a2c",
+  "continuation_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b",
+  "all_src_byte_identical": true,
+  "changed_launcher_only_paths": [
+    "tools/run_coverage_regression.sh",
+    "tools/run_g2_inspection_acceptance.sh",
+    "tools/start_session.sh",
+    "tools/test_lane_processes.sh"
+  ],
+  "prior_accepted_cases": [
+    "horizontal_legacy",
+    "horizontal_vacuum_chassis",
+    "vertical_vacuum_chassis"
+  ],
+  "failed_r6_trapezoid_reused": false
+}

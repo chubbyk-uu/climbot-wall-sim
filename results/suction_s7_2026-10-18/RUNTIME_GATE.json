@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "scope": "S7 runtime acceptance, before merge/documentation and scoped temporary cleanup",
+  "runtime_source_revision": "1846f6ade1781ef48ab129864733d1d3fcc5c802",
+  "checks": {
+    "s6_default_model_equivalence": true,
+    "targeted_134_contracts": true,
+    "affected_37_tests": true,
+    "capture_all_checks": true,
+    "cuda_postprocess": true,
+    "bounded_visual_review": true,
+    "reused_s6_complete_acceptance": true
+  },
+  "main_merge_pending": true,
+  "major_document_update_pending": true,
+  "temporary_cleanup_pending": true
+}

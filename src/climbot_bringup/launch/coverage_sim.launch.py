@@ -18,11 +18,12 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from climbot_description.wall_frame import reference_grid_spacing
+from climbot_gazebo.geometry_launch import select_simulation
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import EnvironmentVariable, LaunchConfiguration
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PathJoinSubstitution
 
 
 def generate_launch_description():
@@ -32,11 +33,13 @@ def generate_launch_description():
     inspection_share = get_package_share_directory('climbot_inspection')
 
     simulation = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(gazebo_share, 'launch', 'climbot_wall.launch.py')),
+        PythonLaunchDescriptionSource(PathJoinSubstitution([
+            gazebo_share, 'launch', LaunchConfiguration('simulation_launch_file')])),
         launch_arguments={
             'use_sim_time': 'true',
+            'robot_geometry': LaunchConfiguration('robot_geometry'),
             'clock_publish_hz': LaunchConfiguration('clock_publish_hz'),
+            'adhesion_mode': LaunchConfiguration('resolved_adhesion_mode'),
             'headless': LaunchConfiguration('headless'),
             'gpu_backend': LaunchConfiguration('gpu_backend'),
             'mesa': LaunchConfiguration('mesa'),
@@ -64,6 +67,7 @@ def generate_launch_description():
                 coverage_share, 'launch', 'coverage_planner.launch.py')),
         launch_arguments={
             'use_sim_time': 'true',
+            'robot_geometry': LaunchConfiguration('robot_geometry'),
             'rviz': 'true',
             'config_file': LaunchConfiguration('config_file'),
             'input_mode': LaunchConfiguration('input_mode'),
@@ -78,6 +82,7 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('inspection')),
         launch_arguments={
             'use_sim_time': 'true',
+            'robot_geometry': LaunchConfiguration('robot_geometry'),
             'flat_field_file': LaunchConfiguration('flat_field_file'),
             'render_headless': LaunchConfiguration('headless'),
             'render_gpu_backend': LaunchConfiguration('gpu_backend'),
@@ -88,6 +93,8 @@ def generate_launch_description():
     default_config = os.path.join(
         coverage_share, 'config', 'coverage_rectangle.yaml')
     return LaunchDescription([
+        DeclareLaunchArgument('robot_geometry', default_value='vacuum_chassis'),
+        DeclareLaunchArgument('adhesion_mode', default_value='auto'),
         # The wall launch this includes supports both, and coverage_mission
         # declares both. Without them the two combined entry points differ in
         # what they can do for no reason an operator can see.
@@ -175,6 +182,7 @@ def generate_launch_description():
             'measurement_timestamp_jitter_seed', default_value='20260827',
             description='Seed for header-stamp jitter.',
         ),
+        OpaqueFunction(function=select_simulation),
         simulation,
         inspection,
         coverage,

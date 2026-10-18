@@ -1,0 +1,44 @@
+{
+  "revision_at_start": "fe3cc38",
+  "dependency_metadata_committed_as": "039d3dc",
+  "working_changes_at_test": [
+    "src/climbot_description/package.xml: declare python3-numpy",
+    "src/climbot_gazebo/package.xml: declare python3-numpy"
+  ],
+  "runtime_binaries_unchanged": true,
+  "executor": "parallel",
+  "parallel_workers": 8,
+  "runs": [
+    {
+      "run": 0,
+      "colcon_exit": 0,
+      "result_exit": 0,
+      "summary": "Summary: 1554 tests, 0 errors, 0 failures, 74 skipped",
+      "log_name": "climbot_s3_final_after_capture_0_20261017.log"
+    },
+    {
+      "run": 1,
+      "colcon_exit": 0,
+      "result_exit": 0,
+      "summary": "Summary: 1554 tests, 0 errors, 0 failures, 74 skipped",
+      "log_name": "climbot_s3_final_after_capture_1_20261017.log"
+    }
+  ],
+  "before_capture_fixture_correction_runs": [
+    {
+      "run": 0,
+      "colcon_exit": 0,
+      "result_exit": 0,
+      "summary": "Summary: 1554 tests, 0 errors, 0 failures, 74 skipped",
+      "log_name": "climbot_s3_final_regression_0_20261017.log"
+    },
+    {
+      "run": 1,
+      "colcon_exit": 0,
+      "result_exit": 0,
+      "summary": "Summary: 1554 tests, 0 errors, 0 failures, 74 skipped",
+      "log_name": "climbot_s3_final_regression_1_20261017.log"
+    }
+  ],
+  "notes": "74 cppcheck performance skips; functional and native tests executed. Earlier diagnostic failures are retained in REPORT."
+}

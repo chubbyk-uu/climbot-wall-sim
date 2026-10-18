@@ -18,11 +18,12 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from climbot_description.wall_frame import reference_grid_spacing
+from climbot_gazebo.geometry_launch import select_simulation
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import EnvironmentVariable, LaunchConfiguration
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PathJoinSubstitution
 
 
 def generate_launch_description():
@@ -34,11 +35,13 @@ def generate_launch_description():
     default_archive_root = os.path.join(os.path.expanduser('~'), 'climbot_data')
 
     simulation = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(gazebo_share, 'launch', 'climbot_wall.launch.py')),
+        PythonLaunchDescriptionSource(PathJoinSubstitution([
+            gazebo_share, 'launch', LaunchConfiguration('simulation_launch_file')])),
         launch_arguments={
             'use_sim_time': 'true',
+            'robot_geometry': LaunchConfiguration('robot_geometry'),
             'clock_publish_hz': LaunchConfiguration('clock_publish_hz'),
+            'adhesion_mode': LaunchConfiguration('resolved_adhesion_mode'),
             'headless': LaunchConfiguration('headless'),
             'gpu_backend': LaunchConfiguration('gpu_backend'),
             'mesa': LaunchConfiguration('mesa'),
@@ -66,6 +69,7 @@ def generate_launch_description():
                 coverage_share, 'launch', 'coverage_planner.launch.py')),
         launch_arguments={
             'use_sim_time': 'true',
+            'robot_geometry': LaunchConfiguration('robot_geometry'),
             'rviz': LaunchConfiguration('rviz'),
             'config_file': LaunchConfiguration('planner_config_file'),
             'input_mode': LaunchConfiguration('input_mode'),
@@ -84,6 +88,7 @@ def generate_launch_description():
                 control_share, 'launch', 'coverage_executor.launch.py')),
         launch_arguments={
             'use_sim_time': 'true',
+            'robot_geometry': LaunchConfiguration('robot_geometry'),
             'control_config_file': LaunchConfiguration('control_config_file'),
             'tracking_mode': LaunchConfiguration('tracking_mode'),
             'inspection_default_enabled': LaunchConfiguration('inspection'),
@@ -97,6 +102,7 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('inspection')),
         launch_arguments={
             'use_sim_time': 'true',
+            'robot_geometry': LaunchConfiguration('robot_geometry'),
             'inspection_output_root': LaunchConfiguration('inspection_output_root'),
             'flat_field_file': LaunchConfiguration('flat_field_file'),
             'render_headless': LaunchConfiguration('headless'),
@@ -112,6 +118,8 @@ def generate_launch_description():
     default_control_config = os.path.join(
         control_share, 'config', 'control.yaml')
     return LaunchDescription([
+        DeclareLaunchArgument('robot_geometry', default_value='vacuum_chassis'),
+        DeclareLaunchArgument('adhesion_mode', default_value='auto'),
         DeclareLaunchArgument(
             'headless',
             default_value='false',
@@ -229,6 +237,7 @@ def generate_launch_description():
             description='Straight-line control: distance or time. The panel '
                         'can also switch it while no task is running.',
         ),
+        OpaqueFunction(function=select_simulation),
         simulation,
         inspection,
         planning,

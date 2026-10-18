@@ -16,14 +16,34 @@
 
 import os
 
+from ament_index_python.packages import get_package_share_directory
+from climbot_common.dds import local_dds_environment
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+
+
+def _manager_node(context):
+    """Apply the same local DDS policy as the included tracker."""
+    return [Node(
+        package='climbot_control',
+        executable='coverage_manager_node',
+        name='coverage_manager',
+        parameters=[{
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'inspection_default_enabled': LaunchConfiguration('inspection_default_enabled'),
+            'inspection_output_root': LaunchConfiguration('inspection_output_root'),
+        }],
+        additional_env=local_dds_environment(
+            os.path.join(get_package_share_directory('climbot_common'),
+                         'config', 'fastdds_control_local.xml'), context.environment),
+        output='screen',
+    )]
 
 
 def generate_launch_description():
@@ -44,6 +64,7 @@ def generate_launch_description():
         # explicit pass below makes that collision impossible.
         DeclareLaunchArgument('control_config_file', default_value=default_config),
         DeclareLaunchArgument('tracking_mode', default_value='time'),
+        DeclareLaunchArgument('robot_geometry', default_value='vacuum_chassis'),
         DeclareLaunchArgument('inspection_default_enabled', default_value='true'),
         DeclareLaunchArgument(
             'inspection_output_root',
@@ -56,17 +77,8 @@ def generate_launch_description():
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'config_file': LaunchConfiguration('control_config_file'),
                 'tracking_mode': LaunchConfiguration('tracking_mode'),
+                'robot_geometry': LaunchConfiguration('robot_geometry'),
             }.items(),
         ),
-        Node(
-            package='climbot_control',
-            executable='coverage_manager_node',
-            name='coverage_manager',
-            parameters=[{
-                'use_sim_time': LaunchConfiguration('use_sim_time'),
-                'inspection_default_enabled': LaunchConfiguration('inspection_default_enabled'),
-                'inspection_output_root': LaunchConfiguration('inspection_output_root'),
-            }],
-            output='screen',
-        ),
+        OpaqueFunction(function=_manager_node),
     ])

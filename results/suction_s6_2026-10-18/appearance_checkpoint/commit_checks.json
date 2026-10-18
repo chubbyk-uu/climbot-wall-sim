@@ -1,0 +1,245 @@
+{
+  "full_suite_parallel_workers": 8,
+  "stages": [
+    {
+      "name": "build",
+      "exit_code": 0,
+      "elapsed_s": 2.1868749589993968,
+      "command": [
+        "colcon",
+        "build",
+        "--symlink-install",
+        "--executor",
+        "parallel",
+        "--parallel-workers",
+        "8"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/build.log"
+    },
+    {
+      "name": "test_1",
+      "exit_code": 0,
+      "elapsed_s": 48.31949925400113,
+      "command": [
+        "colcon",
+        "test",
+        "--executor",
+        "parallel",
+        "--parallel-workers",
+        "8",
+        "--event-handlers",
+        "console_cohesion+",
+        "--return-code-on-test-failure"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/test_1.log"
+    },
+    {
+      "name": "result_1",
+      "exit_code": 0,
+      "elapsed_s": 0.7706525870016776,
+      "command": [
+        "colcon",
+        "test-result",
+        "--all"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/result_1.log",
+      "summary": "Summary: 1672 tests, 0 errors, 0 failures, 81 skipped"
+    },
+    {
+      "name": "test_2",
+      "exit_code": 0,
+      "elapsed_s": 48.04523717700067,
+      "command": [
+        "colcon",
+        "test",
+        "--executor",
+        "parallel",
+        "--parallel-workers",
+        "8",
+        "--event-handlers",
+        "console_cohesion+",
+        "--return-code-on-test-failure"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/test_2.log"
+    },
+    {
+      "name": "result_2",
+      "exit_code": 0,
+      "elapsed_s": 0.44765809799719136,
+      "command": [
+        "colcon",
+        "test-result",
+        "--all"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/result_2.log",
+      "summary": "Summary: 1672 tests, 0 errors, 0 failures, 81 skipped"
+    },
+    {
+      "name": "test_3",
+      "exit_code": 0,
+      "elapsed_s": 48.82855734400073,
+      "command": [
+        "colcon",
+        "test",
+        "--executor",
+        "parallel",
+        "--parallel-workers",
+        "8",
+        "--event-handlers",
+        "console_cohesion+",
+        "--return-code-on-test-failure"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/test_3.log"
+    },
+    {
+      "name": "result_3",
+      "exit_code": 0,
+      "elapsed_s": 0.44332741999824066,
+      "command": [
+        "colcon",
+        "test-result",
+        "--all"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/result_3.log",
+      "summary": "Summary: 1672 tests, 0 errors, 0 failures, 81 skipped"
+    },
+    {
+      "name": "test_4",
+      "exit_code": 0,
+      "elapsed_s": 49.00451976500335,
+      "command": [
+        "colcon",
+        "test",
+        "--executor",
+        "parallel",
+        "--parallel-workers",
+        "8",
+        "--event-handlers",
+        "console_cohesion+",
+        "--return-code-on-test-failure"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/test_4.log"
+    },
+    {
+      "name": "result_4",
+      "exit_code": 0,
+      "elapsed_s": 0.4477114889959921,
+      "command": [
+        "colcon",
+        "test-result",
+        "--all"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/result_4.log",
+      "summary": "Summary: 1672 tests, 0 errors, 0 failures, 81 skipped"
+    },
+    {
+      "name": "test_5",
+      "exit_code": 0,
+      "elapsed_s": 48.34852443600539,
+      "command": [
+        "colcon",
+        "test",
+        "--executor",
+        "parallel",
+        "--parallel-workers",
+        "8",
+        "--event-handlers",
+        "console_cohesion+",
+        "--return-code-on-test-failure"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/test_5.log"
+    },
+    {
+      "name": "result_5",
+      "exit_code": 0,
+      "elapsed_s": 0.45119200999761233,
+      "command": [
+        "colcon",
+        "test-result",
+        "--all"
+      ],
+      "log": "/tmp/climbot_appearance_final_checks_20261018/result_5.log",
+      "summary": "Summary: 1672 tests, 0 errors, 0 failures, 81 skipped"
+    }
+  ],
+  "scope": "Build and five consecutive full parallel -j8 suites; does not close physical or dual-GUI S6 acceptance.",
+  "source_before_commit": "1cd16ba2d98725cd3ff8b9778728ca6f154ed5ad",
+  "source_dirty": true,
+  "changed_source_sha256": {
+    "src/climbot_control/test/test_coverage_manager_states.py": "122d5aca5ec180077c63a8bcdbeea1c75d6ce2ed74cd60fcbced5180e5edd1d3",
+    "src/climbot_description/CMakeLists.txt": "a994fc3bb3d572b412dc98e3badfd93d76e394520d43d39d695a6cb43424c5ad",
+    "src/climbot_gazebo/CMakeLists.txt": "958379e292fda1723debc2f5c4b52b11820385b0ca3ea261a43dca9ec6d61174",
+    "src/climbot_gazebo/climbot_gazebo/mesa_runtime.py": "91ffca32c31dded801c0ff0f639418f77adf85ec7649cd625cb179cc7a164c6c",
+    "src/climbot_gazebo/gui/ClimbotWorldStats.qml": "3b8d0ade2e2e4b52be26b44db422cf7513014443a3aa238a6d4c7dd264db2d40",
+    "src/climbot_gazebo/gui/ClimbotWorldStats.qrc": "6de22188cf44e98b1f50f9da704ed1d2632ad19ce2bfe009a499f7c0e404a332",
+    "src/climbot_gazebo/include/climbot_gazebo/compact_stats_gui.hpp": "349de7a7f7659d130c9a298d59e832303c38212dd9c58c9801263b69054f5ae4",
+    "src/climbot_gazebo/launch/climbot_vacuum.launch.py": "a0aa227b38f47ed34242cd0d48e9863a729aa7a065ff1c67dbeb66bdf8af3654",
+    "src/climbot_gazebo/launch/climbot_wall.launch.py": "e902e090a9fa98152ade8490070275fcece82f2f7f1fde22f2e0b53a68530761",
+    "src/climbot_gazebo/package.xml": "75938971711514792fb2c83a40f8985377dab93c072d857414af4b788eb7f5c8",
+    "src/climbot_gazebo/scripts/gz_sim_supervisor.py": "df1e87e73eef5de41df083f231e64a53d4de9480f52f1309002bf1847de9b65e",
+    "src/climbot_gazebo/src/compact_stats_gui.cpp": "02661baf84a98a8a9c92089e26956b02d93a71d1cbc7e474acd15b5026e38fb9",
+    "src/climbot_gazebo/test/test_command_routing.py": "80433fa64b432541d921c28ae681be18fb925e723a03e184d46c856be65616bd",
+    "src/climbot_gazebo/test/test_mesa_runtime.py": "d6339313e456f3f4df7d2406b2049efe84db543acada26a42420accda5241c33",
+    "src/climbot_gazebo/test/test_vacuum_assets.py": "44d2f575db516afaeb563433b8b7febfacab10ca2eae9e51d18ddf722912febd",
+    "src/climbot_gazebo/worlds/climbot_wall.sdf.xacro": "334738b78cf188d0c423f11f47c1a3fd33730f5ceb809cd5ce357aa9e64592c1",
+    "tools/observe_gui_acceptance.py": "c194ea2fe7bc156d9736292f33c86d723a9d5110df099380ceeceb5b68ae315a",
+    "tools/run_coverage_regression.sh": "7a6bec042f75f4505d902397e37fc181daa48cc6cc94d246035cc6747a3c2344",
+    "tools/run_g2_inspection_acceptance.sh": "f126785e17ab18a014d3881a9b358c96ca3b878400dcb0daac199a14b6e9da14",
+    "tools/run_vacuum_gui_regression.py": "2fe1d591219e9c3e5f60942325e1942fa61d60aed2f4dc4aa8bf25222ff7f64d",
+    "tools/vacuum_preview.py": "d55f31285b930856a987cd32438175c82e6effc493964723d8e2d01962099e4b",
+    "tools/vacuum_visuals.py": "783468436dabde72803c57a2034376d98892a21fe02f86925fb297f234ec9d1b",
+    "tools/with_mesa_runtime.py": "0ae9ae0802bbacfa932be1af5fc64a59c265894c7c0d5f8918df994813f81c9f"
+  },
+  "goal_status": "paused",
+  "initial_failed_full_run": {
+    "source_before_commit": "1cd16ba2d98725cd3ff8b9778728ca6f154ed5ad",
+    "source_dirty": true,
+    "stages": {
+      "build": {
+        "exit_code": 0,
+        "elapsed_s": 7.160221837002609,
+        "command": [
+          "colcon",
+          "build",
+          "--symlink-install",
+          "--executor",
+          "parallel",
+          "--parallel-workers",
+          "8"
+        ],
+        "log": "/tmp/climbot_appearance_commit_checks_20261018/build.log"
+      },
+      "test": {
+        "exit_code": 1,
+        "elapsed_s": 47.592377364999265,
+        "command": [
+          "colcon",
+          "test",
+          "--executor",
+          "parallel",
+          "--parallel-workers",
+          "8",
+          "--event-handlers",
+          "console_cohesion+",
+          "--return-code-on-test-failure"
+        ],
+        "log": "/tmp/climbot_appearance_commit_checks_20261018/test.log"
+      },
+      "result": {
+        "exit_code": 1,
+        "log": "/tmp/climbot_appearance_commit_checks_20261018/result.log"
+      }
+    }
+  },
+  "initial_failed_summary": "1671 tests, 0 errors, 6 failures, 81 skipped (includes duplicated CTest/launch failure reporting)",
+  "archive_verification": {
+    "verified_records": 276,
+    "verified_bytes": 1198905051,
+    "restored": 0
+  },
+  "staged_whitespace": {
+    "all_except_two_frozen_generated_svg": "passed",
+    "generated_svg_boundary": "Matplotlib path lines contain trailing spaces. Original artifact bytes and manifests are preserved.",
+    "log": "/tmp/climbot_appearance_staged_check_except_frozen_svg_20261018.log"
+  }
+}

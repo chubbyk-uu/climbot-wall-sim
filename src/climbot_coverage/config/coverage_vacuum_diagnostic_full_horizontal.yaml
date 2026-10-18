@@ -1,0 +1,30 @@
+# Candidate geometry needs 0.5585 m wall clearance (full camera/wheel envelope).
+# Keep the original 0.10 m edge and maneuver margins and all coverage policies.
+# This variant moves each original 0.55 m task boundary inward by 0.01 m;
+# the frozen legacy P2-06 task is unchanged. Counts must come from preflight.
+# P2-06 full diagnostic target: the largest practical rectangle inside the
+# green robot-safe frame. Camera geometry is injected from inspection_camera.yaml.
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    task_id: vacuum-diagnostic-full-horizontal-025mm-20261018
+    input_mode: parameters
+    region_type: rectangle
+    lower_left: [0.56, 0.56]
+    upper_right: [9.44, 7.44]
+    lower_right: [9.44, 0.56]
+    detection_width: 0.50
+    detection_length: 0.28125
+    detection_forward_offset: 0.340
+    detection_edge_overlap: 0.0
+    overlap_ratio: 0.20
+    # The same dynamic envelope is checked for horizontal tracks. It leaves
+    # side boundaries untouched for vertical gravity, but protects any tracks
+    # whose turn or compensation is close to the top/bottom hard boundary.
+    maneuver_boundary_margin_m: 0.10
+    maneuver_drift_direction: [0.0, -1.0]
+    minimum_nominal_coverage_ratio: 0.95
+    sweep_direction: horizontal
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

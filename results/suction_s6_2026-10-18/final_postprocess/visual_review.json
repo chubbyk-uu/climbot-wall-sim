@@ -1,0 +1,53 @@
+{
+  "passed": true,
+  "review_method": "Opened optimized mosaic overview and all 21 final lossless comparison PNG windows in the image viewer. All sample windows were viewed at original pixel resolution.",
+  "sample_inventory": "native_review_samples.json",
+  "sample_inventory_sha256": "6c116811c72cead90e1a5fad5a4140c02407fb590f48314f9ac3e820adf61aa0",
+  "reviewed_feature_ids": [
+    "construction_seam_01",
+    "construction_seam_02",
+    "construction_seam_03",
+    "crack_decal_01",
+    "crack_decal_02",
+    "crack_decal_03",
+    "crack_decal_04",
+    "crack_decal_05",
+    "crack_decal_06",
+    "crack_decal_07",
+    "crack_decal_08",
+    "repair_patch_01",
+    "repair_patch_02",
+    "repair_patch_03",
+    "repair_patch_04",
+    "repair_patch_05",
+    "repair_patch_06",
+    "graffiti_decal_01",
+    "graffiti_decal_02",
+    "graffiti_decal_03",
+    "graffiti_decal_04"
+  ],
+  "native_comparison_samples_reviewed": 21,
+  "native_tiles_generated": 170,
+  "all_native_tiles_individually_reviewed": false,
+  "entire_mosaic_individually_reviewed_at_native_resolution": false,
+  "preview": {
+    "data_relative_image": "mosaic-suction-s6-final-joint-20261018-cuda/mosaic_preview.jpg",
+    "sha256": "aa6668e2373103a6a1e7b6e0d93024c573ce4957011a6d3c6505ba61051fe31d",
+    "reviewed": true
+  },
+  "observations": [
+    "Overview shows photographic wall, cracks, repair polygons, graffiti and construction seams; no large interior blank area seen. Serrated black outer coverage lies around the image boundary.",
+    "The optimized sample panels preserve continuous crack branches, polygon borders, construction seams and graffiti strokes; pose-only panels show much larger boundary offsets.",
+    "Some hard-cut brightness boundaries and rendering blur relative to immutable albedo remain visible. This is not a claim of photometrically seamless or truth-identical reconstruction.",
+    "Hard-cut intersections within samples were inspected; the separate full-raster automated seam test evaluates 4554397 hard-cut adjacencies. No claim of manually reviewing every seam or selecting global worst seams."
+  ],
+  "coverage_scope": {
+    "inside_inspection_region_feature_pixels": 122951965,
+    "uncovered_inside_inspection_region": 0,
+    "uncovered_feature_pixels_outside_inspection_region": 474585,
+    "note": "Outside-region uncovered pixels are explicitly retained in diagnostic_inspection_summary.json; this is not full-wall coverage."
+  },
+  "automated_gate_sha256": "37417b12e98d33cb852e1b2f7611b57b421369ba00ca8b202a3b70a78d7ee6e8",
+  "S7_started": false,
+  "M2_started": false
+}

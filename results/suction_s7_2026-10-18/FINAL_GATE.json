@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "checks": {
+    "s6_default_model_equivalence": true,
+    "targeted_134_contracts": true,
+    "affected_37_tests": true,
+    "capture_all_checks": true,
+    "cuda_postprocess": true,
+    "bounded_visual_review": true,
+    "reused_s6_complete_acceptance": true,
+    "main_branch": true,
+    "runtime_revision_is_ancestor_of_main": true,
+    "runtime_source_committed_and_unchanged": true,
+    "temporary_cleanup_executed": true,
+    "superseded_small_raw_removed": true,
+    "formal_raw_70_retained": true,
+    "main_documents_updated": true,
+    "local_document_links": true
+  },
+  "merge_commit": "ea7de8f40645e75938ab0b1259f16268f2790dbd",
+  "runtime_revision": "1846f6ade1781ef48ab129864733d1d3fcc5c802",
+  "stage": "S7 / M1 complete; no M2 or speed work",
+  "native_dual_gui_rtf": 0.988451928476494,
+  "capture_count": 70,
+  "mosaic_size_px": [
+    14631,
+    8675
+  ],
+  "cuda_effective": true,
+  "pushed": false,
+  "goal_remains_paused": true
+}

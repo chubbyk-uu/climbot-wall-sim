@@ -1,0 +1,35 @@
+{
+  "artifact_sha256": {
+    "a_loads.csv": "98542616beee05f8053e8ce02704e47f770c1f05f6f0c6993162b0aa7484f579",
+    "a_loads_summary.json": "089bfab4105de7dc9b2a7d10f5be0edf6b0c99b8cd577ef3a7d856b1bbecdf8d",
+    "baseline_summary.json": "db6686a4cc90414a0150b8216929a394c04a3baa38b3d7ccae2b8838459c625e",
+    "model.sdf": "0ed049f9420358a8e16ad5478374237837ce47d35612b1b2b8445c4f384ce42f",
+    "regression_initial_failure.txt": "ccee93e51b3a132ed34a117307f50fab839c827a8bee7add65fa5696d44679cc",
+    "regression_summary.json": "d58a5f69f264e591fb8fc7ff36c04c59eb8b73e25a671a12172968b1deadda2a",
+    "robot.urdf": "cddbdabc8511cff68c8fc717a06d7edf8ac9fbac3729dfafbb88df614197e1d6",
+    "world.sdf": "fba3445be63c0e74401b326eb05e4e5d14472e570b445ae33f22cacb63fd49fd"
+  },
+  "cleanup_passed": true,
+  "gz_partition": "lanesuction_24744",
+  "launch_arguments": [
+    "headless:=true"
+  ],
+  "log_directory_basename_under_tmp": "climbot_suction_baseline_9rACzwaw",
+  "log_sha256": {
+    "measurement.log": "7c13299cdbdd3d3757cb0dfde76e551d9a5111fa84ab0ae27821b6edc4d53477",
+    "simulator.log": "c7800999fafc2ecdad401dadfcbd9e8b866b7425820493cb878a57d4acc4ee05"
+  },
+  "measurement_exit": 0,
+  "parameters_override": {
+    "brake_duration_s": 2.0,
+    "drive_duration_s": 5.0,
+    "static_duration_s": 2.0,
+    "static_settle_duration_s": 0.5,
+    "use_sim_time": true
+  },
+  "raw_contact_time_series_saved": false,
+  "remaining_partition_pids": [],
+  "ros_domain_id": 187,
+  "schema_version": 1,
+  "teardown_notes": ""
+}

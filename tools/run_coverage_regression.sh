@@ -155,6 +155,11 @@ TOTAL_STATION_RATE=12.0
 TOTAL_STATION_DROP=0.0
 OVERRIDES=()
 COMPRESS=1
+ROBOT_GEOMETRY=${ROBOT_GEOMETRY:-vacuum_chassis}
+ADHESION_MODE=${ADHESION_MODE:-auto}
+COVERAGE_HEADLESS=${COVERAGE_HEADLESS:-true}
+COVERAGE_RVIZ=${COVERAGE_RVIZ:-false}
+COVERAGE_GUI_GPU_BACKEND=${COVERAGE_GUI_GPU_BACKEND:-auto}
 while getopts 'j:t:m:s:i:n:r:d:o:kh' opt; do
   case $opt in
     j) LANES=$OPTARG ;;
@@ -172,6 +177,16 @@ while getopts 'j:t:m:s:i:n:r:d:o:kh' opt; do
   esac
 done
 shift $((OPTIND - 1))
+
+# Validate once before creating any simulator. Explicit geometry never falls back.
+case "$ROBOT_GEOMETRY/$ADHESION_MODE" in
+  vacuum_chassis/auto|vacuum_chassis/vacuum|vacuum_chassis/fixed_pressure)
+    SIMULATION_LAUNCH=climbot_wall.launch.py ;;
+  *) echo "Invalid robot geometry/adhesion: $ROBOT_GEOMETRY/$ADHESION_MODE" >&2; exit 2 ;;
+esac
+if [ "$COVERAGE_HEADLESS" = false ] && [ "$LANES" -ne 1 ]; then
+  echo 'GUI regression requires -j 1 for isolated real-time measurements' >&2; exit 2
+fi
 
 WANTED=("$@")
 if [ ${#WANTED[@]} -eq 0 ]; then
@@ -199,6 +214,7 @@ WARN
   echo "================================================================================" >&2
 fi
 
+LANE_PARTITION_PREFIX="coverage_${TAG}_$$_lane"
 RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/coverage_regression_XXXXXX")
 
 # An override is applied by copying control.yaml and patching the copy, rather
@@ -310,7 +326,7 @@ run_lane() {
   local lane=$1
   export ROS_DOMAIN_ID=$((70 + lane))
   export ROS_LOCALHOST_ONLY=1
-  export GZ_PARTITION="lane${lane}"
+  export GZ_PARTITION="${LANE_PARTITION_PREFIX}${lane}"
   # ROS's setup.bash reads AMENT_TRACE_SETUP_FILES without defining it first,
   # which is fatal under set -u.
   set +u
@@ -340,8 +356,10 @@ run_lane() {
     echo "[lane$lane] $name start $(date +%T)"
     lane_teardown "$lane"
 
-    setsid ros2 launch climbot_gazebo climbot_wall.launch.py \
-      use_sim_time:=true headless:=true \
+    "$SCRIPT_DIR/start_session.sh" ros2 launch climbot_gazebo "$SIMULATION_LAUNCH" \
+      use_sim_time:=true headless:="$COVERAGE_HEADLESS" \
+      adhesion_mode:="$ADHESION_MODE" \
+      gui_gpu_backend:="$COVERAGE_GUI_GPU_BACKEND" \
       total_station_seed:="$TOTAL_STATION_SEED" imu_seed:="$IMU_SEED" \
       total_station_stddev_m:="$TOTAL_STATION_STDDEV" \
       total_station_rate_hz:="$TOTAL_STATION_RATE" \
@@ -361,11 +379,28 @@ run_lane() {
       lane_teardown "$lane"; continue
     fi
 
+    "$SCRIPT_DIR/start_session.sh" python3 "$WS/tools/observe_gui_acceptance.py" --output "$log/observation" \
+      --geometry "$ROBOT_GEOMETRY" --gui "$([ "$COVERAGE_HEADLESS" = false ] && echo required || echo disabled)" \
+      --rviz "$([ "$COVERAGE_RVIZ" = true ] && echo required || echo disabled)" \
+      > "$log/observer.log" 2>&1 &
+    lane_remember "$lane" $!
+    disown
+
+    "$SCRIPT_DIR/start_session.sh" python3 "$WS/tools/observe_native_stats.py" --output "$log/native_observation" \
+      > "$log/native.log" 2>&1 &
+    lane_remember "$lane" $!
+    disown
+
     # A line case has nothing for the planner to decompose, so it does not
     # run one: the evaluator publishes the two-waypoint task itself.
     if [ "$kind" = "coverage" ]; then
-      setsid ros2 launch climbot_coverage coverage_planner.launch.py \
-        use_sim_time:=true rviz:=false \
+      local -a planner_runtime_args=()
+      if [ "$COVERAGE_HEADLESS" = false ] && [ "$COVERAGE_RVIZ" = true ]; then
+        planner_runtime_args+=(--wait-for-gazebo-gui)
+      fi
+      "$SCRIPT_DIR/start_session.sh" python3 "$WS/tools/with_mesa_runtime.py" "${planner_runtime_args[@]}" \
+        ros2 launch climbot_coverage coverage_planner.launch.py \
+        use_sim_time:=true rviz:="$COVERAGE_RVIZ" \
         config_file:="$WS/src/climbot_coverage/config/$cfg" \
         inspection_geometry_profile:=configured \
         input_mode:=parameters region_type:="$region" sweep_direction:="$sweep" \
@@ -374,7 +409,7 @@ run_lane() {
       disown
       sleep 10
     fi
-    setsid ros2 launch climbot_control coverage_executor.launch.py \
+    "$SCRIPT_DIR/start_session.sh" ros2 launch climbot_control coverage_executor.launch.py \
       use_sim_time:=true tracking_mode:="$MODE" \
       control_config_file:="$CONTROL_CONFIG" > "$log/executor.log" 2>&1 &
     lane_remember "$lane" $!
@@ -397,7 +432,7 @@ run_lane() {
     # swept up by partition afterwards. Its exit status still arrives here,
     # through wait.
     # shellcheck disable=SC2086
-    setsid timeout 1500 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
+    "$SCRIPT_DIR/start_session.sh" timeout 1500 ros2 run climbot_gazebo evaluate_coverage_execution.py --ros-args \
       -p use_sim_time:=true $case_arguments \
       -p startup_timeout_s:=90.0 -p execution_timeout_s:=900.0 \
       -p trajectory_csv:="results/coverage_${name}_${TAG}_trajectory.csv" \

@@ -1,5 +1,7 @@
 # 实验结果索引
 
+远端保留精简报告／摘要；完整验收附件留在本机，见[发布范围](PUBLICATION.md)。
+
 本目录保存可追溯的仿真与验收证据。每份正式摘要应包含任务与配置、软件溯源、随机源、
 评价口径和严格 JSON 结果。大体积原始图像与拼接母版保存在 `${CLIMBOT_DATA_ROOT}`，
 不进入 Git。
@@ -18,10 +20,24 @@
 
 | 范围 | 证据 | 地位 |
 | --- | --- | --- |
+| S6 追加数据精简 | [清理范围与记录](suction_retention_2026-10-18/REPORT.md) | 最终旧／新各 1340 张原图保留；R2 照片、可重建 processed PNG 与 170 个 tile 按用户授权清理；21 个已复核样本及元数据保留 |
+| 三风机吸附 S7 默认收口 | [S7 报告](suction_s7_2026-10-18/REPORT.md)、[运行门禁](suction_s7_2026-10-18/RUNTIME_GATE.json) | 新模型为默认，旧恒力路径删除；双 GUI reset、70/70 张中等采集及 CUDA 拼接通过，RTF 0.988452，已合并 main |
+| 三风机吸附 S6 最终验收 | [最终报告](suction_s6_2026-10-18/REPORT.md)、[总门禁](suction_s6_2026-10-18/FINAL_GATE.json) | 新质量 91 组、九组双 GUI 控制、四项传感、2680 张原精度照片与 CUDA 链通过；最终 1727 项零失败，总门禁 40 项通过；新结构拍照 RTF 0.986212／0.986974 |
+| 三风机吸附 S6 物理预算 | [提手质量与逐轮重算](suction_s6_2026-10-18/physical_model/REPORT.md)、[故障可观测性红绿](suction_s6_2026-10-18/failure_observability/REPORT.md) | 15.518481 kg，解析包络约 6.10 kPa／801 N；阶段物理预算；最终新质量运动与双 GUI 全链已由 S6 最终报告关闭 |
+| 三风机吸附 S6 显示／失压演示 | [风扇旋转](suction_s6_2026-10-18/fan_visual_trial/REPORT.md)、[全停跌落](suction_s6_2026-10-18/all_fans_off_trial/REPORT.md) | 实际窗口录像；旋转为慢速显示代理，跌落暴露的故障停报已有独立红绿修复，不代表完整撞地吸附物理验收 |
+| 三风机吸附 S6 控制／GUI | [旧／新八工况实际 GUI 配对](suction_s6_2026-10-18/controls/REPORT.md) | 16 组／128 项通过，实测 RTF 约 1，四组额外原生统计；阶段控制记录；最终 S6 已关闭，引用最终报告的冻结证据 |
+| 三风机吸附 S6 长采集 | [传感器与首轮完整 GUI 长采集](suction_s6_2026-10-18/CAPTURE_R2_REPORT.md) | 四组／2680 张及压力／清理通过；首轮性能／GUI 配置历史，未作为最终门禁；后续双 GUI 全链已通过 |
+| 三风机吸附 S5 | [运动／停机边界](suction_s5_2026-10-18/REPORT.md)、[追加压力验证](suction_s5_pressure_2026-10-18/REPORT.md) | 91 组／698 项与独立审计 139 项通过；追加 32 组明确低压失败，旧质量下 7500 Pa 的 24 组运动通过；新质量下限不外推，当前依据 S6 复验 |
+| 三风机吸附 S4 | [压力测量与故障接口报告](suction_s4_2026-10-18/REPORT.md) | 原生九组 63 项、B/C 真实 ROS bridge 各 31 项通过；1590 项完整回归零失败，后续运动／故障边界另见 S5 |
+| 三风机吸附 S3 | [平墙原生集成报告](suction_s3_2026-10-17/REPORT.md) | 八朝向 B/C、60 s 保持、逐轮轮载与暂停/reset；231 项主检查及 3 项原始复核通过；传感器后续证据另见 S4，当时的集成阶段记录，后续 S5～S7 已通过，M2 待验收 |
+| 控制反馈时戳专项 | [受控红绿对照](cruise_timestamp_2026-10-17/REPORT.md) | 延迟里程计引起的虚假追赶已修复，原速度门槛不变；Start 拒绝诊断补齐，两轮完整 -j8 各 1555 项零失败；ROS 测试不替代 S5/S6 整车验收 |
 | 覆盖任务与控制 | `coverage_{bigH,bigTH,bigTV,bigV,horizontal,trapezoid_horizontal,trapezoid_vertical,vertical}_2026-08-20_summary.json` | 默认 `time` 控制的八工况正式仿真基线 |
 | 距离控制对照 | 对应的 `*_2026-08-20d_summary.json` | 与默认控制律同口径的对照，不替代默认基线 |
 | 定位 | [localization_2026-08-19_summary.json](localization_2026-08-19_summary.json) | 融合定位与轮式里程计的四方向独立真值对照 |
-| 侧滑与转向 | `normal_loads_400N.csv`、`turn_slip_2026-08-30.csv`、`turn_map_2026-08-30.csv`（含 `_summary.json`）、`wall_slip_trajectory.csv.gz` | 当前 400 N 几何与侧滑参考；`turn_slip_per_degree_m` 由 24 次转向拟合为 `0.00046`，整圈 48 点 `0.4309--0.5018 mm/deg` 且圆平坦。旧的 `turn_slip.csv`、`turn_map.csv` 与 `turn_map_g1_camera_2026-08-24.*` 保留为历史对照 |
+| 侧滑与转向 | `normal_loads_400N.csv`、`turn_slip_2026-08-30.csv`、`turn_map_2026-08-30.csv`（含 `_summary.json`）、`wall_slip_trajectory.csv.gz` | 旧 400 N 结构历史侧滑参考；新结构适用性由 S6 24／48 次转向复验确认；`turn_slip_per_degree_m` 由 24 次转向拟合为 `0.00046`，整圈 48 点 `0.4309--0.5018 mm/deg` 且圆平坦。旧的 `turn_slip.csv`、`turn_map.csv` 与 `turn_map_g1_camera_2026-08-24.*` 保留为历史对照 |
+| 吸附专项 S0 | [基线与诊断报告](suction_s0_2026-10-17/REPORT.md)、[输入摘要](suction_s0_2026-10-17/baseline_summary.json)、[A 组复测](suction_s0_2026-10-17/a_loads_summary.json) | 冻结旧模型的 34 工况轮压复现与旧质量静力诊断，不是新底盘／负压模型通过；首次回归异常、夹具修复与剩余问题分别保留 |
+| 吸附专项 S1 | [新结构与逐轮设计](suction_s1_rearward_2026-10-17/REPORT.md)、[质量与几何](suction_s1_rearward_2026-10-17/layout.json)、[计算摘要](suction_s1_rearward_2026-10-17/summary.json) | 平墙刚性轮离线候选；质量和材料假设、静态／运动需求与交叉敏感性分列。阶段离线设计；运行模型与新提手质量的最终结果见 S6／S7 |
+| 吸附专项 S2 | [纯核心隔离报告](suction_s2_2026-10-17/REPORT.md)、[检查与原始数据索引](suction_s2_2026-10-17/summary.json) | C++ 单腔风机／裙边数学参考、留出与数值检查通过；名义漏气范围与不利参数失败分列，不是实机曲线或 Gazebo 整车验收 |
 | G1 相机 | `g1_camera_*`、`target_*`、`localization-g1-*` | 相机接口、轴向/畸变和运动投影中心证据 |
 | G2/G4 采集 | `g2_accept_{horizontal,vertical,trapezoid}_2026-08-26_summary.json` | 异步匀速位置触发、位姿绑定与原始归档正式结果 |
 | P2 相对拼接 | [mosaic_p2_baseline_2026-08-26_summary.json](mosaic_p2_baseline_2026-08-26_summary.json) | 0.25 mm 相对拼接历史基线；其最低改善比例未单独冻结，当前绝对门限见 P2-06 |
@@ -61,7 +77,7 @@
   相对比较，不能与 `3f422f5` 之后的数据混用。
 - P2-06 新任务的采集前预检把 feature 裁到巡检域再判断，与采集后检查器的口径不同；
   它不读取新采图像，不能替代 `coverage_count.tif`。
-- 2026-08-18b 之前的法向载荷口径为 220 N；与当前 400 N 基线不能直接混用。
+- 2026-08-18b 之前的法向载荷口径为 220 N；与旧 400 N 基线不能直接混用，更不能外推到当前新质量负压模型。
 - 仅带 `source_modified` 的记录用于趋势观察；可复现实验须有完整源码版本、命令与输入溯源。
 
 ## 复现与新增规则

@@ -1,0 +1,37 @@
+# S2 equivalent simulation curves, not measured hardware. Freeze before holdout.
+vacuum_physics:
+  schema_version: 1
+  gas:
+    ambient_pa: 101325.0
+    temperature_k: 293.15
+    specific_r: 287.05
+    gamma: 1.4
+    regularization_pa: 0.1
+    discharge_coefficient: 0.65
+  # Three identical fixed-setting fans, one common chamber. Affinity scaling
+  # changes head with speed squared, while parallel operation sums mass flow.
+  fans:
+    - {free_flow_m3_s: 0.012, shutoff_pa: 14000.0, time_constant_s: 0.15, port_area_m2: 0.0025, reverse_fraction: 0.05}
+    - {free_flow_m3_s: 0.012, shutoff_pa: 14000.0, time_constant_s: 0.15, port_area_m2: 0.0025, reverse_fraction: 0.05}
+    - {free_flow_m3_s: 0.012, shutoff_pa: 14000.0, time_constant_s: 0.15, port_area_m2: 0.0025, reverse_fraction: 0.05}
+  calibration:
+    reference_area_m2: 0.000080
+    residual_area_m2: 0.000020
+    opening_multipliers: [0.0, 1.0, 2.0]
+    holdout_multipliers: [0.5, 1.5, 3.0]
+    # Chosen from the calibration interval before running the holdout cases.
+    maximum_normal_opening_multiplier: 2.0
+    # Updated mass/CG budget for the accepted handle. Curves stay unchanged.
+    requirement_source: results/suction_s6_2026-10-18/physical_model/summary.json
+  skirt:
+    damping_ns_m: 40.0
+    maximum_compression_m: 0.010
+    transition_m: 0.001
+  acceptance:
+    mass_flow_residual_kg_s: 1.0e-9
+    independent_pressure_error_pa: 0.01
+    steady_relative_error: 0.02
+    response_relative_error: 0.02
+    response_absolute_error_s: 0.0001
+    transition_relative_increment: 0.01
+    transition_samples_per_width: 1000

@@ -1,0 +1,2705 @@
+{
+  "stage": "S2 isolated C++ core, not Gazebo integration or hardware validation",
+  "source_commit": "4f8bd49667e18f0921118d0c5ce27cadbe6c7e4e",
+  "source_dirty": false,
+  "binary_sha256": "cfa88b63a995b10fb8abb0f6155bd0091ac2f8d3b963b0ec1f9b1cd75c2616b2",
+  "input_sha256": {
+    "src/climbot_gazebo/config/vacuum_physics.yaml": "c5a1aa6b6d8630fd6f90e376eb90a40935b2e6f61cb52e7df01d8ee027577e07",
+    "src/climbot_gazebo/include/climbot_gazebo/vacuum_core.hpp": "256ba774ad6594dec23e86d20df7763ce2a1da06b7553467dce92b48051bf7f8",
+    "src/climbot_gazebo/src/vacuum_core.cpp": "11c63d82e04f702ecde3ef1358f6a201fa40ccec4f589ac1802e4bfe2ff9f51d",
+    "src/climbot_gazebo/src/vacuum_core_probe.cpp": "e9ee5b21bab922435de33594d4c5d0f15309945075ba3c1f4b596f0419109145",
+    "src/climbot_gazebo/test/test_vacuum_core.cpp": "8f96545d6070b4b9c62723cb6054bfc0b34cd889c4198c69db37a7e055f7924e",
+    "tools/validate_vacuum_physics.py": "4569ed74d20120a0921de2376c1771409688946cc1ed3546b7f362e1e806c659",
+    "results/suction_s1_rearward_2026-10-17/summary.json": "333e8f4da1841bb90927133ecbc173af83911872fe27fd323849dd9a54072c0e",
+    "results/suction_s1_rearward_2026-10-17/layout.json": "474fa0852705b5748e2249930c75f944829fea0ded7695952eae930ec5e19daa"
+  },
+  "assertions": {
+    "mass_balance": true,
+    "independent_pressure": true,
+    "allowed_normal_opening": true,
+    "closed_mass_retained": true,
+    "nonunique_rejected": true,
+    "s1_area_and_preload": true,
+    "continuous_transition_1000": true,
+    "continuous_transition_2000": true,
+    "transition_spatial_refinement": true,
+    "transition_reverse_unique": true,
+    "skirt_sampling_refinement": true,
+    "skirt_drag_dissipative": true,
+    "ramp_quasi_static_time_refinement": true,
+    "ramp_ode_time_refinement": true,
+    "regularization_operating_error": true,
+    "fan_start_quasi_static_time_convergence": true,
+    "fan_start_quasi_static_steady_step_convergence": true,
+    "fan_start_ode_time_convergence": true,
+    "fan_start_ode_steady_step_convergence": true,
+    "fan_stop_quasi_static_time_convergence": true,
+    "fan_stop_quasi_static_steady_step_convergence": true,
+    "fan_stop_ode_time_convergence": true,
+    "fan_stop_ode_steady_step_convergence": true,
+    "fast_open_ode_time_convergence": true,
+    "independent_ode_response": true
+  },
+  "passed": true,
+  "metrics": {
+    "calibration_and_holdout": [
+      {
+        "id": "calibration_0.0",
+        "additional_opening_m2": 0.0,
+        "pressure_pa": 13201.550837712828,
+        "force_n": 1733.2712141358306,
+        "required_pressure_pa": 5591.856446117163,
+        "meets_nominal_requirement": true,
+        "shutoff_headroom_pa": 798.4491622871719,
+        "mass_flow_residual_kg_s": -8.560773617771744e-14,
+        "independent_pressure_error_pa": -3.05553840007633e-08,
+        "linear_pressure_time_constant_s": 0.010048553847422861
+      },
+      {
+        "id": "calibration_1.0",
+        "additional_opening_m2": 8e-05,
+        "pressure_pa": 10490.427746017114,
+        "force_n": 1377.3197300578252,
+        "required_pressure_pa": 5591.856446117163,
+        "meets_nominal_requirement": true,
+        "shutoff_headroom_pa": 3509.5722539828857,
+        "mass_flow_residual_kg_s": 1.279826938871409e-13,
+        "independent_pressure_error_pa": 3.893001121468842e-08,
+        "linear_pressure_time_constant_s": 0.008509314428289299
+      },
+      {
+        "id": "calibration_2.0",
+        "additional_opening_m2": 0.00016,
+        "pressure_pa": 8404.442641162896,
+        "force_n": 1103.4444876862003,
+        "required_pressure_pa": 5591.856446117163,
+        "meets_nominal_requirement": true,
+        "shutoff_headroom_pa": 5595.557358837104,
+        "mass_flow_residual_kg_s": 1.131733595727269e-14,
+        "independent_pressure_error_pa": 2.9340299079194665e-09,
+        "linear_pressure_time_constant_s": 0.007244764709874983
+      },
+      {
+        "id": "holdout_0.5",
+        "additional_opening_m2": 4.000000000000001e-05,
+        "pressure_pa": 11756.383824418124,
+        "force_n": 1543.530901459329,
+        "required_pressure_pa": 5591.856446117163,
+        "meets_nominal_requirement": true,
+        "shutoff_headroom_pa": 2243.6161755818757,
+        "mass_flow_residual_kg_s": 7.353839759360881e-14,
+        "independent_pressure_error_pa": 2.4519977159798145e-08,
+        "linear_pressure_time_constant_s": 0.009238596069735091
+      },
+      {
+        "id": "holdout_1.5",
+        "additional_opening_m2": 0.00012000000000000002,
+        "pressure_pa": 9379.86676728059,
+        "force_n": 1231.5108474765707,
+        "required_pressure_pa": 5591.856446117163,
+        "meets_nominal_requirement": true,
+        "shutoff_headroom_pa": 4620.13323271941,
+        "mass_flow_residual_kg_s": 3.6448274953748694e-14,
+        "independent_pressure_error_pa": 1.193620846606791e-08,
+        "linear_pressure_time_constant_s": 0.007847806572183865
+      },
+      {
+        "id": "holdout_3.0",
+        "additional_opening_m2": 0.00024000000000000003,
+        "pressure_pa": 6791.712562150729,
+        "force_n": 891.7043174224558,
+        "required_pressure_pa": 5591.856446117163,
+        "meets_nominal_requirement": true,
+        "shutoff_headroom_pa": 7208.287437849271,
+        "mass_flow_residual_kg_s": 3.787248292752565e-14,
+        "independent_pressure_error_pa": 8.245478966273367e-09,
+        "linear_pressure_time_constant_s": 0.006187900096102094
+      }
+    ],
+    "s1_uncertainty_pressure_pa": 8998.55344207026,
+    "uncertainty_requirement_at_allowed_opening_passes": false,
+    "fault_matrix": [
+      {
+        "id": "backflow_0.0_mask_0_opening_0.0",
+        "running": 0.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_0_opening_1.0",
+        "running": 0.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_0_opening_2.0",
+        "running": 0.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_0_opening_3.0",
+        "running": 0.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_0_opening_6.0",
+        "running": 0.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_0_opening_10.0",
+        "running": 0.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_1_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 11756.383824418124,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_1_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 6126.2572289528325,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_1_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 3469.379920530715,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_1_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 2136.8860572014237,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_1_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 732.2348873868468,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_1_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 291.8024881328165,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_2_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 11756.383824418124,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_2_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 6126.2572289528325,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_2_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 3469.379920530715,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_2_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 2136.8860572014237,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_2_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 732.2348873868468,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_2_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 291.8024881328165,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_3_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 12821.99517892496,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_3_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 9124.06596619985,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_3_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 6617.4228947052325,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_3_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4899.842652169755,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_3_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 2260.6604280817264,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_3_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 1036.6666234336735,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_4_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 11756.383824418124,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_4_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 6126.2572289528325,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_4_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 3469.379920530715,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_4_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 2136.8860572014237,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_4_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 732.2348873868468,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_4_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 291.8024881328165,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_5_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 12821.99517892496,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_5_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 9124.06596619985,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_5_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 6617.4228947052325,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_5_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4899.842652169755,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_5_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 2260.6604280817264,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_5_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 1036.6666234336735,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_6_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 12821.99517892496,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_6_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 9124.06596619985,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_6_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 6617.4228947052325,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_6_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4899.842652169755,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_6_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 2260.6604280817264,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_6_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 1036.6666234336735,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_7_opening_0.0",
+        "running": 3.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 13201.550837712828,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_7_opening_1.0",
+        "running": 3.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 10490.427746017114,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_7_opening_2.0",
+        "running": 3.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 8404.442641162896,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_7_opening_3.0",
+        "running": 3.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 6791.712562150729,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_7_opening_6.0",
+        "running": 3.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 3791.3949989112734,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.0_mask_7_opening_10.0",
+        "running": 3.0,
+        "reverse_fraction": 0.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 1985.8421659660235,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.01_mask_0_opening_0.0",
+        "running": 0.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.1021869530528581e-11
+      },
+      {
+        "id": "backflow_0.01_mask_0_opening_1.0",
+        "running": 0.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.1021869530528581e-11
+      },
+      {
+        "id": "backflow_0.01_mask_0_opening_2.0",
+        "running": 0.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.1021869530528581e-11
+      },
+      {
+        "id": "backflow_0.01_mask_0_opening_3.0",
+        "running": 0.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.1021869530528581e-11
+      },
+      {
+        "id": "backflow_0.01_mask_0_opening_6.0",
+        "running": 0.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.1021869530528581e-11
+      },
+      {
+        "id": "backflow_0.01_mask_0_opening_10.0",
+        "running": 0.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.1021869530528581e-11
+      },
+      {
+        "id": "backflow_0.01_mask_1_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 7750.99298294264,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.004254455294643864
+      },
+      {
+        "id": "backflow_0.01_mask_1_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 4250.548523156671,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0032134358410581595
+      },
+      {
+        "id": "backflow_0.01_mask_1_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 2539.0886654784845,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.002507044786489099
+      },
+      {
+        "id": "backflow_0.01_mask_1_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 1639.4469070113264,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.002024343457423176
+      },
+      {
+        "id": "backflow_0.01_mask_1_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 616.421490841487,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.001248106923577678
+      },
+      {
+        "id": "backflow_0.01_mask_1_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 260.4864597078995,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0008128802252025188
+      },
+      {
+        "id": "backflow_0.01_mask_2_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 7750.99298294264,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.004254455294643864
+      },
+      {
+        "id": "backflow_0.01_mask_2_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 4250.548523156671,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0032134358410581595
+      },
+      {
+        "id": "backflow_0.01_mask_2_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 2539.0886654784845,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.002507044786489099
+      },
+      {
+        "id": "backflow_0.01_mask_2_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 1639.4469070113264,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.002024343457423176
+      },
+      {
+        "id": "backflow_0.01_mask_2_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 616.421490841487,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.001248106923577678
+      },
+      {
+        "id": "backflow_0.01_mask_2_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 260.4864597078995,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0008128802252025188
+      },
+      {
+        "id": "backflow_0.01_mask_3_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 11506.139728113485,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.0025351456051126466
+      },
+      {
+        "id": "backflow_0.01_mask_3_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 8235.140680541808,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.002186537044375846
+      },
+      {
+        "id": "backflow_0.01_mask_3_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 6010.506599885586,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.0018919083334168097
+      },
+      {
+        "id": "backflow_0.01_mask_3_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4480.428536323947,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0016474930272527234
+      },
+      {
+        "id": "backflow_0.01_mask_3_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 2107.394160188647,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0011446750844791211
+      },
+      {
+        "id": "backflow_0.01_mask_3_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 984.5694663602917,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0007871428497197133
+      },
+      {
+        "id": "backflow_0.01_mask_4_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 7750.99298294264,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.004254455294643864
+      },
+      {
+        "id": "backflow_0.01_mask_4_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 4250.548523156671,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0032134358410581595
+      },
+      {
+        "id": "backflow_0.01_mask_4_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 2539.0886654784845,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.002507044786489099
+      },
+      {
+        "id": "backflow_0.01_mask_4_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 1639.4469070113264,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.002024343457423176
+      },
+      {
+        "id": "backflow_0.01_mask_4_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 616.421490841487,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.001248106923577678
+      },
+      {
+        "id": "backflow_0.01_mask_4_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 260.4864597078995,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0008128802252025188
+      },
+      {
+        "id": "backflow_0.01_mask_5_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 11506.139728113485,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.0025351456051126466
+      },
+      {
+        "id": "backflow_0.01_mask_5_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 8235.140680541808,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.002186537044375846
+      },
+      {
+        "id": "backflow_0.01_mask_5_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 6010.506599885586,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.0018919083334168097
+      },
+      {
+        "id": "backflow_0.01_mask_5_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4480.428536323947,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0016474930272527234
+      },
+      {
+        "id": "backflow_0.01_mask_5_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 2107.394160188647,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0011446750844791211
+      },
+      {
+        "id": "backflow_0.01_mask_5_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 984.5694663602917,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0007871428497197133
+      },
+      {
+        "id": "backflow_0.01_mask_6_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 11506.139728113485,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.0025351456051126466
+      },
+      {
+        "id": "backflow_0.01_mask_6_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 8235.140680541808,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.002186537044375846
+      },
+      {
+        "id": "backflow_0.01_mask_6_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 6010.506599885586,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.0018919083334168097
+      },
+      {
+        "id": "backflow_0.01_mask_6_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4480.428536323947,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0016474930272527234
+      },
+      {
+        "id": "backflow_0.01_mask_6_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 2107.394160188647,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0011446750844791211
+      },
+      {
+        "id": "backflow_0.01_mask_6_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 984.5694663602917,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0007871428497197133
+      },
+      {
+        "id": "backflow_0.01_mask_7_opening_0.0",
+        "running": 3.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 13201.550837712828,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.01_mask_7_opening_1.0",
+        "running": 3.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 10490.427746017114,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.01_mask_7_opening_2.0",
+        "running": 3.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 8404.442641162896,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.01_mask_7_opening_3.0",
+        "running": 3.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 6791.712562150729,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.01_mask_7_opening_6.0",
+        "running": 3.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 3791.3949989112734,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.01_mask_7_opening_10.0",
+        "running": 3.0,
+        "reverse_fraction": 0.01,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 1985.8421659660235,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.05_mask_0_opening_0.0",
+        "running": 0.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 5.51093476526429e-11
+      },
+      {
+        "id": "backflow_0.05_mask_0_opening_1.0",
+        "running": 0.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 5.51093476526429e-11
+      },
+      {
+        "id": "backflow_0.05_mask_0_opening_2.0",
+        "running": 0.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 5.51093476526429e-11
+      },
+      {
+        "id": "backflow_0.05_mask_0_opening_3.0",
+        "running": 0.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 5.51093476526429e-11
+      },
+      {
+        "id": "backflow_0.05_mask_0_opening_6.0",
+        "running": 0.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 5.51093476526429e-11
+      },
+      {
+        "id": "backflow_0.05_mask_0_opening_10.0",
+        "running": 0.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 5.51093476526429e-11
+      },
+      {
+        "id": "backflow_0.05_mask_1_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 2022.1943574604811,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.011218138198593705
+      },
+      {
+        "id": "backflow_0.05_mask_1_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 1350.5679193836695,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009201056514080394
+      },
+      {
+        "id": "backflow_0.05_mask_1_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 955.093895171216,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007753928447521851
+      },
+      {
+        "id": "backflow_0.05_mask_1_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 706.6814899930323,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.006678609627101879
+      },
+      {
+        "id": "backflow_0.05_mask_1_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 345.8947999824304,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0046814379185776
+      },
+      {
+        "id": "backflow_0.05_mask_1_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 174.50884077895898,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0033282087374869366
+      },
+      {
+        "id": "backflow_0.05_mask_2_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 2022.1943574604811,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.011218138198593705
+      },
+      {
+        "id": "backflow_0.05_mask_2_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 1350.5679193836695,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009201056514080394
+      },
+      {
+        "id": "backflow_0.05_mask_2_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 955.093895171216,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007753928447521851
+      },
+      {
+        "id": "backflow_0.05_mask_2_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 706.6814899930323,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.006678609627101879
+      },
+      {
+        "id": "backflow_0.05_mask_2_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 345.8947999824304,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0046814379185776
+      },
+      {
+        "id": "backflow_0.05_mask_2_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 174.50884077895898,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0033282087374869366
+      },
+      {
+        "id": "backflow_0.05_mask_3_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 7597.198245010484,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.010539408888858803
+      },
+      {
+        "id": "backflow_0.05_mask_3_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 5573.594575241063,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009131681576926908
+      },
+      {
+        "id": "backflow_0.05_mask_3_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 4177.282973601978,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007967281503703679
+      },
+      {
+        "id": "backflow_0.05_mask_3_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 3199.2309203976474,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007010077097545481
+      },
+      {
+        "id": "backflow_0.05_mask_3_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 1618.976897747285,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.005029718508516068
+      },
+      {
+        "id": "backflow_0.05_mask_3_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 809.8088412405923,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0035727016728294182
+      },
+      {
+        "id": "backflow_0.05_mask_4_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 2022.1943574604811,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.011218138198593705
+      },
+      {
+        "id": "backflow_0.05_mask_4_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 1350.5679193836695,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009201056514080394
+      },
+      {
+        "id": "backflow_0.05_mask_4_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 955.093895171216,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007753928447521851
+      },
+      {
+        "id": "backflow_0.05_mask_4_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 706.6814899930323,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.006678609627101879
+      },
+      {
+        "id": "backflow_0.05_mask_4_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 345.8947999824304,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0046814379185776
+      },
+      {
+        "id": "backflow_0.05_mask_4_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 174.50884077895898,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0033282087374869366
+      },
+      {
+        "id": "backflow_0.05_mask_5_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 7597.198245010484,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.010539408888858803
+      },
+      {
+        "id": "backflow_0.05_mask_5_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 5573.594575241063,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009131681576926908
+      },
+      {
+        "id": "backflow_0.05_mask_5_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 4177.282973601978,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007967281503703679
+      },
+      {
+        "id": "backflow_0.05_mask_5_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 3199.2309203976474,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007010077097545481
+      },
+      {
+        "id": "backflow_0.05_mask_5_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 1618.976897747285,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.005029718508516068
+      },
+      {
+        "id": "backflow_0.05_mask_5_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 809.8088412405923,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0035727016728294182
+      },
+      {
+        "id": "backflow_0.05_mask_6_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 7597.198245010484,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0.010539408888858803
+      },
+      {
+        "id": "backflow_0.05_mask_6_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 5573.594575241063,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009131681576926908
+      },
+      {
+        "id": "backflow_0.05_mask_6_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 4177.282973601978,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007967281503703679
+      },
+      {
+        "id": "backflow_0.05_mask_6_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 3199.2309203976474,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007010077097545481
+      },
+      {
+        "id": "backflow_0.05_mask_6_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 1618.976897747285,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.005029718508516068
+      },
+      {
+        "id": "backflow_0.05_mask_6_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 809.8088412405923,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0035727016728294182
+      },
+      {
+        "id": "backflow_0.05_mask_7_opening_0.0",
+        "running": 3.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 13201.550837712828,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.05_mask_7_opening_1.0",
+        "running": 3.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 10490.427746017114,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.05_mask_7_opening_2.0",
+        "running": 3.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 8404.442641162896,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.05_mask_7_opening_3.0",
+        "running": 3.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 6791.712562150729,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.05_mask_7_opening_6.0",
+        "running": 3.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 3791.3949989112734,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.05_mask_7_opening_10.0",
+        "running": 3.0,
+        "reverse_fraction": 0.05,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 1985.8421659660235,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.2_mask_0_opening_0.0",
+        "running": 0.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 2.204373906105716e-10
+      },
+      {
+        "id": "backflow_0.2_mask_0_opening_1.0",
+        "running": 0.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 2.204373906105716e-10
+      },
+      {
+        "id": "backflow_0.2_mask_0_opening_2.0",
+        "running": 0.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 2.204373906105716e-10
+      },
+      {
+        "id": "backflow_0.2_mask_0_opening_3.0",
+        "running": 0.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 2.204373906105716e-10
+      },
+      {
+        "id": "backflow_0.2_mask_0_opening_6.0",
+        "running": 0.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 2.204373906105716e-10
+      },
+      {
+        "id": "backflow_0.2_mask_0_opening_10.0",
+        "running": 0.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 2.204373906105716e-10
+      },
+      {
+        "id": "backflow_0.2_mask_1_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 191.5342631516687,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013945879419432377
+      },
+      {
+        "id": "backflow_0.2_mask_1_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 165.35265518986853,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.012959506840862967
+      },
+      {
+        "id": "backflow_0.2_mask_1_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 144.16057760675903,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.012101936590658058
+      },
+      {
+        "id": "backflow_0.2_mask_1_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 126.77336946196738,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.011349731787793638
+      },
+      {
+        "id": "backflow_0.2_mask_1_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 89.9570881112013,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009562552721042275
+      },
+      {
+        "id": "backflow_0.2_mask_1_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 61.372297553461976,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007899650411437958
+      },
+      {
+        "id": "backflow_0.2_mask_2_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 191.5342631516687,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013945879419432377
+      },
+      {
+        "id": "backflow_0.2_mask_2_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 165.35265518986853,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.012959506840862967
+      },
+      {
+        "id": "backflow_0.2_mask_2_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 144.16057760675903,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.012101936590658058
+      },
+      {
+        "id": "backflow_0.2_mask_2_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 126.77336946196738,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.011349731787793638
+      },
+      {
+        "id": "backflow_0.2_mask_2_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 89.9570881112013,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009562552721042275
+      },
+      {
+        "id": "backflow_0.2_mask_2_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 61.372297553461976,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007899650411437958
+      },
+      {
+        "id": "backflow_0.2_mask_3_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 2136.8860572014237,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.023049459774579985
+      },
+      {
+        "id": "backflow_0.2_mask_3_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 1725.0323248352797,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.020755541333472127
+      },
+      {
+        "id": "backflow_0.2_mask_3_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 1415.639466247987,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.018833636293906632
+      },
+      {
+        "id": "backflow_0.2_mask_3_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 1178.9182568002434,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.017208808409868204
+      },
+      {
+        "id": "backflow_0.2_mask_3_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 732.2348873868468,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.01359472044076514
+      },
+      {
+        "id": "backflow_0.2_mask_3_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 440.13557161198696,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.01055633567486691
+      },
+      {
+        "id": "backflow_0.2_mask_4_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 191.5342631516687,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013945879419432377
+      },
+      {
+        "id": "backflow_0.2_mask_4_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 165.35265518986853,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.012959506840862967
+      },
+      {
+        "id": "backflow_0.2_mask_4_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 144.16057760675903,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.012101936590658058
+      },
+      {
+        "id": "backflow_0.2_mask_4_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 126.77336946196738,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.011349731787793638
+      },
+      {
+        "id": "backflow_0.2_mask_4_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 89.9570881112013,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.009562552721042275
+      },
+      {
+        "id": "backflow_0.2_mask_4_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 61.372297553461976,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.007899650411437958
+      },
+      {
+        "id": "backflow_0.2_mask_5_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 2136.8860572014237,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.023049459774579985
+      },
+      {
+        "id": "backflow_0.2_mask_5_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 1725.0323248352797,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.020755541333472127
+      },
+      {
+        "id": "backflow_0.2_mask_5_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 1415.639466247987,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.018833636293906632
+      },
+      {
+        "id": "backflow_0.2_mask_5_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 1178.9182568002434,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.017208808409868204
+      },
+      {
+        "id": "backflow_0.2_mask_5_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 732.2348873868468,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.01359472044076514
+      },
+      {
+        "id": "backflow_0.2_mask_5_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 440.13557161198696,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.01055633567486691
+      },
+      {
+        "id": "backflow_0.2_mask_6_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 2136.8860572014237,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.023049459774579985
+      },
+      {
+        "id": "backflow_0.2_mask_6_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 1725.0323248352797,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.020755541333472127
+      },
+      {
+        "id": "backflow_0.2_mask_6_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 1415.639466247987,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.018833636293906632
+      },
+      {
+        "id": "backflow_0.2_mask_6_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 1178.9182568002434,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.017208808409868204
+      },
+      {
+        "id": "backflow_0.2_mask_6_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 732.2348873868468,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.01359472044076514
+      },
+      {
+        "id": "backflow_0.2_mask_6_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 440.13557161198696,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.01055633567486691
+      },
+      {
+        "id": "backflow_0.2_mask_7_opening_0.0",
+        "running": 3.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 13201.550837712828,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.2_mask_7_opening_1.0",
+        "running": 3.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 10490.427746017114,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.2_mask_7_opening_2.0",
+        "running": 3.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 8404.442641162896,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.2_mask_7_opening_3.0",
+        "running": 3.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 6791.712562150729,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.2_mask_7_opening_6.0",
+        "running": 3.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 3791.3949989112734,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_0.2_mask_7_opening_10.0",
+        "running": 3.0,
+        "reverse_fraction": 0.2,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 1985.8421659660235,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_1.0_mask_0_opening_0.0",
+        "running": 0.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.102186953052858e-09
+      },
+      {
+        "id": "backflow_1.0_mask_0_opening_1.0",
+        "running": 0.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.102186953052858e-09
+      },
+      {
+        "id": "backflow_1.0_mask_0_opening_2.0",
+        "running": 0.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.102186953052858e-09
+      },
+      {
+        "id": "backflow_1.0_mask_0_opening_3.0",
+        "running": 0.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.102186953052858e-09
+      },
+      {
+        "id": "backflow_1.0_mask_0_opening_6.0",
+        "running": 0.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.102186953052858e-09
+      },
+      {
+        "id": "backflow_1.0_mask_0_opening_10.0",
+        "running": 0.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 4.607136361300945e-08,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 1.102186953052858e-09
+      },
+      {
+        "id": "backflow_1.0_mask_1_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 8.133232984691858,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.014382336933503577
+      },
+      {
+        "id": "backflow_1.0_mask_1_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 7.8804159139690455,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.014157022830724678
+      },
+      {
+        "id": "backflow_1.0_mask_1_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 7.639204695238732,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013938655002868412
+      },
+      {
+        "id": "backflow_1.0_mask_1_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 7.408900151844136,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013726917410600482
+      },
+      {
+        "id": "backflow_1.0_mask_1_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 6.777184209029656,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013128599108504394
+      },
+      {
+        "id": "backflow_1.0_mask_1_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 6.053248470125254,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0124074822897864
+      },
+      {
+        "id": "backflow_1.0_mask_2_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 8.133232984691858,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.014382336933503577
+      },
+      {
+        "id": "backflow_1.0_mask_2_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 7.8804159139690455,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.014157022830724678
+      },
+      {
+        "id": "backflow_1.0_mask_2_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 7.639204695238732,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013938655002868412
+      },
+      {
+        "id": "backflow_1.0_mask_2_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 7.408900151844136,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013726917410600482
+      },
+      {
+        "id": "backflow_1.0_mask_2_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 6.777184209029656,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013128599108504394
+      },
+      {
+        "id": "backflow_1.0_mask_2_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 6.053248470125254,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0124074822897864
+      },
+      {
+        "id": "backflow_1.0_mask_3_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 126.77336946196738,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.028374329469484098
+      },
+      {
+        "id": "backflow_1.0_mask_3_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 119.22975820265128,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.027518278216909036
+      },
+      {
+        "id": "backflow_1.0_mask_3_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 112.33639931329526,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.026711914333216104
+      },
+      {
+        "id": "backflow_1.0_mask_3_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 106.02102611679584,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.025951070193947285
+      },
+      {
+        "id": "backflow_1.0_mask_3_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 89.9570881112013,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.023906381802605688
+      },
+      {
+        "id": "backflow_1.0_mask_3_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 73.63519947353052,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.02163098690927401
+      },
+      {
+        "id": "backflow_1.0_mask_4_opening_0.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 8.133232984691858,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.014382336933503577
+      },
+      {
+        "id": "backflow_1.0_mask_4_opening_1.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 7.8804159139690455,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.014157022830724678
+      },
+      {
+        "id": "backflow_1.0_mask_4_opening_2.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 7.639204695238732,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013938655002868412
+      },
+      {
+        "id": "backflow_1.0_mask_4_opening_3.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 7.408900151844136,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013726917410600482
+      },
+      {
+        "id": "backflow_1.0_mask_4_opening_6.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 6.777184209029656,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.013128599108504394
+      },
+      {
+        "id": "backflow_1.0_mask_4_opening_10.0",
+        "running": 1.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 6.053248470125254,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.0124074822897864
+      },
+      {
+        "id": "backflow_1.0_mask_5_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 126.77336946196738,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.028374329469484098
+      },
+      {
+        "id": "backflow_1.0_mask_5_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 119.22975820265128,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.027518278216909036
+      },
+      {
+        "id": "backflow_1.0_mask_5_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 112.33639931329526,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.026711914333216104
+      },
+      {
+        "id": "backflow_1.0_mask_5_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 106.02102611679584,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.025951070193947285
+      },
+      {
+        "id": "backflow_1.0_mask_5_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 89.9570881112013,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.023906381802605688
+      },
+      {
+        "id": "backflow_1.0_mask_5_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 73.63519947353052,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.02163098690927401
+      },
+      {
+        "id": "backflow_1.0_mask_6_opening_0.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 126.77336946196738,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.028374329469484098
+      },
+      {
+        "id": "backflow_1.0_mask_6_opening_1.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 119.22975820265128,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.027518278216909036
+      },
+      {
+        "id": "backflow_1.0_mask_6_opening_2.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 112.33639931329526,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.026711914333216104
+      },
+      {
+        "id": "backflow_1.0_mask_6_opening_3.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 106.02102611679584,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.025951070193947285
+      },
+      {
+        "id": "backflow_1.0_mask_6_opening_6.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 89.9570881112013,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.023906381802605688
+      },
+      {
+        "id": "backflow_1.0_mask_6_opening_10.0",
+        "running": 2.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 73.63519947353052,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0.02163098690927401
+      },
+      {
+        "id": "backflow_1.0_mask_7_opening_0.0",
+        "running": 3.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 2e-05,
+        "pressure_pa": 13201.550837712828,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_1.0_mask_7_opening_1.0",
+        "running": 3.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0001,
+        "pressure_pa": 10490.427746017114,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_1.0_mask_7_opening_2.0",
+        "running": 3.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00018,
+        "pressure_pa": 8404.442641162896,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_1.0_mask_7_opening_3.0",
+        "running": 3.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.00026000000000000003,
+        "pressure_pa": 6791.712562150729,
+        "meets_nominal_requirement": true,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_1.0_mask_7_opening_6.0",
+        "running": 3.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0005000000000000001,
+        "pressure_pa": 3791.3949989112734,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      },
+      {
+        "id": "backflow_1.0_mask_7_opening_10.0",
+        "running": 3.0,
+        "reverse_fraction": 1.0,
+        "total_area_m2": 0.0008200000000000001,
+        "pressure_pa": 1985.8421659660235,
+        "meets_nominal_requirement": false,
+        "reverse_kg_s": 0
+      }
+    ],
+    "transition_max_adjacent_change": [
+      7.285000000085973e-07,
+      2.3568260309535932e-05,
+      7.801722701115068,
+      0.17904936220175216
+    ],
+    "transition_columns": [
+      "area_m2",
+      "flow_kg_s",
+      "pressure_pa",
+      "skirt_n"
+    ],
+    "quadrature": [
+      {
+        "id": "quadrature_32",
+        "gap_m": 0.022,
+        "delta_pa": 6000,
+        "area_m2": 0.1295945455174072,
+        "leak_area_m2": 3.778823191168221e-05,
+        "mechanical_n": 0.7327183424845555,
+        "lip_n": 77.22927310444325,
+        "normal_n": 77.96199144692767,
+        "drag_power_w": -1.89340085764823,
+        "pressure_centre_m": [
+          -0.14344285525983233,
+          2.3529683274408297e-19,
+          0.018
+        ],
+        "pressure_force_n": [
+          0,
+          0,
+          -777.5672731044432
+        ],
+        "pressure_moment_nm": [
+          -1.8295911660692885e-16,
+          -111.53646981070317,
+          0
+        ],
+        "contact_force_n": [
+          -6.40272707876603,
+          3.051266142649507,
+          77.96199144692767
+        ],
+        "contact_moment_nm": [
+          3.7470027081099033e-16,
+          13.021803312201197,
+          -1.021425736491705
+        ],
+        "status": "ok"
+      },
+      {
+        "id": "quadrature_64",
+        "gap_m": 0.022,
+        "delta_pa": 6000,
+        "area_m2": 0.12959425353029708,
+        "leak_area_m2": 3.779643149354559e-05,
+        "mechanical_n": 0.7327183424845556,
+        "lip_n": 77.22752118178197,
+        "normal_n": 77.96023952426673,
+        "drag_power_w": -1.8934029161932417,
+        "pressure_centre_m": [
+          -0.1434436003063702,
+          4.1830642291250794e-19,
+          0.018
+        ],
+        "pressure_force_n": [
+          0,
+          0,
+          -777.5655211817825
+        ],
+        "pressure_moment_nm": [
+          -3.252606517456514e-16,
+          -111.53679783241405,
+          0
+        ],
+        "contact_force_n": [
+          -6.4024241874199,
+          3.051215090656458,
+          77.96023952426673
+        ],
+        "contact_moment_nm": [
+          2.2898349882893854e-15,
+          13.022159472490705,
+          -1.0215301311821035
+        ],
+        "status": "ok"
+      },
+      {
+        "id": "quadrature_128",
+        "gap_m": 0.022,
+        "delta_pa": 6000,
+        "area_m2": 0.12959418053351954,
+        "leak_area_m2": 3.7798481389011464e-05,
+        "mechanical_n": 0.7327183424845597,
+        "lip_n": 77.22708320111687,
+        "normal_n": 77.95980154360151,
+        "drag_power_w": -1.8934034276708716,
+        "pressure_centre_m": [
+          -0.14344378650152403,
+          -1.071910812490344e-18,
+          0.018
+        ],
+        "pressure_force_n": [
+          0,
+          0,
+          -777.5650832011172
+        ],
+        "pressure_moment_nm": [
+          8.334804200982315e-16,
+          -111.53687978574082,
+          0
+        ],
+        "contact_force_n": [
+          -6.402348485480305,
+          3.051202310730294,
+          77.95980154360151
+        ],
+        "contact_moment_nm": [
+          5.689893001203927e-16,
+          13.02224846046357,
+          -1.0215562176246806
+        ],
+        "status": "ok"
+      }
+    ],
+    "ramp_quasi_static_pressure_refinement_error_pa": 0.0,
+    "ramp_quasi_static_force_refinement_error_n": 0.0,
+    "ramp_ode_pressure_refinement_error_pa": 0.5946178383019287,
+    "ramp_ode_force_refinement_error_n": 0.007243059628024184,
+    "ramp_physical_lag_pa": 280.00563044892624,
+    "regularization": [
+      {
+        "epsilon_pa": 0.01,
+        "pressure_pa": 8404.442640978581,
+        "zero_flows_kg_s": [
+          -8.049568179130926e-07,
+          -8.069415660838057e-08,
+          0,
+          8.06941565685611e-08,
+          8.049568139409395e-07
+        ]
+      },
+      {
+        "epsilon_pa": 0.1,
+        "pressure_pa": 8404.442641162896,
+        "zero_flows_kg_s": [
+          -2.5517731874269336e-07,
+          -2.5518364414752718e-08,
+          0,
+          2.551836440216038e-08,
+          2.551773174834912e-07
+        ]
+      },
+      {
+        "epsilon_pa": 1.0,
+        "pressure_pa": 8404.442655538995,
+        "zero_flows_kg_s": [
+          -8.069615054834353e-08,
+          -8.06961736851006e-09,
+          0,
+          8.069617364528013e-09,
+          8.069615015013898e-08
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "name": "fan_start",
+        "mode": "quasi_static",
+        "dt_s": 0.001,
+        "response": {
+          "t10_s": 0.05690393647144245,
+          "t90_s": 0.4449082560583459,
+          "t10_90_s": 0.38800431958690346
+        },
+        "initial_delta_pa": 0,
+        "final_steady_delta_pa": 13201.550837743383,
+        "final_delta_pa": 13200.356984171754
+      },
+      {
+        "name": "fan_start",
+        "mode": "quasi_static",
+        "dt_s": 0.0005,
+        "response": {
+          "t10_s": 0.05690412554426086,
+          "t90_s": 0.44490811112220785,
+          "t10_90_s": 0.388003985577947
+        },
+        "initial_delta_pa": 0,
+        "final_steady_delta_pa": 13201.550837743383,
+        "final_delta_pa": 13200.356984171754
+      },
+      {
+        "name": "fan_start",
+        "mode": "quasi_static",
+        "dt_s": 5e-05,
+        "response": {
+          "t10_s": 0.056904275682149084,
+          "t90_s": 0.4449079937895032,
+          "t10_90_s": 0.3880037181073541
+        },
+        "initial_delta_pa": 0,
+        "final_steady_delta_pa": 13201.550837743383,
+        "final_delta_pa": 13200.356984171754
+      },
+      {
+        "name": "fan_start",
+        "mode": "quasi_static",
+        "dt_s": 2.5e-05,
+        "response": {
+          "t10_s": 0.056904276096804714,
+          "t90_s": 0.44490799315698715,
+          "t10_90_s": 0.38800371706018244
+        },
+        "initial_delta_pa": 0,
+        "final_steady_delta_pa": 13201.550837743383,
+        "final_delta_pa": 13200.356984171754
+      },
+      {
+        "name": "fan_start",
+        "mode": "ode",
+        "dt_s": 0.001,
+        "response": {
+          "t10_s": 0.060166574472735865,
+          "t90_s": 0.45511257336825317,
+          "t10_90_s": 0.3949459988955173
+        },
+        "initial_delta_pa": 0,
+        "final_steady_delta_pa": 13201.550837743383,
+        "final_delta_pa": 13200.266693065962
+      },
+      {
+        "name": "fan_start",
+        "mode": "ode",
+        "dt_s": 0.0005,
+        "response": {
+          "t10_s": 0.059922845117354434,
+          "t90_s": 0.45484689921871674,
+          "t10_90_s": 0.39492405410136233
+        },
+        "initial_delta_pa": 0,
+        "final_steady_delta_pa": 13201.550837743383,
+        "final_delta_pa": 13200.268985318253
+      },
+      {
+        "name": "fan_start",
+        "mode": "ode",
+        "dt_s": 5e-05,
+        "response": {
+          "t10_s": 0.05970320722949365,
+          "t90_s": 0.45460778402857266,
+          "t10_90_s": 0.39490457679907903
+        },
+        "initial_delta_pa": 0,
+        "final_steady_delta_pa": 13201.550837743383,
+        "final_delta_pa": 13200.271044695983
+      },
+      {
+        "name": "fan_start",
+        "mode": "ode",
+        "dt_s": 2.5e-05,
+        "response": {
+          "t10_s": 0.059690997006510677,
+          "t90_s": 0.4545945090173174,
+          "t10_90_s": 0.39490351201080676
+        },
+        "initial_delta_pa": 0,
+        "final_steady_delta_pa": 13201.550837743383,
+        "final_delta_pa": 13200.271159151947
+      },
+      {
+        "name": "fan_stop",
+        "mode": "quasi_static",
+        "dt_s": 0.001,
+        "response": {
+          "t10_s": 0.007932420768476191,
+          "t90_s": 0.17294381765643804,
+          "t10_90_s": 0.16501139688796185
+        },
+        "initial_delta_pa": 13201.550837712828,
+        "final_steady_delta_pa": 0.0,
+        "final_delta_pa": 2.8798298444598913e-05
+      },
+      {
+        "name": "fan_stop",
+        "mode": "quasi_static",
+        "dt_s": 0.0005,
+        "response": {
+          "t10_s": 0.00793219651668921,
+          "t90_s": 0.17294362988587506,
+          "t10_90_s": 0.16501143336918583
+        },
+        "initial_delta_pa": 13201.550837712828,
+        "final_steady_delta_pa": 0.0,
+        "final_delta_pa": 2.8798298444598913e-05
+      },
+      {
+        "name": "fan_stop",
+        "mode": "quasi_static",
+        "dt_s": 5e-05,
+        "response": {
+          "t10_s": 0.007932006164750052,
+          "t90_s": 0.1729434648900785,
+          "t10_90_s": 0.16501145872532846
+        },
+        "initial_delta_pa": 13201.550837712828,
+        "final_steady_delta_pa": 0.0,
+        "final_delta_pa": 2.8798298444598913e-05
+      },
+      {
+        "name": "fan_stop",
+        "mode": "quasi_static",
+        "dt_s": 2.5e-05,
+        "response": {
+          "t10_s": 0.007932003188385635,
+          "t90_s": 0.17294346380110098,
+          "t10_90_s": 0.16501146061271535
+        },
+        "initial_delta_pa": 13201.550837712828,
+        "final_steady_delta_pa": 0.0,
+        "final_delta_pa": 2.8798298444598913e-05
+      },
+      {
+        "name": "fan_stop",
+        "mode": "ode",
+        "dt_s": 0.001,
+        "response": {
+          "t10_s": 0.013100263293681792,
+          "t90_s": 0.1763339484086304,
+          "t10_90_s": 0.1632336851149486
+        },
+        "initial_delta_pa": 13201.550837712828,
+        "final_steady_delta_pa": 0.0,
+        "final_delta_pa": 2.8982613002881408e-05
+      },
+      {
+        "name": "fan_stop",
+        "mode": "ode",
+        "dt_s": 0.0005,
+        "response": {
+          "t10_s": 0.01284991203907976,
+          "t90_s": 0.17607247175390064,
+          "t10_90_s": 0.1632225597148209
+        },
+        "initial_delta_pa": 13201.550837712828,
+        "final_steady_delta_pa": 0.0,
+        "final_delta_pa": 2.889047027565539e-05
+      },
+      {
+        "name": "fan_stop",
+        "mode": "ode",
+        "dt_s": 5e-05,
+        "response": {
+          "t10_s": 0.012622998429788947,
+          "t90_s": 0.17583816070383937,
+          "t10_90_s": 0.16321516227405042
+        },
+        "initial_delta_pa": 13201.550837712828,
+        "final_steady_delta_pa": 0.0,
+        "final_delta_pa": 2.8798298444598913e-05
+      },
+      {
+        "name": "fan_stop",
+        "mode": "ode",
+        "dt_s": 2.5e-05,
+        "response": {
+          "t10_s": 0.012610371689063822,
+          "t90_s": 0.17582515320726194,
+          "t10_90_s": 0.16321478151819813
+        },
+        "initial_delta_pa": 13201.550837712828,
+        "final_steady_delta_pa": 0.0,
+        "final_delta_pa": 2.8798298444598913e-05
+      },
+      {
+        "name": "fast_open",
+        "mode": "ode",
+        "dt_s": 0.0001,
+        "response": {
+          "t10_s": 0.0005369303147387781,
+          "t90_s": 0.010324009406253774,
+          "t10_90_s": 0.009787079091514996
+        },
+        "initial_delta_pa": 13201.550837700575,
+        "final_steady_delta_pa": 3791.394998879986,
+        "final_delta_pa": 3791.395290594606
+      },
+      {
+        "name": "fast_open",
+        "mode": "ode",
+        "dt_s": 5e-05,
+        "response": {
+          "t10_s": 0.0005346474495206335,
+          "t90_s": 0.010272141722044369,
+          "t10_90_s": 0.009737494272523736
+        },
+        "initial_delta_pa": 13201.550837700575,
+        "final_steady_delta_pa": 3791.394998879986,
+        "final_delta_pa": 3791.395260644378
+      },
+      {
+        "name": "fast_open",
+        "mode": "ode",
+        "dt_s": 2.5e-05,
+        "response": {
+          "t10_s": 0.0005335458459900157,
+          "t90_s": 0.010246161205090263,
+          "t10_90_s": 0.009712615359100247
+        },
+        "initial_delta_pa": 13201.550837700575,
+        "final_steady_delta_pa": 3791.394998879986,
+        "final_delta_pa": 3791.395247189823
+      }
+    ],
+    "fan_start_quasi_static_time_error_s": 1.0471716826998545e-09,
+    "fan_start_ode_time_error_s": 1.0647882722758517e-06,
+    "fan_stop_quasi_static_time_error_s": 1.887386885668363e-09,
+    "fan_stop_ode_time_error_s": 3.8075585229169207e-07,
+    "fast_open_ode_time_error_s": 2.4878913423488636e-05,
+    "fast_open_independent_ode_maximum_pressure_error_pa": 8.46196959677036,
+    "fan_start_quasi_vs_ode_max_pressure_difference_pa": 242.6591586690338
+  }
+}

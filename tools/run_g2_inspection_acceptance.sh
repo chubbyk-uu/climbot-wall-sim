@@ -38,6 +38,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 WS=$(dirname "$SCRIPT_DIR")
 RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/climbot_g2_XXXXXX")
 TERM_GRACE_S=${G2_TERM_GRACE_S:-20}
+INT_GRACE_S=${G2_INT_GRACE_S:-8}
 LOCALIZATION_PROFILE=${LOCALIZATION_PROFILE:-precision}
 PRISM_EXTRINSIC_ERROR_ROBOT_M=${PRISM_EXTRINSIC_ERROR_ROBOT_M:-'[0.020, -0.010, 0.0]'}
 G2_MAX_CAMERA_POSITION_ERROR_M=${G2_MAX_CAMERA_POSITION_ERROR_M:-0.005}
@@ -50,6 +51,21 @@ G2_EXTERNAL_TIMEOUT_S=${G2_EXTERNAL_TIMEOUT_S:-1800}
 # long stability runs to verify the same workload remains visually healthy.
 G2_HEADLESS=${G2_HEADLESS:-true}
 G2_RVIZ=${G2_RVIZ:-false}
+ROBOT_GEOMETRY=${ROBOT_GEOMETRY:-vacuum_chassis}
+# A paired capture may conservatively plan the old robot with the larger new
+# envelope to obtain exactly the same photo route. Physics and controller still
+# use ROBOT_GEOMETRY. Never allow the new robot to plan with the smaller envelope.
+PLANNER_ROBOT_GEOMETRY=${PLANNER_ROBOT_GEOMETRY:-$ROBOT_GEOMETRY}
+case "$ROBOT_GEOMETRY/$PLANNER_ROBOT_GEOMETRY" in
+  vacuum_chassis/vacuum_chassis) ;;
+  *) echo "Invalid physical/planning geometry" >&2; exit 2 ;;
+esac
+ADHESION_MODE=${ADHESION_MODE:-auto}
+case "$ROBOT_GEOMETRY/$ADHESION_MODE" in
+  vacuum_chassis/auto|vacuum_chassis/vacuum|vacuum_chassis/fixed_pressure)
+    SIMULATION_LAUNCH=climbot_wall.launch.py ;;
+  *) echo "Invalid robot geometry/adhesion: $ROBOT_GEOMETRY/$ADHESION_MODE" >&2; exit 2 ;;
+esac
 # ROS /clock rate for the lane. Unset by default and then not passed at all,
 # so acceptance measures whatever the product launch defaults to. Pinning a
 # value here would silently accept a configuration nobody ships.
@@ -83,6 +99,8 @@ if [[ "$G2_EVALUATOR_TIMEOUT_S" != *.* ]]; then
 fi
 
 declare -A CONFIG=(
+  [vacuum_horizontal]='coverage_vacuum_diagnostic_full_horizontal.yaml'
+  [vacuum_vertical]='coverage_vacuum_diagnostic_full_vertical.yaml'
   [horizontal]='coverage_g2_acceptance_horizontal.yaml'
   [vertical]='coverage_g2_acceptance_vertical.yaml'
   [trapezoid]='coverage_g2_acceptance_trapezoid.yaml'
@@ -92,6 +110,8 @@ declare -A CONFIG=(
   [p206_vertical]='coverage_p206_diagnostic_full_vertical.yaml'
 )
 declare -A REGION=(
+  [vacuum_horizontal]='rectangle'
+  [vacuum_vertical]='rectangle'
   [horizontal]='rectangle'
   [vertical]='rectangle'
   [trapezoid]='trapezoid'
@@ -101,6 +121,8 @@ declare -A REGION=(
   [p206_vertical]='rectangle'
 )
 declare -A SWEEP=(
+  [vacuum_horizontal]='horizontal'
+  [vacuum_vertical]='vertical'
   [horizontal]='horizontal'
   [vertical]='vertical'
   [trapezoid]='horizontal'
@@ -132,6 +154,10 @@ source /opt/ros/jazzy/setup.bash
 source "$WS/install/setup.bash"
 set -u
 
+# Use the same root-INT / group-escalation policy as control regression lanes.
+# shellcheck disable=SC1091
+source "$WS/tools/lane_processes.sh"
+
 remember_group() {
   local pid=$1 pgid own attempt
   own=$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')
@@ -159,36 +185,70 @@ remember_group() {
 start_group() {
   local log=$1
   shift
-  setsid "$@" >"$log" 2>&1 &
+  "$WS/tools/start_session.sh" "$@" >"$log" 2>&1 &
   local pid=$!
   remember_group "$pid" || return 1
 }
 
 teardown_case() {
-  local pgid deadline
-  for pgid in "${PGIDS[@]+${PGIDS[@]}}"; do
-    # `--` is essential: without it Bash can parse a negative process-group
-    # id as another option, silently leaving a completed lane's executor and
-    # recorder alive for the next case.
-    kill -TERM -- "-$pgid" 2>/dev/null || true
-  done
-  deadline=$((SECONDS + TERM_GRACE_S))
-  while [ "$SECONDS" -lt "$deadline" ]; do
-    local alive=0
+  local pgid deadline stop_signal grace
+  local -a forced=() remaining=()
+  [ "${#PGIDS[@]}" -gt 0 ] || return 0
+  for stop_signal in INT TERM; do
+    grace=$TERM_GRACE_S
+    [ "$stop_signal" = INT ] && grace=$INT_GRACE_S
     for pgid in "${PGIDS[@]+${PGIDS[@]}}"; do
-      if kill -0 -- "-$pgid" 2>/dev/null; then
-        alive=1
-        break
-      fi
+      # INT goes to the root once; TERM/KILL still cover the entire group.
+      lane_signal_group "$stop_signal" "$pgid" || true
+    done
+    deadline=$((SECONDS + grace))
+    local alive=0
+    while [ "$SECONDS" -lt "$deadline" ]; do
+      alive=0
+      for pgid in "${PGIDS[@]+${PGIDS[@]}}"; do
+        if kill -0 -- "-$pgid" 2>/dev/null; then
+          alive=1
+          break
+        fi
+      done
+      [ "$alive" -eq 0 ] && break
+      sleep 1
     done
     [ "$alive" -eq 0 ] && break
-    sleep 1
   done
   for pgid in "${PGIDS[@]+${PGIDS[@]}}"; do
-    kill -0 -- "-$pgid" 2>/dev/null && kill -KILL -- "-$pgid" 2>/dev/null || true
+    if kill -0 -- "-$pgid" 2>/dev/null; then
+      forced+=("$pgid")
+      kill -KILL -- "-$pgid" 2>/dev/null || true
+    fi
+    wait "$pgid" 2>/dev/null || true
   done
+  deadline=$((SECONDS + 5))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    remaining=()
+    for pgid in "${PGIDS[@]}"; do
+      kill -0 -- "-$pgid" 2>/dev/null && remaining+=("$pgid")
+    done
+    [ "${#remaining[@]}" -eq 0 ] && break
+    sleep 1
+  done
+  if [ -n "$ACTIVE_CASE" ]; then
+    python3 - "$RUN_DIR/$ACTIVE_CASE/cleanup.json" \
+      "${PGIDS[*]}" "${forced[*]}" "${remaining[*]}" <<'PY'
+import json
+from pathlib import Path
+import sys
+
+known, forced, remaining = [list(map(int, value.split())) for value in sys.argv[2:]]
+Path(sys.argv[1]).write_text(json.dumps({
+    'known_process_groups': known, 'forced_kill_groups': forced,
+    'remaining_groups': remaining, 'passed': not forced and not remaining,
+}, indent=2) + '\n')
+PY
+  fi
   PGIDS=()
   ros2 daemon stop >/dev/null 2>&1 || true
+  [ "${#forced[@]}" -eq 0 ] && [ "${#remaining[@]}" -eq 0 ]
 }
 
 cleanup() {
@@ -234,7 +294,8 @@ run_case() {
   export GZ_PARTITION="climbot-g2-${case_name}-$$"
 
   echo "[$case_name] starting (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, GZ_PARTITION=$GZ_PARTITION)"
-  start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo climbot_wall.launch.py \
+  start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo "$SIMULATION_LAUNCH" \
+    adhesion_mode:="$ADHESION_MODE" \
     use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:="$G2_GPU_BACKEND" wall_grid_spacing:=0 \
     ${G2_CLOCK_PUBLISH_HZ:+clock_publish_hz:="$G2_CLOCK_PUBLISH_HZ"} \
     gui_gpu_backend:="$G2_GUI_GPU_BACKEND" \
@@ -246,7 +307,26 @@ run_case() {
     return 1
   fi
 
-  start_group "$case_dir/planner.log" ros2 launch climbot_coverage coverage_planner.launch.py \
+  # Topic/service discovery precedes usable clock and EKF data on a cold DDS
+  # scene. Keep mission dispatch and measurement warmup after actual readiness.
+  python3 "$WS/tools/wait_gazebo_ready.py" \
+    --planning-geometry "$PLANNER_ROBOT_GEOMETRY" --physical-geometry "$ROBOT_GEOMETRY" \
+    --output "$case_dir/startup_readiness.json" >"$case_dir/startup.log" 2>&1 || return 1
+
+  start_group "$case_dir/observer.log" python3 "$WS/tools/observe_gui_acceptance.py" \
+    --output "$case_dir/observation" --geometry "$ROBOT_GEOMETRY" \
+    --gui "$([ "$G2_HEADLESS" = false ] && echo required || echo disabled)" \
+    --rviz "$([ "$G2_RVIZ" = true ] && echo required || echo disabled)" || return 1
+  start_group "$case_dir/native.log" python3 "$WS/tools/observe_native_stats.py" \
+    --output "$case_dir/native_observation" || return 1
+
+  local -a planner_runtime_args=()
+  if [ "$G2_HEADLESS" = false ] && [ "$G2_RVIZ" = true ]; then
+    planner_runtime_args+=(--wait-for-gazebo-gui)
+  fi
+  start_group "$case_dir/planner.log" python3 "$WS/tools/with_mesa_runtime.py" \
+    --gpu-backend "$G2_GPU_BACKEND" "${planner_runtime_args[@]}" \
+    ros2 launch climbot_coverage coverage_planner.launch.py \
     use_sim_time:=true rviz:="$G2_RVIZ" \
     config_file:="$WS/src/climbot_coverage/config/${CONFIG[$case_name]}" \
     input_mode:=parameters region_type:="${REGION[$case_name]}" \
@@ -292,7 +372,7 @@ run_case() {
     ((.maximum_lateral_spacing_limit_m * 1000)|tostring) + "mm, pose p95=" +
     ((.p95_camera_position_error_m * 1000)|tostring) + "mm max=" +
     ((.maximum_camera_position_error_m * 1000)|tostring) + "mm"' "$summary"
-  teardown_case
+  teardown_case || return 1
   ACTIVE_CASE=''
 }
 

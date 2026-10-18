@@ -1,0 +1,70 @@
+{
+  "default_source_revision": "1b6e390",
+  "contract_checks": {
+    "passed": true,
+    "tests": 134,
+    "failures": 0,
+    "duration_s": 16.61,
+    "log": "/tmp/climbot_s7_contracts_final_20261018.log"
+  },
+  "visual_recovery_red": {
+    "expected_failure": true,
+    "log": "/tmp/climbot_s7_visual_red_20261018.log",
+    "message": "RViz-cleared grid, wall/regions and path were never restored"
+  },
+  "visual_recovery_green": {
+    "passed": true,
+    "tests": 1,
+    "duration_s": 1.044,
+    "log": "/tmp/climbot_s7_visual_green2_20261018.log",
+    "checks": [
+      "clock rollback restores grid, wall/regions and path",
+      "visual geometry unchanged",
+      "no execution task republished"
+    ]
+  },
+  "fixture_adjustment": "First green attempt used serialized CDR bytes to compare geometry; switched to structured ROS fields to exclude non-field serialization differences. Product visual recovery was already observed; first aggregate failure retained in /tmp log.",
+  "affected_visual_launch_tests": [
+    {
+      "path": "build/climbot_coverage/test_results/climbot_coverage/test_test_coverage_visual_refresh.py.xunit.xml",
+      "tests": 1,
+      "failures": 0
+    },
+    {
+      "path": "build/climbot_coverage/test_results/climbot_coverage/test_test_coverage_planner_node.py.xunit.xml",
+      "tests": 2,
+      "failures": 0
+    },
+    {
+      "path": "build/climbot_coverage/test_results/climbot_coverage/test_rviz_config.xunit.xml",
+      "tests": 5,
+      "failures": 0
+    },
+    {
+      "path": "build/climbot_coverage/test_results/climbot_coverage/test_test_coverage_planner_rviz.py.xunit.xml",
+      "tests": 3,
+      "failures": 0
+    },
+    {
+      "path": "build/climbot_coverage/test_results/climbot_coverage/test_planner_launch_grid.xunit.xml",
+      "tests": 2,
+      "failures": 0
+    },
+    {
+      "path": "build/climbot_coverage/test_results/climbot_coverage/test_test_coverage_configure.py.xunit.xml",
+      "tests": 12,
+      "failures": 0
+    },
+    {
+      "path": "build/climbot_bringup/test_results/climbot_bringup/test_geometry_consumers.xunit.xml",
+      "tests": 4,
+      "failures": 0
+    },
+    {
+      "path": "build/climbot_bringup/test_results/climbot_bringup/test_workspace_consistency.xunit.xml",
+      "tests": 8,
+      "failures": 0
+    }
+  ],
+  "affected_visual_launch_tests_passed": true
+}

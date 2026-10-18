@@ -161,6 +161,9 @@ def scan_line_spacing(rows, segment_types, waypoints, scan_type=1):
         'maximum_scan_line_spacing_error_m': max(
             (abs(value) for value in errors), default=None),
         'applicable': bool(errors),
+        'not_applicable_reason': None if errors else (
+            'fewer than two planned parallel scan lines have scored truth samples; '
+            'execution did not provide enough measured lines to evaluate spacing'),
         'crossing_scan_lines': len(crossing),
     }
 

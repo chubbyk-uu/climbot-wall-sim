@@ -1,0 +1,153 @@
+{
+  "phase": "complete_reviewed",
+  "source_revision": "1846f6ade1781ef48ab129864733d1d3fcc5c802",
+  "stages": {
+    "processing": {
+      "command": [
+        "ros2",
+        "run",
+        "climbot_image_processing",
+        "process_inspection_archive",
+        "--input-run",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018/s7-medium-horizontal-20261018/r000001_20261018T113625Z_a3e172e0d5ff461fbbce394fe02c8423",
+        "--output-dir",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_processed",
+        "--flat-field-file",
+        "$CLIMBOT_DATA_ROOT/calibration/flat_field_sim_pbr_exp065_20260901.npz",
+        "--denoise",
+        "none",
+        "--jobs",
+        "auto",
+        "--memory-budget-gb",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_s": 1.7417968139998266,
+      "log": "/tmp/climbot_s7_medium_processing_20261018.log"
+    },
+    "validate_inputs": {
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "validate_mosaic_inputs",
+        "--input-run",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_processed"
+      ],
+      "exit_code": 0,
+      "elapsed_s": 1.1516122990014992,
+      "log": "/tmp/climbot_s7_medium_validate_inputs_20261018.log"
+    },
+    "matches": {
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "build_local_matches",
+        "--input-run",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_processed",
+        "--output-dir",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_matches",
+        "--work-dir",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_feature-work",
+        "--jobs",
+        "auto"
+      ],
+      "exit_code": 0,
+      "elapsed_s": 3.3360164250007074,
+      "log": "/tmp/climbot_s7_medium_matches_20261018.log"
+    },
+    "pose_graph": {
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "build_pose_graph",
+        "--input-run",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_processed",
+        "--local-matches",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_matches/local_matches.json",
+        "--output-dir",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_pose-graph"
+      ],
+      "exit_code": 0,
+      "elapsed_s": 1.4350559970007453,
+      "log": "/tmp/climbot_s7_medium_pose_graph_20261018.log"
+    },
+    "mosaic_cuda": {
+      "command": [
+        "ros2",
+        "run",
+        "climbot_mosaic",
+        "build_wall_mosaic",
+        "--input-run",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_processed",
+        "--pose-graph-dir",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_pose-graph",
+        "--output-dir",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_mosaic",
+        "--work-dir",
+        "$CLIMBOT_DATA_ROOT/suction_s7_medium_20261018_cuda-work",
+        "--backend",
+        "cuda",
+        "--resolution-mm-per-pixel",
+        ".25",
+        "--jobs",
+        "auto",
+        "--memory-budget-gb",
+        "4",
+        "--preview-max-side-px",
+        "4096"
+      ],
+      "exit_code": 0,
+      "elapsed_s": 5.777582464999796,
+      "log": "/tmp/climbot_s7_medium_mosaic_cuda_20261018.log"
+    }
+  },
+  "paths": {
+    "processed": "suction_s7_medium_20261018_processed",
+    "matches": "suction_s7_medium_20261018_matches",
+    "feature-work": "suction_s7_medium_20261018_feature-work",
+    "pose-graph": "suction_s7_medium_20261018_pose-graph",
+    "mosaic": "suction_s7_medium_20261018_mosaic",
+    "cuda-work": "suction_s7_medium_20261018_cuda-work"
+  },
+  "raw_run": "suction_s7_medium_20261018/s7-medium-horizontal-20261018/r000001_20261018T113625Z_a3e172e0d5ff461fbbce394fe02c8423",
+  "raw_manifest_sha256": "a9a6d021cff5ff225fd2f808c3c6dca9b7799c9dc4e61b981555bd3f4f0ce68e",
+  "flat_field_sha256": "e78234e7b9b7ee2ee0e16c2ec82e2fe03f2354ee40f69f88a0b69eedd5bd72fb",
+  "backend": {
+    "attempts": [
+      {
+        "backend": "cuda",
+        "elapsed_s": 4.319069380999281,
+        "outcome": "completed",
+        "started_utc": "2026-10-18T11:39:28Z"
+      }
+    ],
+    "cuda": {
+      "compute_capability": "12.0",
+      "cuda_driver_version": 13040,
+      "cuda_runtime_version": 12080,
+      "device_count": 1,
+      "device_index": 0,
+      "device_name": "NVIDIA GeForce RTX 5080",
+      "extension_sha256": "acbe2fc99623fe3408a0abb4fc60e7f273cc77ac4ab756a6f29ae3f3de7566d6",
+      "free_memory_bytes": 15679356928,
+      "implementation": "climbot_custom_hardcut_kernel",
+      "maximum_candidates_per_tile": 64,
+      "sampling": "opencv-compatible-1/32-pixel",
+      "total_memory_bytes": 17066033152
+    },
+    "effective": "cuda",
+    "fallback": false,
+    "opencv": {
+      "backend": "cpu_support",
+      "opencv_build_information_sha256": "9f5e29ccfaa37fc3a2a09635a9df50bf5cdf263b34207abc5b627956265c6edd",
+      "opencv_module_sha256": "067c1b2f8ce9b9f91a31e71a567ab900e52383c7eeecba519ced458c68f6b93b",
+      "opencv_version": "4.6.0"
+    },
+    "requested": "cuda"
+  },
+  "passed": true,
+  "visual_review": "visual_review.json"
+}

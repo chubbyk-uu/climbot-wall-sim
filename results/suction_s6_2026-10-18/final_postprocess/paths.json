@@ -1,0 +1,20 @@
+{
+  "processed": {
+    "horizontal": "processed-suction-s6-final-horizontal-20261018",
+    "vertical": "processed-suction-s6-final-vertical-20261018"
+  },
+  "content": {
+    "horizontal": "archive-content-suction-s6-final-horizontal-20261018",
+    "vertical": "archive-content-suction-s6-final-vertical-20261018"
+  },
+  "joint": {
+    "candidates": "mosaic-suction-s6-final-joint-20261018-candidates",
+    "matches": "mosaic-suction-s6-final-joint-20261018-matches",
+    "feature-work": "mosaic-suction-s6-final-joint-20261018-feature-work",
+    "pose-graph": "mosaic-suction-s6-final-joint-20261018-pose-graph",
+    "cuda": "mosaic-suction-s6-final-joint-20261018-cuda",
+    "cuda-work": "mosaic-suction-s6-final-joint-20261018-cuda-work",
+    "truth": "mosaic-suction-s6-final-joint-20261018-truth",
+    "inspection": "mosaic-suction-s6-final-joint-20261018-inspection"
+  }
+}

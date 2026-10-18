@@ -1,0 +1,13 @@
+{
+  "observed_source": "76b0cbd",
+  "observed_case": "horizontal_legacy",
+  "behavior_and_dual_gui_checks_passed": true,
+  "cleanup_check_failed": true,
+  "runner_reported_own_group_before_setsid": true,
+  "cleanup_backstop_caught_unrecorded_simulator_group": true,
+  "all_partition_processes_eventually_cleaned": true,
+  "cause": "parent reads process group before asynchronous child setsid transition",
+  "deterministic_fixture": "first ps reads real old group then releases child to setsid",
+  "fix": "up to 50 polls at 0.1 seconds; never record own group; existing cleanup gates unchanged",
+  "future_controls_output": "final_controls_r3"
+}

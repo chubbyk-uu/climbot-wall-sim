@@ -1,0 +1,228 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf xmlns:xacro="http://www.ros.org/wiki/xacro" version="1.10">
+  <xacro:arg name="imu_mount_z" default="0.085" />
+  <xacro:arg name="imu_mount_y" default="0.0" />
+  <xacro:arg name="imu_mount_x" default="-0.11" />
+  <xacro:arg name="base_width" default="0.44" />
+  <xacro:arg name="wheel_radius" default="0.08" />
+  <xacro:arg name="wheel_separation" default="0.43" />
+  <xacro:arg name="slip_lateral" default="0.12" />
+  <xacro:arg name="slip_longitudinal" default="0.04" />
+  <xacro:arg name="nominal_normal_force" default="77.0" />
+  <xacro:arg name="camera_body_x" default="0.340" />
+  <xacro:arg name="camera_body_y" default="0.000" />
+  <xacro:arg name="camera_body_z" default="0.315" />
+  <xacro:arg name="camera_optical_z" default="0.275" />
+  <xacro:arg name="camera_bracket_x" default="0.220" />
+  <xacro:arg name="camera_bracket_y" default="0.000" />
+  <xacro:arg name="camera_bracket_z" default="0.247" />
+  <xacro:arg name="camera_image_width" default="1920" />
+  <xacro:arg name="camera_image_height" default="1080" />
+  <xacro:arg name="camera_render_fx" default="796.8" />
+  <xacro:arg name="camera_render_fy" default="796.8" />
+  <xacro:arg name="camera_render_hfov" default="1.756056982795549" />
+  <xacro:arg name="camera_cx" default="959.5" />
+  <xacro:arg name="camera_cy" default="539.5" />
+  <xacro:arg name="camera_skew" default="0.0" />
+  <xacro:arg name="camera_triggered" default="true" />
+  <xacro:arg name="camera_update_rate" default="30.0" />
+  <xacro:arg name="camera_image_format" default="R8G8B8" />
+  <xacro:arg name="camera_near_clip" default="0.05" />
+  <xacro:arg name="camera_far_clip" default="20.0" />
+  <xacro:arg name="camera_noise_mean" default="0.0" />
+  <xacro:arg name="camera_noise_stddev" default="0.003" />
+  <xacro:arg name="camera_visualize" default="false" />
+  <xacro:arg name="inspection_led_x" default="0.380" />
+  <xacro:arg name="inspection_led_y" default="0.000" />
+  <xacro:arg name="inspection_led_z" default="0.290" />
+  <xacro:arg name="inspection_led_direction_x" default="0.0" />
+  <xacro:arg name="inspection_led_direction_y" default="0.0" />
+  <xacro:arg name="inspection_led_direction_z" default="-1.0" />
+  <xacro:arg name="inspection_led_intensity" default="1.2" />
+  <xacro:arg name="inspection_led_range" default="2.0" />
+  <xacro:arg name="inspection_led_constant" default="0.20" />
+  <xacro:arg name="inspection_led_linear" default="0.35" />
+  <xacro:arg name="inspection_led_quadratic" default="1.8" />
+  <xacro:arg name="inspection_led_inner_angle" default="0.35" />
+  <xacro:arg name="inspection_led_outer_angle" default="2.05" />
+  <xacro:arg name="inspection_led_falloff" default="0.55" />
+  <xacro:arg name="inspection_led_cast_shadows" default="true" />
+  <xacro:arg name="max_linear_velocity" default="0.30" />
+  <xacro:arg name="max_angular_velocity" default="1.20" />
+  <xacro:arg name="max_linear_acceleration" default="0.40" />
+  <xacro:arg name="max_angular_acceleration" default="1.50" />
+  <xacro:arg name="odom_frequency" default="50.0" />
+  <xacro:arg name="imu_rate" default="100.0" />
+  <xacro:arg name="imu_gyro_stddev" default="0.0002" />
+  <xacro:arg name="imu_accel_stddev" default="0.017" />
+  <xacro:property name="width" value="$(arg base_width)" />
+  <xacro:property name="wheel_radius" value="$(arg wheel_radius)" />
+  <model name="climbot" canonical_link="chassis_link">
+    <link name="chassis_link">
+      <pose>$(arg imu_mount_x) $(arg imu_mount_y) $(arg imu_mount_z) 0 0 0</pose>
+      <sensor name="imu" type="imu">
+        <always_on>true</always_on>
+        <update_rate>$(arg imu_rate)</update_rate>
+        <topic>/imu</topic>
+        <gz_frame_id>base_link</gz_frame_id>
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>$(arg imu_gyro_stddev)</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>$(arg imu_gyro_stddev)</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>$(arg imu_gyro_stddev)</stddev>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>$(arg imu_accel_stddev)</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>$(arg imu_accel_stddev)</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>$(arg imu_accel_stddev)</stddev>
+              </noise>
+            </z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+    </link>
+    <link name="inspection_camera_bracket_link">
+      <pose>$(arg camera_bracket_x) $(arg camera_bracket_y) $(arg camera_bracket_z) 0 0 0</pose>
+      <light type="spot" name="inspection_led">
+        <pose>${float('$(arg inspection_led_x)') - float('$(arg camera_bracket_x)')} ${float('$(arg inspection_led_y)') - float('$(arg camera_bracket_y)')} ${float('$(arg inspection_led_z)') - float('$(arg camera_bracket_z)')} 0 0 0</pose>
+        <cast_shadows>$(arg inspection_led_cast_shadows)</cast_shadows>
+        <diffuse>1 1 1 1</diffuse>
+        <specular>0.08 0.08 0.08 1</specular>
+        <intensity>$(arg inspection_led_intensity)</intensity>
+        <attenuation>
+          <range>$(arg inspection_led_range)</range>
+          <constant>$(arg inspection_led_constant)</constant>
+          <linear>$(arg inspection_led_linear)</linear>
+          <quadratic>$(arg inspection_led_quadratic)</quadratic>
+        </attenuation>
+        <direction>$(arg inspection_led_direction_x) $(arg inspection_led_direction_y) $(arg inspection_led_direction_z)</direction>
+        <spot>
+          <inner_angle>$(arg inspection_led_inner_angle)</inner_angle>
+          <outer_angle>$(arg inspection_led_outer_angle)</outer_angle>
+          <falloff>$(arg inspection_led_falloff)</falloff>
+        </spot>
+      </light>
+    </link>
+    <link name="inspection_camera_link">
+      <pose>$(arg camera_body_x) $(arg camera_body_y) $(arg camera_body_z) 0 0 0</pose>
+      <sensor name="inspection_camera" type="camera">
+        <pose>0 0 ${float('$(arg camera_optical_z)') - float('$(arg camera_body_z)')} 0 1.5707963267948966 0</pose>
+        <always_on>true</always_on>
+        <update_rate>$(arg camera_update_rate)</update_rate>
+        <visualize>$(arg camera_visualize)</visualize>
+        <topic>/simulation/inspection_camera/ideal_image</topic>
+        <gz_frame_id>inspection_camera_optical_frame</gz_frame_id>
+        <camera>
+          <triggered>$(arg camera_triggered)</triggered>
+          <trigger_topic>/simulation/inspection_camera/trigger</trigger_topic>
+          <camera_info_topic>/simulation/inspection_camera/ideal_camera_info</camera_info_topic>
+          <horizontal_fov>$(arg camera_render_hfov)</horizontal_fov>
+          <image>
+            <width>$(arg camera_image_width)</width>
+            <height>$(arg camera_image_height)</height>
+            <format>$(arg camera_image_format)</format>
+          </image>
+          <clip>
+            <near>$(arg camera_near_clip)</near>
+            <far>$(arg camera_far_clip)</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>$(arg camera_noise_mean)</mean>
+            <stddev>$(arg camera_noise_stddev)</stddev>
+          </noise>
+          <lens>
+            <intrinsics>
+              <fx>$(arg camera_render_fx)</fx>
+              <fy>$(arg camera_render_fy)</fy>
+              <cx>$(arg camera_cx)</cx>
+              <cy>$(arg camera_cy)</cy>
+              <s>$(arg camera_skew)</s>
+            </intrinsics>
+          </lens>
+        </camera>
+      </sensor>
+    </link>
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>$(arg wheel_separation)</wheel_separation>
+      <wheel_radius>${wheel_radius}</wheel_radius>
+      <topic>/cmd_vel</topic>
+      <odom_topic>/model/climbot/odometry</odom_topic>
+      <tf_topic>/model/climbot/tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_link</child_frame_id>
+      <odom_publish_frequency>$(arg odom_frequency)</odom_publish_frequency>
+      <max_linear_velocity>$(arg max_linear_velocity)</max_linear_velocity>
+      <min_linear_velocity>${-1.0 * float("$(arg max_linear_velocity)")}</min_linear_velocity>
+      <max_angular_velocity>$(arg max_angular_velocity)</max_angular_velocity>
+      <min_angular_velocity>${-1.0 * float("$(arg max_angular_velocity)")}</min_angular_velocity>
+      <max_linear_acceleration>$(arg max_linear_acceleration)</max_linear_acceleration>
+      <min_linear_acceleration>${-1.0 * float("$(arg max_linear_acceleration)")}</min_linear_acceleration>
+      <max_angular_acceleration>$(arg max_angular_acceleration)</max_angular_acceleration>
+      <min_angular_acceleration>${-1.0 * float("$(arg max_angular_acceleration)")}</min_angular_acceleration>
+    </plugin>
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>/model/climbot/joint_state</topic>
+      <joint_name>left_wheel_joint</joint_name>
+      <joint_name>right_wheel_joint</joint_name>
+    </plugin>
+    <plugin filename="gz-sim-wheel-slip-system" name="gz::sim::systems::WheelSlip">
+      <wheel link_name="left_wheel_link">
+        <wheel_radius>${wheel_radius}</wheel_radius>
+        <wheel_normal_force>$(arg nominal_normal_force)</wheel_normal_force>
+        <slip_compliance_lateral>$(arg slip_lateral)</slip_compliance_lateral>
+        <slip_compliance_longitudinal>$(arg slip_longitudinal)</slip_compliance_longitudinal>
+      </wheel>
+      <wheel link_name="right_wheel_link">
+        <wheel_radius>${wheel_radius}</wheel_radius>
+        <wheel_normal_force>$(arg nominal_normal_force)</wheel_normal_force>
+        <slip_compliance_lateral>$(arg slip_lateral)</slip_compliance_lateral>
+        <slip_compliance_longitudinal>$(arg slip_longitudinal)</slip_compliance_longitudinal>
+      </wheel>
+    </plugin>
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_model_pose>true</publish_model_pose>
+      <publish_link_pose>true</publish_link_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <update_frequency>$(arg odom_frequency)</update_frequency>
+    </plugin>
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>100</odom_publish_frequency>
+      <odom_topic>/model/climbot/ground_truth</odom_topic>
+      <odom_covariance_topic>/model/climbot/ground_truth_with_covariance</odom_covariance_topic>
+    </plugin>
+  </model>
+</sdf>

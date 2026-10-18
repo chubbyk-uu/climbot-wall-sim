@@ -1,0 +1,212 @@
+{
+  "execution": {
+    "attempts": [
+      {
+        "backend": "cuda",
+        "elapsed_s": 4.319069380999281,
+        "outcome": "completed",
+        "started_utc": "2026-10-18T11:39:28Z"
+      }
+    ],
+    "cuda": {
+      "compute_capability": "12.0",
+      "cuda_driver_version": 13040,
+      "cuda_runtime_version": 12080,
+      "device_count": 1,
+      "device_index": 0,
+      "device_name": "NVIDIA GeForce RTX 5080",
+      "extension_sha256": "acbe2fc99623fe3408a0abb4fc60e7f273cc77ac4ab756a6f29ae3f3de7566d6",
+      "free_memory_bytes": 15679356928,
+      "implementation": "climbot_custom_hardcut_kernel",
+      "maximum_candidates_per_tile": 64,
+      "sampling": "opencv-compatible-1/32-pixel",
+      "total_memory_bytes": 17066033152
+    },
+    "effective": "cuda",
+    "fallback": false,
+    "opencv": {
+      "backend": "cpu_support",
+      "opencv_build_information_sha256": "9f5e29ccfaa37fc3a2a09635a9df50bf5cdf263b34207abc5b627956265c6edd",
+      "opencv_module_sha256": "067c1b2f8ce9b9f91a31e71a567ab900e52383c7eeecba519ced458c68f6b93b",
+      "opencv_version": "4.6.0"
+    },
+    "requested": "cuda"
+  },
+  "fusion": {
+    "comparison_height_px": 2429,
+    "comparison_width_px": 12288,
+    "cuda_renderer": {
+      "decode_elapsed_s": 0.1002138250059943,
+      "decoder_workers": 8,
+      "empty_tiles": 30,
+      "frame_count": 70,
+      "initialization_elapsed_s": 0.11704947900034313,
+      "render_and_download_elapsed_s": 0.7704266390155681,
+      "rendered_tiles": 956,
+      "resident_image_bytes": 145152000,
+      "sampling": "opencv-compatible-1/32-pixel",
+      "upload_elapsed_s": 0.015277950995368883
+    },
+    "elapsed_s": 4.319051872998898,
+    "jobs": 17,
+    "memory_budget_gb": 4.0,
+    "method": "single-image hard cut by maximum interior distance; stable input-frame order resolves ties",
+    "passes": {
+      "difference": {
+        "elapsed_s": 0.15686179200019978,
+        "image_cache": null,
+        "source": "absolute difference of the two rendered variants, taken tile by tile inside the optimized pass"
+      },
+      "optimized": {
+        "elapsed_s": 1.3505806050015963,
+        "image_cache": {
+          "aggregate_png_decode_cpu_s": 0.0,
+          "capacity_bytes_per_worker": 33554432,
+          "hit_ratio": null,
+          "hits": 0,
+          "misses": 0,
+          "peak_bytes_in_one_worker": 0,
+          "task_chunk_tiles": 16
+        },
+        "seam_adjacency_count": 204718,
+        "timing": {
+          "quality_reduction_s": 0.006717688967910362,
+          "raw_auxiliary_write_s": 0.454340159014464,
+          "result_wait_s": 0.4207185929917614,
+          "seam_extraction_s": 0.4148518650272308,
+          "tiff_writer_s": 0.014118231005340931
+        }
+      },
+      "pose_only": {
+        "elapsed_s": 0.9763005400000111,
+        "image_cache": {
+          "aggregate_png_decode_cpu_s": 0.0,
+          "capacity_bytes_per_worker": 33554432,
+          "hit_ratio": null,
+          "hits": 0,
+          "misses": 0,
+          "peak_bytes_in_one_worker": 0,
+          "task_chunk_tiles": 16
+        },
+        "seam_adjacency_count": 204699,
+        "timing": {
+          "quality_reduction_s": 0.00638834497294738,
+          "raw_auxiliary_write_s": 0.08317675700709515,
+          "result_wait_s": 0.4139215260038327,
+          "seam_extraction_s": 0.41792966098728357,
+          "tiff_writer_s": 0.013806673983708606
+        }
+      }
+    },
+    "peak_process_tree_pss_bytes": 1366274048,
+    "preview_max_side_px": 4096,
+    "preview_panel_height_px": 2429,
+    "preview_panel_width_px": 4096,
+    "pss_sample_interval_s": 1.0,
+    "same_grid_and_pixels_except_pose": true,
+    "tiff_compression": {
+      "codec": "deflate",
+      "level": 1,
+      "lossless": true
+    }
+  },
+  "grid": {
+    "frame": "wall",
+    "height_px": 8675,
+    "max_x_m": 6.827758420944214,
+    "max_y_m": 4.616873931884766,
+    "min_x_m": 3.170008420944214,
+    "min_y_m": 2.4481239318847656,
+    "resolution_m_per_pixel": 0.00025,
+    "tile_size_px": 512,
+    "width_px": 14631
+  },
+  "input_summary": {
+    "camera": {
+      "height_px": 1080,
+      "signature": "a9a7f84b27fd4b3c687805bd948d0e37ab07471014f0747a1d24e2e12c990624",
+      "width_px": 1920
+    },
+    "frame_count": 70,
+    "processed_run_count": 1,
+    "processing_manifest_sha256": [
+      "7c8381611414329e9526fbb16704878078fed3c7f6e568ca4c12025075f45e34"
+    ],
+    "source_run_ids": [
+      "a3e172e0d5ff461fbbce394fe02c8423"
+    ],
+    "status": "valid",
+    "task_ids": [
+      "s7-medium-horizontal-20261018"
+    ]
+  },
+  "mosaic_format_version": 3,
+  "outputs": {
+    "coverage_count.tif": {
+      "bytes": 2759569,
+      "sha256": "1dbde3874c10107dde0412d31186bb2d6e36993d1127028667201320a29632ce"
+    },
+    "coverage_pose_only_count.tif": {
+      "bytes": 2759587,
+      "sha256": "f0b90dc2cece37ef05bb3e032c1b235b7b77f49eda01987a56e03aa27e5301bc"
+    },
+    "mosaic_comparison.jpg": {
+      "bytes": 4493854,
+      "sha256": "49fa46cb47aab8bcc7e07ca612441f0a882f526114f597f58853c89c6d712021"
+    },
+    "mosaic_difference.tif": {
+      "bytes": 50696149,
+      "sha256": "32d4787f3993daf2186579804821d3df90b3a4f98f454a7e954dd3aa9966c5cf"
+    },
+    "mosaic_optimized.tif": {
+      "bytes": 46813427,
+      "sha256": "1d515793617ecec1a2aaebd228004f3ddd4f85e5c533cbc07235211c00946348"
+    },
+    "mosaic_pose_only.tif": {
+      "bytes": 46879050,
+      "sha256": "2b001964639fa4e5d639fb4994c5f8b05b8037a598af5736740f8108230c37b9"
+    },
+    "mosaic_preview.jpg": {
+      "bytes": 1628672,
+      "sha256": "c0af4ba3e0c48c26488ad3bfcfca446bf671c63ba199a8589bbab3cc74d59d01"
+    },
+    "seams_optimized.npz": {
+      "bytes": 231567,
+      "sha256": "f9484cfdf3a6cb1fea1e9d4c85d47025ac4e29aab627221e9b6ab0f2bbd33bb9"
+    },
+    "seams_pose_only.npz": {
+      "bytes": 231612,
+      "sha256": "4b2d6a590fa744c977fe0aea935d6752253c56aeb3e4847516d41476c9e682d4"
+    },
+    "uncertainty.tif": {
+      "bytes": 3104915,
+      "sha256": "558a6f0a1f472fd8f708f274b3a811a9b4e43ef081fd24005197a6e611e168ee"
+    }
+  },
+  "quality": {
+    "metric": "grayscale standard deviation across source images in >=2-image overlap",
+    "optimized": {
+      "gray_std_mean": 1.323955944755833,
+      "gray_std_p95": 3.1135531135531136,
+      "overlap_pixel_count": 72700224
+    },
+    "pose_only": {
+      "gray_std_mean": 2.2674886080661425,
+      "gray_std_p95": 5.47985347985348,
+      "overlap_pixel_count": 72715279
+    }
+  },
+  "seam_adjacencies": {
+    "definition": "adjacent covered pixels whose selected hard-cut source frame differs; axis 0 is rightward and axis 1 is downward",
+    "format_version": 1,
+    "optimized_count": 204718,
+    "optimized_file": "seams_optimized.npz",
+    "pose_only_count": 204699,
+    "pose_only_file": "seams_pose_only.npz"
+  },
+  "uncertainty_encoding": {
+    "dtype": "uint16",
+    "nodata": 65535,
+    "scale_m_per_count": 1e-05
+  }
+}

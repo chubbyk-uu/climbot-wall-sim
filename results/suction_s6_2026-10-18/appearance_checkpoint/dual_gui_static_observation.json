@@ -1,0 +1,94 @@
+{
+  "geometry": "vacuum_chassis",
+  "gui_required": true,
+  "rviz_required": true,
+  "rviz": {
+    "window_id": 14680326,
+    "width": 1280,
+    "height": 1000,
+    "pid": 284442,
+    "mapped_gl_libraries": [
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
+      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0"
+    ]
+  },
+  "gui": {
+    "window_id": 10485778,
+    "width": 1200,
+    "height": 1000
+  },
+  "error": null,
+  "counts": {
+    "clock": 15855,
+    "joints": 31678,
+    "truth": 3176,
+    "imu": 3176,
+    "imu_wall": 3173,
+    "filtered": 1592,
+    "pressure": 3170,
+    "vacuum": 3170
+  },
+  "tf_connected": {
+    "base_link": 1,
+    "imu_link": 1,
+    "inspection_camera_optical_frame": 1,
+    "left_wheel_link": 1,
+    "right_wheel_link": 1,
+    "chassis_link": 1
+  },
+  "clock_warmup_excluded_wall_s": 20,
+  "measured_realtime_factor": 1.000003572738904,
+  "ten_wall_second_rtf": [
+    0.9999878142716784
+  ],
+  "wall_duration_s": 35.00112846199772,
+  "clock_scored_endpoints": [
+    [
+      20.078669925002032,
+      27.965
+    ],
+    [
+      34.942616820000694,
+      42.829
+    ]
+  ],
+  "plugin_cpu_us_mean": 28.454252681388013,
+  "minimum_delta_pa": 8404.442641112662,
+  "fixture_released_observed": true,
+  "observed_startup_failure": false,
+  "observed_runtime_failure": false,
+  "runtime_libraries": [
+    {
+      "pid": 283986,
+      "gui": false,
+      "private_mapping_complete": true,
+      "libraries": {
+        "libgallium-25.2.8.so": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66",
+        "libgbm.so.1": "88e1947b2b3d4c0ca715bc6e5bdaa1f52d77aa1561cd34cea672b199eafb2057",
+        "libGLX_mesa.so.0": "99ad1bb870dfe482e4d7e192bc8d1bf6d654f9fe4d41ca9f167d67af61ae24b0",
+        "libEGL_mesa.so.0": "11af8b32546452438ca4752d44c9758a1f259a9458be71a2be2e6c8eec26a576"
+      },
+      "system_gallium_mapped": false
+    },
+    {
+      "pid": 284308,
+      "gui": true,
+      "private_mapping_complete": true,
+      "libraries": {
+        "libgallium-25.2.8.so": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66",
+        "libgbm.so.1": "88e1947b2b3d4c0ca715bc6e5bdaa1f52d77aa1561cd34cea672b199eafb2057",
+        "libGLX_mesa.so.0": "99ad1bb870dfe482e4d7e192bc8d1bf6d654f9fe4d41ca9f167d67af61ae24b0",
+        "libEGL_mesa.so.0": "11af8b32546452438ca4752d44c9758a1f259a9458be71a2be2e6c8eec26a576"
+      },
+      "system_gallium_mapped": false
+    }
+  ]
+}

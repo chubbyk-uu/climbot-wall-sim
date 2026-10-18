@@ -1,0 +1,4023 @@
+{
+  "stage": "S1 analytical design only",
+  "source_commit": "315b315512e2b2d94ae23f502770e8622d56da04",
+  "source_dirty": false,
+  "input_sha256": {
+    "src/climbot_description/config/vacuum_chassis.yaml": "cb7f94e2486ef19f81566c3fb0887737dea47063ac4fbcb1e42dd65eb706bce2",
+    "src/climbot_description/config/robot.yaml": "8e324b1e2f00cfdfd787327fbb38e343bea09046ddade871cd3728c2d05f9013",
+    "src/climbot_description/config/inspection_camera.yaml": "f76bb343e0ebcf8cab65354a135a42ff413bbd7198a845cd727fa0c15138eabb",
+    "src/climbot_control/config/control.yaml": "789b8b3276b0876f78bebfe03d18d66c35001a494b4a0e579d3271627001b07a",
+    "src/climbot_gazebo/config/simulation.yaml": "b23d56b8c2c0a4b82e718b430a76690158e535912ddec70325a46afa2043c25d",
+    "src/climbot_gazebo/worlds/climbot_wall.sdf.xacro": "077d78dc55cdc51f060e6caf10de3612a4d1e6e9e21073988a6a2b98ea217b55",
+    "tools/vacuum_layout.py": "61ddbdc93c703e0be8df27ca5241fa9f4207af9f7ac7aab7fe2644a5eb629600",
+    "tools/vacuum_loads.py": "5b3a04380ba95c9d113153910cd64f454aa94cdaf036edf1f00849d35dd6a532",
+    "tools/vacuum_preview.py": "19ff37a8cf33de2caa158ecbf0cf7513dac46e658637278367542a50df095547",
+    "tools/design_vacuum_chassis.py": "c5d41ed5f4a7481a4a368e6f9f03b7d51ab0ad1d1c41984bf98c3b2a57b720bc",
+    "tools/test_vacuum_design.py": "1da444849ef0bbc4c63d2e8bde58592cfaf3e6ef8c2a95f89c0973e1631ab5e5",
+    "docs/SUCTION_CONTRACT.md": "7ac43f9db72d6e6f04766ea4c96ede397cff4f53865f149668d738cc8c43090d"
+  },
+  "gravity_mps2": 9.81,
+  "drive_mu_nominal": 1.1,
+  "mass_kg": 14.86374244981948,
+  "centre_xyz_m": [
+    -0.07507007985217748,
+    0.0,
+    0.08543780663833668
+  ],
+  "profile_count": 149,
+  "state_count": 61074,
+  "nominal": {
+    "status": "analytical_candidate",
+    "mu": 1.1,
+    "margin_required": 1.5,
+    "caster_floor_n": 10.0,
+    "lateral_allocation": "normal_proportional",
+    "coarse_heading_step_deg": 1.0,
+    "refined_heading_step_deg": 0.1,
+    "worst": {
+      "profile": "rated_grid_137",
+      "group": "actuator",
+      "state": [
+        50.2,
+        0.189,
+        0.7,
+        -1.2,
+        0.0
+      ],
+      "minimum_pressure_pa": 5795.384547673166,
+      "minimum_pressure_force_n": 760.893423417653
+    },
+    "profile_peaks": [
+      {
+        "profile": "static",
+        "group": "static",
+        "state": [
+          48.7,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5087.646113242954,
+        "minimum_pressure_force_n": 667.9723211460073
+      },
+      {
+        "profile": "cruise_001",
+        "group": "operation",
+        "state": [
+          47.8,
+          -0.2,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4841.94082848262,
+        "minimum_pressure_force_n": 635.7129371939687
+      },
+      {
+        "profile": "cruise_002",
+        "group": "operation",
+        "state": [
+          49.7,
+          0.2,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5359.3990876106545,
+        "minimum_pressure_force_n": 703.6515844096658
+      },
+      {
+        "profile": "catchup_003",
+        "group": "operation",
+        "state": [
+          47.4,
+          -0.35,
+          -0.35,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4717.091739876196,
+        "minimum_pressure_force_n": 619.3211258035655
+      },
+      {
+        "profile": "catchup_004",
+        "group": "operation",
+        "state": [
+          48.1,
+          -0.35,
+          0.35,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4967.563814716414,
+        "minimum_pressure_force_n": 652.2063559255622
+      },
+      {
+        "profile": "catchup_005",
+        "group": "operation",
+        "state": [
+          49.3,
+          0.35,
+          -0.35,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5219.173832447268,
+        "minimum_pressure_force_n": 685.2409899834993
+      },
+      {
+        "profile": "catchup_006",
+        "group": "operation",
+        "state": [
+          50.0,
+          0.35,
+          0.35,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5500.3098951419815,
+        "minimum_pressure_force_n": 722.1521870628764
+      },
+      {
+        "profile": "correct_007",
+        "group": "operation",
+        "state": [
+          47.3,
+          -0.35,
+          -0.35,
+          -0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 4901.92967816256,
+        "minimum_pressure_force_n": 643.5890532349971
+      },
+      {
+        "profile": "correct_008",
+        "group": "operation",
+        "state": [
+          47.2,
+          -0.35,
+          -0.35,
+          -0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 4787.936781649478,
+        "minimum_pressure_force_n": 628.622583873105
+      },
+      {
+        "profile": "correct_009",
+        "group": "operation",
+        "state": [
+          132.8,
+          -0.35,
+          -0.35,
+          0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 4787.936781649478,
+        "minimum_pressure_force_n": 628.622583873105
+      },
+      {
+        "profile": "correct_010",
+        "group": "operation",
+        "state": [
+          132.7,
+          -0.35,
+          -0.35,
+          0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 4901.92967816256,
+        "minimum_pressure_force_n": 643.5890532349971
+      },
+      {
+        "profile": "correct_011",
+        "group": "operation",
+        "state": [
+          48.0,
+          -0.35,
+          0.35,
+          -0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 5155.862061074004,
+        "minimum_pressure_force_n": 676.9285975845893
+      },
+      {
+        "profile": "correct_012",
+        "group": "operation",
+        "state": [
+          48.0,
+          -0.35,
+          0.35,
+          -0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 5041.683859890327,
+        "minimum_pressure_force_n": 661.9377990165808
+      },
+      {
+        "profile": "correct_013",
+        "group": "operation",
+        "state": [
+          132.0,
+          -0.35,
+          0.35,
+          0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 5041.683859890327,
+        "minimum_pressure_force_n": 661.9377990165808
+      },
+      {
+        "profile": "correct_014",
+        "group": "operation",
+        "state": [
+          132.0,
+          -0.35,
+          0.35,
+          0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 5155.862061074004,
+        "minimum_pressure_force_n": 676.9285975845893
+      },
+      {
+        "profile": "correct_015",
+        "group": "operation",
+        "state": [
+          49.4,
+          0.35,
+          -0.35,
+          -0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 5325.643010437489,
+        "minimum_pressure_force_n": 699.2196477693693
+      },
+      {
+        "profile": "correct_016",
+        "group": "operation",
+        "state": [
+          130.8,
+          0.35,
+          -0.35,
+          -0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 5226.317882188596,
+        "minimum_pressure_force_n": 686.1789537061874
+      },
+      {
+        "profile": "correct_017",
+        "group": "operation",
+        "state": [
+          49.2,
+          0.35,
+          -0.35,
+          0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 5226.317882188596,
+        "minimum_pressure_force_n": 686.1789537061874
+      },
+      {
+        "profile": "correct_018",
+        "group": "operation",
+        "state": [
+          130.6,
+          0.35,
+          -0.35,
+          0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 5325.643010437489,
+        "minimum_pressure_force_n": 699.2196477693693
+      },
+      {
+        "profile": "correct_019",
+        "group": "operation",
+        "state": [
+          50.0,
+          0.35,
+          0.35,
+          -0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 5611.119767418131,
+        "minimum_pressure_force_n": 736.7007476236288
+      },
+      {
+        "profile": "correct_020",
+        "group": "operation",
+        "state": [
+          130.1,
+          0.35,
+          0.35,
+          -0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 5502.468813210726,
+        "minimum_pressure_force_n": 722.4356378928759
+      },
+      {
+        "profile": "correct_021",
+        "group": "operation",
+        "state": [
+          49.9,
+          0.35,
+          0.35,
+          0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 5502.468813210726,
+        "minimum_pressure_force_n": 722.4356378928759
+      },
+      {
+        "profile": "correct_022",
+        "group": "operation",
+        "state": [
+          130.0,
+          0.35,
+          0.35,
+          0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 5611.119767418131,
+        "minimum_pressure_force_n": 736.7007476236288
+      },
+      {
+        "profile": "turn_023",
+        "group": "operation",
+        "state": [
+          49.0,
+          0.0,
+          0.0,
+          -0.6,
+          -1.0
+        ],
+        "minimum_pressure_pa": 5552.744802553207,
+        "minimum_pressure_force_n": 729.0365233616183
+      },
+      {
+        "profile": "turn_024",
+        "group": "operation",
+        "state": [
+          49.0,
+          0.0,
+          0.0,
+          -0.6,
+          1.0
+        ],
+        "minimum_pressure_pa": 5397.018427611329,
+        "minimum_pressure_force_n": 708.5907404163743
+      },
+      {
+        "profile": "turn_025",
+        "group": "operation",
+        "state": [
+          131.0,
+          0.0,
+          0.0,
+          0.6,
+          -1.0
+        ],
+        "minimum_pressure_pa": 5397.018427611329,
+        "minimum_pressure_force_n": 708.5907404163743
+      },
+      {
+        "profile": "turn_026",
+        "group": "operation",
+        "state": [
+          131.0,
+          0.0,
+          0.0,
+          0.6,
+          1.0
+        ],
+        "minimum_pressure_pa": 5552.744802553207,
+        "minimum_pressure_force_n": 729.0365233616183
+      },
+      {
+        "profile": "turn_start_027",
+        "group": "operation",
+        "state": [
+          48.8,
+          0.0,
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "minimum_pressure_pa": 5160.95764527563,
+        "minimum_pressure_force_n": 677.5976121211734
+      },
+      {
+        "profile": "turn_start_028",
+        "group": "operation",
+        "state": [
+          131.2,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "minimum_pressure_pa": 5160.95764527563,
+        "minimum_pressure_force_n": 677.5976121211734
+      },
+      {
+        "profile": "rated_straight_029",
+        "group": "actuator",
+        "state": [
+          46.9,
+          -0.45,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4593.101572827436,
+        "minimum_pressure_force_n": 603.0420848012327
+      },
+      {
+        "profile": "rated_straight_030",
+        "group": "actuator",
+        "state": [
+          48.5,
+          -0.45,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5093.899435596541,
+        "minimum_pressure_force_n": 668.7933385977767
+      },
+      {
+        "profile": "rated_straight_031",
+        "group": "actuator",
+        "state": [
+          49.0,
+          0.45,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5079.687852412462,
+        "minimum_pressure_force_n": 666.9274572067895
+      },
+      {
+        "profile": "rated_straight_032",
+        "group": "actuator",
+        "state": [
+          50.3,
+          0.45,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5641.842496697791,
+        "minimum_pressure_force_n": 740.7344269189432
+      },
+      {
+        "profile": "rated_turn_033",
+        "group": "actuator",
+        "state": [
+          49.1,
+          0.0,
+          0.0,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5666.4538162294775,
+        "minimum_pressure_force_n": 743.9657208942169
+      },
+      {
+        "profile": "rated_turn_034",
+        "group": "actuator",
+        "state": [
+          49.0,
+          0.0,
+          0.0,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5323.822069913149,
+        "minimum_pressure_force_n": 698.9805710251071
+      },
+      {
+        "profile": "rated_turn_035",
+        "group": "actuator",
+        "state": [
+          131.0,
+          0.0,
+          0.0,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5323.822069913149,
+        "minimum_pressure_force_n": 698.9805710251071
+      },
+      {
+        "profile": "rated_turn_036",
+        "group": "actuator",
+        "state": [
+          130.9,
+          0.0,
+          0.0,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5666.4538162294775,
+        "minimum_pressure_force_n": 743.9657208942169
+      },
+      {
+        "profile": "rated_mixed_037",
+        "group": "actuator",
+        "state": [
+          48.0,
+          -0.189,
+          -0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5462.058734265156,
+        "minimum_pressure_force_n": 717.1300773978752
+      },
+      {
+        "profile": "rated_mixed_038",
+        "group": "actuator",
+        "state": [
+          47.9,
+          -0.189,
+          -0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5129.961781203747,
+        "minimum_pressure_force_n": 673.5280721395836
+      },
+      {
+        "profile": "rated_mixed_039",
+        "group": "actuator",
+        "state": [
+          132.1,
+          -0.189,
+          -0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5129.961781203747,
+        "minimum_pressure_force_n": 673.5280721395836
+      },
+      {
+        "profile": "rated_mixed_040",
+        "group": "actuator",
+        "state": [
+          132.0,
+          -0.189,
+          -0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5462.058734265156,
+        "minimum_pressure_force_n": 717.1300773978752
+      },
+      {
+        "profile": "rated_mixed_041",
+        "group": "actuator",
+        "state": [
+          48.5,
+          -0.189,
+          0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5634.16063261684,
+        "minimum_pressure_force_n": 739.7258519381629
+      },
+      {
+        "profile": "rated_mixed_042",
+        "group": "actuator",
+        "state": [
+          48.4,
+          -0.189,
+          0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5301.799602457322,
+        "minimum_pressure_force_n": 696.0891752054293
+      },
+      {
+        "profile": "rated_mixed_043",
+        "group": "actuator",
+        "state": [
+          131.6,
+          -0.189,
+          0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5301.799602457322,
+        "minimum_pressure_force_n": 696.0891752054293
+      },
+      {
+        "profile": "rated_mixed_044",
+        "group": "actuator",
+        "state": [
+          131.5,
+          -0.189,
+          0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5634.16063261684,
+        "minimum_pressure_force_n": 739.7258519381629
+      },
+      {
+        "profile": "rated_mixed_045",
+        "group": "actuator",
+        "state": [
+          49.4,
+          0.189,
+          -0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5586.2329312367365,
+        "minimum_pressure_force_n": 733.433280240865
+      },
+      {
+        "profile": "rated_mixed_046",
+        "group": "actuator",
+        "state": [
+          49.3,
+          0.189,
+          -0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5238.850905443542,
+        "minimum_pressure_force_n": 687.8244519283991
+      },
+      {
+        "profile": "rated_mixed_047",
+        "group": "actuator",
+        "state": [
+          130.7,
+          0.189,
+          -0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5238.850905443542,
+        "minimum_pressure_force_n": 687.8244519283991
+      },
+      {
+        "profile": "rated_mixed_048",
+        "group": "actuator",
+        "state": [
+          130.6,
+          0.189,
+          -0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5586.2329312367365,
+        "minimum_pressure_force_n": 733.433280240865
+      },
+      {
+        "profile": "rated_mixed_049",
+        "group": "actuator",
+        "state": [
+          49.8,
+          0.189,
+          0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5769.793333020061,
+        "minimum_pressure_force_n": 757.533476072203
+      },
+      {
+        "profile": "rated_mixed_050",
+        "group": "actuator",
+        "state": [
+          49.7,
+          0.189,
+          0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5422.306144027971,
+        "minimum_pressure_force_n": 711.9108405678645
+      },
+      {
+        "profile": "rated_mixed_051",
+        "group": "actuator",
+        "state": [
+          130.3,
+          0.189,
+          0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5422.306144027971,
+        "minimum_pressure_force_n": 711.9108405678645
+      },
+      {
+        "profile": "rated_mixed_052",
+        "group": "actuator",
+        "state": [
+          130.2,
+          0.189,
+          0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5769.793333020061,
+        "minimum_pressure_force_n": 757.533476072203
+      },
+      {
+        "profile": "rated_grid_053",
+        "group": "actuator",
+        "state": [
+          47.6,
+          -0.45,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 4917.383033316582,
+        "minimum_pressure_force_n": 645.6179705932342
+      },
+      {
+        "profile": "rated_grid_054",
+        "group": "actuator",
+        "state": [
+          47.5,
+          -0.45,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4762.83345837146,
+        "minimum_pressure_force_n": 625.3266932499643
+      },
+      {
+        "profile": "rated_grid_055",
+        "group": "actuator",
+        "state": [
+          132.4,
+          -0.45,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 4917.383033316582,
+        "minimum_pressure_force_n": 645.6179705932342
+      },
+      {
+        "profile": "rated_grid_056",
+        "group": "actuator",
+        "state": [
+          47.8,
+          -0.45,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 4996.566656045616,
+        "minimum_pressure_force_n": 656.0142259721971
+      },
+      {
+        "profile": "rated_grid_057",
+        "group": "actuator",
+        "state": [
+          47.8,
+          -0.45,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4841.938483295962,
+        "minimum_pressure_force_n": 635.7126292873769
+      },
+      {
+        "profile": "rated_grid_058",
+        "group": "actuator",
+        "state": [
+          132.2,
+          -0.45,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 4996.566656045616,
+        "minimum_pressure_force_n": 656.0142259721971
+      },
+      {
+        "profile": "rated_grid_059",
+        "group": "actuator",
+        "state": [
+          48.1,
+          -0.45,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5076.045524328947,
+        "minimum_pressure_force_n": 666.4492450257205
+      },
+      {
+        "profile": "rated_grid_060",
+        "group": "actuator",
+        "state": [
+          48.0,
+          -0.45,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4921.356142731383,
+        "minimum_pressure_force_n": 646.1396120476317
+      },
+      {
+        "profile": "rated_grid_061",
+        "group": "actuator",
+        "state": [
+          131.9,
+          -0.45,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5076.045524328947,
+        "minimum_pressure_force_n": 666.4492450257205
+      },
+      {
+        "profile": "rated_grid_062",
+        "group": "actuator",
+        "state": [
+          47.5,
+          -0.189,
+          -0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5111.649571917951,
+        "minimum_pressure_force_n": 671.1238072458236
+      },
+      {
+        "profile": "rated_grid_063",
+        "group": "actuator",
+        "state": [
+          46.9,
+          -0.189,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4593.104101368226,
+        "minimum_pressure_force_n": 603.0424167809387
+      },
+      {
+        "profile": "rated_grid_064",
+        "group": "actuator",
+        "state": [
+          132.5,
+          -0.189,
+          -0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5111.649571917951,
+        "minimum_pressure_force_n": 671.1238072458236
+      },
+      {
+        "profile": "rated_grid_065",
+        "group": "actuator",
+        "state": [
+          48.0,
+          -0.189,
+          -0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5296.036459039897,
+        "minimum_pressure_force_n": 695.3325148167253
+      },
+      {
+        "profile": "rated_grid_066",
+        "group": "actuator",
+        "state": [
+          47.6,
+          -0.189,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 4917.385748703964,
+        "minimum_pressure_force_n": 645.6183271045896
+      },
+      {
+        "profile": "rated_grid_067",
+        "group": "actuator",
+        "state": [
+          47.5,
+          -0.189,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4762.836100417189,
+        "minimum_pressure_force_n": 625.3270401320741
+      },
+      {
+        "profile": "rated_grid_068",
+        "group": "actuator",
+        "state": [
+          132.4,
+          -0.189,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 4917.385748703964,
+        "minimum_pressure_force_n": 645.6183271045896
+      },
+      {
+        "profile": "rated_grid_069",
+        "group": "actuator",
+        "state": [
+          132.0,
+          -0.189,
+          -0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5296.036459039897,
+        "minimum_pressure_force_n": 695.3325148167253
+      },
+      {
+        "profile": "rated_grid_070",
+        "group": "actuator",
+        "state": [
+          48.3,
+          -0.189,
+          0.0,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5547.972923959605,
+        "minimum_pressure_force_n": 728.4100091054286
+      },
+      {
+        "profile": "rated_grid_071",
+        "group": "actuator",
+        "state": [
+          48.2,
+          -0.189,
+          0.0,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5381.87948113773,
+        "minimum_pressure_force_n": 706.6031027170161
+      },
+      {
+        "profile": "rated_grid_072",
+        "group": "actuator",
+        "state": [
+          48.2,
+          -0.189,
+          0.0,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5215.729766059667,
+        "minimum_pressure_force_n": 684.7888081752719
+      },
+      {
+        "profile": "rated_grid_073",
+        "group": "actuator",
+        "state": [
+          47.8,
+          -0.189,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 4996.569423819892,
+        "minimum_pressure_force_n": 656.0145893615852
+      },
+      {
+        "profile": "rated_grid_074",
+        "group": "actuator",
+        "state": [
+          47.8,
+          -0.189,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4841.941179474816,
+        "minimum_pressure_force_n": 635.7129832767871
+      },
+      {
+        "profile": "rated_grid_075",
+        "group": "actuator",
+        "state": [
+          132.2,
+          -0.189,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 4996.569423819892,
+        "minimum_pressure_force_n": 656.0145893615852
+      },
+      {
+        "profile": "rated_grid_076",
+        "group": "actuator",
+        "state": [
+          131.8,
+          -0.189,
+          0.0,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5215.729766059667,
+        "minimum_pressure_force_n": 684.7888081752719
+      },
+      {
+        "profile": "rated_grid_077",
+        "group": "actuator",
+        "state": [
+          131.8,
+          -0.189,
+          0.0,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5381.87948113773,
+        "minimum_pressure_force_n": 706.6031027170161
+      },
+      {
+        "profile": "rated_grid_078",
+        "group": "actuator",
+        "state": [
+          131.7,
+          -0.189,
+          0.0,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5547.972923959605,
+        "minimum_pressure_force_n": 728.4100091054286
+      },
+      {
+        "profile": "rated_grid_079",
+        "group": "actuator",
+        "state": [
+          48.4,
+          -0.189,
+          0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5468.008719035424,
+        "minimum_pressure_force_n": 717.9112687483181
+      },
+      {
+        "profile": "rated_grid_080",
+        "group": "actuator",
+        "state": [
+          48.1,
+          -0.189,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5076.048344490118,
+        "minimum_pressure_force_n": 666.4496152931412
+      },
+      {
+        "profile": "rated_grid_081",
+        "group": "actuator",
+        "state": [
+          48.0,
+          -0.189,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4921.358889550902,
+        "minimum_pressure_force_n": 646.1399726858067
+      },
+      {
+        "profile": "rated_grid_082",
+        "group": "actuator",
+        "state": [
+          131.9,
+          -0.189,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5076.048344490118,
+        "minimum_pressure_force_n": 666.4496152931412
+      },
+      {
+        "profile": "rated_grid_083",
+        "group": "actuator",
+        "state": [
+          131.6,
+          -0.189,
+          0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5468.008719035424,
+        "minimum_pressure_force_n": 717.9112687483181
+      },
+      {
+        "profile": "rated_grid_084",
+        "group": "actuator",
+        "state": [
+          48.8,
+          -0.189,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5654.9776426982135,
+        "minimum_pressure_force_n": 742.4589796427766
+      },
+      {
+        "profile": "rated_grid_085",
+        "group": "actuator",
+        "state": [
+          48.5,
+          -0.189,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5093.902292428538,
+        "minimum_pressure_force_n": 668.7937136798201
+      },
+      {
+        "profile": "rated_grid_086",
+        "group": "actuator",
+        "state": [
+          131.2,
+          -0.189,
+          0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5654.9776426982135,
+        "minimum_pressure_force_n": 742.4589796427766
+      },
+      {
+        "profile": "rated_grid_087",
+        "group": "actuator",
+        "state": [
+          48.4,
+          0.0,
+          -0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5212.745585013181,
+        "minimum_pressure_force_n": 684.3970060931357
+      },
+      {
+        "profile": "rated_grid_088",
+        "group": "actuator",
+        "state": [
+          48.0,
+          0.0,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 4823.95556231495,
+        "minimum_pressure_force_n": 633.3515976430168
+      },
+      {
+        "profile": "rated_grid_089",
+        "group": "actuator",
+        "state": [
+          131.6,
+          0.0,
+          -0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5212.745585013181,
+        "minimum_pressure_force_n": 684.3970060931357
+      },
+      {
+        "profile": "rated_grid_090",
+        "group": "actuator",
+        "state": [
+          48.9,
+          0.0,
+          -0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5576.727839070372,
+        "minimum_pressure_force_n": 732.1853281750665
+      },
+      {
+        "profile": "rated_grid_091",
+        "group": "actuator",
+        "state": [
+          48.8,
+          0.0,
+          -0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5405.485707451589,
+        "minimum_pressure_force_n": 709.7024349884416
+      },
+      {
+        "profile": "rated_grid_092",
+        "group": "actuator",
+        "state": [
+          48.8,
+          0.0,
+          -0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5234.192489879206,
+        "minimum_pressure_force_n": 687.2128345737107
+      },
+      {
+        "profile": "rated_grid_093",
+        "group": "actuator",
+        "state": [
+          48.6,
+          0.0,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5165.081150480546,
+        "minimum_pressure_force_n": 678.1389994900425
+      },
+      {
+        "profile": "rated_grid_094",
+        "group": "actuator",
+        "state": [
+          48.5,
+          0.0,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5003.868409548886,
+        "minimum_pressure_force_n": 656.972895094902
+      },
+      {
+        "profile": "rated_grid_095",
+        "group": "actuator",
+        "state": [
+          131.4,
+          0.0,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5165.081150480546,
+        "minimum_pressure_force_n": 678.1389994900425
+      },
+      {
+        "profile": "rated_grid_096",
+        "group": "actuator",
+        "state": [
+          131.2,
+          0.0,
+          -0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5234.192489879206,
+        "minimum_pressure_force_n": 687.2128345737107
+      },
+      {
+        "profile": "rated_grid_097",
+        "group": "actuator",
+        "state": [
+          131.2,
+          0.0,
+          -0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5405.485707451589,
+        "minimum_pressure_force_n": 709.7024349884416
+      },
+      {
+        "profile": "rated_grid_098",
+        "group": "actuator",
+        "state": [
+          131.1,
+          0.0,
+          -0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5576.727839070372,
+        "minimum_pressure_force_n": 732.1853281750665
+      },
+      {
+        "profile": "rated_grid_099",
+        "group": "actuator",
+        "state": [
+          49.1,
+          0.0,
+          0.0,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5495.164007297717,
+        "minimum_pressure_force_n": 721.4765680101393
+      },
+      {
+        "profile": "rated_grid_100",
+        "group": "actuator",
+        "state": [
+          48.8,
+          0.0,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5248.917560675181,
+        "minimum_pressure_force_n": 689.1461332937267
+      },
+      {
+        "profile": "rated_grid_101",
+        "group": "actuator",
+        "state": [
+          131.2,
+          0.0,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5248.917560675181,
+        "minimum_pressure_force_n": 689.1461332937267
+      },
+      {
+        "profile": "rated_grid_102",
+        "group": "actuator",
+        "state": [
+          130.9,
+          0.0,
+          0.0,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5495.164007297717,
+        "minimum_pressure_force_n": 721.4765680101393
+      },
+      {
+        "profile": "rated_grid_103",
+        "group": "actuator",
+        "state": [
+          49.3,
+          0.0,
+          0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5756.436326773837,
+        "minimum_pressure_force_n": 755.7797946511175
+      },
+      {
+        "profile": "rated_grid_104",
+        "group": "actuator",
+        "state": [
+          49.2,
+          0.0,
+          0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5585.110287065618,
+        "minimum_pressure_force_n": 733.2858849197063
+      },
+      {
+        "profile": "rated_grid_105",
+        "group": "actuator",
+        "state": [
+          49.2,
+          0.0,
+          0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5413.731643930078,
+        "minimum_pressure_force_n": 710.7850687265118
+      },
+      {
+        "profile": "rated_grid_106",
+        "group": "actuator",
+        "state": [
+          49.0,
+          0.0,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5333.030215697363,
+        "minimum_pressure_force_n": 700.189536109554
+      },
+      {
+        "profile": "rated_grid_107",
+        "group": "actuator",
+        "state": [
+          49.0,
+          0.0,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5171.714153839275,
+        "minimum_pressure_force_n": 679.0098664000201
+      },
+      {
+        "profile": "rated_grid_108",
+        "group": "actuator",
+        "state": [
+          131.0,
+          0.0,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5333.030215697363,
+        "minimum_pressure_force_n": 700.189536109554
+      },
+      {
+        "profile": "rated_grid_109",
+        "group": "actuator",
+        "state": [
+          130.8,
+          0.0,
+          0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5413.731643930078,
+        "minimum_pressure_force_n": 710.7850687265118
+      },
+      {
+        "profile": "rated_grid_110",
+        "group": "actuator",
+        "state": [
+          130.8,
+          0.0,
+          0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5585.110287065618,
+        "minimum_pressure_force_n": 733.2858849197063
+      },
+      {
+        "profile": "rated_grid_111",
+        "group": "actuator",
+        "state": [
+          130.7,
+          0.0,
+          0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5756.436326773837,
+        "minimum_pressure_force_n": 755.7797946511175
+      },
+      {
+        "profile": "rated_grid_112",
+        "group": "actuator",
+        "state": [
+          49.7,
+          0.0,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5780.267773079686,
+        "minimum_pressure_force_n": 758.9086967309513
+      },
+      {
+        "profile": "rated_grid_113",
+        "group": "actuator",
+        "state": [
+          49.4,
+          0.0,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5354.240307351574,
+        "minimum_pressure_force_n": 702.9742726731104
+      },
+      {
+        "profile": "rated_grid_114",
+        "group": "actuator",
+        "state": [
+          130.3,
+          0.0,
+          0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5780.267773079686,
+        "minimum_pressure_force_n": 758.9086967309513
+      },
+      {
+        "profile": "rated_grid_115",
+        "group": "actuator",
+        "state": [
+          48.9,
+          0.189,
+          -0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5215.587010025047,
+        "minimum_pressure_force_n": 684.7700653072186
+      },
+      {
+        "profile": "rated_grid_116",
+        "group": "actuator",
+        "state": [
+          49.0,
+          0.189,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5079.684747615829,
+        "minimum_pressure_force_n": 666.9270495687251
+      },
+      {
+        "profile": "rated_grid_117",
+        "group": "actuator",
+        "state": [
+          131.1,
+          0.189,
+          -0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5215.587010025047,
+        "minimum_pressure_force_n": 684.7700653072186
+      },
+      {
+        "profile": "rated_grid_118",
+        "group": "actuator",
+        "state": [
+          49.4,
+          0.189,
+          -0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5412.56922238972,
+        "minimum_pressure_force_n": 710.6324509152137
+      },
+      {
+        "profile": "rated_grid_119",
+        "group": "actuator",
+        "state": [
+          49.5,
+          0.189,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5439.0678339404985,
+        "minimum_pressure_force_n": 714.11153312155
+      },
+      {
+        "profile": "rated_grid_120",
+        "group": "actuator",
+        "state": [
+          49.5,
+          0.189,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5270.570965949446,
+        "minimum_pressure_force_n": 691.9890738324007
+      },
+      {
+        "profile": "rated_grid_121",
+        "group": "actuator",
+        "state": [
+          130.5,
+          0.189,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5439.0678339404985,
+        "minimum_pressure_force_n": 714.11153312155
+      },
+      {
+        "profile": "rated_grid_122",
+        "group": "actuator",
+        "state": [
+          130.6,
+          0.189,
+          -0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5412.56922238972,
+        "minimum_pressure_force_n": 710.6324509152137
+      },
+      {
+        "profile": "rated_grid_123",
+        "group": "actuator",
+        "state": [
+          49.6,
+          0.189,
+          0.0,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5677.889452781528,
+        "minimum_pressure_force_n": 745.4671399240453
+      },
+      {
+        "profile": "rated_grid_124",
+        "group": "actuator",
+        "state": [
+          49.6,
+          0.189,
+          0.0,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5504.1940324008465,
+        "minimum_pressure_force_n": 722.6621470960044
+      },
+      {
+        "profile": "rated_grid_125",
+        "group": "actuator",
+        "state": [
+          49.5,
+          0.189,
+          0.0,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5330.443902639672,
+        "minimum_pressure_force_n": 699.8499713092706
+      },
+      {
+        "profile": "rated_grid_126",
+        "group": "actuator",
+        "state": [
+          49.7,
+          0.189,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5527.935708523728,
+        "minimum_pressure_force_n": 725.7792629792059
+      },
+      {
+        "profile": "rated_grid_127",
+        "group": "actuator",
+        "state": [
+          49.7,
+          0.189,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5359.398658038117,
+        "minimum_pressure_force_n": 703.6515280097987
+      },
+      {
+        "profile": "rated_grid_128",
+        "group": "actuator",
+        "state": [
+          130.3,
+          0.189,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5527.935708523728,
+        "minimum_pressure_force_n": 725.7792629792059
+      },
+      {
+        "profile": "rated_grid_129",
+        "group": "actuator",
+        "state": [
+          130.5,
+          0.189,
+          0.0,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5330.443902639672,
+        "minimum_pressure_force_n": 699.8499713092706
+      },
+      {
+        "profile": "rated_grid_130",
+        "group": "actuator",
+        "state": [
+          130.4,
+          0.189,
+          0.0,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5504.1940324008465,
+        "minimum_pressure_force_n": 722.6621470960044
+      },
+      {
+        "profile": "rated_grid_131",
+        "group": "actuator",
+        "state": [
+          130.4,
+          0.189,
+          0.0,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 5677.889452781528,
+        "minimum_pressure_force_n": 745.4671399240453
+      },
+      {
+        "profile": "rated_grid_132",
+        "group": "actuator",
+        "state": [
+          49.8,
+          0.189,
+          0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5596.076407819055,
+        "minimum_pressure_force_n": 734.7256598117873
+      },
+      {
+        "profile": "rated_grid_133",
+        "group": "actuator",
+        "state": [
+          49.9,
+          0.189,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5617.064567632042,
+        "minimum_pressure_force_n": 737.4812582781138
+      },
+      {
+        "profile": "rated_grid_134",
+        "group": "actuator",
+        "state": [
+          49.9,
+          0.189,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5448.4979884000495,
+        "minimum_pressure_force_n": 715.3496463910078
+      },
+      {
+        "profile": "rated_grid_135",
+        "group": "actuator",
+        "state": [
+          130.1,
+          0.189,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5617.064567632042,
+        "minimum_pressure_force_n": 737.4812582781138
+      },
+      {
+        "profile": "rated_grid_136",
+        "group": "actuator",
+        "state": [
+          130.2,
+          0.189,
+          0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5596.076407819055,
+        "minimum_pressure_force_n": 734.7256598117873
+      },
+      {
+        "profile": "rated_grid_137",
+        "group": "actuator",
+        "state": [
+          50.2,
+          0.189,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5795.384547673166,
+        "minimum_pressure_force_n": 760.893423417653
+      },
+      {
+        "profile": "rated_grid_138",
+        "group": "actuator",
+        "state": [
+          50.3,
+          0.189,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5641.839009476826,
+        "minimum_pressure_force_n": 740.733969071241
+      },
+      {
+        "profile": "rated_grid_139",
+        "group": "actuator",
+        "state": [
+          129.8,
+          0.189,
+          0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 5795.384547673166,
+        "minimum_pressure_force_n": 760.893423417653
+      },
+      {
+        "profile": "rated_grid_140",
+        "group": "actuator",
+        "state": [
+          49.5,
+          0.45,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5439.07115701586,
+        "minimum_pressure_force_n": 714.1119694180834
+      },
+      {
+        "profile": "rated_grid_141",
+        "group": "actuator",
+        "state": [
+          49.5,
+          0.45,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5270.574203459546,
+        "minimum_pressure_force_n": 691.9894988948142
+      },
+      {
+        "profile": "rated_grid_142",
+        "group": "actuator",
+        "state": [
+          130.5,
+          0.45,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5439.07115701586,
+        "minimum_pressure_force_n": 714.1119694180834
+      },
+      {
+        "profile": "rated_grid_143",
+        "group": "actuator",
+        "state": [
+          49.7,
+          0.45,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5527.9390927171335,
+        "minimum_pressure_force_n": 725.7797073001108
+      },
+      {
+        "profile": "rated_grid_144",
+        "group": "actuator",
+        "state": [
+          49.7,
+          0.45,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5359.401956666261,
+        "minimum_pressure_force_n": 703.6519610965835
+      },
+      {
+        "profile": "rated_grid_145",
+        "group": "actuator",
+        "state": [
+          130.3,
+          0.45,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5527.9390927171335,
+        "minimum_pressure_force_n": 725.7797073001108
+      },
+      {
+        "profile": "rated_grid_146",
+        "group": "actuator",
+        "state": [
+          49.9,
+          0.45,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 5617.068012943491,
+        "minimum_pressure_force_n": 737.48171062339
+      },
+      {
+        "profile": "rated_grid_147",
+        "group": "actuator",
+        "state": [
+          49.9,
+          0.45,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 5448.501344653778,
+        "minimum_pressure_force_n": 715.3500870436286
+      },
+      {
+        "profile": "rated_grid_148",
+        "group": "actuator",
+        "state": [
+          130.1,
+          0.45,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 5617.068012943491,
+        "minimum_pressure_force_n": 737.48171062339
+      }
+    ],
+    "rounded_pressure_pa": 5800.0,
+    "rounded_pressure_force_n": 761.4994000000002,
+    "minimum_normals_at_design_n": [
+      130.9097829445059,
+      130.90978294450596,
+      272.83362578913386
+    ],
+    "minimum_drive_margin_at_design": 1.501416180511785,
+    "maximum_motor_torque_at_design_nm": 4.889599779720217,
+    "maximum_wheel_speed_at_design_rps": 9.473684210526315,
+    "maximum_force_residual_n": 2.842170943040401e-14,
+    "maximum_moment_residual_nm": 4.618527782440651e-14,
+    "worst_state_normals_at_design_n": [
+      133.15430400097023,
+      168.64362778496024,
+      355.1954682140697
+    ],
+    "worst_state_drive_tangent_at_design_n": [
+      [
+        87.63772593224351,
+        42.85425676316805
+      ],
+      [
+        43.27504169728746,
+        54.27610756401961
+      ]
+    ],
+    "worst_state_skirt_normal_at_design_n": 104.506,
+    "worst_state_skirt_drag_at_design_n": [
+      -5.1514903771483604,
+      -4.049455951726305,
+      0.0
+    ]
+  },
+  "worst_sensitivity_label": "joint_corner_57",
+  "worst_sensitivity_refined": {
+    "status": "analytical_candidate",
+    "mu": 0.8,
+    "margin_required": 1.5,
+    "caster_floor_n": 10.0,
+    "lateral_allocation": "normal_proportional",
+    "coarse_heading_step_deg": 1.0,
+    "refined_heading_step_deg": 0.1,
+    "worst": {
+      "profile": "rated_grid_137",
+      "group": "actuator",
+      "state": [
+        49.2,
+        0.189,
+        0.7,
+        -1.2,
+        0.0
+      ],
+      "minimum_pressure_pa": 12291.363914846443,
+      "minimum_pressure_force_n": 1682.4634025510325
+    },
+    "profile_peaks": [
+      {
+        "profile": "static",
+        "group": "static",
+        "state": [
+          46.1,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 8119.515154394321,
+        "minimum_pressure_force_n": 1111.413443485015
+      },
+      {
+        "profile": "cruise_001",
+        "group": "operation",
+        "state": [
+          216.6,
+          -0.2,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7145.197611534968,
+        "minimum_pressure_force_n": 978.0471531627268
+      },
+      {
+        "profile": "cruise_002",
+        "group": "operation",
+        "state": [
+          50.1,
+          0.2,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 10090.196672827005,
+        "minimum_pressure_force_n": 1381.1637784207383
+      },
+      {
+        "profile": "catchup_003",
+        "group": "operation",
+        "state": [
+          219.1,
+          -0.35,
+          -0.35,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7293.732406105846,
+        "minimum_pressure_force_n": 998.3788557794791
+      },
+      {
+        "profile": "catchup_004",
+        "group": "operation",
+        "state": [
+          41.8,
+          -0.35,
+          0.35,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7014.615563093685,
+        "minimum_pressure_force_n": 960.1728538534991
+      },
+      {
+        "profile": "catchup_005",
+        "group": "operation",
+        "state": [
+          49.7,
+          0.35,
+          -0.35,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 9823.971890145913,
+        "minimum_pressure_force_n": 1344.7224642739804
+      },
+      {
+        "profile": "catchup_006",
+        "group": "operation",
+        "state": [
+          50.4,
+          0.35,
+          0.35,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 10357.79639496468,
+        "minimum_pressure_force_n": 1417.7932966864569
+      },
+      {
+        "profile": "correct_007",
+        "group": "operation",
+        "state": [
+          320.1,
+          -0.35,
+          -0.35,
+          -0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 7996.0791586199775,
+        "minimum_pressure_force_n": 1094.5173083704303
+      },
+      {
+        "profile": "correct_008",
+        "group": "operation",
+        "state": [
+          321.6,
+          -0.35,
+          -0.35,
+          -0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 7723.398256930523,
+        "minimum_pressure_force_n": 1057.1922693555998
+      },
+      {
+        "profile": "correct_009",
+        "group": "operation",
+        "state": [
+          218.4,
+          -0.35,
+          -0.35,
+          0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 7723.398256930523,
+        "minimum_pressure_force_n": 1057.1922693555998
+      },
+      {
+        "profile": "correct_010",
+        "group": "operation",
+        "state": [
+          219.9,
+          -0.35,
+          -0.35,
+          0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 7996.0791586199775,
+        "minimum_pressure_force_n": 1094.5173083704303
+      },
+      {
+        "profile": "correct_011",
+        "group": "operation",
+        "state": [
+          324.4,
+          -0.35,
+          0.35,
+          -0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 7680.912893847562,
+        "minimum_pressure_force_n": 1051.3767985074187
+      },
+      {
+        "profile": "correct_012",
+        "group": "operation",
+        "state": [
+          326.2,
+          -0.35,
+          0.35,
+          -0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 7420.087141217664,
+        "minimum_pressure_force_n": 1015.6745130423711
+      },
+      {
+        "profile": "correct_013",
+        "group": "operation",
+        "state": [
+          213.8,
+          -0.35,
+          0.35,
+          0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 7420.087141217664,
+        "minimum_pressure_force_n": 1015.6745130423711
+      },
+      {
+        "profile": "correct_014",
+        "group": "operation",
+        "state": [
+          215.6,
+          -0.35,
+          0.35,
+          0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 7680.912893847562,
+        "minimum_pressure_force_n": 1051.3767985074187
+      },
+      {
+        "profile": "correct_015",
+        "group": "operation",
+        "state": [
+          49.5,
+          0.35,
+          -0.35,
+          -0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 10560.151340905577,
+        "minimum_pressure_force_n": 1445.4919958080022
+      },
+      {
+        "profile": "correct_016",
+        "group": "operation",
+        "state": [
+          49.5,
+          0.35,
+          -0.35,
+          -0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 10286.742175812833,
+        "minimum_pressure_force_n": 1408.0672708240686
+      },
+      {
+        "profile": "correct_017",
+        "group": "operation",
+        "state": [
+          130.5,
+          0.35,
+          -0.35,
+          0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 10286.742175812833,
+        "minimum_pressure_force_n": 1408.0672708240686
+      },
+      {
+        "profile": "correct_018",
+        "group": "operation",
+        "state": [
+          130.5,
+          0.35,
+          -0.35,
+          0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 10560.151340905577,
+        "minimum_pressure_force_n": 1445.4919958080022
+      },
+      {
+        "profile": "correct_019",
+        "group": "operation",
+        "state": [
+          50.2,
+          0.35,
+          0.35,
+          -0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 11126.99284683913,
+        "minimum_pressure_force_n": 1523.0822531128224
+      },
+      {
+        "profile": "correct_020",
+        "group": "operation",
+        "state": [
+          50.2,
+          0.35,
+          0.35,
+          -0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 10853.327738586813,
+        "minimum_pressure_force_n": 1485.6224941813057
+      },
+      {
+        "profile": "correct_021",
+        "group": "operation",
+        "state": [
+          129.8,
+          0.35,
+          0.35,
+          0.35,
+          -0.8
+        ],
+        "minimum_pressure_pa": 10853.327738586813,
+        "minimum_pressure_force_n": 1485.6224941813057
+      },
+      {
+        "profile": "correct_022",
+        "group": "operation",
+        "state": [
+          129.8,
+          0.35,
+          0.35,
+          0.35,
+          0.8
+        ],
+        "minimum_pressure_pa": 11126.99284683913,
+        "minimum_pressure_force_n": 1523.0822531128224
+      },
+      {
+        "profile": "turn_023",
+        "group": "operation",
+        "state": [
+          47.5,
+          0.0,
+          0.0,
+          -0.6,
+          -1.0
+        ],
+        "minimum_pressure_pa": 11018.152012838982,
+        "minimum_pressure_force_n": 1508.1839292834227
+      },
+      {
+        "profile": "turn_024",
+        "group": "operation",
+        "state": [
+          47.4,
+          0.0,
+          0.0,
+          -0.6,
+          1.0
+        ],
+        "minimum_pressure_pa": 10676.635896088555,
+        "minimum_pressure_force_n": 1461.43660556942
+      },
+      {
+        "profile": "turn_025",
+        "group": "operation",
+        "state": [
+          132.6,
+          0.0,
+          0.0,
+          0.6,
+          -1.0
+        ],
+        "minimum_pressure_pa": 10676.635896088555,
+        "minimum_pressure_force_n": 1461.43660556942
+      },
+      {
+        "profile": "turn_026",
+        "group": "operation",
+        "state": [
+          132.5,
+          0.0,
+          0.0,
+          0.6,
+          1.0
+        ],
+        "minimum_pressure_pa": 11018.152012838982,
+        "minimum_pressure_force_n": 1508.1839292834227
+      },
+      {
+        "profile": "turn_start_027",
+        "group": "operation",
+        "state": [
+          46.1,
+          0.0,
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "minimum_pressure_pa": 8249.785390798934,
+        "minimum_pressure_force_n": 1129.2450614169923
+      },
+      {
+        "profile": "turn_start_028",
+        "group": "operation",
+        "state": [
+          133.9,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "minimum_pressure_pa": 8249.785390798934,
+        "minimum_pressure_force_n": 1129.2450614169923
+      },
+      {
+        "profile": "rated_straight_029",
+        "group": "actuator",
+        "state": [
+          221.5,
+          -0.45,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7450.098910485394,
+        "minimum_pressure_force_n": 1019.7825765403343
+      },
+      {
+        "profile": "rated_straight_030",
+        "group": "actuator",
+        "state": [
+          42.5,
+          -0.45,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7177.809085696936,
+        "minimum_pressure_force_n": 982.5110688160967
+      },
+      {
+        "profile": "rated_straight_031",
+        "group": "actuator",
+        "state": [
+          49.3,
+          0.45,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 9559.183962992392,
+        "minimum_pressure_force_n": 1308.4778294263342
+      },
+      {
+        "profile": "rated_straight_032",
+        "group": "actuator",
+        "state": [
+          50.7,
+          0.45,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 10626.598534290679,
+        "minimum_pressure_force_n": 1454.5874039211433
+      },
+      {
+        "profile": "rated_turn_033",
+        "group": "actuator",
+        "state": [
+          47.6,
+          0.0,
+          0.0,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 11279.871410806663,
+        "minimum_pressure_force_n": 1544.0085384861852
+      },
+      {
+        "profile": "rated_turn_034",
+        "group": "actuator",
+        "state": [
+          47.4,
+          0.0,
+          0.0,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 10528.370317770168,
+        "minimum_pressure_force_n": 1441.141753744437
+      },
+      {
+        "profile": "rated_turn_035",
+        "group": "actuator",
+        "state": [
+          132.6,
+          0.0,
+          0.0,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10528.370317770168,
+        "minimum_pressure_force_n": 1441.141753744437
+      },
+      {
+        "profile": "rated_turn_036",
+        "group": "actuator",
+        "state": [
+          132.4,
+          0.0,
+          0.0,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 11279.871410806663,
+        "minimum_pressure_force_n": 1544.0085384861852
+      },
+      {
+        "profile": "rated_mixed_037",
+        "group": "actuator",
+        "state": [
+          44.2,
+          -0.189,
+          -0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 9648.149624699727,
+        "minimum_pressure_force_n": 1320.655604890742
+      },
+      {
+        "profile": "rated_mixed_038",
+        "group": "actuator",
+        "state": [
+          43.9,
+          -0.189,
+          -0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 9006.208787905052,
+        "minimum_pressure_force_n": 1232.7856197538226
+      },
+      {
+        "profile": "rated_mixed_039",
+        "group": "actuator",
+        "state": [
+          136.1,
+          -0.189,
+          -0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 9006.208787905052,
+        "minimum_pressure_force_n": 1232.7856197538226
+      },
+      {
+        "profile": "rated_mixed_040",
+        "group": "actuator",
+        "state": [
+          135.8,
+          -0.189,
+          -0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 9648.149624699727,
+        "minimum_pressure_force_n": 1320.655604890742
+      },
+      {
+        "profile": "rated_mixed_041",
+        "group": "actuator",
+        "state": [
+          44.7,
+          -0.189,
+          0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 9933.290010667406,
+        "minimum_pressure_force_n": 1359.6861199176735
+      },
+      {
+        "profile": "rated_mixed_042",
+        "group": "actuator",
+        "state": [
+          44.5,
+          -0.189,
+          0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 9290.005755610764,
+        "minimum_pressure_force_n": 1271.632245338074
+      },
+      {
+        "profile": "rated_mixed_043",
+        "group": "actuator",
+        "state": [
+          135.5,
+          -0.189,
+          0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 9290.005755610764,
+        "minimum_pressure_force_n": 1271.632245338074
+      },
+      {
+        "profile": "rated_mixed_044",
+        "group": "actuator",
+        "state": [
+          135.3,
+          -0.189,
+          0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 9933.290010667406,
+        "minimum_pressure_force_n": 1359.6861199176735
+      },
+      {
+        "profile": "rated_mixed_045",
+        "group": "actuator",
+        "state": [
+          48.5,
+          0.189,
+          -0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 11899.802794796415,
+        "minimum_pressure_force_n": 1628.8658312066245
+      },
+      {
+        "profile": "rated_mixed_046",
+        "group": "actuator",
+        "state": [
+          48.4,
+          0.189,
+          -0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 11085.009444504976,
+        "minimum_pressure_force_n": 1517.3354915303694
+      },
+      {
+        "profile": "rated_mixed_047",
+        "group": "actuator",
+        "state": [
+          131.6,
+          0.189,
+          -0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 11085.009444504976,
+        "minimum_pressure_force_n": 1517.3354915303694
+      },
+      {
+        "profile": "rated_mixed_048",
+        "group": "actuator",
+        "state": [
+          131.5,
+          0.189,
+          -0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 11899.802794796415,
+        "minimum_pressure_force_n": 1628.8658312066245
+      },
+      {
+        "profile": "rated_mixed_049",
+        "group": "actuator",
+        "state": [
+          48.9,
+          0.189,
+          0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 12283.108552219346,
+        "minimum_pressure_force_n": 1681.3333940677508
+      },
+      {
+        "profile": "rated_mixed_050",
+        "group": "actuator",
+        "state": [
+          48.8,
+          0.189,
+          0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 11467.828066670336,
+        "minimum_pressure_force_n": 1569.7363744649526
+      },
+      {
+        "profile": "rated_mixed_051",
+        "group": "actuator",
+        "state": [
+          131.2,
+          0.189,
+          0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 11467.828066670336,
+        "minimum_pressure_force_n": 1569.7363744649526
+      },
+      {
+        "profile": "rated_mixed_052",
+        "group": "actuator",
+        "state": [
+          131.1,
+          0.189,
+          0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 12283.108552219346,
+        "minimum_pressure_force_n": 1681.3333940677508
+      },
+      {
+        "profile": "rated_grid_053",
+        "group": "actuator",
+        "state": [
+          319.5,
+          -0.45,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 7591.118852142245,
+        "minimum_pressure_force_n": 1039.0856329392218
+      },
+      {
+        "profile": "rated_grid_054",
+        "group": "actuator",
+        "state": [
+          218.2,
+          -0.45,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7238.246678025462,
+        "minimum_pressure_force_n": 990.7838722198119
+      },
+      {
+        "profile": "rated_grid_055",
+        "group": "actuator",
+        "state": [
+          220.5,
+          -0.45,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 7591.118852142245,
+        "minimum_pressure_force_n": 1039.0856329392218
+      },
+      {
+        "profile": "rated_grid_056",
+        "group": "actuator",
+        "state": [
+          321.0,
+          -0.45,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 7493.235966539942,
+        "minimum_pressure_force_n": 1025.687252262929
+      },
+      {
+        "profile": "rated_grid_057",
+        "group": "actuator",
+        "state": [
+          216.6,
+          -0.45,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7145.211666938849,
+        "minimum_pressure_force_n": 978.0490770910069
+      },
+      {
+        "profile": "rated_grid_058",
+        "group": "actuator",
+        "state": [
+          219.0,
+          -0.45,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 7493.235966539942,
+        "minimum_pressure_force_n": 1025.687252262929
+      },
+      {
+        "profile": "rated_grid_059",
+        "group": "actuator",
+        "state": [
+          322.5,
+          -0.45,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 7398.3276943909,
+        "minimum_pressure_force_n": 1012.6960418816918
+      },
+      {
+        "profile": "rated_grid_060",
+        "group": "actuator",
+        "state": [
+          214.9,
+          -0.45,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7055.680256453343,
+        "minimum_pressure_force_n": 965.7938609437825
+      },
+      {
+        "profile": "rated_grid_061",
+        "group": "actuator",
+        "state": [
+          217.5,
+          -0.45,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 7398.3276943909,
+        "minimum_pressure_force_n": 1012.6960418816918
+      },
+      {
+        "profile": "rated_grid_062",
+        "group": "actuator",
+        "state": [
+          43.5,
+          -0.189,
+          -0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9022.900829440914,
+        "minimum_pressure_force_n": 1235.070455610324
+      },
+      {
+        "profile": "rated_grid_063",
+        "group": "actuator",
+        "state": [
+          221.5,
+          -0.189,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7450.0806466676295,
+        "minimum_pressure_force_n": 1019.780076556997
+      },
+      {
+        "profile": "rated_grid_064",
+        "group": "actuator",
+        "state": [
+          136.5,
+          -0.189,
+          -0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9022.900829440914,
+        "minimum_pressure_force_n": 1235.070455610324
+      },
+      {
+        "profile": "rated_grid_065",
+        "group": "actuator",
+        "state": [
+          44.1,
+          -0.189,
+          -0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9327.097482746467,
+        "minimum_pressure_force_n": 1276.7094258589314
+      },
+      {
+        "profile": "rated_grid_066",
+        "group": "actuator",
+        "state": [
+          319.5,
+          -0.189,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 7591.100556892343,
+        "minimum_pressure_force_n": 1039.0831286533987
+      },
+      {
+        "profile": "rated_grid_067",
+        "group": "actuator",
+        "state": [
+          218.2,
+          -0.189,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7238.229842623696,
+        "minimum_pressure_force_n": 990.7815677605562
+      },
+      {
+        "profile": "rated_grid_068",
+        "group": "actuator",
+        "state": [
+          220.5,
+          -0.189,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 7591.100556892343,
+        "minimum_pressure_force_n": 1039.0831286533987
+      },
+      {
+        "profile": "rated_grid_069",
+        "group": "actuator",
+        "state": [
+          135.9,
+          -0.189,
+          -0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9327.097482746467,
+        "minimum_pressure_force_n": 1276.7094258589314
+      },
+      {
+        "profile": "rated_grid_070",
+        "group": "actuator",
+        "state": [
+          44.4,
+          -0.189,
+          0.0,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 9790.412979782559,
+        "minimum_pressure_force_n": 1340.1288618953515
+      },
+      {
+        "profile": "rated_grid_071",
+        "group": "actuator",
+        "state": [
+          44.3,
+          -0.189,
+          0.0,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9469.024873687886,
+        "minimum_pressure_force_n": 1296.136695503927
+      },
+      {
+        "profile": "rated_grid_072",
+        "group": "actuator",
+        "state": [
+          44.2,
+          -0.189,
+          0.0,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 9147.760896594264,
+        "minimum_pressure_force_n": 1252.161520107392
+      },
+      {
+        "profile": "rated_grid_073",
+        "group": "actuator",
+        "state": [
+          321.0,
+          -0.189,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 7493.218327872455,
+        "minimum_pressure_force_n": 1025.6848378512557
+      },
+      {
+        "profile": "rated_grid_074",
+        "group": "actuator",
+        "state": [
+          216.6,
+          -0.189,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7145.195514312945,
+        "minimum_pressure_force_n": 978.0468660913061
+      },
+      {
+        "profile": "rated_grid_075",
+        "group": "actuator",
+        "state": [
+          219.0,
+          -0.189,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 7493.218327872455,
+        "minimum_pressure_force_n": 1025.6848378512557
+      },
+      {
+        "profile": "rated_grid_076",
+        "group": "actuator",
+        "state": [
+          135.8,
+          -0.189,
+          0.0,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 9147.760896594264,
+        "minimum_pressure_force_n": 1252.161520107392
+      },
+      {
+        "profile": "rated_grid_077",
+        "group": "actuator",
+        "state": [
+          135.7,
+          -0.189,
+          0.0,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9469.024873687886,
+        "minimum_pressure_force_n": 1296.136695503927
+      },
+      {
+        "profile": "rated_grid_078",
+        "group": "actuator",
+        "state": [
+          135.6,
+          -0.189,
+          0.0,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 9790.412979782559,
+        "minimum_pressure_force_n": 1340.1288618953515
+      },
+      {
+        "profile": "rated_grid_079",
+        "group": "actuator",
+        "state": [
+          44.6,
+          -0.189,
+          0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9611.60093836952,
+        "minimum_pressure_force_n": 1315.6527567456624
+      },
+      {
+        "profile": "rated_grid_080",
+        "group": "actuator",
+        "state": [
+          322.5,
+          -0.189,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 7398.310719290748,
+        "minimum_pressure_force_n": 1012.6937183002766
+      },
+      {
+        "profile": "rated_grid_081",
+        "group": "actuator",
+        "state": [
+          214.9,
+          -0.189,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7055.664811050519,
+        "minimum_pressure_force_n": 965.7917467500146
+      },
+      {
+        "profile": "rated_grid_082",
+        "group": "actuator",
+        "state": [
+          217.5,
+          -0.189,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 7398.310719290748,
+        "minimum_pressure_force_n": 1012.6937183002766
+      },
+      {
+        "profile": "rated_grid_083",
+        "group": "actuator",
+        "state": [
+          135.4,
+          -0.189,
+          0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9611.60093836952,
+        "minimum_pressure_force_n": 1315.6527567456624
+      },
+      {
+        "profile": "rated_grid_084",
+        "group": "actuator",
+        "state": [
+          45.1,
+          -0.189,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9921.654841164127,
+        "minimum_pressure_force_n": 1358.093477554518
+      },
+      {
+        "profile": "rated_grid_085",
+        "group": "actuator",
+        "state": [
+          42.5,
+          -0.189,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7177.821779041551,
+        "minimum_pressure_force_n": 982.512806303321
+      },
+      {
+        "profile": "rated_grid_086",
+        "group": "actuator",
+        "state": [
+          134.9,
+          -0.189,
+          0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 9921.654841164127,
+        "minimum_pressure_force_n": 1358.093477554518
+      },
+      {
+        "profile": "rated_grid_087",
+        "group": "actuator",
+        "state": [
+          46.8,
+          0.0,
+          -0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 10357.404830865562,
+        "minimum_pressure_force_n": 1417.7396987073323
+      },
+      {
+        "profile": "rated_grid_088",
+        "group": "actuator",
+        "state": [
+          45.1,
+          0.0,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7713.348810793832,
+        "minimum_pressure_force_n": 1055.8166835818788
+      },
+      {
+        "profile": "rated_grid_089",
+        "group": "actuator",
+        "state": [
+          133.2,
+          0.0,
+          -0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 10357.404830865562,
+        "minimum_pressure_force_n": 1417.7396987073323
+      },
+      {
+        "profile": "rated_grid_090",
+        "group": "actuator",
+        "state": [
+          47.4,
+          0.0,
+          -0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 11106.066863285378,
+        "minimum_pressure_force_n": 1520.2178678635134
+      },
+      {
+        "profile": "rated_grid_091",
+        "group": "actuator",
+        "state": [
+          47.3,
+          0.0,
+          -0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 10730.490467394702,
+        "minimum_pressure_force_n": 1468.808313535305
+      },
+      {
+        "profile": "rated_grid_092",
+        "group": "actuator",
+        "state": [
+          47.2,
+          0.0,
+          -0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 10354.954475769773,
+        "minimum_pressure_force_n": 1417.4042898136995
+      },
+      {
+        "profile": "rated_grid_093",
+        "group": "actuator",
+        "state": [
+          45.9,
+          0.0,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 8276.554289041087,
+        "minimum_pressure_force_n": 1132.90923505395
+      },
+      {
+        "profile": "rated_grid_094",
+        "group": "actuator",
+        "state": [
+          45.8,
+          0.0,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 7990.218671620823,
+        "minimum_pressure_force_n": 1093.715114654134
+      },
+      {
+        "profile": "rated_grid_095",
+        "group": "actuator",
+        "state": [
+          134.1,
+          0.0,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 8276.554289041087,
+        "minimum_pressure_force_n": 1132.90923505395
+      },
+      {
+        "profile": "rated_grid_096",
+        "group": "actuator",
+        "state": [
+          132.8,
+          0.0,
+          -0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10354.954475769773,
+        "minimum_pressure_force_n": 1417.4042898136995
+      },
+      {
+        "profile": "rated_grid_097",
+        "group": "actuator",
+        "state": [
+          132.7,
+          0.0,
+          -0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 10730.490467394702,
+        "minimum_pressure_force_n": 1468.808313535305
+      },
+      {
+        "profile": "rated_grid_098",
+        "group": "actuator",
+        "state": [
+          132.6,
+          0.0,
+          -0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 11106.066863285378,
+        "minimum_pressure_force_n": 1520.2178678635134
+      },
+      {
+        "profile": "rated_grid_099",
+        "group": "actuator",
+        "state": [
+          47.5,
+          0.0,
+          0.0,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 10904.109731200151,
+        "minimum_pressure_force_n": 1492.5736221987065
+      },
+      {
+        "profile": "rated_grid_100",
+        "group": "actuator",
+        "state": [
+          46.2,
+          0.0,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 8406.125453766435,
+        "minimum_pressure_force_n": 1150.645162831094
+      },
+      {
+        "profile": "rated_grid_101",
+        "group": "actuator",
+        "state": [
+          133.8,
+          0.0,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 8406.125453766435,
+        "minimum_pressure_force_n": 1150.645162831094
+      },
+      {
+        "profile": "rated_grid_102",
+        "group": "actuator",
+        "state": [
+          132.5,
+          0.0,
+          0.0,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 10904.109731200151,
+        "minimum_pressure_force_n": 1492.5736221987065
+      },
+      {
+        "profile": "rated_grid_103",
+        "group": "actuator",
+        "state": [
+          47.8,
+          0.0,
+          0.22149999999999992,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 11454.184778267518,
+        "minimum_pressure_force_n": 1567.86885727262
+      },
+      {
+        "profile": "rated_grid_104",
+        "group": "actuator",
+        "state": [
+          47.7,
+          0.0,
+          0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11078.266809345223,
+        "minimum_pressure_force_n": 1516.4125478300907
+      },
+      {
+        "profile": "rated_grid_105",
+        "group": "actuator",
+        "state": [
+          47.6,
+          0.0,
+          0.22149999999999992,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 10702.35560007859,
+        "minimum_pressure_force_n": 1464.9571636610578
+      },
+      {
+        "profile": "rated_grid_106",
+        "group": "actuator",
+        "state": [
+          46.5,
+          0.0,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 8536.311914795078,
+        "minimum_pressure_force_n": 1168.4653134430014
+      },
+      {
+        "profile": "rated_grid_107",
+        "group": "actuator",
+        "state": [
+          46.4,
+          0.0,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 8249.467756832018,
+        "minimum_pressure_force_n": 1129.2015831237413
+      },
+      {
+        "profile": "rated_grid_108",
+        "group": "actuator",
+        "state": [
+          133.5,
+          0.0,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 8536.311914795078,
+        "minimum_pressure_force_n": 1168.4653134430014
+      },
+      {
+        "profile": "rated_grid_109",
+        "group": "actuator",
+        "state": [
+          132.4,
+          0.0,
+          0.22149999999999992,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10702.35560007859,
+        "minimum_pressure_force_n": 1464.9571636610578
+      },
+      {
+        "profile": "rated_grid_110",
+        "group": "actuator",
+        "state": [
+          132.3,
+          0.0,
+          0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11078.266809345223,
+        "minimum_pressure_force_n": 1516.4125478300907
+      },
+      {
+        "profile": "rated_grid_111",
+        "group": "actuator",
+        "state": [
+          132.2,
+          0.0,
+          0.22149999999999992,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 11454.184778267518,
+        "minimum_pressure_force_n": 1567.86885727262
+      },
+      {
+        "profile": "rated_grid_112",
+        "group": "actuator",
+        "state": [
+          48.1,
+          0.0,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11456.197493243963,
+        "minimum_pressure_force_n": 1568.144361220847
+      },
+      {
+        "profile": "rated_grid_113",
+        "group": "actuator",
+        "state": [
+          47.0,
+          0.0,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 8532.265547546558,
+        "minimum_pressure_force_n": 1167.9114396128814
+      },
+      {
+        "profile": "rated_grid_114",
+        "group": "actuator",
+        "state": [
+          131.9,
+          0.0,
+          0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11456.197493243963,
+        "minimum_pressure_force_n": 1568.144361220847
+      },
+      {
+        "profile": "rated_grid_115",
+        "group": "actuator",
+        "state": [
+          48.1,
+          0.189,
+          -0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11081.008688779548,
+        "minimum_pressure_force_n": 1516.7878610853502
+      },
+      {
+        "profile": "rated_grid_116",
+        "group": "actuator",
+        "state": [
+          49.3,
+          0.189,
+          -0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 9559.157013427466,
+        "minimum_pressure_force_n": 1308.4741405227253
+      },
+      {
+        "profile": "rated_grid_117",
+        "group": "actuator",
+        "state": [
+          131.9,
+          0.189,
+          -0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11081.008688779548,
+        "minimum_pressure_force_n": 1516.7878610853502
+      },
+      {
+        "profile": "rated_grid_118",
+        "group": "actuator",
+        "state": [
+          48.5,
+          0.189,
+          -0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11492.399905691855,
+        "minimum_pressure_force_n": 1573.0998107909363
+      },
+      {
+        "profile": "rated_grid_119",
+        "group": "actuator",
+        "state": [
+          49.9,
+          0.189,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10275.034777005203,
+        "minimum_pressure_force_n": 1406.4647415873321
+      },
+      {
+        "profile": "rated_grid_120",
+        "group": "actuator",
+        "state": [
+          49.8,
+          0.189,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 9921.533345477656,
+        "minimum_pressure_force_n": 1358.0768470123362
+      },
+      {
+        "profile": "rated_grid_121",
+        "group": "actuator",
+        "state": [
+          130.1,
+          0.189,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 10275.034777005203,
+        "minimum_pressure_force_n": 1406.4647415873321
+      },
+      {
+        "profile": "rated_grid_122",
+        "group": "actuator",
+        "state": [
+          131.5,
+          0.189,
+          -0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11492.399905691855,
+        "minimum_pressure_force_n": 1573.0998107909363
+      },
+      {
+        "profile": "rated_grid_123",
+        "group": "actuator",
+        "state": [
+          48.7,
+          0.189,
+          0.0,
+          -1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 12091.219659196213,
+        "minimum_pressure_force_n": 1655.0673065851815
+      },
+      {
+        "profile": "rated_grid_124",
+        "group": "actuator",
+        "state": [
+          48.7,
+          0.189,
+          0.0,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11683.68446698878,
+        "minimum_pressure_force_n": 1599.2831762892417
+      },
+      {
+        "profile": "rated_grid_125",
+        "group": "actuator",
+        "state": [
+          48.6,
+          0.189,
+          0.0,
+          -1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 11276.155933155678,
+        "minimum_pressure_force_n": 1543.4999574032324
+      },
+      {
+        "profile": "rated_grid_126",
+        "group": "actuator",
+        "state": [
+          50.1,
+          0.189,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10443.816854967736,
+        "minimum_pressure_force_n": 1429.5679277874801
+      },
+      {
+        "profile": "rated_grid_127",
+        "group": "actuator",
+        "state": [
+          50.1,
+          0.189,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 10090.192942880094,
+        "minimum_pressure_force_n": 1381.1632678590775
+      },
+      {
+        "profile": "rated_grid_128",
+        "group": "actuator",
+        "state": [
+          129.9,
+          0.189,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 10443.816854967736,
+        "minimum_pressure_force_n": 1429.5679277874801
+      },
+      {
+        "profile": "rated_grid_129",
+        "group": "actuator",
+        "state": [
+          131.4,
+          0.189,
+          0.0,
+          1.2,
+          -2.2
+        ],
+        "minimum_pressure_pa": 11276.155933155678,
+        "minimum_pressure_force_n": 1543.4999574032324
+      },
+      {
+        "profile": "rated_grid_130",
+        "group": "actuator",
+        "state": [
+          131.3,
+          0.189,
+          0.0,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11683.68446698878,
+        "minimum_pressure_force_n": 1599.2831762892417
+      },
+      {
+        "profile": "rated_grid_131",
+        "group": "actuator",
+        "state": [
+          131.3,
+          0.189,
+          0.0,
+          1.2,
+          2.2
+        ],
+        "minimum_pressure_pa": 12091.219659196213,
+        "minimum_pressure_force_n": 1655.0673065851815
+      },
+      {
+        "profile": "rated_grid_132",
+        "group": "actuator",
+        "state": [
+          48.8,
+          0.189,
+          0.22149999999999992,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11875.472436659038,
+        "minimum_pressure_force_n": 1625.5354492066535
+      },
+      {
+        "profile": "rated_grid_133",
+        "group": "actuator",
+        "state": [
+          50.3,
+          0.189,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10613.10580233112,
+        "minimum_pressure_force_n": 1452.740495158238
+      },
+      {
+        "profile": "rated_grid_134",
+        "group": "actuator",
+        "state": [
+          50.3,
+          0.189,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 10259.384485543706,
+        "minimum_pressure_force_n": 1404.3225023040723
+      },
+      {
+        "profile": "rated_grid_135",
+        "group": "actuator",
+        "state": [
+          129.7,
+          0.189,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 10613.10580233112,
+        "minimum_pressure_force_n": 1452.740495158238
+      },
+      {
+        "profile": "rated_grid_136",
+        "group": "actuator",
+        "state": [
+          131.2,
+          0.189,
+          0.22149999999999992,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 11875.472436659038,
+        "minimum_pressure_force_n": 1625.5354492066535
+      },
+      {
+        "profile": "rated_grid_137",
+        "group": "actuator",
+        "state": [
+          49.2,
+          0.189,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 12291.363914846443,
+        "minimum_pressure_force_n": 1682.4634025510325
+      },
+      {
+        "profile": "rated_grid_138",
+        "group": "actuator",
+        "state": [
+          50.7,
+          0.189,
+          0.7,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 10626.56806781888,
+        "minimum_pressure_force_n": 1454.5832336171673
+      },
+      {
+        "profile": "rated_grid_139",
+        "group": "actuator",
+        "state": [
+          130.8,
+          0.189,
+          0.7,
+          1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 12291.363914846443,
+        "minimum_pressure_force_n": 1682.4634025510325
+      },
+      {
+        "profile": "rated_grid_140",
+        "group": "actuator",
+        "state": [
+          49.9,
+          0.45,
+          -0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10275.063900626265,
+        "minimum_pressure_force_n": 1406.4687280795495
+      },
+      {
+        "profile": "rated_grid_141",
+        "group": "actuator",
+        "state": [
+          49.8,
+          0.45,
+          -0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 9921.561501687393,
+        "minimum_pressure_force_n": 1358.0807010835986
+      },
+      {
+        "profile": "rated_grid_142",
+        "group": "actuator",
+        "state": [
+          130.1,
+          0.45,
+          -0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 10275.063900626265,
+        "minimum_pressure_force_n": 1406.4687280795495
+      },
+      {
+        "profile": "rated_grid_143",
+        "group": "actuator",
+        "state": [
+          50.1,
+          0.45,
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10443.846532143652,
+        "minimum_pressure_force_n": 1429.5719900512547
+      },
+      {
+        "profile": "rated_grid_144",
+        "group": "actuator",
+        "state": [
+          50.1,
+          0.45,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 10090.221663122065,
+        "minimum_pressure_force_n": 1381.167199136059
+      },
+      {
+        "profile": "rated_grid_145",
+        "group": "actuator",
+        "state": [
+          129.9,
+          0.45,
+          0.0,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 10443.846532143652,
+        "minimum_pressure_force_n": 1429.5719900512547
+      },
+      {
+        "profile": "rated_grid_146",
+        "group": "actuator",
+        "state": [
+          50.3,
+          0.45,
+          0.22149999999999992,
+          0.0,
+          -2.2
+        ],
+        "minimum_pressure_pa": 10613.136033061892,
+        "minimum_pressure_force_n": 1452.7446331935698
+      },
+      {
+        "profile": "rated_grid_147",
+        "group": "actuator",
+        "state": [
+          50.3,
+          0.45,
+          0.22149999999999992,
+          0.0,
+          0.0
+        ],
+        "minimum_pressure_pa": 10259.413759340532,
+        "minimum_pressure_force_n": 1404.326509352611
+      },
+      {
+        "profile": "rated_grid_148",
+        "group": "actuator",
+        "state": [
+          129.7,
+          0.45,
+          0.22149999999999992,
+          0.0,
+          2.2
+        ],
+        "minimum_pressure_pa": 10613.136033061892,
+        "minimum_pressure_force_n": 1452.7446331935698
+      }
+    ],
+    "rounded_pressure_pa": 12300.0,
+    "rounded_pressure_force_n": 1683.6455250000004,
+    "minimum_normals_at_design_n": [
+      295.41389830720783,
+      295.41389830720794,
+      609.6029622925256
+    ],
+    "minimum_drive_margin_at_design": 1.500843266657849,
+    "maximum_motor_torque_at_design_nm": 7.586405695552981,
+    "maximum_wheel_speed_at_design_rps": 9.473684210526315,
+    "maximum_force_residual_n": 2.842170943040401e-14,
+    "maximum_moment_residual_nm": 8.526512829121202e-14,
+    "worst_state_normals_at_design_n": [
+      297.70414850647876,
+      337.28853949583436,
+      697.2447119976871
+    ],
+    "worst_state_drive_tangent_at_design_n": [
+      [
+        144.5627033670577,
+        65.44446507585799
+      ],
+      [
+        33.668066946955754,
+        74.14632330204799
+      ]
+    ],
+    "worst_state_skirt_normal_at_design_n": 351.4081250000001,
+    "worst_state_skirt_drag_at_design_n": [
+      -35.74347961880225,
+      -29.15438106264237,
+      0.0
+    ]
+  },
+  "elapsed_seconds": 98.30723614499948,
+  "gazebo_dynamic_validation": false,
+  "fan_curve_validated": false,
+  "nominal_actuator_limits_satisfied": true,
+  "sensitivity_actuator_limits_satisfied": true
+}

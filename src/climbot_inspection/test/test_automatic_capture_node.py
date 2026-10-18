@@ -211,15 +211,23 @@ class TestAutomaticCaptureNode(unittest.TestCase):
         return any(
             gate.segment_index == segment and not gate.active for gate in self.gates)
 
+    def _single_reference_heartbeat(self, segment):
+        """Acknowledge one reliable reference without leaving queued heartbeats."""
+        # setUp already waits for the reliable reader match. Publishing again
+        # while waiting for the first gate queues more enabled references;
+        # their legitimate old-segment gates can arrive after gates.clear().
+        # One reference produces one gate; observing it establishes the barrier
+        # needed by the strict no-further-gate assertions below.
+        self._reference(True, segment=segment)
+        return self._pump_until(lambda: self._heartbeat(segment), lambda: None)
+
     def test_camera_mount_mismatch_withholds_the_gate_heartbeat(self):
         """A SCAN this node cannot serve must not receive a healthy heartbeat."""
         self._odom(10, 0.125)
         # Establish that gates do flow for a well-formed SCAN, so the absence
         # asserted below is evidence about the mismatch and not about
         # discovery having failed to complete.
-        self.assertTrue(self._pump_until(
-            lambda: self._heartbeat(11),
-            lambda: self._reference(True, segment=11)))
+        self.assertTrue(self._single_reference_heartbeat(11))
 
         # The mismatch is a configuration fault that cannot resolve mid-task,
         # so the heartbeat is withheld and the tracker's supervision stops the
@@ -241,9 +249,7 @@ class TestAutomaticCaptureNode(unittest.TestCase):
     def test_noninspection_reference_does_not_heartbeat_the_next_scan(self):
         """An entry/transition reference is not a capture gate heartbeat."""
         self._odom(10, 0.125)
-        self.assertTrue(self._pump_until(
-            lambda: self._heartbeat(13),
-            lambda: self._reference(True, segment=13)))
+        self.assertTrue(self._single_reference_heartbeat(13))
 
         # A transition/alignment reference for the NEXT segment must not
         # publish a heartbeat for it. Otherwise an immediately following

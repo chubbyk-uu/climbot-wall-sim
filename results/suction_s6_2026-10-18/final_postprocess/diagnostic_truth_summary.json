@@ -1,0 +1,551 @@
+{
+  "anchor_rule": "repair_patch and graffiti_decal features fully inside both grids; each comparison crop adds 0.100 m padding",
+  "candidate_anchor_count": 9,
+  "common_accepted_anchor_ids": [
+    "graffiti_decal_01",
+    "graffiti_decal_02",
+    "graffiti_decal_03",
+    "repair_patch_01",
+    "repair_patch_02",
+    "repair_patch_03",
+    "repair_patch_04",
+    "repair_patch_05",
+    "repair_patch_06"
+  ],
+  "diagnostic_truth_format_version": 3,
+  "diagnostic_wall_manifest": "/home/jerry/robot_ws/climbot_sim/textures/wall_diagnostic_025/wall_texture.json",
+  "diagnostic_wall_manifest_sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c",
+  "minimum_phase_response": 0.1,
+  "mosaic_dir": "/home/jerry/climbot_data/mosaic-suction-s6-final-joint-20261018-cuda",
+  "mosaic_manifest_sha256": "1495c5401254256a3a3eb278951043904d576d6fa648f0ec9ddb9904a35d4a92",
+  "optimized_minus_pose_only_p95_anchor_offset_m": -0.021555628637837745,
+  "optimized_not_worse_p95_anchor_offset": true,
+  "purpose": "Post-mosaic visual truth evaluation only; diagnostic wall truth is never available to candidate generation, matching, or pose optimization.",
+  "resource_usage": {
+    "mosaic_decode": "tiled; no full-wall truth or mosaic raster is retained",
+    "peak_process_pss_bytes": 1340599296,
+    "pss_sample_interval_s": 0.25,
+    "reference_tile_cache_blocks": 8
+  },
+  "seam_quality_rule": "hard-cut source-owner adjacencies are compared with the immutable wall at the same metric-grid pixels; covered same-owner adjacencies in the same raster are the baseline. No structural-edge displacement proxy is reported.",
+  "variants": {
+    "optimized": {
+      "absolute_anchor_offset_m": {
+        "maximum": 0.0011467035354561668,
+        "median": 0.0009861625392095304,
+        "p95": 0.0011467035354561668
+      },
+      "accepted_anchor_count": 9,
+      "anchors": [
+        {
+          "expected_center_m": [
+            2.0,
+            3.52
+          ],
+          "id": "repair_patch_01",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            1.9994844188417034,
+            3.519084035375895
+          ],
+          "offset_m": [
+            -0.0005155811582966408,
+            -0.0009159646241050368
+          ],
+          "offset_norm_m": 0.0010511018615730766,
+          "phase_response": 1.0288413138160653,
+          "similarity_inlier": true,
+          "similarity_residual_m": 3.797009156349125e-05
+        },
+        {
+          "expected_center_m": [
+            4.4,
+            1.84
+          ],
+          "id": "repair_patch_02",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            4.39988083607407,
+            1.839069248536133
+          ],
+          "offset_m": [
+            -0.00011916392593036562,
+            -0.0009307514638670078
+          ],
+          "offset_norm_m": 0.0009383487244802518,
+          "phase_response": 0.7966823011308835,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.0003252608141250174
+        },
+        {
+          "expected_center_m": [
+            6.4,
+            4.96
+          ],
+          "id": "repair_patch_03",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            6.399640462499092,
+            4.959349921863738
+          ],
+          "offset_m": [
+            -0.00035953750090822467,
+            -0.0006500781362621666
+          ],
+          "offset_norm_m": 0.0007428787234841389,
+          "phase_response": 1.0028843955993652,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.000192713508212205
+        },
+        {
+          "expected_center_m": [
+            8.8,
+            2.16
+          ],
+          "id": "repair_patch_04",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            8.799455363958183,
+            2.1589908911950735
+          ],
+          "offset_m": [
+            -0.0005446360418179808,
+            -0.0010091088049266617
+          ],
+          "offset_norm_m": 0.0011467035354561668,
+          "phase_response": 0.987572617127301,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.00023388276958076588
+        },
+        {
+          "expected_center_m": [
+            1.6,
+            5.6
+          ],
+          "id": "repair_patch_05",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            1.5994134777788307,
+            5.599113997923108
+          ],
+          "offset_m": [
+            -0.0005865222211693943,
+            -0.0008860020768919341
+          ],
+          "offset_norm_m": 0.0010625478794775794,
+          "phase_response": 1.020598841035317,
+          "similarity_inlier": true,
+          "similarity_residual_m": 7.387725355316647e-05
+        },
+        {
+          "expected_center_m": [
+            7.800000000000001,
+            6.72
+          ],
+          "id": "repair_patch_06",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            7.799581677233117,
+            6.719179865383891
+          ],
+          "offset_m": [
+            -0.0004183227668841383,
+            -0.0008201346161085254
+          ],
+          "offset_norm_m": 0.000920659940386829,
+          "phase_response": 1.0251099444730782,
+          "similarity_inlier": true,
+          "similarity_residual_m": 4.025738297004573e-05
+        },
+        {
+          "expected_center_m": [
+            0.8999999999999999,
+            4.64
+          ],
+          "id": "graffiti_decal_01",
+          "kind": "graffiti_decal",
+          "observed_center_m": [
+            0.8993779607028619,
+            4.639173213198935
+          ],
+          "offset_m": [
+            -0.0006220392971379995,
+            -0.0008267868010642943
+          ],
+          "offset_norm_m": 0.0010346541942108317,
+          "phase_response": 1.017413598754883,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.00011697983248440374
+        },
+        {
+          "expected_center_m": [
+            3.7,
+            6.96
+          ],
+          "id": "graffiti_decal_02",
+          "kind": "graffiti_decal",
+          "observed_center_m": [
+            3.699531367715825,
+            6.959132301702221
+          ],
+          "offset_m": [
+            -0.0004686322841753743,
+            -0.000867698297779107
+          ],
+          "offset_norm_m": 0.0009861625392095304,
+          "phase_response": 1.0199292841206198,
+          "similarity_inlier": true,
+          "similarity_residual_m": 5.632260954610833e-05
+        },
+        {
+          "expected_center_m": [
+            7.199999999999999,
+            2.48
+          ],
+          "id": "graffiti_decal_03",
+          "kind": "graffiti_decal",
+          "observed_center_m": [
+            7.19949508682217,
+            2.4792674180371836
+          ],
+          "offset_m": [
+            -0.0005049131778296356,
+            -0.0007325819628163366
+          ],
+          "offset_norm_m": 0.0008897267273662501,
+          "phase_response": 1.0050369644886814,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.00015414571105817296
+        }
+      ],
+      "candidate_anchor_count": 9,
+      "phase_response": {
+        "accepted_median": 1.017413598754883,
+        "accepted_minimum": 0.7966823011308835,
+        "candidate_median": 1.017413598754883,
+        "candidate_minimum": 0.7966823011308835
+      },
+      "rejected_anchor_ids": [],
+      "seam_quality": {
+        "axis_counts": {
+          "downward": 2278377,
+          "rightward": 2276020
+        },
+        "gradient_excess_gray_per_pixel": {
+          "definition": "adjacent-pixel grayscale discontinuity beyond immutable truth at hard-cut source transitions; the baseline uses every covered same-owner adjacency in the same raster and directions",
+          "off_hard_cut_baseline": {
+            "excess_over_truth": {
+              "count": 2112719984,
+              "maximum": 63.0,
+              "mean": 0.36055870714952254,
+              "median": 0.0,
+              "p95": 2.0,
+              "p99": 3.0
+            }
+          },
+          "on_hard_cut": {
+            "excess_over_truth": {
+              "count": 4554397,
+              "maximum": 73.0,
+              "mean": 1.3591002277579227,
+              "median": 0.0,
+              "p95": 6.0,
+              "p99": 9.0
+            },
+            "immutable_truth": {
+              "count": 4554397,
+              "maximum": 68.0,
+              "mean": 3.7305518161899367,
+              "median": 3.0,
+              "p95": 11.0,
+              "p99": 17.0
+            },
+            "observed": {
+              "count": 4554397,
+              "maximum": 73.0,
+              "mean": 2.9861472331024284,
+              "median": 2.0,
+              "p95": 7.0,
+              "p99": 10.0
+            }
+          },
+          "on_to_off_excess_p95_ratio": 3.0
+        },
+        "seam_adjacency_count": 4554397
+      },
+      "similarity": {
+        "inlier_count": 9,
+        "local_residual_maximum": 0.0003252608141250174,
+        "local_residual_median": 0.00011697983248440374,
+        "local_residual_observable": true,
+        "local_residual_p95": 0.0003252608141250174,
+        "scale": 1.000014331872258,
+        "scale_error_ppm": 14.331872258077638,
+        "translation_m": [
+          -0.0004872160864053233,
+          -0.000955690817090015
+        ],
+        "yaw_error_deg": 0.0005420118005192827
+      }
+    },
+    "pose_only": {
+      "absolute_anchor_offset_m": {
+        "maximum": 0.022702332173293913,
+        "median": 0.018969453671698583,
+        "p95": 0.022702332173293913
+      },
+      "accepted_anchor_count": 9,
+      "anchors": [
+        {
+          "expected_center_m": [
+            2.0,
+            3.52
+          ],
+          "id": "repair_patch_01",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            1.9854992879350994,
+            3.5299306607424494
+          ],
+          "offset_m": [
+            -0.014500712064900556,
+            0.009930660742449415
+          ],
+          "offset_norm_m": 0.017575228964960273,
+          "phase_response": 0.2689098227753397,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.014621761444781665
+        },
+        {
+          "expected_center_m": [
+            4.4,
+            1.84
+          ],
+          "id": "repair_patch_02",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            4.390135584618253,
+            1.825351333512997
+          ],
+          "offset_m": [
+            -0.009864415381747094,
+            -0.014648666487003137
+          ],
+          "offset_norm_m": 0.01766041111274303,
+          "phase_response": 0.20454816754376448,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.02555322452647997
+        },
+        {
+          "expected_center_m": [
+            6.4,
+            4.96
+          ],
+          "id": "repair_patch_03",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            6.410006424664193,
+            4.975527128226407
+          ],
+          "offset_m": [
+            0.010006424664192437,
+            0.015527128226406894
+          ],
+          "offset_norm_m": 0.01847214783178828,
+          "phase_response": 0.24586036160786948,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.016743535206878664
+        },
+        {
+          "expected_center_m": [
+            8.8,
+            2.16
+          ],
+          "id": "repair_patch_04",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            8.784501691539965,
+            2.1709381263240246
+          ],
+          "offset_m": [
+            -0.015498308460035304,
+            0.010938126324024466
+          ],
+          "offset_norm_m": 0.018969453671698583,
+          "phase_response": 0.2409024404817662,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.009381252194416026
+        },
+        {
+          "expected_center_m": [
+            1.6,
+            5.6
+          ],
+          "id": "repair_patch_05",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            1.6090969416752006,
+            5.617006351680822
+          ],
+          "offset_m": [
+            0.009096941675200476,
+            0.01700635168082254
+          ],
+          "offset_norm_m": 0.019286532745255557,
+          "phase_response": 0.48422881207250273,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.01473728574102424
+        },
+        {
+          "expected_center_m": [
+            7.800000000000001,
+            6.72
+          ],
+          "id": "repair_patch_06",
+          "kind": "repair_patch",
+          "observed_center_m": [
+            7.785876157270908,
+            6.732636524528965
+          ],
+          "offset_m": [
+            -0.014123842729092395,
+            0.012636524528965687
+          ],
+          "offset_norm_m": 0.01895164071016775,
+          "phase_response": 0.2903655865751667,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.010462601928749532
+        },
+        {
+          "expected_center_m": [
+            0.8999999999999999,
+            4.64
+          ],
+          "id": "graffiti_decal_01",
+          "kind": "graffiti_decal",
+          "observed_center_m": [
+            0.9089248133214366,
+            4.657095522899639
+          ],
+          "offset_m": [
+            0.008924813321436686,
+            0.017095522899639448
+          ],
+          "offset_norm_m": 0.019284947395173016,
+          "phase_response": 0.14361375172424318,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.013582214231220066
+        },
+        {
+          "expected_center_m": [
+            3.7,
+            6.96
+          ],
+          "id": "graffiti_decal_02",
+          "kind": "graffiti_decal",
+          "observed_center_m": [
+            3.69056269965134,
+            6.939352161172758
+          ],
+          "offset_m": [
+            -0.009437300348660305,
+            -0.02064783882724175
+          ],
+          "offset_norm_m": 0.022702332173293913,
+          "phase_response": 0.10026211657805371,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.026314836174238677
+        },
+        {
+          "expected_center_m": [
+            7.199999999999999,
+            2.48
+          ],
+          "id": "graffiti_decal_03",
+          "kind": "graffiti_decal",
+          "observed_center_m": [
+            7.209996784660007,
+            2.4988227026947163
+          ],
+          "offset_m": [
+            0.009996784660007307,
+            0.01882270269471631
+          ],
+          "offset_norm_m": 0.02131266853944475,
+          "phase_response": 0.11261366737744538,
+          "similarity_inlier": true,
+          "similarity_residual_m": 0.01733137052457592
+        }
+      ],
+      "candidate_anchor_count": 9,
+      "phase_response": {
+        "accepted_median": 0.2409024404817662,
+        "accepted_minimum": 0.10026211657805371,
+        "candidate_median": 0.2409024404817662,
+        "candidate_minimum": 0.10026211657805371
+      },
+      "rejected_anchor_ids": [],
+      "seam_quality": {
+        "axis_counts": {
+          "downward": 2206106,
+          "rightward": 2216143
+        },
+        "gradient_excess_gray_per_pixel": {
+          "definition": "adjacent-pixel grayscale discontinuity beyond immutable truth at hard-cut source transitions; the baseline uses every covered same-owner adjacency in the same raster and directions",
+          "off_hard_cut_baseline": {
+            "excess_over_truth": {
+              "count": 2124452703,
+              "maximum": 63.0,
+              "mean": 0.363564962359155,
+              "median": 0.0,
+              "p95": 2.0,
+              "p99": 3.0
+            }
+          },
+          "on_hard_cut": {
+            "excess_over_truth": {
+              "count": 4422249,
+              "maximum": 73.0,
+              "mean": 4.309857043327954,
+              "median": 2.0,
+              "p95": 15.0,
+              "p99": 24.0
+            },
+            "immutable_truth": {
+              "count": 4422249,
+              "maximum": 59.0,
+              "mean": 3.742261234046296,
+              "median": 3.0,
+              "p95": 11.0,
+              "p99": 17.0
+            },
+            "observed": {
+              "count": 4422249,
+              "maximum": 77.0,
+              "mean": 6.815395062557536,
+              "median": 5.0,
+              "p95": 18.0,
+              "p99": 28.0
+            }
+          },
+          "on_to_off_excess_p95_ratio": 7.5
+        },
+        "seam_adjacency_count": 4422249
+      },
+      "similarity": {
+        "inlier_count": 9,
+        "local_residual_maximum": 0.026314836174238677,
+        "local_residual_median": 0.01473728574102424,
+        "local_residual_observable": true,
+        "local_residual_p95": 0.026314836174238677,
+        "scale": 0.9990647424959557,
+        "scale_error_ppm": -935.2575040443289,
+        "translation_m": [
+          0.0025577167283253803,
+          0.010421041484588195
+        ],
+        "yaw_error_deg": 0.012374149681034206
+      }
+    }
+  }
+}

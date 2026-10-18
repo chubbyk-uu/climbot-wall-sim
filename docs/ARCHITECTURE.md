@@ -84,7 +84,8 @@
 - `config/robot.yaml`：机器人几何、质量、轮系、驱动限幅、规划轮廓，以及 G1 相机本体
   与支架的物理质量／质心／惯量；
 - `config/wall.yaml`：墙面工作坐标系、可作业表面尺寸及参考网格线间距；
-- `urdf/climbot.urdf.xacro`：`robot_state_publisher` 使用的机器人描述；
+- `config/vacuum_chassis.yaml` 与 `robot_geometry.load_robot()`：同源新底盘几何、质量／惯量与规划轮廓；
+- `urdf/sensor_frames.urdf.xacro`：共享 IMU 帧；完整 URDF 由同一底盘生成器输出给 robot_state_publisher；
 - `include/climbot_description/` 与 `src/`：墙面坐标变换和通用几何函数的**唯一实现**（C++）；
 - `climbot_description/`：上述实现的 pybind11 绑定与薄封装。Python 侧 API 与下游调用点
   保持不变，但两种语言共用同一份实现——热路径上的 C++ 节点需要这个变换，而一份约定分裂成
@@ -97,9 +98,12 @@ Gazebo 真值接口。
 
 仿真环境、定位链路和实验工具：
 
-- `config/simulation.yaml`：Gazebo 专有的接触、摩擦、滑移、吸附和传感器参数；
+- `config/simulation.yaml`：Gazebo 专有的接触、摩擦、滑移、灯光、IMU 安装和传感器参数；
 - `config/ekf_wall.yaml`：当前阶段的 `robot_localization` 配置；
-- `worlds/`、`models/`：Gazebo 世界与 SDF 模型；
+- `worlds/` 与 `models/climbot/components.sdf.xacro`：墙面及共享传感器／灯光／驱动组件；
+- `vacuum_assets.py`：生成新底盘 SDF／URDF，接入唯一 VacuumSystem 施力路径；
+- `launch_entry.py`／`simulation_stack.py`：默认压力模型和共享 ROS／Mesa 编排；
+- `vacuum_{physics,runtime,io}.yaml`：风机／裙边／漏气、启动支撑和压力观测／故障输入；
 - `launch/climbot_wall.launch.py`：墙面仿真、桥接、TF、传感器适配和 EKF；
 - `scripts/`：全站仪模拟、协方差适配、标定和评估工具；
 - `climbot_gazebo/provenance.py`：所有评估工具共用的溯源采集——git 状态，以及**向
@@ -225,10 +229,12 @@ C++ 轨迹控制和速度安全：
 
 | 配置 | 所有者 | 消费者 | 说明 |
 | --- | --- | --- | --- |
-| `robot.yaml` | description | Gazebo、coverage、未来 control | 真实物理属性、相机／支架惯性和保守规划轮廓 |
+| `robot.yaml` | description | Gazebo、coverage、control | 共享标量默认及载荷／驱动属性；详细底盘由 load_robot 同源派生 |
+| `vacuum_chassis.yaml` | description | 底盘生成器、load_robot | 新底盘几何、材料、提手、风机外形、密封圈与球座 |
 | `inspection_camera.yaml` | description | Gazebo、inspection、未来实机 | 分辨率、内参、畸变、有效 ROI 和标称相机外参 |
 | `wall.yaml` | description | Gazebo、coverage、定位、未来实机 | `world → wall` 基准、作业面尺寸和参考网格线间距 |
-| `simulation.yaml` | gazebo | 仅 Gazebo | 吸附、摩擦、WheelSlip、出生位姿、仿真噪声 |
+| `simulation.yaml` | gazebo | 仅 Gazebo | 摩擦、WheelSlip、出生位姿、灯光、IMU 安装与仿真噪声；无旧恒力参数 |
+| `vacuum_{physics,runtime,io}.yaml` | gazebo | 仅 Gazebo | 分别对应风机与裙边物理、启动／压力源选项、传感器与故障合同 |
 | `ekf_wall.yaml` | gazebo | `robot_localization` | 定位链路配置，随喂给它的仿真传感器留在 gazebo；不属于编排，未随 bringup 外移 |
 | `coverage_*.yaml` | coverage | 覆盖规划器 | 区域输入和扫描参数 |
 | `control.yaml` | control | 直线跟踪器、速度看门狗 | 作业速度、控制增益、软件限幅和超时；不复制机器人硬件属性 |

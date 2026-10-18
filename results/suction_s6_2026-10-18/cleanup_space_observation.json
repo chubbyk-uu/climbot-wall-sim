@@ -1,0 +1,8 @@
+{
+  "before_time_ns": 1792321687515696956,
+  "before_available_bytes": 657431478272,
+  "scope": "Linux filesystem available-byte observation; not a claim that logical duplicate bytes equal physical space freed or that the WSL virtual disk shrinks.",
+  "after_time_ns": 1792321761774202413,
+  "after_available_bytes": 658465193984,
+  "observed_available_bytes_delta": 1033715712
+}

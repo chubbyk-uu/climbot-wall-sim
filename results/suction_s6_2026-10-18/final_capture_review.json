@@ -1,0 +1,47 @@
+{
+  "passed": true,
+  "scope": "Actual 8 startup and 8 in-task GUI/RViz PNGs opened and reviewed; 2 candidate raw PNG samples opened at original 1920x1080 resolution. Not a per-pixel review of all 2680 raw images. Automated full input audit is separate.",
+  "cases": {
+    "legacy_horizontal": {
+      "startup_review": "final_capture/legacy/startup_visual_review.json",
+      "live_review": "final_capture/legacy/live_horizontal/visual_review.json",
+      "live_witness_sha256": "f6400ffd948a2f4f2a8cd1f5c4707bf685da3220cc73bed758d680aef1d489ac"
+    },
+    "legacy_vertical": {
+      "startup_review": "final_capture/legacy/startup_visual_review.json",
+      "live_review": "final_capture/legacy/live_vertical/visual_review.json",
+      "live_witness_sha256": "b48bc8700b7a3d051963f1819427bc53166ab39d27cb4ff08ef700d7a45854eb"
+    },
+    "vacuum_chassis_horizontal": {
+      "startup_review": "final_capture/vacuum_chassis/startup_visual_review.json",
+      "live_review": "final_capture/vacuum_chassis/live_horizontal/visual_review.json",
+      "live_witness_sha256": "c7576f738252ce55654545109c654d9c799d7ed503dab00b08ce30f4ef9e3f55"
+    },
+    "vacuum_chassis_vertical": {
+      "startup_review": "final_capture/vacuum_chassis/startup_visual_review.json",
+      "live_review": "final_capture/vacuum_chassis/live_vertical/visual_review.json",
+      "live_witness_sha256": "98f6f02406f567a4f1ae512f71686d246a5d54b83c4429b3cc6aa8b88ad527e9"
+    }
+  },
+  "raw_samples": [
+    {
+      "data_relative_image": "suction_s6_candidate_dual_gui_20261018_final/vacuum-diagnostic-full-horizontal-025mm-20261018/r000001_20261018T100950Z_73c1949ae71f4b8fb606c5c4c80a395a/images/raw/000330.png",
+      "sha256": "e62339e8455f113b47588072e4111392c4d69956369bad980ae4742e72dc3994",
+      "reviewed_at_original_resolution": true,
+      "observations": "Photographic monochrome wall texture resolves speckles/cracks, illumination falloff visible; no robot/bracket occlusion or blank image. Horizontal sample also shows a curved dark seam."
+    },
+    {
+      "data_relative_image": "suction_s6_candidate_dual_gui_20261018_final/vacuum-diagnostic-full-vertical-025mm-20261018/r000001_20261018T102817Z_e8f1b005c22e429fb99813bee9e4184e/images/raw/000330.png",
+      "sha256": "1172bc78849c3e5df49435286751a51ea33ddfa1466f20bc16cb0df7bf1ec69e",
+      "reviewed_at_original_resolution": true,
+      "observations": "Photographic monochrome wall texture resolves speckles/cracks, illumination falloff visible; no robot/bracket occlusion or blank image. Horizontal sample also shows a curved dark seam."
+    }
+  ],
+  "all_photo_plans_equal": true,
+  "numeric_audit_sha256": "ee356f4f9bc2a69b92e2e7dbdb88de76a3e68a1023d496b1aeff8d19e08f7bce",
+  "input_audit_sha256": "565ff2275ffa36bcebbe3b39d16a79fd877b8d76f89e4b16a78eb54bdce913bd",
+  "remaining_capture_partition_pids": [],
+  "performance_note": "Candidate vertical live screenshot retains instantaneous RTF 82.4%; this is not hidden or used as whole-task acceptance. Its final native task mean is 0.9869741222 and minimum native 10-source-second window 0.9757351837; frozen gate is whole-task mean >=0.95.",
+  "S7_started": false,
+  "M2_started": false
+}

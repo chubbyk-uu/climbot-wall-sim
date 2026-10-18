@@ -1,0 +1,165 @@
+{
+  "additional_pre_fix_runs": [
+    {
+      "errors": 0,
+      "failures": 2,
+      "log_basename_under_tmp": "climbot_suction_s0_suite_verified_20261017.log",
+      "log_sha256": "77948531f7b420d3ccbfbd0b43b7f32ec8a1b18f065b60c78ccb7896b26756a8",
+      "skipped": 67,
+      "tests": 1434
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_20261017_1.log",
+      "log_sha256": "bb4df97e63626034be4937af6ec1ebbc73b4cdbce94a595a6a1f372fc7820598",
+      "skipped": 67,
+      "tests": 1436
+    },
+    {
+      "errors": 0,
+      "failures": 2,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_20261017_2.log",
+      "log_sha256": "76d2d034654467a0b7658f7776fe02c4174b5a25320e2aeac322c89854c2a7c3",
+      "skipped": 67,
+      "tests": 1436
+    }
+  ],
+  "changed_src_files": [
+    "src/climbot_control/test/test_coverage_executor.py",
+    "src/climbot_control/test/test_coverage_manager_forced_recovery.py",
+    "src/climbot_gazebo/CMakeLists.txt"
+  ],
+  "closed_fixture_issues": [
+    {
+      "commit": "c09e6be",
+      "id": "clock_epoch",
+      "test": "test_clock_epoch_survives_recreating_the_test_client"
+    },
+    {
+      "commit": "c09e6be",
+      "id": "failure_goal_cleanup",
+      "test": "test_cruise_assertion_failure_still_retires_the_goal"
+    },
+    {
+      "commit": "3429e17",
+      "id": "manager_action_discovery",
+      "test": "test_operator_can_recover_without_calling_an_unknown_goal_finished"
+    }
+  ],
+  "consecutive_passes": 8,
+  "contract_sha256": "7ac43f9db72d6e6f04766ea4c96ede397cff4f53865f149668d738cc8c43090d",
+  "control_binary_sha256": {
+    "cmd_vel_watchdog_node": "9e0107e2d1531547a4ab83b844a72da47e9317cbde60e4b12ed5ae3dca4672a6",
+    "coverage_manager_node": "225c5685c8cffb422f7f32b1c6026bc37fa96a9a62e017996cece6e4d7d7d6b8",
+    "line_tracker_node": "b5457296a5ae2a6e04757d07399ab49e864ee655bfd408d28add22b0f17eca72"
+  },
+  "full_suite_arguments": [
+    "--executor",
+    "parallel",
+    "--parallel-workers",
+    "8"
+  ],
+  "full_suite_runs": [
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_ready_20261017_1.log",
+      "log_sha256": "12172bfce1aff08ca73136c8c11a30a691f21f8dddb31dd818ba6f63aa198bf2",
+      "skipped": 67,
+      "tests": 1436
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_ready_20261017_2.log",
+      "log_sha256": "a441bdfb654f74c0bb0a5a185d1d05b7a80a14edf2f33ee54b9edefef9368a9a",
+      "skipped": 67,
+      "tests": 1436
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_ready_20261017_3.log",
+      "log_sha256": "eb4b3109401db2c7a9439456d991fd752de03ba20aac40f26b89843425f9717c",
+      "skipped": 67,
+      "tests": 1436
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_ready_20261017_4.log",
+      "log_sha256": "8c4a3590291a14a2f752fba8017c99804d55c02d2e482b11415556c393c9ec6c",
+      "skipped": 67,
+      "tests": 1436
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_ready_20261017_5.log",
+      "log_sha256": "16e84e31d844e9394f76c5eb86a1e5c08b95d0b8e128a968b76d1eb2ca7aae6d",
+      "skipped": 67,
+      "tests": 1436
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_ready_20261017_6.log",
+      "log_sha256": "d4477118bfc80e3f8e77a1362f8d9a5695699e127faad9f683d6a0e8bd67161e",
+      "skipped": 67,
+      "tests": 1436
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_ready_20261017_7.log",
+      "log_sha256": "c9606ff92266e7e932d885f7f921f9c57b499b3160f922cf296daf8d2804209a",
+      "skipped": 67,
+      "tests": 1436
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_basename_under_tmp": "climbot_suction_s0_stress_ready_20261017_8.log",
+      "log_sha256": "9f0abc4d8e2e6c09c52addf93be4630805bde7436d7fb08e7269e61c4ef734d7",
+      "skipped": 67,
+      "tests": 1436
+    }
+  ],
+  "kind": "s0_quality_verification_not_new_vacuum_acceptance",
+  "negative_controls": [
+    {
+      "expected_failure_marker": "0.0 != 0.02",
+      "expected_nonzero_exit": true,
+      "kind": "clock",
+      "log_sha256": "7ffce77c96cf616edf7f9fc187a082503765de3eda0f0a8b852763988c946294",
+      "mutant_source_sha256": "1b01a6225a81428f823839cb2840073b0ef0f80e41039b339552de5de19c500d",
+      "observed_exit": 1,
+      "recipe": "Keep only clock regression; set setUp self.sim_time=0.0.",
+      "source_commit": "c09e6be"
+    },
+    {
+      "expected_failure_marker": "has no attribute '_cruise_cleanup_result'",
+      "expected_nonzero_exit": true,
+      "kind": "cleanup",
+      "log_sha256": "19c18ffcfa25642463cebe32f7b2f16e984899128d0f1f5675ba6cba3a692bde",
+      "mutant_source_sha256": "4892dc054f1f0623db441c3fffded1f90b63284728e48a5049ec9a33df7dbe6f",
+      "observed_exit": 1,
+      "recipe": "Keep cleanup regression and cruise exercise; execute try body and finalbody sequentially instead of try/finally.",
+      "source_commit": "c09e6be"
+    }
+  ],
+  "open_observations": [
+    {
+      "id": "initial_cruise_overspeed",
+      "limit_mps": 0.205,
+      "status": "direct cause not independently established; not closed by passing reruns",
+      "value_mps": 0.21046448658564493
+    }
+  ],
+  "project_scope_sha256": "6a8308d8ecc524e697fb3459d5d74a2975f1b42c524c7527f3bc4579a9e85d81",
+  "runtime_physics_and_controller_sources_unchanged_from": "c2acf17",
+  "schema_version": 1,
+  "source_status": [],
+  "verification_source_commit": "3429e171b0dcfc998c9dfaabeaca2b7bdd7ba75b"
+}

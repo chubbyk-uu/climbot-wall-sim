@@ -1,6 +1,10 @@
 # climbot_gazebo
 
-垂直墙面 Gazebo 仿真、ROS/Gazebo 桥接、定位链路和实验评估工具。
+垂直墙面 Gazebo 仿真、三风机单腔负压物理、ROS/Gazebo 桥接、定位链路和实验评估工具。
+默认新底盘＋vacuum＋平墙＋刚性轮，三机固定档位抽气，压力就绪后自动撤支撑。
+
+`adhesion_mode:=fixed_pressure` 保留同插件 B 诊断；旧几何及恒力入口已删除，历史对照从冻结 Git 版本复现。
+风扇 GUI 动画跟随实际归一化转速，显示转速为便于观察的慢速代理。
 
 ## 启动
 
@@ -35,9 +39,12 @@ ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
 
 ## 内容
 
-- `config/simulation.yaml`：吸附、摩擦、WheelSlip、出生位姿和仿真传感器；
+- `config/simulation.yaml`：摩擦、WheelSlip、灯光、IMU 安装、出生位姿和仿真传感器；
+- `config/vacuum_{physics,runtime,io}.yaml`：负压／裙边物理、启动支撑、压力测量和故障输入；
 - `config/ekf_wall.yaml`：当前 `robot_localization` 配置；
-- `models/`、`worlds/`：运行时由共享 YAML 渲染的 SDF/Xacro；
+- `models/climbot/components.sdf.xacro`、`worlds/`：共享传感器／灯光／驱动组件和墙面；
+- `climbot_gazebo/vacuum_assets.py`：同源生成完整新底盘 SDF／URDF，唯一压力施力路径；
+- `climbot_gazebo/launch_entry.py`、`simulation_stack.py`：公共压力入口与共享启动编排；
 - `launch/climbot_wall.launch.py`：Gazebo、桥接、TF、适配器和 EKF；
 - `src/total_station_sim_node.cpp`：12 Hz 带噪声和延迟的绝对位置；
 - `wall_wheel_odom_adapter_node` / `wall_imu_adapter_node`：轮式里程计和 IMU 协方差适配（C++）；

@@ -1,0 +1,21 @@
+{
+  "records": [
+    {
+      "removed_untracked_working_log": "localization_gap_investigation/gdb_discovery/default_stacks.log",
+      "bytes": 49608,
+      "sha256": "fa42a2f7e5ae02d1710c1034e6a6f6113b8e2de726f10c18f5c69998c53b0f45",
+      "retained_case_relative_file": "localization_gap_investigation/gdb_discovery/default_stacks.txt",
+      "method": "byte-identical formal text retained"
+    },
+    {
+      "removed_untracked_working_log": "localization_gap_investigation/pre_restart_records/climbot_s6_gap_minimal_driver_20261018.log",
+      "bytes": 728,
+      "sha256": "9cba9924480f1ea848dc40cbe90ec210709e20b8959c465f7f2fa9f0cd74b2e7",
+      "retained_data_relative_file": "acceptance_evidence/suction_s6_20261018/localization_diagnostics/pre_restart_extra_logs/climbot_s6_gap_minimal_driver_20261018.log.gz",
+      "archive_sha256": "98b5c02bdee054ed989e3c799581045cfb844c97031cc3be1f89d3a7c75a4f2b",
+      "method": "lossless gzip outside repository"
+    }
+  ],
+  "passed": true,
+  "temporary_test_logs_committed": false
+}

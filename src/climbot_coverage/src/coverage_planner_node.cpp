@@ -216,6 +216,10 @@ public:
     // turn drop, the 20 mm runtime boundary tolerance, and measurement room.
     maneuver_boundary_margin_ = declare_parameter("maneuver_boundary_margin_m", 0.10);
     maneuver_drift_direction_ = pointParameter("maneuver_drift_direction", {0.0, -1.0});
+    const auto robot_geometry = declare_parameter("robot_geometry", std::string("vacuum_chassis"));
+    if (robot_geometry != "vacuum_chassis") {
+      throw std::invalid_argument("robot_geometry must be vacuum_chassis");
+    }
     robot_length_ = declare_parameter("robot_length", -1.0);
     robot_width_ = declare_parameter("robot_width", -1.0);
     edge_clearance_ = declare_parameter("edge_clearance", -1.0);
@@ -287,6 +291,11 @@ public:
       publishTask(emptyTask());
       publishMarkers({}, {});
     }
+    // RViz clears its displays on a clock rollback or manual Reset, while
+    // its subscriptions remain connected. Transient-local history is therefore
+    // insufficient. Refresh cached visuals only, never the executable task.
+    visual_refresh_timer_ = create_wall_timer(
+      std::chrono::seconds(1), [this]() {refreshVisuals();});
   }
 
 private:
@@ -807,17 +816,18 @@ private:
       path.poses.push_back(pose);
     }
     task_publisher_->publish(task);
+    cached_path_ = path;
     path_publisher_->publish(path);
   }
 
-  /// Draw the wall's reference grid once, on a topic of its own.
+  /// Build the wall reference grid on its own display topic.
   ///
   /// Same pitch and the same lines as the grid painted on the wall face in
   /// Gazebo, so a coordinate read off one view is the coordinate in the other.
   /// It is drawn whatever the painted grid is doing, which is the point: a
   /// photography run takes the grid off the wall and the operator watching it
-  /// still has one to plan against. It never changes, so it is published once
-  /// and latched for late subscribers rather than rebuilt per plan.
+  /// still has one to plan against. Cache its geometry for inexpensive display
+  /// recovery; the heartbeat neither replans nor publishes another task.
   void publishWallGrid()
   {
     visualization_msgs::msg::MarkerArray markers;
@@ -863,6 +873,7 @@ private:
       }
       markers.markers.push_back(grid);
     }
+    cached_grid_ = markers;
     grid_publisher_->publish(markers);
   }
 
@@ -992,8 +1003,31 @@ private:
       sphere.color.a = 1.0F;
       markers.markers.push_back(sphere);
     }
+    cached_markers_ = markers;
     marker_publisher_->publish(markers);
   }
+
+  void refreshVisuals()
+  {
+    const auto stamp = now();
+    for (auto * array : {&cached_grid_, &cached_markers_}) {
+      for (auto & marker : array->markers) {
+        marker.header.stamp = stamp;
+      }
+    }
+    cached_path_.header.stamp = stamp;
+    for (auto & pose : cached_path_.poses) {
+      pose.header.stamp = stamp;
+    }
+    grid_publisher_->publish(cached_grid_);
+    marker_publisher_->publish(cached_markers_);
+    path_publisher_->publish(cached_path_);
+  }
+
+  visualization_msgs::msg::MarkerArray cached_grid_;
+  visualization_msgs::msg::MarkerArray cached_markers_;
+  nav_msgs::msg::Path cached_path_;
+  rclcpp::TimerBase::SharedPtr visual_refresh_timer_;
 
   std::string frame_id_;
   std::string task_id_;

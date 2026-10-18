@@ -1,0 +1,205 @@
+{
+  "cases": {
+    "horizontal_legacy": {
+      "exit_code": 0,
+      "log_name": "climbot_horizontal_legacy_1792311274300029857.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.999997706623067,
+      "native_rtf": 1.0000000022247668,
+      "evidence_relative_path": "final_controls_r6/horizontal_legacy",
+      "source_revision": "9a1cdf675555d031841e586a1714c12e21142a2c"
+    },
+    "horizontal_vacuum_chassis": {
+      "exit_code": 0,
+      "log_name": "climbot_horizontal_vacuum_chassis_1792311274300029857.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.9996144517121434,
+      "native_rtf": 0.9996085290377691,
+      "evidence_relative_path": "final_controls_r6/horizontal_vacuum_chassis",
+      "source_revision": "9a1cdf675555d031841e586a1714c12e21142a2c"
+    },
+    "vertical_vacuum_chassis": {
+      "exit_code": 0,
+      "log_name": "climbot_vertical_vacuum_chassis_1792311274300029857.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.999897583934904,
+      "native_rtf": 0.9998977628800798,
+      "evidence_relative_path": "final_controls_r6/vertical_vacuum_chassis",
+      "source_revision": "9a1cdf675555d031841e586a1714c12e21142a2c"
+    },
+    "trapezoid_horizontal_vacuum_chassis": {
+      "exit_code": 0,
+      "log_name": "climbot_trapezoid_horizontal_vacuum_chassis_1792312708062415394.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.9998871864289754,
+      "native_rtf": 0.9998872518267997,
+      "evidence_relative_path": "final_controls_r7/trapezoid_horizontal_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "trapezoid_vertical_vacuum_chassis": {
+      "exit_code": 0,
+      "log_name": "climbot_trapezoid_vertical_vacuum_chassis_1792312708062415394.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.9999240040901518,
+      "native_rtf": 0.9999242997155019,
+      "evidence_relative_path": "final_controls_r7/trapezoid_vertical_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "bigH_vacuum_chassis": {
+      "exit_code": 0,
+      "log_name": "climbot_bigH_vacuum_chassis_1792312708062415394.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.9999518480925892,
+      "native_rtf": 0.9999517220697379,
+      "evidence_relative_path": "final_controls_r7/bigH_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "bigTH_vacuum_chassis": {
+      "exit_code": 0,
+      "log_name": "climbot_bigTH_vacuum_chassis_1792312708062415394.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.9998712538446339,
+      "native_rtf": 0.9998719928727108,
+      "evidence_relative_path": "final_controls_r7/bigTH_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "bigV_vacuum_chassis": {
+      "exit_code": 0,
+      "log_name": "climbot_bigV_vacuum_chassis_1792312708062415394.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.9998905845289239,
+      "native_rtf": 0.9998899585913688,
+      "evidence_relative_path": "final_controls_r7/bigV_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    },
+    "bigTV_vacuum_chassis": {
+      "exit_code": 0,
+      "log_name": "climbot_bigTV_vacuum_chassis_1792312708062415394.log",
+      "checks": {
+        "evaluator_passed": true,
+        "visible_gui_recorded": true,
+        "visible_rviz_recorded": true,
+        "native_clock_integrity": true,
+        "task_average_rtf_at_least_095": true,
+        "imu_localization_and_joint_streams_present": true,
+        "all_sensor_tf_connected": true,
+        "private_mesa_actual_server_and_gui": true,
+        "candidate_pressure_released_without_failure": true,
+        "no_observation_error": true,
+        "no_cleanup_failure": true
+      },
+      "rtf": 0.9999263117790367,
+      "native_rtf": 0.9999274849808037,
+      "evidence_relative_path": "final_controls_r7/bigTV_vacuum_chassis",
+      "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b"
+    }
+  },
+  "paired_rtf": {
+    "horizontal": {
+      "legacy_rtf": 1.0000000022247668,
+      "candidate_rtf": 0.9996085290377691,
+      "candidate_minus_legacy": -0.00039147318699772615
+    }
+  },
+  "all_case_checks_passed": true,
+  "user_approved_reduced_coverage": true,
+  "legacy_cases": 1,
+  "candidate_cases": 8,
+  "evidence_scope": "Three previously passed R6 complete tasks retained; six R7 complete tasks. R6 failed trapezoid is not selected. All src bytes identical; only session-start signal reset and its harness routing/test changed. No controller/model/pressure/image or workload configuration changed; source revisions are retained per case."
+}

@@ -1,0 +1,59 @@
+{
+  "source_commit": "315b315512e2b2d94ae23f502770e8622d56da04",
+  "runtime_inputs_equal_s0": 12,
+  "analysis_tests": {
+    "passed": 77,
+    "new": 35,
+    "legacy": 42,
+    "exit_code": 0
+  },
+  "build": {
+    "packages": 2,
+    "exit_code": 0
+  },
+  "full_regression": {
+    "executor": "parallel",
+    "parallel_workers": 8,
+    "packages": 11,
+    "tests": 1472,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 67,
+    "elapsed_s": 44.7,
+    "test_exit_code": 0,
+    "result_exit_code": 0
+  },
+  "sdf_check_exit_code": 0,
+  "urdf_check_exit_code": 0,
+  "logs_directory": "temporary, not archived",
+  "logs": {
+    "build": {
+      "filename": "climbot_s1_build_20261017.log",
+      "sha256": "6c94335076399f18e6151c8a1f1963c891972f3606613176e1011b9a49e9c585"
+    },
+    "analysis_tests": {
+      "filename": "climbot_s1_analysis_tests_20261017.log",
+      "sha256": "cfb7715ba26ed70fd085e148166b3a578d0497da4604e39f495181d4f33349e3"
+    },
+    "full_regression": {
+      "filename": "climbot_s1_full_regression_20261017.log",
+      "sha256": "cf7f13dfd4c6d7069d1ab96355acdfd127755906ae09dcb530a401dd01f5f216"
+    },
+    "full_result": {
+      "filename": "climbot_s1_full_result_20261017.log",
+      "sha256": "50e22928c08659bcec257ac18423c85d43659cb948ad6c2e8f7b29e0adec88eb"
+    },
+    "sdf": {
+      "filename": "climbot_s1_sdf_formal_20261017.log",
+      "sha256": "581e1adf70bd048b67b37b74d7e86c4914095ff3f6ca4164e452e18465907d34"
+    },
+    "urdf": {
+      "filename": "climbot_s1_urdf_formal_20261017.log",
+      "sha256": "85b4c21b15e0296501492f3b1703054c67c47f024e4f17cc2847a53cccad9c14"
+    },
+    "calculation": {
+      "filename": "climbot_s1_formal_design_20261017.log",
+      "sha256": "799fe89fddd056a061734cf10e2ff5371a126bcc17faa1579b5b3ecd5c87bcc5"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "scope": "One mosaic overview, three 512x512 native windows shown side-by-side pose-only/optimized without resizing, one original 1920x1080 mono8 frame (index 34), two startup and two live desktop screenshots. This is a bounded review, not all full-resolution mosaic pixels or all 70 raw images.",
+  "observations": [
+    "RViz wall, grid, safety outline and five scan paths recovered after reset; live frame and recording progress visible.",
+    "Optimized construction seam and texture alignment visibly improved over pose-only; no large interior blank or obvious doubled structure in reviewed samples. Small hard-cut brightness steps and optical softness remain.",
+    "Black outer stair-step/notch areas follow alternating camera footprint ends; no claim of rectangular full-wall coverage.",
+    "Raw image contains actual textured wall and physical lighting; no chassis/bracket occlusion in sampled frame."
+  ],
+  "mosaic_dimensions": [
+    14631,
+    8675
+  ],
+  "resolution_mm_per_pixel": 0.25,
+  "cuda_effective": true,
+  "quality_scope": "S7 end-to-end smoke and bounded image review; absolute full-wall quality continues to rely on frozen S6 evidence, not this 70-frame single-sweep sample."
+}

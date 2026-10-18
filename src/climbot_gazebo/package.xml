@@ -22,6 +22,11 @@
   <exec_depend>launch_ros</exec_depend>
   <depend>geometry_msgs</depend>
   <depend>yaml-cpp</depend>
+  <depend>gz_sim_vendor</depend>
+  <depend>gz_gui_vendor</depend>
+  <depend>gz_rendering_vendor</depend>
+  <depend>gz_plugin_vendor</depend>
+  <depend>gz_transport_vendor</depend>
   <depend>nav_msgs</depend>
   <exec_depend>ros_gz_interfaces</exec_depend>
   <exec_depend>xacro</exec_depend>
@@ -37,6 +42,7 @@
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
   <exec_depend>python3-matplotlib</exec_depend>
 
   <!-- test_inspection_contract.py reads the deployed inspection config
@@ -47,6 +53,7 @@
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+  <test_depend>rmw_fastrtps_cpp</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

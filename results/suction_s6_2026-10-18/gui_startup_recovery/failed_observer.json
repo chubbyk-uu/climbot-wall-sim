@@ -1,0 +1,50 @@
+{
+  "geometry": "vacuum_chassis",
+  "gui_required": true,
+  "rviz_required": true,
+  "rviz": null,
+  "gui": null,
+  "error": "CalledProcessError(1, ['xdotool', 'search', '--onlyvisible', '--name', 'Gazebo'])",
+  "counts": {
+    "pressure": 1171,
+    "vacuum": 1171,
+    "imu_wall": 1171,
+    "filtered": 574,
+    "joints": 10828,
+    "clock": 5413,
+    "imu": 1082,
+    "truth": 1082
+  },
+  "tf_connected": {
+    "base_link": 1,
+    "imu_link": 1,
+    "inspection_camera_optical_frame": 1,
+    "left_wheel_link": 1,
+    "right_wheel_link": 1,
+    "chassis_link": 1
+  },
+  "clock_warmup_excluded_wall_s": 20,
+  "measured_realtime_factor": null,
+  "ten_wall_second_rtf": [],
+  "wall_duration_s": 12.022789918002672,
+  "clock_scored_endpoints": [],
+  "plugin_cpu_us_mean": 33.274926558497015,
+  "minimum_delta_pa": 3539.5843100330094,
+  "fixture_released_observed": true,
+  "observed_startup_failure": false,
+  "observed_runtime_failure": false,
+  "runtime_libraries": [
+    {
+      "pid": 357272,
+      "gui": false,
+      "private_mapping_complete": true,
+      "libraries": {
+        "libgallium-25.2.8.so": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66",
+        "libgbm.so.1": "88e1947b2b3d4c0ca715bc6e5bdaa1f52d77aa1561cd34cea672b199eafb2057",
+        "libGLX_mesa.so.0": "99ad1bb870dfe482e4d7e192bc8d1bf6d654f9fe4d41ca9f167d67af61ae24b0",
+        "libEGL_mesa.so.0": "11af8b32546452438ca4752d44c9758a1f259a9458be71a2be2e6c8eec26a576"
+      },
+      "system_gallium_mapped": false
+    }
+  ]
+}

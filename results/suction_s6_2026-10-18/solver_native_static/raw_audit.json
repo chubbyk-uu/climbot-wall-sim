@@ -1,0 +1,259 @@
+{
+  "audit_script_sha256": "b4a6f39f82c77f196363c3a42f23da832425d0a63261900c16ff4d03b928839a",
+  "native_run_source_revision": "1cd16ba2d98725cd3ff8b9778728ca6f154ed5ad",
+  "cases": {
+    "fan_ode_h0": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 4.665715182834013e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fan_ode_h135": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 4.665760515071976e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fan_ode_h180": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 4.665715182820135e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fan_ode_h225": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 4.665760515266265e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fan_ode_h270": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319999,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 3.311626399150197e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fan_ode_h315": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 4.665760515148304e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fan_ode_h45": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 4.665760515071976e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fan_ode_h90": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 4.665715182702174e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fixed_pressure_h0": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 8.089827834755967e-05,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fixed_pressure_h135": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 8.089906457556598e-05,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fixed_pressure_h180": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 8.089827834735844e-05,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fixed_pressure_h225": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 8.089906457573945e-05,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fixed_pressure_h270": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319999,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 5.741912012406994e-05,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fixed_pressure_h315": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 8.089906457576027e-05,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fixed_pressure_h45": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 8.089906457556598e-05,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "fixed_pressure_h90": {
+      "frames": 64000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 319997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 8.089827834727517e-05,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "half_step": {
+      "frames": 128000,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 639997,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 1.1658775642860164e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "lifecycle": {
+      "frames": 5101,
+      "generations": [
+        "0",
+        "1"
+      ],
+      "exact_paused_comparisons": 99,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 25499,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 4.665715182834013e-06,
+      "maximum_action_reaction_error_n": 0.0
+    },
+    "startup_timeout": {
+      "frames": 10500,
+      "generations": [
+        "0"
+      ],
+      "exact_paused_comparisons": 0,
+      "exact_pause_values_unchanged": true,
+      "raw_contact_points": 52497,
+      "maximum_normal_deviation_deg": 0.0,
+      "minimum_depth_m": 0.0,
+      "maximum_depth_m": 5.5697528993751966e-06,
+      "maximum_action_reaction_error_n": 0.0
+    }
+  },
+  "checks": {
+    "all_paused_scalars_exactly_frozen": true,
+    "both_reset_generations_observed": true,
+    "mutual_force_path_rejected": true
+  }
+}

@@ -21,3 +21,21 @@ docs/archive/reviews/REVIEW_*.md
 # tools/fetch_wall_texture.sh (which pins the source archive by checksum) and
 # tools/bake_wall_texture.py with the seed recorded in the manifest.
 textures/
+
+# Full suction experiment evidence stays local. Small reviewed reports and JSON
+# summaries are tracked explicitly; adding a new summary requires git add -f.
+/results/suction_s*/
+/results/suction_retention_*/
+/results/cruise_timestamp_*/
+# Raw and generated acceptance data must not become new Git objects.
+/results/**/*.png
+/results/**/*.jpg
+/results/**/*.mp4
+/results/**/*.csv
+/results/**/*.csv.gz
+/results/**/*.jsonl
+/results/**/*.jsonl.gz
+/results/**/*.sdf
+/results/**/*.urdf
+/results/**/*.obj
+/results/**/*.log

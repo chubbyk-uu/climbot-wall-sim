@@ -16,6 +16,9 @@ ros2 launch climbot_bringup coverage_sim.launch.py
 ros2 launch climbot_bringup coverage_mission.launch.py
 ```
 
+两个入口均默认新底盘、三风机单腔 vacuum、平墙和刚性轮，仿真／规划／控制使用同一几何；
+`adhesion_mode:=fixed_pressure` 可做同插件诊断。巡航仍为 0.20 m/s。
+
 两个 launch 都接受 `config_file`（`coverage_sim`）或 `planner_config_file` 与
 `control_config_file`（`coverage_mission`）、`region_type` 和 `sweep_direction`。
 `coverage_mission` 另有 `tracking_mode`（`distance` 或 `time`），透传给执行器选择

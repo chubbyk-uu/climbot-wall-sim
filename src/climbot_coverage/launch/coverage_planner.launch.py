@@ -17,6 +17,7 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
+from climbot_description.robot_geometry import load_robot
 from climbot_description.wall_frame import reference_grid_spacing
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
@@ -26,14 +27,17 @@ from launch_ros.actions import Node
 import yaml
 
 
-def _planner_node(context, *, footprint, wall_surface, inspection_camera):
+def _planner_node(context, *, wall_surface, inspection_camera):
     """Create the planner after resolving its explicit geometry profile."""
+    geometry = LaunchConfiguration('robot_geometry').perform(context)
+    footprint = load_robot(geometry)['footprint']
     profile = LaunchConfiguration('inspection_geometry_profile').perform(context)
     if profile not in ('calibrated', 'configured'):
         raise RuntimeError(
             'inspection_geometry_profile must be calibrated or configured.')
     parameters = {
         'use_sim_time': LaunchConfiguration('use_sim_time'),
+        'robot_geometry': geometry,
         'input_mode': LaunchConfiguration('input_mode'),
         'region_type': LaunchConfiguration('region_type'),
         'sweep_direction': LaunchConfiguration('sweep_direction'),
@@ -73,8 +77,6 @@ def generate_launch_description():
     default_config = os.path.join(
         package_share, 'config', 'coverage_rectangle.yaml')
     rviz_config = os.path.join(package_share, 'rviz', 'coverage.rviz')
-    with open(os.path.join(description_share, 'config', 'robot.yaml')) as handle:
-        footprint = yaml.safe_load(handle)['robot']['footprint']
     with open(os.path.join(description_share, 'config', 'wall.yaml')) as handle:
         wall_surface = yaml.safe_load(handle)['wall']['surface']
     with open(os.path.join(description_share, 'config', 'inspection_camera.yaml')) as handle:
@@ -90,6 +92,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
+        DeclareLaunchArgument('robot_geometry', default_value='vacuum_chassis'),
         DeclareLaunchArgument('rviz', default_value='true'),
         DeclareLaunchArgument('config_file', default_value=default_config),
         DeclareLaunchArgument('input_mode', default_value='parameters'),
@@ -102,7 +105,6 @@ def generate_launch_description():
                 'YAML geometry.'),
         ),
         OpaqueFunction(function=_planner_node, kwargs={
-            'footprint': footprint,
             'wall_surface': wall_surface,
             'inspection_camera': inspection_camera,
         }),

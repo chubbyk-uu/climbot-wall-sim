@@ -11,6 +11,13 @@ find_package(pybind11 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 ament_python_install_package(${PROJECT_NAME})
+# The offline design and the runtime renderer install the same source files.
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vacuum_layout.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vacuum_preview.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vacuum_visuals.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vacuum_loads.py
+  DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}")
 
 # The wall transform has one implementation. C++ nodes link the library and
 # the Python package binds to it, so the convention cannot drift between them.
@@ -54,6 +61,7 @@ if(BUILD_TESTING)
     test_robot_description_defaults test/test_robot_description_defaults.py)
   ament_add_pytest_test(
     test_inspection_camera_config test/test_inspection_camera_config.py)
+  ament_add_pytest_test(test_robot_geometry test/test_robot_geometry.py)
   ament_add_pytest_test(test_wall_frame test/test_wall_frame.py)
   find_package(ament_cmake_gtest REQUIRED)
   ament_add_gtest(test_geometry_cpp test/test_geometry.cpp)

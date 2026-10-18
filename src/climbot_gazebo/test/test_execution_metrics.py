@@ -206,3 +206,12 @@ def test_coefficient_of_variation_rejects_undefined_inputs():
         coefficient_of_variation([])
     with pytest.raises(ValueError):
         coefficient_of_variation([1.0, -1.0])
+
+
+@pytest.mark.parametrize('completed_lines', [0, 1])
+def test_aborted_coverage_explains_unmeasured_spacing(completed_lines):
+    rows, types, waypoints = _vertical_boustrophedon([0.0, 0.40])
+    result = scan_line_spacing(rows[:completed_lines * 2], types, waypoints)
+    assert result['applicable'] is False
+    assert result['maximum_scan_line_spacing_error_m'] is None
+    assert 'scored truth samples' in result['not_applicable_reason']

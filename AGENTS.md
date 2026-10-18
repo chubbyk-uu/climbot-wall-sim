@@ -38,7 +38,21 @@ These instructions apply to all work in this repository.
 
 - Run full offline wall-mosaic performance and acceptance jobs with the explicit
   `build_wall_mosaic --backend cuda` argument. After completion, verify that
-  `mosaic_manifest.json` records `execution.backend.effective` as `cuda`.
+  `mosaic_manifest.json` records `execution.effective` as `cuda` and
+  `execution.fallback` as `false`. The current producer stores these directly
+  under `execution`, not under an additional `backend` object; inspect the
+  actual native manifest and do not inject fields into acceptance output.
 - Do not use `--backend auto` for GPU evidence because fallback would change the
   tested backend. Use `--backend cpu` only for an explicit CPU baseline or A/B
   comparison. Ordinary unit tests remain portable and may exercise either path.
+
+## Publishing scope
+
+- Keep raw telemetry, captures, acceptance screenshots/videos, generated scenes,
+  caches and per-frame inventories outside Git, under the local data root.
+- Commit only small reviewed reports and summary JSON under results/. The two
+  approved README screenshots are documentation assets, not a general exception.
+- Before pushing, inspect all newly introduced Git objects, including historical
+  commits; deleting working files does not remove their objects from history.
+- If unpublished history contains bulk evidence, keep a local backup branch and
+  publish a clean commit based on remote main. Do not force-push remote history.

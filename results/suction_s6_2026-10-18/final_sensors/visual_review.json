@@ -1,0 +1,64 @@
+{
+  "scope": "Actual original GUI/RViz screenshots opened; G1 canonical frame separately opened. Sensor-only fixtures do not start a coverage executor, so its UI Not connected and startup camera No Image are expected.",
+  "cases": {
+    "g1_camera": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_robot_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_model_visible": true,
+        "actual_g1_frame_grid_and_markers_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "observation/gui.png": "0977729623905bc47fbb235a200f6c770f7bbdf3d1cc53a1931327691f971407",
+        "observation/rviz.png": "cb7354e013d0364622e93337ab2a3a3fa79053af3f2196a7ad97d782c56cd746",
+        "frame.png": "a930ca9bd476ef26d6baf06c54d25ab95c80f430ae9f586f0d23acb80a32b5ac"
+      }
+    },
+    "localization": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_robot_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_model_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "dde3b95d6e01413578e70ba36fd3865aca37a51367be1ebc2bcea15436b69ffb",
+        "rviz.png": "0484e1c24dda74a26b885024e2b99e7b24a3f96d44d7edfd10567b0fca2eada4"
+      }
+    },
+    "turn_slip": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_robot_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_model_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "a511a204a7690ce73f5cf32113924743c7e488732aca8fd2f0c8a681221c15cc",
+        "rviz.png": "1bbc8365a0216a33dfd6bad73ec50ec91aaa47d736e52c544d9430b941723ddf"
+      }
+    },
+    "turn_band": {
+      "passed": true,
+      "checks": {
+        "gazebo_scene_visible": true,
+        "correct_robot_visible": true,
+        "rtf_widget_in_window": true,
+        "rviz_model_visible": true,
+        "no_visible_black_scene_or_corruption": true
+      },
+      "sha256": {
+        "gui.png": "97e8ec11b9214653b7936fc57d93f93825c6c9c0acf042a8b6b800c8e67f58ec",
+        "rviz.png": "cf0d6aa4c330a569021b1b29b6a3a58a25ff77ce9868e02d4b84f863c0ab7464"
+      }
+    }
+  },
+  "passed": true
+}

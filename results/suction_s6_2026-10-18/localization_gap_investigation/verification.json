@@ -1,0 +1,44 @@
+{
+  "targeted": {
+    "passed": 45,
+    "log": "/tmp/climbot_s6_dds_profile_targeted_20261018.log"
+  },
+  "full_suite": {
+    "tests": 1727,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 83,
+    "test_exit": 0,
+    "results_exit": 0,
+    "command": "colcon test --executor parallel --parallel-workers 8",
+    "log": "/tmp/climbot_s6_dds_full_v2_20261018.log",
+    "results_log": "/tmp/climbot_s6_dds_results_v2_20261018.log"
+  },
+  "initial_suite": "failed; corrected format, frozen launch hash contract, and unmeasured spacing reason; diagnostic sources excluded from colcon discovery",
+  "formal_s6_passed": true,
+  "full_suite_after_shutdown_fix": {
+    "tests": 1727,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 83,
+    "test_exit": 0,
+    "results_exit": 0,
+    "command": "colcon test --executor parallel --parallel-workers 8",
+    "log": "/tmp/climbot_s6_root_int_full_20261018.log",
+    "results_log": "/tmp/climbot_s6_root_int_results_20261018.log"
+  },
+  "final_full_suite": {
+    "tests": 1727,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 83,
+    "test_exit": 0,
+    "results_exit": 0,
+    "source_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b",
+    "command": "colcon test --executor parallel --parallel-workers 8",
+    "log": "/tmp/climbot_s6_final_full_20261018.log",
+    "results_log": "/tmp/climbot_s6_final_full_results_20261018.log",
+    "elapsed_wall_s": 57.414653921001445
+  },
+  "formal_s6_gate": "../FINAL_GATE.json"
+}

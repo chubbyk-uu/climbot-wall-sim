@@ -1,0 +1,46 @@
+{
+  "native_revision": "413cd890141176d08db54c614b0df6ab57c8b16c",
+  "current_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b",
+  "changed_manifest_files": [
+    "src/climbot_gazebo/launch/climbot_wall.launch.py",
+    "tools/freeze_suction_baseline.py"
+  ],
+  "unchanged_manifest_files": [
+    "docs/SUCTION_S5_METHOD.md",
+    "src/climbot_control/config/control.yaml",
+    "src/climbot_description/config/inspection_camera.yaml",
+    "src/climbot_description/config/robot.yaml",
+    "src/climbot_description/config/vacuum_chassis.yaml",
+    "src/climbot_description/config/wall.yaml",
+    "src/climbot_description/urdf/climbot.urdf.xacro",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py",
+    "src/climbot_gazebo/config/ekf_wall.yaml",
+    "src/climbot_gazebo/config/simulation.yaml",
+    "src/climbot_gazebo/config/vacuum_io.yaml",
+    "src/climbot_gazebo/config/vacuum_physics.yaml",
+    "src/climbot_gazebo/config/vacuum_runtime.yaml",
+    "src/climbot_gazebo/include/climbot_gazebo/vacuum_state.hpp",
+    "src/climbot_gazebo/models/climbot/model.config",
+    "src/climbot_gazebo/models/climbot/model.sdf.xacro",
+    "src/climbot_gazebo/scripts/measure_normal_loads.py",
+    "src/climbot_gazebo/src/vacuum_core.cpp",
+    "src/climbot_gazebo/src/vacuum_io.cpp",
+    "src/climbot_gazebo/src/vacuum_sim_probe.cpp",
+    "src/climbot_gazebo/src/vacuum_system.cpp",
+    "src/climbot_gazebo/worlds/climbot_wall.sdf.xacro",
+    "tools/vacuum_layout.py",
+    "tools/vacuum_loads.py",
+    "tools/validate_vacuum_motion.py",
+    "tools/validate_vacuum_physics.py"
+  ],
+  "all_other_native_inputs_byte_identical": true,
+  "change_scope": "Local DDS child environment in launch; frozen baseline auditor now separately pins exact local transport launch hash. Native plugin/model/physical config bytes and control numeric config unchanged. GUI controls repeated in R5. Follow-up changes only route shutdown INT to launch roots, retaining group TERM/KILL budgets.",
+  "native_91_case_evidence_remains_applicable": true,
+  "exit_only_changes": [
+    "tools/lane_processes.sh",
+    "tools/run_g2_inspection_acceptance.sh",
+    "tools/test_lane_processes.sh",
+    "tools/start_session.sh",
+    "tools/run_coverage_regression.sh"
+  ]
+}

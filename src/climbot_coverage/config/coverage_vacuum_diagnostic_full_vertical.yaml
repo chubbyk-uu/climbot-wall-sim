@@ -1,0 +1,33 @@
+# Candidate geometry needs 0.5585 m wall clearance (full camera/wheel envelope).
+# Keep the original 0.10 m edge and maneuver margins and all coverage policies.
+# This variant moves each original 0.55 m task boundary inward by 0.01 m;
+# the frozen legacy P2-06 task is unchanged. Counts must come from preflight.
+# P2-06 complementary full diagnostic target; see the horizontal task for
+# shared geometry and safety-frame rationale.
+coverage_planner:
+  ros__parameters:
+    frame_id: odom
+    task_id: vacuum-diagnostic-full-vertical-025mm-20261018
+    input_mode: parameters
+    region_type: rectangle
+    lower_left: [0.56, 0.56]
+    upper_right: [9.44, 7.44]
+    lower_right: [9.44, 0.56]
+    detection_width: 0.50
+    detection_length: 0.28125
+    detection_forward_offset: 0.340
+    detection_edge_overlap: 0.0
+    overlap_ratio: 0.20
+    # Reserve the measured worst-case turn envelope where this full-height
+    # route touches the hard green boundary. The direction is gravity/down in
+    # wall coordinates; the planner also reserves the equal opposite distance
+    # for the controller's upward turn compensation.
+    maneuver_boundary_margin_m: 0.10
+    maneuver_drift_direction: [0.0, -1.0]
+    # Reject a future geometry/calibration change that would make the safe
+    # inward route cover materially less than the full diagnostic target.
+    minimum_nominal_coverage_ratio: 0.95
+    sweep_direction: vertical
+    start_corner: lower_left
+    path_height: 0.06
+    bottom_warning_tolerance: 0.05

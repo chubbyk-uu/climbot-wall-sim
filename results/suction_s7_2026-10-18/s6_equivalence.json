@@ -1,0 +1,12 @@
+{
+  "baseline_revision": "cb3fbda",
+  "runtime_reference_revision": "c38fc537d058438aa7949ed96773f2dabf1b760b",
+  "method": "Expanded S6 candidate before edits, compare model/URDF/world XML including attributes; normalize only generated directory; float abs/rel tolerance 1e-12; independently byte-hash every mesh.",
+  "consumer_exact_equal": true,
+  "xml_nodes_compared": 7626,
+  "differences": [],
+  "mesh_bytes_equal": true,
+  "mesh_count": 20,
+  "resolved_inputs_exact_equal": true,
+  "passed": true
+}
