@@ -6,6 +6,15 @@
 
 ![三风机负压底盘在真实纹理墙面上采集](docs/images/gazebo_pressure_chassis.png)
 
+当前模型细节近照（Gazebo 截图，点击可放大）：
+
+| 风扇出风口与上部结构 | 底部密封圈与吸气通道 |
+| --- | --- |
+| [![三风机出风口护网、双圆管提手与乳白色主动轮](docs/images/robot_fan_closeup.png)](docs/images/robot_fan_closeup.png) | [![外翻密封圈、三个吸气通道及圈内万向球轮](docs/images/robot_skirt_closeup.png)](docs/images/robot_skirt_closeup.png) |
+
+主动轮采用偏暖乳白色，透明度为 4%，轮毂与轮轴为金属灰。底部图是移除墙面遮挡后的静态
+外观展示，可看清沿底盘一圈外翻的密封裙边和圈内球轮。
+
 ## 你能做什么
 
 - 在 Gazebo 中启动墙面、机器人、传感器、EKF 和 RViz；

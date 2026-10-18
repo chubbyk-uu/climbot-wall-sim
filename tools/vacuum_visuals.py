@@ -10,6 +10,9 @@ from pathlib import Path
 import numpy as np
 
 
+_WHEEL_METAL_RGBA = (.47, .50, .53, 1)
+
+
 def _mesh(directory, name, vertices, faces, centre, color, smooth=False):
     path = Path(directory) / (name + '.obj')
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -105,7 +108,8 @@ def display_shapes(part, model, camera, directory):
         shapes = list(part['shapes'])
         body_half = model['config']['body']['width_m']/2
         wheel_half = model['wheel_width_m']/2
-        axle_y = model['track_m']/2-wheel_half
+        axle_inner = body_half-.006
+        axle_outer = model['track_m']/2+wheel_half+.0045
         z = model['config']['wheel']['radius_m']
         for side in [-1, 1]:
             label = 'left' if side == 1 else 'right'
@@ -113,22 +117,31 @@ def display_shapes(part, model, camera, directory):
                 {'type': 'box', 'size': [.064, .008, .052],
                  'centre': [0, side*(body_half+.003), z],
                  'color': [.24, .27, .30, 1], 'display_name': label+'_bearing_mount'},
-                {'type': 'cylinder', 'radius': .011, 'length': axle_y-body_half+.012,
-                 'axis': 'y', 'centre': [0, side*(body_half+axle_y)/2, z],
-                 'color': [.52, .55, .58, 1], 'display_name': label+'_drive_axle'},
+                {'type': 'cylinder', 'radius': .011, 'length': axle_outer-axle_inner,
+                 'axis': 'y', 'centre': [0, side*(axle_inner+axle_outer)/2, z],
+                 'color': _WHEEL_METAL_RGBA, 'display_name': label+'_drive_axle'},
             ])
         return shapes
     if part['role'] == 'drive':
         shapes = list(part['shapes'])
         side = 1 if centre[1] > 0 else -1
-        y = centre[1]+side*(model['wheel_width_m']/2-.003)
+        # Keep the metal hub in front of the tyre's closed cylinder end cap.
+        y = centre[1]+side*(model['wheel_width_m']/2+.0015)
         shapes.extend([
+            {'type': 'cylinder', 'radius': .026,
+             'length': model['wheel_width_m']+.003, 'axis': 'y',
+             'centre': list(centre), 'color': _WHEEL_METAL_RGBA,
+             'display_name': name+'_hub_core'},
+            {'type': 'cylinder', 'radius': .029, 'length': .003, 'axis': 'y',
+             'centre': [centre[0], centre[1]-side*(model['wheel_width_m']/2+.0015),
+                        centre[2]],
+             'color': _WHEEL_METAL_RGBA, 'display_name': name+'_inner_hub'},
             {'type': 'cylinder', 'radius': .029, 'length': .003, 'axis': 'y',
              'centre': [centre[0], y, centre[2]],
-             'color': [.47, .50, .53, 1], 'display_name': name+'_hub'},
+             'color': _WHEEL_METAL_RGBA, 'display_name': name+'_hub'},
             {'type': 'cylinder', 'radius': .012, 'length': .004, 'axis': 'y',
-             'centre': [centre[0], y+side*.001, centre[2]],
-             'color': [.15, .17, .19, 1], 'display_name': name+'_axle_cap'},
+             'centre': [centre[0], y+side*.003, centre[2]],
+             'color': _WHEEL_METAL_RGBA, 'display_name': name+'_axle_cap'},
         ])
         return shapes
     if name == 'camera_arm':

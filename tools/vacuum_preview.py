@@ -22,12 +22,12 @@ def numbers(values):
 
 
 def _appearance(part):
-    """Use the legacy orange body, dark wheels, grey supports and blue camera."""
+    """Use orange bodywork, ivory tyres, grey supports and a blue camera."""
     name, role = part['name'], part['role']
     if name in ('chassis_link', 'cover_link'):
         return 'body_orange', [0.66, 0.31, 0.03, 1], [0.95, 0.45, 0.05, 1]
     if role == 'drive':
-        return 'wheel_black', [0.04, 0.04, 0.04, 1], [0.08, 0.08, 0.08, 1]
+        return 'wheel_ivory', [0.53, 0.51, 0.45, 0.96], [0.82, 0.79, 0.69, 0.96]
     if name == 'inspection_camera_link':
         return 'camera_blue', [0.03, 0.12, 0.20, 1], [0.05, 0.20, 0.32, 1]
     if role == 'ball' or name in ('caster_housing_link', 'camera_upright', 'camera_arm'):
@@ -104,6 +104,8 @@ def export(model, camera, path, urdf=False):
                         node(material, 'color', rgba=numbers(diffuse))
                     else:
                         material = node(item, 'material')
+                        if palette == 'wheel_ivory':
+                            node(item, 'transparency', 1 - diffuse[3])
                         node(material, 'ambient', numbers(ambient))
                         node(material, 'diffuse', numbers(diffuse))
                         if 'emissive' in shape:

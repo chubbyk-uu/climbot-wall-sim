@@ -50,8 +50,9 @@ These instructions apply to all work in this repository.
 
 - Keep raw telemetry, captures, acceptance screenshots/videos, generated scenes,
   caches and per-frame inventories outside Git, under the local data root.
-- Commit only small reviewed reports and summary JSON under results/. The two
-  approved README screenshots are documentation assets, not a general exception.
+- Commit only small reviewed reports and summary JSON under results/. Explicitly
+  approved README images (two task screenshots and two model close-ups) are
+  documentation assets, not a general exception for acceptance images.
 - Before pushing, inspect all newly introduced Git objects, including historical
   commits; deleting working files does not remove their objects from history.
 - If unpublished history contains bulk evidence, keep a local backup branch and

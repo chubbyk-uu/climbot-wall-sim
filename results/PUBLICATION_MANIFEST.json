@@ -4,7 +4,9 @@
   "local_backup_branch": "archive/pressure-suction-full-evidence-20261018",
   "readme_images": [
     "docs/images/gazebo_pressure_chassis.png",
-    "docs/images/rviz_pressure_capture.png"
+    "docs/images/rviz_pressure_capture.png",
+    "docs/images/robot_fan_closeup.png",
+    "docs/images/robot_skirt_closeup.png"
   ],
   "public_results_reports": 35,
   "public_results_json": 98,
@@ -1232,5 +1234,5 @@
       "bytes": 1945
     }
   ],
-  "policy": "No new raw image/video/pressure/contact/scene data; exactly two approved README PNGs; remote main fast-forward from original base; original complete local history retained."
+  "policy": "No new raw image/video/pressure/contact/scene data; only explicitly approved README images (two task screenshots and two model close-ups); remote main fast-forward from original base; original complete local history retained."
 }
