@@ -30,8 +30,11 @@ jobs:
       - name: Install workspace dependencies
         run: |
           source /opt/ros/jazzy/setup.bash
+          # Ubuntu ships tifffile, but rosdep has no rule for this key.
+          sudo apt-get update
+          sudo apt-get install -y python3-tifffile
           rosdep update
-          rosdep install --from-paths src --ignore-src --rosdistro jazzy -r -y
+          rosdep install --from-paths src --ignore-src --rosdistro jazzy --skip-keys python3-tifffile -y
       - name: Build
         run: |
           source /opt/ros/jazzy/setup.bash

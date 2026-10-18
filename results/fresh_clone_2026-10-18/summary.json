@@ -1,0 +1,251 @@
+{
+  "date": "2026-10-18",
+  "baseline_remote_commit": "87509c709bd4bd8b363b5d059d23cce21ad6166f",
+  "source_modified": true,
+  "modified_source_sha256": {
+    "src/climbot_inspection/package.xml": "908729f5a542dab06361dc9641406f67355769106f1cc0d5887dd44fe4a207e4",
+    "src/climbot_gazebo/package.xml": "8678c3273c057deb5f40ad204e902e3bdea86b89f540bdb41372d70263192b45"
+  },
+  "environment_scope": "Existing Ubuntu 24.04 WSL host; new remote clone, isolated build/install, /opt/ros/jazzy underlay only. Not a newly installed WSL distribution.",
+  "rosdep": {
+    "before_exit_code": 2,
+    "unresolved_keys": [
+      "cv-bridge",
+      "python3-tifffile"
+    ],
+    "after_exit_code": 0,
+    "skip_keys": [
+      "python3-tifffile"
+    ],
+    "tifffile_system_package_verified": true
+  },
+  "build": {
+    "exit_code": 0,
+    "summary": "Summary: 11 packages finished [59.1s]",
+    "parallel_workers": 4,
+    "cmake_build_type": "Release",
+    "original_workspace_overlay_used": false,
+    "warning": "LTO compiler used serial compilation for 3 LTRANS jobs"
+  },
+  "tests": {
+    "exit_code": 0,
+    "summary": "60 passed, 2 warnings in 5.25s",
+    "files": [
+      "src/climbot_gazebo/test/test_vacuum_assets.py",
+      "src/climbot_gazebo/test/test_wall_texture.py",
+      "src/climbot_gazebo/test/test_mesa_runtime.py",
+      "src/climbot_image_processing/test/test_flat_field_pin.py"
+    ],
+    "warnings": "Two Python fork-with-threads warnings in existing asset tests"
+  },
+  "download": {
+    "url": "https://ambientcg.com/get?file=Concrete044D_8K-JPG.zip",
+    "exit_code": 0,
+    "archive_bytes": 566080745,
+    "archive_sha256": "bd48ea1206efebd7c549fd928f6d27aee625ccbd70752dc8e53b42cc3b57698d",
+    "color_sha256": "8179451010485cdb9268356ee96de5dcdfc45845c98d1bea11ff267ae6e5649c"
+  },
+  "bake": {
+    "exit_code": 0,
+    "region_m": [
+      0.512,
+      0.512
+    ],
+    "assets": [
+      {
+        "name": "wall_025",
+        "size_px": [
+          2048,
+          2048
+        ],
+        "scale_m_per_px": 0.00025,
+        "source_sha256": "8179451010485cdb9268356ee96de5dcdfc45845c98d1bea11ff267ae6e5649c",
+        "blocks": 1,
+        "diagnostic_feature_counts": null
+      },
+      {
+        "name": "wall_diagnostic_025",
+        "size_px": [
+          2048,
+          2048
+        ],
+        "scale_m_per_px": 0.00025,
+        "source_sha256": "8179451010485cdb9268356ee96de5dcdfc45845c98d1bea11ff267ae6e5649c",
+        "blocks": 1,
+        "diagnostic_feature_counts": {
+          "construction_seam": 3,
+          "crack_decal": 8,
+          "graffiti_decal": 4,
+          "repair_patch": 6
+        }
+      }
+    ],
+    "full_10_by_8_m_rebake": false
+  },
+  "calibration": {
+    "exit_code": 0,
+    "frames": 30,
+    "unique_timestamps": 30,
+    "unique_images": 30,
+    "noise_dn": 0.811,
+    "saturated_fraction": 0.0,
+    "cleanup": [
+      {
+        "name": "capture",
+        "returncode": 0,
+        "needed_sigterm": false
+      },
+      {
+        "name": "simulator",
+        "returncode": 0,
+        "needed_sigterm": false
+      }
+    ],
+    "child_sigint_exit_codes_are_shutdown_only": true
+  },
+  "mesa": {
+    "source_urls": [
+      {
+        "file": "mesa_25.2.8-0ubuntu0.24.04.2.dsc",
+        "status": 200
+      },
+      {
+        "file": "mesa_25.2.8-0ubuntu0.24.04.2.debian.tar.xz",
+        "status": 200
+      },
+      {
+        "file": "mesa_25.2.8.orig.tar.xz",
+        "status": 200
+      },
+      {
+        "file": "mesa_25.2.8.orig.tar.xz.asc",
+        "status": 200
+      }
+    ],
+    "locked_dependencies": [
+      {
+        "package": "bison",
+        "version": "2:3.8.2+dfsg-1build2",
+        "available": true
+      },
+      {
+        "package": "directx-headers-dev",
+        "version": "1.614.1-1~ubuntu0.24.04.2",
+        "available": true
+      },
+      {
+        "package": "flex",
+        "version": "2.6.4-8.2build1",
+        "available": true
+      },
+      {
+        "package": "libfl2",
+        "version": "2.6.4-8.2build1",
+        "available": true
+      },
+      {
+        "package": "libwayland-egl-backend-dev",
+        "version": "1.22.0-2.1build1",
+        "available": true
+      },
+      {
+        "package": "libxcb-dri2-0-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-dri3-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-glx0-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-present-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-randr0-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-render0-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-shape0-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-shm0-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-sync-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb-xfixes0-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxcb1-dev",
+        "version": "1.15-1ubuntu2",
+        "available": true
+      },
+      {
+        "package": "libxshmfence-dev",
+        "version": "1.3-1build5",
+        "available": true
+      },
+      {
+        "package": "meson-1.7",
+        "version": "1.7.0-1ubuntu1~24.04.2",
+        "available": true
+      },
+      {
+        "package": "python3-mako",
+        "version": "1.3.2-1ubuntu0.1",
+        "available": true
+      },
+      {
+        "package": "python3-markupsafe",
+        "version": "2.1.5-1build2",
+        "available": true
+      },
+      {
+        "package": "wayland-protocols",
+        "version": "1.45-1~ubuntu0.24.04.2",
+        "available": true
+      }
+    ],
+    "private_runtime_rebuilt": false,
+    "startup_used_existing_validated_private_runtime": true
+  },
+  "limitations": [
+    "No new Windows/WSL installation performed",
+    "Full-wall rebake and S6/S7 reruns intentionally excluded",
+    "No claim of bit-identical historical images or hardware-independent RTF"
+  ],
+  "temporary_generated_assets_removed": true,
+  "logs": [
+    "/tmp/climbot_fresh_clone_20261018.log",
+    "/tmp/climbot_fresh_rosdep_20261018.log",
+    "/tmp/climbot_fresh_rosdep_fixed_20261018.log",
+    "/tmp/climbot_fresh_build_20261018.log",
+    "/tmp/climbot_fresh_asset_download_20261018.log",
+    "/tmp/climbot_fresh_bake_20261018.log",
+    "/tmp/climbot_fresh_targeted_tests_20261018.log",
+    "/tmp/climbot_fresh_calibration_20261018/"
+  ]
+}

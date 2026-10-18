@@ -287,9 +287,9 @@ mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结
 
 ## 墙面贴图
 
-墙面贴图是本地可再生产物，由 `.gitignore` 排除，不进仓库。需要时用
-`tools/fetch_wall_texture.sh` 取素材，再按 `tools/bake_wall_texture.py --help` 和
-`tools/create_diagnostic_wall.py --help` 烘焙普通墙或诊断墙。
+素材来源、校验、普通墙／诊断墙的完整生成命令及资源预算统一见
+[README：从源码生成资产](../README.md#4-从源码生成资产)。墙面贴图由 `.gitignore` 排除，
+不进仓库；实验时显式用 `wall_texture` 指向生成的清单。
 
 ## 故障处置
 

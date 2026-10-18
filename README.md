@@ -42,7 +42,7 @@ A～G4、P1 和 P2 的仿真链路均已完成；P2-06 的门限已由三组数�
 本机运行验收在 WSL2/NVIDIA 上完成；原生 Linux 使用独立的 native 启动路径，不能把本机
 长任务结果当作原生 Linux 的验收。无窗口仿真可用 `headless:=true`，离线处理与 CPU 拼接则
 不需要图形环境。墙面 DDS 贴图放在 `textures/`，不随 Git 分发；视觉任务按
-[墙面贴图](docs/OPERATION.md#墙面贴图) 生成。
+[从源码生成资产](#4-从源码生成资产) 生成。
 
 采集、预处理与拼接的大文件不进入仓库。默认写入**记录器所在主机**当前用户的
 `$HOME/climbot_data`，并在首次归档时创建。要使用另一块数据盘或共享目录时，再设置一个持久化、
@@ -51,9 +51,18 @@ A～G4、P1 和 P2 的仿真链路均已完成；P2-06 的门限已由三组数�
 
 ## 安装与部署
 
-以下步骤从已克隆的仓库开始；示例位置为 `~/robot_ws/climbot_sim`。首次获取源码可运行
-`git clone https://github.com/chubbyk-uu/climbot-wall-sim.git ~/robot_ws/climbot_sim`；已有仓库
-跳过，不要覆盖现有工作区。接着按系统准备图形环境，再安装共同依赖并构建。
+以下 Linux 命令以已有 Ubuntu 24.04 为前提；全新 Windows 先完成第 1 节的 WSL 发行版安装。
+示例位置为 `~/robot_ws/climbot_sim`。首次获取源码：
+
+```bash
+sudo apt update
+sudo apt install -y git
+mkdir -p ~/robot_ws
+git clone https://github.com/chubbyk-uu/climbot-wall-sim.git ~/robot_ws/climbot_sim
+cd ~/robot_ws/climbot_sim
+```
+
+已有仓库跳过克隆，不要覆盖现有工作区。接着按系统准备图形环境，再安装共同依赖并构建。
 
 ### 1. 准备对应系统的图形环境
 
@@ -63,7 +72,8 @@ launch 的默认 `auto` 会选原生后端；需要明确指定时使用 `gpu_ba
 
 **WSL2：**在 Windows 安装匹配的 GPU 驱动，并按
 [微软 WSLg 指南](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps)确认 WSL2 和
-Linux GUI 可用。更新 WSL 时，在 Windows PowerShell 中执行：
+Linux GUI 可用。全新 Windows 可先在管理员 PowerShell 运行
+`wsl --install -d Ubuntu-24.04`，按提示重启并创建 Linux 用户；已有发行版则按需更新：
 
 ```powershell
 wsl --update
@@ -87,14 +97,19 @@ WSL 的 Linux 文件系统，而不是 `/mnt/c`；大图读写尤其应避免跨
 
 ```bash
 sudo apt update
-sudo apt install -y ros-jazzy-ros-gz python3-colcon-common-extensions python3-rosdep mesa-utils
+sudo apt install -y ros-jazzy-ros-gz python3-colcon-common-extensions python3-rosdep \
+  mesa-utils build-essential curl wget unzip python3-pil python3-tifffile
 
 cd ~/robot_ws/climbot_sim
 source /opt/ros/jazzy/setup.bash
 sudo rosdep init  # 首次执行；已初始化时可跳过
 rosdep update
-rosdep install --from-paths src --ignore-src --rosdistro jazzy -y
+rosdep install --from-paths src --ignore-src --rosdistro jazzy \
+  --skip-keys python3-tifffile -y
 ```
+
+Ubuntu 24.04 提供 `python3-tifffile`，但当前 rosdep 没有这个键的映射，所以先用 apt 安装，
+再仅跳过这个键；其余依赖解析失败必须处理。Python 工具使用系统 Python，不需要 Conda。
 
 ### 3. 构建、加载和检查
 
@@ -120,6 +135,58 @@ glxinfo -B
 `glxinfo -B` 在有图形会话的终端执行。原生 Linux 检查是否使用预期 GPU；WSL 普通终端显示的
 只是系统库渲染器，不能据此证明启动时加载了修复库，按 [Mesa 验证步骤](docs/MESA_SETUP.md#验证是否真正生效)
 检查。`nvidia-smi` 能看到 GPU 也不能代替图形渲染验证。
+
+### 4. 从源码生成资产
+
+机器人底盘、轮子、密封圈、风机、提手、相机和灯均由仓库中的配置与脚本生成，启动时自动
+写入运行目录；不用下载私有 CAD，也不依赖开发机的照片目录或另两个机器人项目。
+尺寸来源是 [vacuum_chassis.yaml](src/climbot_description/config/vacuum_chassis.yaml)，
+建模／外观脚本为 [vacuum_layout.py](tools/vacuum_layout.py) 与
+[vacuum_visuals.py](tools/vacuum_visuals.py)，构建时安装到 `climbot_description`；
+运行装配入口是 [vacuum_assets.py](src/climbot_gazebo/climbot_gazebo/vacuum_assets.py)。
+
+视觉采集还需本地生成墙面贴图。源素材是 ambientCG 的
+[Concrete044D](https://ambientcg.com/view?id=Concrete044D)，选择 **8K-JPG**；素材为
+[CC0](https://docs.ambientcg.com/license/)，约 540 MiB。
+[下载脚本](tools/fetch_wall_texture.sh)固定 URL 和 ZIP SHA-256，
+只提取颜色图；下载失败或摘要不符会中止。诊断裂缝／涂鸦图集
+`tools/assets/diagnostic_wall_decals_v2.png` 已随仓库分发，无需额外下载。
+
+在仓库根目录依次执行，先生成普通混凝土墙，再叠加诊断特征：
+
+```bash
+cd ~/robot_ws/climbot_sim
+WALL_SOURCE="$HOME/.cache/climbot/Concrete044D_8K-JPG"
+bash tools/fetch_wall_texture.sh "$WALL_SOURCE"
+
+python3 tools/bake_wall_texture.py \
+  --source-dir "$WALL_SOURCE/maps" --output-dir textures/wall_025 \
+  --source-size-m 2.5 --region-m 10 8 --region-origin-m 0 0 \
+  --scale-mm-per-px 0.25 --block-px 2048 --gutter-px 128 \
+  --patch-px 1536 --overlap-fraction 0.25 --seam-feather-px 96 \
+  --candidates 96 --tolerance 0.10 --seed 20260820 --jobs 4 \
+  --host-memory-budget-gb 12 --video-memory-budget-gb 3
+
+python3 tools/create_diagnostic_wall.py \
+  --base-manifest textures/wall_025/wall_texture.json \
+  --output-dir textures/wall_diagnostic_025 --seed 20260827 --jobs 4
+```
+
+`2.5 m` 是项目声明的源图物理尺度，素材本身没有标注实测尺度。生成墙面为
+**10×8 m、40000×32000 像素、0.25 mm/px**，与现有拍照精度一致；每套 320 个 BC1 DDS
+块及 `wall_texture.json`，每套约 1.1 GB。缓存源 ZIP、两套贴图及临时空间应预留至少 5 GB；
+全尺寸烘焙的基础内存估计约 9.66 GB，另外还有编码进程与系统开销，建议给 WSL 至少
+16 GiB 可用内存。脚本会检查预算；资源不足先减少 `--jobs` 或仅生成较小任务区，
+不要通过降低采样精度来替代正式拍照资产。全墙显存估计约 2.14 GB，另需给相机和 GUI 留余量。
+
+颜色图 SHA-256 应为
+`8179451010485cdb9268356ee96de5dcdfc45845c98d1bea11ff267ae6e5649c`，生成清单记录
+源哈希、随机种子、尺度、分块和诊断特征。时间、提交号以及运行中的相机噪声会不同，
+不能要求新机器的整个清单或照片与历史验收逐字节一致。旋转／镜像与近邻去重的进一步增强
+仍按 [WALL_TEXTURE_PLAN](docs/WALL_TEXTURE_PLAN.md) 单独实施。
+
+`textures/`、下载缓存和采集数据不提交 Git。未指定 `wall_texture` 时默认是纯色墙，
+只适合查看模型；下面的采集主线会显式加载诊断墙。
 
 ### 可选：安装 CUDA 拼接后端
 
@@ -193,7 +260,7 @@ colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 bash tools/run_clang_tidy.sh --log /tmp/climbot-clang-tidy.log
 ```
 
-CI 在每个 main 推送和 Pull Request 上执行构建、静态分析和串行测试。批量回归与故障排查见
+CI 在每个 main 推送和 Pull Request 上执行构建、静态分析和八 worker 并行测试。批量回归与故障排查见
 [OPERATION](docs/OPERATION.md)。
 
 `climbot_bringup` 的 `test_workspace_consistency` 守两条没有任何单个包能自查的约定：launch
@@ -235,12 +302,50 @@ ros2 launch climbot_bringup coverage_sim.launch.py
 随后在 RViz 选择 `Publish Point`，点击任务区域：矩形点左下和右上两个角；等腰梯形再点右下角。
 所有点都必须在绿色安全框内。此模式只显示路径，不会控制机器人。
 
-### 3. 规划、控制与自动采集
+### 3. 首次使用：生成本机平场标定
+
+历史验收使用的 NPZ 不随 Git 分发。新电脑需用同一 PBR 材质路径的均匀靶重新标定，
+不能把仓库里的中性靶 PNG 当作平场增益文件。先关闭已有仿真和采集进程，打开三个终端；
+每个终端先加载本工作区，并设置同一个数据根：
+
+```bash
+source ~/robot_ws/climbot_sim/install/setup.bash
+export CLIMBOT_DATA_ROOT="${CLIMBOT_DATA_ROOT:-$HOME/climbot_data}"
+```
+
+终端 A 启动标定靶并保持运行（WSL 的 headless 仍需上述 Mesa 补丁）：
+
+```bash
+ros2 launch climbot_gazebo climbot_wall.launch.py \
+  headless:=true inspection_flat_field_target:=true wall_grid_spacing:=0
+```
+
+终端 B 启动单次采集服务并保持运行：
+
+```bash
+ros2 launch climbot_inspection inspection.launch.py \
+  use_sim_time:=true automatic_capture:=false archive_recorder:=false
+```
+
+终端 C 采集 30 次独立曝光，成功应输出 `CALIBRATION_OK`，帧数、唯一时间戳和唯一图像均为 30：
+
+```bash
+ros2 run climbot_inspection calibrate_flat_field --ros-args \
+  -p use_sim_time:=true \
+  -p output_file:="$CLIMBOT_DATA_ROOT/calibration/flat_field_local.npz"
+```
+
+成功后用 Ctrl-C 结束 A、B，再运行下一节的正常采集任务。新标定的哈希不同于历史验收文件，
+离线处理主线显式用 `--allow-unpinned-flat-field` 处理，并在处理清单中记录实际哈希；这不代表它已经
+取得历史验收的亮度残差结论。若相机、灯光或曝光改变，需要重新标定。
+
+### 4. 规划、控制与自动采集
 
 想让机器人执行路径并保存巡检照片，先设置数据保存位置，再启动完整任务：
 
 ```bash
 ros2 launch climbot_bringup coverage_mission.launch.py \
+  wall_texture:="$HOME/robot_ws/climbot_sim/textures/wall_diagnostic_025/wall_texture.json" \
   wall_grid_spacing:=0
 ```
 
@@ -260,13 +365,15 @@ launch 参数、`CLIMBOT_DATA_ROOT` 或 `$HOME/climbot_data` 解析出的保存�
 改成纵向扫描：
 
 ```bash
-ros2 launch climbot_bringup coverage_mission.launch.py sweep_direction:=vertical
+ros2 launch climbot_bringup coverage_mission.launch.py sweep_direction:=vertical \
+  wall_texture:="$HOME/robot_ws/climbot_sim/textures/wall_diagnostic_025/wall_texture.json" \
+  wall_grid_spacing:=0
 ```
 
 无 GUI 批处理、诊断墙贴图和 realistic 定位属于实验用法，见
 [OPERATION 的启动变体](docs/OPERATION.md#启动变体)。
 
-### 4. 离线图像处理
+### 5. 离线图像处理
 
 照片采集完成后，这一步对原图做校验、平场校正和去畸变，生成拼接可以读取的新目录。`RAW_RUN` 是
 上一步生成的任务目录；`PROCESSED_RUN` 必须是一个还不存在的新目录：
@@ -278,21 +385,24 @@ PROCESSED_RUN="$CLIMBOT_DATA_ROOT/processed-<new-id>"
 ros2 run climbot_image_processing process_inspection_archive \
   --input-run "$RAW_RUN" \
   --output-dir "$PROCESSED_RUN" \
-  --flat-field-file "$CLIMBOT_DATA_ROOT/calibration/<flat-field>.npz" \
+  --flat-field-file "$CLIMBOT_DATA_ROOT/calibration/flat_field_local.npz" \
+  --allow-unpinned-flat-field \
   --denoise none --jobs auto --memory-budget-gb 4
 ```
 
-原始照片不会被修改。命令成功后，在 `PROCESSED_RUN` 中得到校正后的图像和对应标签。平场文件
-不可用且明确不做校正时，把 `--flat-field-file ...` 换成 `--no-flat-field`；完整参数见
-[image processing README](src/climbot_image_processing/README.md)。
+原始照片不会被修改。命令成功后，在 `PROCESSED_RUN` 中得到校正后的图像和对应标签。
+使用已核验的历史标定文件时，移除 `--allow-unpinned-flat-field`，保留原有 SHA-256 严格门禁。
+明确不做平场校正时，将 `--flat-field-file ...` 与 `--allow-unpinned-flat-field` 两项一并换成
+`--no-flat-field`；完整参数见 [image processing README](src/climbot_image_processing/README.md)。
 
-### 5. 离线墙面拼接
+### 6. 离线墙面拼接
 
 这一步把多张照片拼成一张墙面图。通常把横向和竖向两次采集一起输入：`RUN_H`、`RUN_V` 是上一步
 得到的两个 processed 目录；`ROOT` 是本次拼接的目录前缀，下面每一步都在它后面加一个不同的
 后缀，作为自己的输出目录。
 
-按顺序执行下面五步。某一步报错时，先看该步输出的错误，不要跳到后面继续运行。
+按顺序执行下面五步。未安装可选 CUDA 后端时，执行最后一步前将 `--backend cuda` 改为
+`--backend cpu`。某一步报错时，先看该步输出的错误，不要跳到后面继续运行。
 
 | 步骤 | 命令 | 它在做什么 | 成功后得到什么 |
 | --- | --- | --- | --- |
