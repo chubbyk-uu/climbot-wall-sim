@@ -25,6 +25,7 @@
 #include <gz/sim/Util.hh>
 #include <gz/sim/components/ContactSensorData.hh>
 #include <gz/sim/components/Gravity.hh>
+#include <gz/sim/components/Name.hh>
 #include <gz/sim/components/Pose.hh>
 #include <gz/sim/components/SystemPluginInfo.hh>
 #include <algorithm>
@@ -154,6 +155,16 @@ public:
         ecm.CreateComponent(collision, gz::sim::components::ContactSensorData());
       }
     }
+    for (auto id : link_.Collisions(ecm)) {
+      auto name = ecm.Component<gz::sim::components::Name>(id);
+      if (name && name->Data().rfind("skirt_stop_", 0) == 0) {
+        stopCollisions_.push_back(id);
+        if (!ecm.Component<gz::sim::components::ContactSensorData>(id)) {
+          ecm.CreateComponent(id, gz::sim::components::ContactSensorData());
+        }
+      }
+    }
+    require(stopCollisions_.size() == 4, "missing unilateral skirt stop collisions");
     link_.EnableVelocityChecks(ecm);
     if (!ecm.Component<gz::sim::components::WorldPose>(link_.Entity())) {
       ecm.CreateComponent(link_.Entity(), gz::sim::components::WorldPose(
@@ -317,6 +328,20 @@ public:
       for (int i = 0; i < 3; ++i) {state_[v::RollingMx + i] = rolling[i];}
       state_[v::PressureCentreX] = centre.X();state_[v::PressureCentreY] = centre.Y();
       state_[v::PressureCentreZ] = centre.Z();
+      double stopNormal = 0;
+      for (auto id : stopCollisions_) {
+        auto data = ecm.Component<gz::sim::components::ContactSensorData>(id);
+        if (!data) {continue;}
+        for (const auto & c : data->Data().contact()) {
+          bool first = c.collision1().id() == id;
+          for (const auto & wrench : c.wrench()) {
+            auto f = first ? wrench.body_1_wrench().force() : wrench.body_2_wrench().force();
+            stopNormal += V3(f.x(), f.y(), f.z()).Dot(normal_);
+          }
+        }
+      }
+      // Native reaction from the previous solve; never apply it a second time.
+      state_[v::SkirtStopNormal] = std::max(0.0, stopNormal);
       state_[v::LastValidTime] = time;
       state_[v::CpuNanoseconds] = std::chrono::duration<double, std::nano>(
         std::chrono::steady_clock::now() - start).count();
@@ -480,6 +505,7 @@ private:
   std::vector<V3> attachments_;
   std::vector<double> lengths_, state_, speeds_;
   std::vector<v::SkirtSample> samples_;
+  std::vector<gz::sim::Entity> stopCollisions_;
   double mass_{}, track_{}, caster_{}, driveMu_{}, margin_{}, driveFloor_{}, ballFloor_{};
   double inner_{}, volumeNominal_{}, cx_{}, gapNominal_{}, fixed_{}, substep_{}, preload_{};
   double readyMargin_{}, dwell_{}, timeout_{}, velocityTolerance_{}, angularTolerance_{},

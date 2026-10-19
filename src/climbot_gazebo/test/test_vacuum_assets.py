@@ -121,3 +121,21 @@ def test_candidate_tf_tree_contains_all_shared_sensor_frames(tmp_path):
             child = parent[child]
     world = ET.parse(tmp_path / 'world.sdf')
     assert world.find('.//frame[@name="imu_link"]') is not None
+
+
+def test_collapsed_skirt_has_native_frictionless_stops(tmp_path):
+    """The stop starts at the declared compression, without sealing a groove."""
+    resolved = build_assets(tmp_path)
+    cfg = resolved['model']['config']
+    limit = resolved['physics']['skirt']['maximum_compression_m']
+    stop_gap = cfg['skirt']['free_height_m'] - limit
+    tree = ET.parse(tmp_path / 'model.sdf')
+    stops = [c for c in tree.findall('.//link[@name="chassis_link"]/collision')
+             if c.get('name', '').startswith('skirt_stop_')]
+    assert len(stops) == 4
+    for collision in stops:
+        pose = list(map(float, collision.findtext('pose').split()))
+        size = list(map(float, collision.findtext('geometry/box/size').split()))
+        assert pose[2] - size[2]/2 == pytest.approx(cfg['body']['bottom_z_m']-stop_gap)
+        assert float(collision.findtext('surface/friction/ode/mu')) == 0
+        assert float(collision.findtext('surface/friction/ode/mu2')) == 0

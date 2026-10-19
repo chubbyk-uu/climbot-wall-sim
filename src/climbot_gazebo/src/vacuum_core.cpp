@@ -234,9 +234,6 @@ SkirtResult skirt(
     require(positive(s.length_m) && nonnegative(s.gap_m) && nonnegative(s.channel_height_m) &&
       std::isfinite(s.x_m) && std::isfinite(s.y_m) && std::isfinite(s.gap_rate_mps) &&
       std::isfinite(s.velocity_x_mps) && std::isfinite(s.velocity_y_mps), "invalid skirt sample");
-    if (p.free_height_m - s.gap_m > p.maximum_compression_m + 1e-12) {
-      throw std::domain_error("skirt compression hard limit: invalid prescribed pose");
-    }
     require(nonnegative(s.support_fraction) && s.support_fraction <= 1,
       "invalid finite-wall support fraction");
     perimeter += s.length_m;
@@ -258,7 +255,7 @@ SkirtResult skirt(
     if (z < 0) {
       double damping_weight = std::clamp(-z / p.transition_m, 0.0, 1.0);
       damping_weight = damping_weight * damping_weight * (3 - 2 * damping_weight);
-      mech = std::max(0.0, (-p.stiffness_n_m * z -
+      mech = std::max(0.0, (p.stiffness_n_m * std::min(-z, p.maximum_compression_m) -
           p.damping_ns_m * s.gap_rate_mps * damping_weight) * s.length_m / perimeter);
     }
     mech *= s.support_fraction;

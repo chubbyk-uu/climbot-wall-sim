@@ -244,7 +244,7 @@ TEST(VacuumSkirt, LocalDepressionIsNotAutomaticallyAThroughChannel)
   pts[0].connected = true;
   EXPECT_NEAR(v::skirt(p, pts, 0).leak_area_m2, .0004, 1e-14);
 }
-TEST(VacuumSkirt, DetachedLipHasNoResidualWallSupportAndHardLimitIsExplicit)
+TEST(VacuumSkirt, DetachedLipHasNoResidualSupportAndBottomingKeepsPressure)
 {
   v::SkirtParameters p;p.inner_area_m2 = .1;auto pts = squareSamples();
   for (auto & pt : pts) {
@@ -254,5 +254,13 @@ TEST(VacuumSkirt, DetachedLipHasNoResidualWallSupportAndHardLimitIsExplicit)
   EXPECT_DOUBLE_EQ(r.normal_n, 0);EXPECT_DOUBLE_EQ(r.weighted_lip_area_m2, 0);
   EXPECT_GT(r.leak_area_m2, 0);
   pts[0].gap_m = .001;
-  EXPECT_THROW(v::skirt(p, pts, 6000), std::domain_error);
+  auto bottomed = v::skirt(p, pts, 6000);
+  EXPECT_GT(bottomed.normal_n, 0);
+  EXPECT_LT(bottomed.pressure.force.z, 0);
+  // Elastic force saturates at collapsed length; solver contact carries excess.
+  double mechanical = bottomed.mechanical_n;
+  pts[0].gap_m = .0005;
+  EXPECT_DOUBLE_EQ(v::skirt(p, pts, 6000).mechanical_n, mechanical);
+  pts[0].gap_m = .018;
+  EXPECT_NO_THROW(v::skirt(p, pts, 6000));
 }

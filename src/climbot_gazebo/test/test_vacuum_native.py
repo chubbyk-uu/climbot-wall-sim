@@ -236,3 +236,41 @@ def test_explicit_pressure_bench_opening_ramp_pause_and_reset(tmp_path):
         before = next(r for r in trace if abs(r['vac_time_s'] - .199) < 1e-8)
         open_port = next(r for r in trace if abs(r['vac_time_s'] - .599) < 1e-8)
         assert open_port['vac_delta_pa'] < before['vac_delta_pa']
+
+
+@pytest.mark.parametrize('step', [.001, .0005])
+def test_bottomed_skirt_keeps_pressure_and_has_native_stop_reaction(tmp_path, step):
+    """Isolated seal bench: native stops carry load; wheels supply no reaction."""
+    from xml.etree import ElementTree as ET
+    build_assets(tmp_path, realtime_factor=0, step_s=step,
+                 runtime_overrides={'fixture_bench_hold': True})
+    path = tmp_path / 'world.sdf'
+    tree = ET.parse(path)
+    for name in ['left_wheel_link', 'right_wheel_link', 'caster_ball_link']:
+        collision = tree.find(f'.//model[@name="climbot"]/link[@name="{name}"]/collision')
+        surface = collision.find('surface')
+        contact = ET.SubElement(surface, 'contact')
+        ET.SubElement(contact, 'collide_bitmask').text = '0'
+    tree.write(path)
+    request = tmp_path / 'request.yaml'
+    request.write_text(yaml.safe_dump({'world': 'world.sdf', 'step_s': step, 'duration_s': 2}))
+    prefix = Path(get_package_prefix('climbot_gazebo'))
+    env, _ = rendering_environment()
+    env['GZ_PARTITION'] = 'climbot_stop_' + uuid.uuid4().hex
+    env['GZ_SIM_SYSTEM_PLUGIN_PATH'] = str(prefix / 'lib')
+    log = tmp_path / 'native.log'
+    with log.open('w') as stream:
+        result = subprocess.run([str(prefix / 'lib/climbot_gazebo/vacuum_sim_probe'),
+                                 str(request), str(tmp_path / 'native')], env=env,
+                                stdout=stream, stderr=subprocess.STDOUT, timeout=60)
+    assert result.returncode == 0, f'Native stop bench failed; inspect {log}'
+    with (tmp_path / 'native/frames.csv').open() as stream:
+        rows = [{k: float(v) for k, v in row.items()} for row in csv.DictReader(stream)]
+    assert all(r['vac_runtime_failed'] == 0 for r in rows)
+    steady = [r for r in rows if r['sim_time_s'] > 1.5]
+    assert len(steady) > 100
+    assert min(r['vac_delta_pa'] for r in steady) > 6000
+    assert min(r['vac_skirt_stop_previous_normal_n'] for r in steady) > 100
+    assert min(r['vac_minimum_gap_m'] for r in steady) > .0115
+    assert max(r['vac_minimum_gap_m'] for r in steady) < .0122
+    assert all(r['vac_last_valid_time_s'] == pytest.approx(r['sim_time_s']) for r in steady)
