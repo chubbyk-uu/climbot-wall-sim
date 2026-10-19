@@ -13,6 +13,7 @@
 #include <gz/sim/ServerConfig.hh>
 #include <gz/sim/System.hh>
 #include <gz/sim/Link.hh>
+#include <gz/sim/Joint.hh>
 #include <gz/sim/Model.hh>
 #include <gz/sim/Util.hh>
 #include <gz/sim/components/ContactSensorData.hh>
@@ -21,6 +22,7 @@
 #include <gz/sim/components/JointVelocityCmd.hh>
 #include <yaml-cpp/yaml.h>
 #include <chrono>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -42,7 +44,11 @@ public:
   std::vector<std::string> names;
   std::vector<gz::math::Vector3d> before;
   std::vector<gz::sim::Entity> scanJoints;
+  std::vector<gz::sim::Link> sprungLinks;
+  std::vector<gz::sim::Joint> springs;
+  std::vector<std::pair<double, double>> loads;
   double scanSpeed = 0, settleSeconds = 0, normalForce = 0;
+  double appliedLoad = 0;
   void PreUpdate(const gz::sim::UpdateInfo & info, ECM & ecm) override
   {
     if (links.empty()) {
@@ -55,6 +61,15 @@ public:
           if (!collision) {throw std::runtime_error("probe collision missing");}
           ecm.CreateComponent(collision, gz::sim::components::ContactSensorData());
           links.push_back(link);collisions.push_back(collision);names.push_back(name->Data());
+          if (!loads.empty()) {
+            gz::sim::Link sprung(model.LinkByName(ecm, "sprung"));
+            gz::sim::Joint spring(model.JointByName(ecm, "tyre_compression"));
+            if (!sprung.Valid(ecm) || !spring.Valid(ecm)) {
+              throw std::runtime_error("missing compliance fixture links/joint");
+            }
+            spring.EnablePositionCheck(ecm);spring.EnableVelocityCheck(ecm);
+            sprungLinks.push_back(sprung);springs.push_back(spring);
+          }
           if (scanSpeed > 0) {
             auto joint = model.JointByName(ecm, "scan_slide");
             if (!joint) {throw std::runtime_error("missing diagnostic scan joint");}
@@ -67,8 +82,23 @@ public:
     for (const auto & link : links) {
       before.push_back(gz::sim::worldPose(link.Entity(), ecm).Pos());
     }
-    if (scanSpeed <= 0 || info.paused) {return;}
+    if (info.paused) {return;}
     const double time = std::chrono::duration<double>(info.simTime).count();
+    if (!loads.empty()) {
+      appliedLoad = loads.front().second;
+      for (std::size_t i = 1; i < loads.size(); ++i) {
+        if (time < loads[i].first) {
+          const auto & a = loads[i - 1];const auto & b = loads[i];
+          appliedLoad = a.second + (b.second - a.second) * (time - a.first) /
+            (b.first - a.first);break;
+        }
+        appliedLoad = loads[i].second;
+      }
+      for (auto & link : sprungLinks) {
+        link.AddWorldWrench(ecm, {-appliedLoad, 0, 0}, gz::math::Vector3d::Zero);
+      }
+    }
+    if (scanSpeed <= 0) {return;}
     for (std::size_t i = 0; i < links.size(); ++i) {
       const std::vector<double> command{time >= settleSeconds ? scanSpeed : 0.0};
       auto velocity = ecm.Component<gz::sim::components::JointVelocityCmd>(scanJoints[i]);
@@ -89,7 +119,15 @@ public:
       if (!pose || !data) {throw std::runtime_error("missing native contact/pose");}
       frames << time << ',' << names[i] << ',' << pose->Pos().X() << ',' <<
         pose->Pos().Y() << ',' << pose->Pos().Z() << ',' << data->Data().contact_size() << ',' <<
-        before[i].X() << ',' << before[i].Y() << ',' << before[i].Z() << '\n';
+        before[i].X() << ',' << before[i].Y() << ',' << before[i].Z();
+      if (!loads.empty()) {
+        auto q = springs[i].Position(ecm), velocity = springs[i].Velocity(ecm);
+        if (!q || q->size() != 1 || !velocity || velocity->size() != 1) {
+          throw std::runtime_error("missing measured tyre compression");
+        }
+        frames << ',' << (*q)[0] << ',' << (*velocity)[0] << ',' << appliedLoad;
+      }
+      frames << '\n';
       for (const auto & contact : data->Data().contact()) {
         for (int j = 0; j < contact.position_size(); ++j) {
           if (j >= contact.normal_size() || j >= contact.depth_size()) {
@@ -123,6 +161,20 @@ int main(int argc, char ** argv)
     const auto iterations = request["iterations"].as<unsigned int>();
     if (!iterations || iterations > 100000) {throw std::runtime_error("invalid iterations");}
     auto observer = std::make_shared<Observer>();
+    if (request["normal_load_profile"]) {
+      for (const auto & p : request["normal_load_profile"]) {
+        double t = p["time_s"].as<double>(), f = p["force_n"].as<double>();
+        if (!std::isfinite(t) || !std::isfinite(f) || t < 0 || f < 0 || f > 600 ||
+          (!observer->loads.empty() && t <= observer->loads.back().first))
+        {
+          throw std::runtime_error("invalid normal loading profile");
+        }
+        observer->loads.emplace_back(t, f);
+      }
+      if (observer->loads.empty() || observer->loads.front().first != 0 || request["sweep"]) {
+        throw std::runtime_error("loading profile must start at zero, without imposed sweep");
+      }
+    }
     if (request["sweep"]) {
       auto sweep = request["sweep"];
       observer->scanSpeed = sweep["speed_mps"].as<double>();
@@ -134,7 +186,11 @@ int main(int argc, char ** argv)
     }
     observer->frames.open(out / "frames.csv");observer->contacts.open(out / "contacts.csv");
     observer->frames << std::setprecision(17) <<
-      "time_s,name,x,y,z,contacts,before_x,before_y,before_z\n";
+      "time_s,name,x,y,z,contacts,before_x,before_y,before_z";
+    if (!observer->loads.empty()) {
+      observer->frames << ",compression_m,compression_velocity_mps,applied_load_n";
+    }
+    observer->frames << '\n';
     observer->contacts << std::setprecision(17) <<
       "time_s,name,x,y,z,nx,ny,nz,depth_m,force_x_n,force_y_n,force_z_n,"
       "collision1_id,collision2_id,collision1_name,collision2_name\n";

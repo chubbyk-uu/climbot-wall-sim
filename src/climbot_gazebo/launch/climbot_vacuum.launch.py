@@ -49,7 +49,9 @@ def _setup(context):
     io = yaml.safe_load(Path(io_config).read_text())['vacuum_io'] if io_config else None
     build_assets(root, mode=LaunchConfiguration('pressure_mode').perform(context),
                  heading_deg=float(LaunchConfiguration('heading_deg').perform(context)),
-                 io_overrides=io)
+                 io_overrides=io,
+                 wheel_compliance=(
+                     LaunchConfiguration('wheel_compliance').perform(context) == 'true'))
     prefix = Path(get_package_prefix('climbot_gazebo'))
     share = Path(get_package_share_directory('climbot_gazebo'))
     control = Path(get_package_share_directory('climbot_control'))
@@ -99,6 +101,8 @@ def generate_launch_description():
         DeclareLaunchArgument('pressure_mode', default_value='fan_ode',
                               choices=['fan_ode', 'fixed_pressure']),
         DeclareLaunchArgument('heading_deg', default_value='0'),
+        DeclareLaunchArgument('wheel_compliance', default_value='false',
+                              choices=['false', 'true']),
         DeclareLaunchArgument('io_config', default_value=''),
         DeclareLaunchArgument('headless', default_value='true'),
         DeclareLaunchArgument('gpu_backend', default_value='auto',

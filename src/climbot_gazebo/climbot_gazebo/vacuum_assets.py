@@ -28,6 +28,8 @@ from climbot_description.vacuum_loads import minimum_pressure, states
 from climbot_description.vacuum_preview import export, node, numbers
 import yaml
 
+from .wheel_compliance import apply as apply_wheel_compliance
+
 
 def _read(path, key):
     return yaml.safe_load(path.read_text())[key]
@@ -109,14 +111,59 @@ def add_fan_visuals_gui(world):
         node(gui, 'property', value, type=typ, key=key)
 
 
+def _caster_proxy_model(model, urdf, radius):
+    """Keep real mass/visuals/centre, scaling collision and rotational inertia only."""
+    for tree in (model, urdf):
+        ball = tree.find('link[@name="caster_ball_link"]')
+        sphere = ball.find('collision/geometry/sphere')
+        if tree is urdf:
+            sphere.set('radius', str(radius / 2))
+            inertia = ball.find('inertial/inertia')
+            for key, value in inertia.attrib.items():
+                inertia.set(key, str(float(value) / 4))
+        else:
+            sphere.find('radius').text = str(radius / 2)
+            for entry in ball.find('inertial/inertia'):
+                entry.text = str(float(entry.text) / 4)
+    for link in model.findall('link'):
+        for collision in link.findall('collision'):
+            surface = collision.find('surface')
+            if surface is None:
+                surface = node(collision, 'surface')
+            contact = surface.find('contact')
+            if contact is None:
+                contact = node(surface, 'contact')
+            node(contact, 'collide_bitmask',
+                 2 if link.get('name') == 'caster_ball_link' else 1)
+
+
+def _caster_proxy_flat_wall(world, normal, offset):
+    """Flat-wall dilation for the opt-in rolling calibration, collision only."""
+    wall = world.find('model[@name="wall"]/link[@name="wall_link"]')
+    collision = wall.find('collision[@name="wall_collision"]')
+    contact = node(collision.find('surface'), 'contact')
+    node(contact, 'collide_bitmask', 1)
+    proxy = node(world, 'model', name='caster_proxy_wall')
+    node(proxy, 'static', 'true')
+    node(proxy, 'pose', numbers([*(offset * n for n in normal), 0, 0, 0]))
+    link = node(proxy, 'link', name='surface')
+    link.append(deepcopy(wall.find('pose')))
+    item = deepcopy(collision)
+    item.set('name', 'caster_proxy_collision')
+    item.find('surface/contact/collide_bitmask').text = '2'
+    link.append(item)
+
+
 def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                  realtime_factor=1.0, runtime_overrides=None, io_overrides=None,
-                 physics_overrides=None):
+                 physics_overrides=None, caster_proxy=False, wheel_compliance=False):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
     if not math.isfinite(heading_deg) or not 0 < step_s <= 0.001:
         raise ValueError('invalid heading or physical step')
+    if type(caster_proxy) is not bool or type(wheel_compliance) is not bool:
+        raise ValueError('caster_proxy and wheel_compliance must be boolean')
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     description = Path(get_package_share_directory('climbot_description'))
@@ -260,7 +307,7 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     node(sp, 'model_cg', numbers(model['centre_xyz_m']))
     node(sp, 'track_m', model['track_m'])
     node(sp, 'caster_x_m', model['caster_x_m'])
-    node(sp, 'caster_radius_m', cfg['caster']['radius_m'])
+    node(sp, 'caster_radius_m', cfg['caster']['radius_m'] / (2 if caster_proxy else 1))
     for key in ['caster_rolling_coefficient', 'caster_rolling_regularization_mps']:
         node(sp, key, cfg['analysis'][key])
     node(sp, 'inner_area_m2', model['inner_area_m2'])
@@ -326,12 +373,21 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                for i in range(3)]
     node(sp, 'wall_pose', numbers(surface + wall['origin_rpy']))
     node(sp, 'wall_size', numbers([wall['surface']['width_m'], wall['surface']['height_m']]))
+    if caster_proxy:
+        _caster_proxy_model(new, urdf, cfg['caster']['radius_m'])
+    if wheel_compliance:
+        compliance = _read(gazebo / 'config/m2_wheel_compliance.yaml', 'm2_wheel_compliance')
+        if step_s != compliance['calibration_step_s']:
+            raise ValueError('wheel compliance requires its calibrated physical step')
+        apply_wheel_compliance(new, urdf, compliance)
     world_file = Path(stack.render_world(str(gazebo), str(description), '0'))
     try:
         world_root = ET.parse(world_file).getroot()
     finally:
         world_file.unlink(missing_ok=True)
     world = world_root.find('world')
+    if caster_proxy:
+        _caster_proxy_flat_wall(world, normal, cfg['caster']['radius_m'] / 2)
     # Only the candidate GUI animates rotors; physics and sensor rendering stay
     # unchanged. This uses actual normalized fan speed, with illustrative RPM.
     add_fan_visuals_gui(world)
@@ -364,5 +420,11 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                 'wall_surface_pose': surface + wall['origin_rpy'],
                 'nominal_startup_minimum_pa': nominal_minimum,
                 'camera_enabled': runtime['camera_enabled']}
+    if caster_proxy:
+        resolved['caster_proxy'] = {'surface': 'flat_calibration_only',
+                                    'collision_radius_m': cfg['caster']['radius_m'] / 2,
+                                    'inertia_scale': .25}
+    if wheel_compliance:
+        resolved['wheel_compliance'] = compliance
     (out / 'resolved.json').write_text(json.dumps(resolved, indent=2, allow_nan=False) + '\n')
     return resolved

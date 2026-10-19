@@ -1,0 +1,121 @@
+{
+  "scope": "Full robot flat-wall straight/turn pair only; no rough wall or GUI acceptance",
+  "passed": true,
+  "gates": {
+    "position_difference_m": 0.005,
+    "orientation_difference_deg": 0.2,
+    "mean_load_difference_n": 5.0,
+    "rolling_force_relative_difference": 0.05,
+    "rolling_power_relative_difference": 0.05,
+    "speed_ratio_error": 0.05,
+    "contact_slip_mps": 0.005
+  },
+  "paired": {
+    "maximum_position_difference_m": 1.0984343873222092e-08,
+    "maximum_orientation_difference_deg": 2.4148365394514667e-06,
+    "phases": {
+      "straight": {
+        "load_difference_n": 1.2026888498439803e-06,
+        "spin_ratio": 2.0000115513296928,
+        "force_relative_difference": 2.6108233353028254e-09,
+        "power_relative_difference": 5.778275684820144e-06
+      },
+      "turn": {
+        "load_difference_n": 1.579056174705329e-07,
+        "spin_ratio": 2.0000114413794217,
+        "force_relative_difference": 9.244678356168379e-10,
+        "power_relative_difference": 5.721674776415497e-06
+      }
+    },
+    "checks": {
+      "position": true,
+      "orientation": true,
+      "straight/load": true,
+      "straight/spin": true,
+      "straight/force": true,
+      "straight/power": true,
+      "straight/slip": true,
+      "turn/load": true,
+      "turn/spin": true,
+      "turn/force": true,
+      "turn/power": true,
+      "turn/slip": true
+    }
+  },
+  "real": {
+    "checks": {
+      "released": true,
+      "no_runtime_failure": true,
+      "no_fixture_reintroduced": true,
+      "no_skirt_stop": true,
+      "finite": true
+    },
+    "phases": {
+      "straight": {
+        "mean_ball_load_n": 497.3085480957484,
+        "mean_spin_rps": 13.85952166383141,
+        "mean_equivalent_rolling_force_n": 4.973002635484723,
+        "mean_rolling_dissipation_w": 0.8615429720098903,
+        "maximum_contact_slip_mps": 9.344397636958947e-07
+      },
+      "turn": {
+        "mean_ball_load_n": 492.2545343134066,
+        "mean_spin_rps": 7.782888708074768,
+        "mean_equivalent_rolling_force_n": 4.922352436043841,
+        "mean_rolling_dissipation_w": 0.47888939630118404,
+        "maximum_contact_slip_mps": 2.1006528351097727e-06
+      }
+    },
+    "release_s": 0.699,
+    "log_path": "/tmp/climbot_m2_roll_real_1792392885698422063.log",
+    "ode_verified": true
+  },
+  "proxy": {
+    "checks": {
+      "released": true,
+      "no_runtime_failure": true,
+      "no_fixture_reintroduced": true,
+      "no_skirt_stop": true,
+      "finite": true
+    },
+    "phases": {
+      "straight": {
+        "mean_ball_load_n": 497.30854929843724,
+        "mean_spin_rps": 27.719203423566945,
+        "mean_equivalent_rolling_force_n": 4.973002648468354,
+        "mean_rolling_dissipation_w": 0.8615479502426969,
+        "maximum_contact_slip_mps": 7.067677864118002e-08
+      },
+      "turn": {
+        "mean_ball_load_n": 492.25453447131224,
+        "mean_spin_rps": 15.565866463132242,
+        "mean_equivalent_rolling_force_n": 4.9223524405943975,
+        "mean_rolling_dissipation_w": 0.47889213635056355,
+        "maximum_contact_slip_mps": 2.483086144324327e-06
+      }
+    },
+    "release_s": 0.699,
+    "log_path": "/tmp/climbot_m2_roll_proxy_1792392894564246601.log",
+    "ode_verified": true
+  },
+  "mesa": {
+    "backend": "wsl_d3d12",
+    "mesa": "private",
+    "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
+  },
+  "ode": {
+    "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install",
+    "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
+    "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
+    "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
+  },
+  "source_commit": "1db6d249d45768ae45a12ccac3f6e13dd58031c3",
+  "source_sha256": {
+    "tools/validate_m2_caster_rolling.py": "437ac81aad780a50668b86de6df4f16f527452a0d96a05c935dbbb0f547a5eaf",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "33847600892e000f9763651d96f004d2452b39eaca6cb672e26dab180d6c7bff",
+    "src/climbot_gazebo/src/vacuum_sim_probe.cpp": "bf3ad3c4ece892622103eb16b39278523e59ca094912ba73188b1993811daa4b"
+  },
+  "binary_sha256": "41a5bfbbb8eb6ce38c4108d181763cca9178c8830df631c9a519da2e06c384ff",
+  "source_dirty": true,
+  "raw_data_relative_root": "m2_caster_rolling_20261019"
+}

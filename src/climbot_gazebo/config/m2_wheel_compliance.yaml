@@ -1,0 +1,15 @@
+# Provisional tyre proxy; opt in during M2. Does not change default rigid wheels.
+# Actual displacement calibrated at 1 ms, not inferred from N/k.
+# Evidence: results/m2_wheel_compliance_2026-10-19/REPORT.md
+m2_wheel_compliance:
+  schema_version: 1
+  stiffness_n_m: 622067.9744964576
+  damping_n_s_m: 1266.2039234893723
+  lower_m: 0.0
+  upper_m: 0.004
+  axle_mass_kg: 0.02  # split from each existing 0.6 kg wheel; total mass unchanged
+  axle_radius_m: 0.01
+  calibration_step_s: 0.001
+  nominal_contact_load_n: 150.0
+  nominal_realized_compression_m: 0.001
+  calibrated_contact_load_range_n: [50.0, 300.0]  # T2 checks any expanded envelope

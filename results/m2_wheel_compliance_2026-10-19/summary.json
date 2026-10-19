@@ -1,0 +1,305 @@
+{
+  "scope": "T1 nominal 0\u2013300 N isolated calibration and flat-wall ROS motion/reset/TF; no T2, rough wall or GUI acceptance",
+  "passed": true,
+  "protocol": "protocol.json",
+  "trials": [
+    {
+      "windows": {
+        "50_up": {
+          "compression_mean_m": 0.0007620949346744994,
+          "compression_peak_to_peak_m": 1.2939145981874164e-09,
+          "contact_load_mean_n": 49.99999963183952,
+          "maximum_abs_compression_velocity_mps": 6.106809834205418e-08,
+          "expected_load_n": 50
+        },
+        "150_up": {
+          "compression_mean_m": 0.0022862847901692837,
+          "compression_peak_to_peak_m": 2.5878292651132506e-09,
+          "contact_load_mean_n": 149.99999970766663,
+          "maximum_abs_compression_velocity_mps": 1.2213619904333228e-07,
+          "expected_load_n": 150
+        },
+        "300_up": {
+          "compression_mean_m": 0.0040000000000648,
+          "compression_peak_to_peak_m": 0.0,
+          "contact_load_mean_n": 300.0000015110016,
+          "maximum_abs_compression_velocity_mps": 3.885780586188048e-16,
+          "expected_load_n": 300
+        },
+        "150_down": {
+          "compression_mean_m": 0.002286284721659185,
+          "compression_peak_to_peak_m": 2.9944519351100818e-09,
+          "contact_load_mean_n": 149.99999926321385,
+          "maximum_abs_compression_velocity_mps": 1.4006187173953855e-07,
+          "expected_load_n": 150
+        },
+        "unloaded": {
+          "compression_mean_m": 1.079756660095911e-71,
+          "compression_peak_to_peak_m": 7.038917707732184e-70,
+          "contact_load_mean_n": 0.0,
+          "maximum_abs_compression_velocity_mps": 2.4695422203392618e-67,
+          "expected_load_n": 0
+        }
+      },
+      "compression_min_m": 0.0,
+      "compression_max_m": 0.004017574427349477,
+      "checks": {
+        "finite": true,
+        "target": false,
+        "settled": true,
+        "independent_contact_load": true,
+        "unloaded": true,
+        "no_upper_stop": false,
+        "no_tensile_extension": true,
+        "repeat_150": true,
+        "linear": false
+      },
+      "passed": false,
+      "stiffness_n_m": 150000.0,
+      "damping_n_s_m": 621.7708574763543,
+      "log_path": "/tmp/climbot_m2_t1_trial_0_1792393605530265451.log"
+    },
+    {
+      "windows": {
+        "50_up": {
+          "compression_mean_m": 0.00045758108184661123,
+          "compression_peak_to_peak_m": 4.060176408407154e-11,
+          "contact_load_mean_n": 50.00000043681893,
+          "maximum_abs_compression_velocity_mps": 3.819847591013392e-09,
+          "expected_load_n": 50
+        },
+        "150_up": {
+          "compression_mean_m": 0.0013727432457558949,
+          "compression_peak_to_peak_m": 8.120355082796848e-11,
+          "contact_load_mean_n": 149.99999932552257,
+          "maximum_abs_compression_velocity_mps": 7.639696764094595e-09,
+          "expected_load_n": 150
+        },
+        "300_up": {
+          "compression_mean_m": 0.002745486491727798,
+          "compression_peak_to_peak_m": 1.218053379513362e-10,
+          "contact_load_mean_n": 299.9999992409536,
+          "maximum_abs_compression_velocity_mps": 1.1459545867786858e-08,
+          "expected_load_n": 300
+        },
+        "150_down": {
+          "compression_mean_m": 0.001372743246836042,
+          "compression_peak_to_peak_m": 1.2180522324274634e-10,
+          "contact_load_mean_n": 150.00000075909423,
+          "maximum_abs_compression_velocity_mps": 1.1459538595826047e-08,
+          "expected_load_n": 150
+        },
+        "unloaded": {
+          "compression_mean_m": 1.7691982001555864e-99,
+          "compression_peak_to_peak_m": 1.5392031903701538e-97,
+          "contact_load_mean_n": 0.0,
+          "maximum_abs_compression_velocity_mps": 8.16529135712112e-95,
+          "expected_load_n": 0
+        }
+      },
+      "compression_min_m": 0.0,
+      "compression_max_m": 0.0028167693856826514,
+      "checks": {
+        "finite": true,
+        "target": false,
+        "settled": true,
+        "independent_contact_load": true,
+        "unloaded": true,
+        "no_upper_stop": true,
+        "no_tensile_extension": true,
+        "repeat_150": true,
+        "linear": true
+      },
+      "passed": false,
+      "stiffness_n_m": 342942.7185253925,
+      "damping_n_s_m": 940.146484214752,
+      "log_path": "/tmp/climbot_m2_t1_trial_1_1792393661944806654.log"
+    },
+    {
+      "windows": {
+        "50_up": {
+          "compression_mean_m": 0.0003100887057032585,
+          "compression_peak_to_peak_m": 3.175448294069627e-12,
+          "contact_load_mean_n": 49.99999948111145,
+          "maximum_abs_compression_velocity_mps": 4.507424572475216e-10,
+          "expected_load_n": 50
+        },
+        "150_up": {
+          "compression_mean_m": 0.0009302661168690739,
+          "compression_peak_to_peak_m": 6.350907972262065e-12,
+          "contact_load_mean_n": 150.0000014243701,
+          "maximum_abs_compression_velocity_mps": 9.01485941451341e-10,
+          "expected_load_n": 150
+        },
+        "300_up": {
+          "compression_mean_m": 0.0018605322334974102,
+          "compression_peak_to_peak_m": 9.526367542034286e-12,
+          "contact_load_mean_n": 299.99999940661684,
+          "maximum_abs_compression_velocity_mps": 1.3522294395329482e-09,
+          "expected_load_n": 300
+        },
+        "150_down": {
+          "compression_mean_m": 0.0009302661156654577,
+          "compression_peak_to_peak_m": 9.526311271941534e-12,
+          "contact_load_mean_n": 150.00000059345666,
+          "maximum_abs_compression_velocity_mps": 1.3522244157737617e-09,
+          "expected_load_n": 150
+        },
+        "unloaded": {
+          "compression_mean_m": 2.873944611171649e-131,
+          "compression_peak_to_peak_m": 3.137142418838054e-129,
+          "contact_load_mean_n": 0.0,
+          "maximum_abs_compression_velocity_mps": 2.4142677823897312e-126,
+          "expected_load_n": 0
+        }
+      },
+      "compression_min_m": 0.0,
+      "compression_max_m": 0.0019034473645104858,
+      "checks": {
+        "finite": true,
+        "target": false,
+        "settled": true,
+        "independent_contact_load": true,
+        "unloaded": true,
+        "no_upper_stop": true,
+        "no_tensile_extension": true,
+        "repeat_150": true,
+        "linear": true
+      },
+      "passed": false,
+      "stiffness_n_m": 721726.3001764476,
+      "damping_n_s_m": 1363.8637892631841,
+      "log_path": "/tmp/climbot_m2_t1_trial_2_1792393664447514808.log"
+    },
+    {
+      "windows": {
+        "50_up": {
+          "compression_mean_m": 0.00033333333379467436,
+          "compression_peak_to_peak_m": 5.428581087256468e-12,
+          "contact_load_mean_n": 49.999999773938164,
+          "maximum_abs_compression_velocity_mps": 6.300156230043541e-10,
+          "expected_load_n": 50
+        },
+        "150_up": {
+          "compression_mean_m": 0.0010000000009227205,
+          "compression_peak_to_peak_m": 1.0857182123832909e-11,
+          "contact_load_mean_n": 149.99999993845134,
+          "maximum_abs_compression_velocity_mps": 1.2600303023191373e-09,
+          "expected_load_n": 150
+        },
+        "300_up": {
+          "compression_mean_m": 0.0020000000013841003,
+          "compression_peak_to_peak_m": 1.628578391935087e-11,
+          "contact_load_mean_n": 300.00000005936477,
+          "maximum_abs_compression_velocity_mps": 1.890045009389496e-09,
+          "expected_load_n": 300
+        },
+        "150_down": {
+          "compression_mean_m": 0.0009999999986160934,
+          "compression_peak_to_peak_m": 1.628568265486796e-11,
+          "contact_load_mean_n": 149.99999994069998,
+          "maximum_abs_compression_velocity_mps": 1.8900502551932874e-09,
+          "expected_load_n": 150
+        },
+        "unloaded": {
+          "compression_mean_m": 2.549595911893963e-124,
+          "compression_peak_to_peak_m": 2.66685315452981e-122,
+          "contact_load_mean_n": 0.0,
+          "maximum_abs_compression_velocity_mps": 1.90538596745213e-119,
+          "expected_load_n": 0
+        }
+      },
+      "compression_min_m": 0.0,
+      "compression_max_m": 0.0020464603246778262,
+      "checks": {
+        "finite": true,
+        "target": true,
+        "settled": true,
+        "independent_contact_load": true,
+        "unloaded": true,
+        "no_upper_stop": true,
+        "no_tensile_extension": true,
+        "repeat_150": true,
+        "linear": true
+      },
+      "passed": true,
+      "stiffness_n_m": 622067.9744964576,
+      "damping_n_s_m": 1266.2039234893723,
+      "log_path": "/tmp/climbot_m2_t1_trial_3_1792393727421263025.log"
+    }
+  ],
+  "mesa": {
+    "backend": "wsl_d3d12",
+    "mesa": "private",
+    "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
+  },
+  "ode": {
+    "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install",
+    "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
+    "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
+    "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
+  },
+  "source_commit": "1db6d249d45768ae45a12ccac3f6e13dd58031c3",
+  "source_dirty": true,
+  "source_sha256": {
+    "tools/calibrate_m2_wheel_compliance.py": "23f82cebb3db70ec320ee1342c4dc73cc222805b5da067aa56917d8db3c4a3ca",
+    "src/climbot_gazebo/src/wall_surface_probe.cpp": "2d1c9978bac3f49fe2d66fffec9327f25e8acaefb97e61a22f88edc7e978bea3"
+  },
+  "binary_sha256": "cc12df368f98acc104e0381bcb2132cc52a159f83ea48601ddcfd81e8b643560",
+  "raw_data_relative_root": "m2_wheel_compliance_20261019",
+  "ros_state": {
+    "scope": "Headless ROS motion/reset and dynamic TF; no GUI or T2 acceptance",
+    "checks": {
+      "motion/left_parent": true,
+      "motion/right_parent": true,
+      "motion/both_joints_match_tf": true,
+      "motion/tf_matches_compression": true,
+      "motion/loaded_compression_nonzero": true,
+      "actual_translation": true,
+      "actual_turn": true,
+      "no_runtime_failure": true,
+      "no_stop_contact": true,
+      "reset_request_exit_zero": true,
+      "after_reset/left_parent": true,
+      "after_reset/right_parent": true,
+      "after_reset/both_joints_match_tf": true,
+      "after_reset/tf_matches_compression": true,
+      "after_reset/loaded_compression_nonzero": true,
+      "reset_recovered": true,
+      "graceful_shutdown": true,
+      "process_group_cleaned": true
+    },
+    "epochs": [
+      {
+        "name": "motion",
+        "matched_tf": {
+          "left": 127,
+          "right": 127
+        },
+        "maximum_tf_error_m": 0.0,
+        "compression_range_m": [
+          0.00019615763738314575,
+          0.0017482329558972808
+        ]
+      },
+      {
+        "name": "after_reset",
+        "matched_tf": {
+          "left": 37,
+          "right": 37
+        },
+        "maximum_tf_error_m": 0.0,
+        "compression_range_m": [
+          0.00019615763738265767,
+          0.0017482329558972977
+        ]
+      }
+    ],
+    "truth_samples": 840,
+    "launch_exit_code": 0,
+    "log_path": "/tmp/climbot_m2_t1_state_bbf65e90314043c399cce56dde638ffa.log",
+    "passed": true
+  },
+  "first_generation_nominal_stiffness_n_m": 150000.0,
+  "realized_nominal_compression_m": 0.0010000000009227205
+}

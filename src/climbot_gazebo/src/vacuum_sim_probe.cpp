@@ -102,7 +102,7 @@ int main(int argc, char ** argv)
     for (auto name : v::kNames) {
       frames << ",vac_" << name;
     }
-    frames << ",command_v_mps,command_omega_rps\n";
+    frames << ",command_v_mps,command_omega_rps,ball_vx,ball_vy,ball_vz,ball_wx,ball_wy,ball_wz\n";
     contacts <<
       "iteration,sim_time_s,sensor,collision1_id,collision2_id,position_x,position_y,position_z,normal_x,normal_y,normal_z,depth,body1_fx,body1_fy,body1_fz,body2_fx,body2_fy,body2_fz,robot_fx,robot_fy,robot_fz,body1_tx,body1_ty,body1_tz,body2_tx,body2_ty,body2_tz\n";
     auto world = std::filesystem::path(argv[1]).parent_path() / request["world"].as<std::string>();
@@ -309,7 +309,11 @@ int main(int argc, char ** argv)
           for (double value : lastState) {
             frames << ',' << value;
           }
-          frames << ',' << commandedV << ',' << commandedW << '\n';
+          frames << ',' << commandedV << ',' << commandedW;
+          gz::sim::Link ball(model.LinkByName(ecm, "caster_ball_link"));
+          auto ballV = ball.WorldLinearVelocity(ecm), ballW = ball.WorldAngularVelocity(ecm);
+          require(ballV && ballW, "ball rolling velocity observation missing");
+          csv(frames, *ballV);csv(frames, *ballW);frames << '\n';
         } catch (const std::exception & error) {
           valid = false;gzerr << "Native observer PostUpdate failed: " << error.what() << std::endl;
         }

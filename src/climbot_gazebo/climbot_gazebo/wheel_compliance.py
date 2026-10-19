@@ -1,0 +1,82 @@
+# Copyright 2026 jerry
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Opt-in normal tyre joints sharing SDF, URDF and state publication names."""
+
+from climbot_description.vacuum_preview import node
+
+
+def apply(model, urdf, cfg):
+    """Split existing wheel mass/inertia without moving its zero-load centre."""
+    mass = cfg['axle_mass_kg']
+    moment = .4 * mass * cfg['axle_radius_m']**2
+    publisher = model.find('plugin[@name="gz::sim::systems::JointStatePublisher"]')
+    for side in ['left', 'right']:
+        wheel_name, axle_name = side + '_wheel_link', side + '_wheel_axle_link'
+        spring_name = side + '_tyre_joint'
+        for tree, is_urdf in [(model, False), (urdf, True)]:
+            wheel = tree.find(f'link[@name="{wheel_name}"]')
+            rotation = tree.find(f'joint[@name="{side}_wheel_joint"]')
+            origin = (rotation.find('origin').get('xyz') if is_urdf else
+                      wheel.findtext('pose').split()[:3])
+            position = origin if is_urdf else ' '.join(origin)
+            parent = 'base_link' if is_urdf else 'chassis_link'
+            axle = node(tree, 'link', name=axle_name)
+            if not is_urdf:
+                node(axle, 'pose', position + ' 0 0 0')
+            inertia = node(node(axle, 'inertial'), 'inertia')
+            wheel_mass = wheel.find('inertial/mass')
+            actual_mass = float(wheel_mass.get('value') if is_urdf else wheel_mass.text)
+            if actual_mass <= mass:
+                raise ValueError('axle mass must be split from the existing wheel')
+            if is_urdf:
+                node(axle.find('inertial'), 'mass', value=str(mass))
+                wheel_mass.set('value', str(actual_mass - mass))
+            else:
+                node(axle.find('inertial'), 'mass', mass)
+                wheel_mass.text = str(actual_mass - mass)
+            for key in ['ixx', 'iyy', 'izz']:
+                original = wheel.find('inertial/inertia')
+                value = float(original.get(key) if is_urdf else original.findtext(key))
+                if value <= moment:
+                    raise ValueError('axle inertia exceeds existing wheel inertia')
+                if is_urdf:
+                    inertia.set(key, str(moment))
+                    original.set(key, str(value - moment))
+                else:
+                    node(inertia, key, moment)
+                    original.find(key).text = str(value - moment)
+            spring = node(tree, 'joint', name=spring_name, type='prismatic')
+            if is_urdf:
+                for key in ['ixy', 'ixz', 'iyz']:
+                    inertia.set(key, '0')
+                rotation.find('parent').set('link', axle_name)
+                rotation.find('origin').set('xyz', '0 0 0')
+                node(spring, 'parent', link=parent)
+                node(spring, 'child', link=axle_name)
+                node(spring, 'origin', xyz=position, rpy='0 0 0')
+                node(spring, 'axis', xyz='0 0 1')
+                node(spring, 'limit', lower=str(cfg['lower_m']), upper=str(cfg['upper_m']),
+                     effort='1000', velocity='1')
+                node(spring, 'dynamics', damping=str(cfg['damping_n_s_m']))
+            else:
+                rotation.find('parent').text = axle_name
+                node(spring, 'parent', parent)
+                node(spring, 'child', axle_name)
+                axis = node(spring, 'axis')
+                node(axis, 'xyz', '0 0 1')
+                limit = node(axis, 'limit')
+                node(limit, 'lower', cfg['lower_m'])
+                node(limit, 'upper', cfg['upper_m'])
+                dynamics = node(axis, 'dynamics')
+                node(dynamics, 'spring_reference', 0)
+                node(dynamics, 'spring_stiffness', cfg['stiffness_n_m'])
+                node(dynamics, 'damping', cfg['damping_n_s_m'])
+        node(publisher, 'joint_name', spring_name)

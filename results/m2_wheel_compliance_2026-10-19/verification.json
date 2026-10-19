@@ -1,0 +1,17 @@
+{
+  "scope": "Targeted T1 evidence; no S6 rerun",
+  "generator_tests": 28,
+  "ros_state_checks": 18,
+  "uncrustify_checks": 38,
+  "package_flake8_passed": true,
+  "tool_flake8_passed": true,
+  "logs_sha256": {
+    "climbot_m2_t1_build_20261019.log": "2b4b874f91b9a14ea73b9a6d44223198f0fa6aea5ee7bb8f855e5f439ada5919",
+    "climbot_m2_t1_integration_build_20261019.log": "6ffcadd3c63c5c4d02a143438b4d9557bd7043c4976d5bcd79d360cb0ed8e3f0",
+    "climbot_m2_t1_calibration_final_20261019.log": "e633cbf2c893596a1e21dd1a2bc4a8dd3659676e4281022b8a7b44f23e200c3a",
+    "climbot_m2_t1_ros_state_20261019.log": "56ca2c5d08d7b5e2c6caf2262c0b176b5728e0eb1b996021fdc125fbed8d2262",
+    "climbot_m2_t1_targeted_20261019.log": "a0d74ebd1f44db656fd447ec11d12adc639308c94caa731eac55342c632e1ec1",
+    "climbot_m2_t1_style_recheck_20261019.log": "3af3cfa76e1d30a3d219714e19e88c0e93dd92936724a8b2cb4f540ee3728ad1",
+    "climbot_m2_t1_tools_style_final_20261019.log": "e8431c8c6b59e3d97db5fe59c4958fd30eae8be14e6d05c9188bcc5f26ba9ff1"
+  }
+}

@@ -139,3 +139,67 @@ def test_collapsed_skirt_has_native_frictionless_stops(tmp_path):
         assert pose[2] - size[2]/2 == pytest.approx(cfg['body']['bottom_z_m']-stop_gap)
         assert float(collision.findtext('surface/friction/ode/mu')) == 0
         assert float(collision.findtext('surface/friction/ode/mu2')) == 0
+
+
+def test_opt_in_caster_proxy_preserves_mass_visuals_and_scales_rolling(tmp_path):
+    """Real and proxy rolling must have equal I/r² and opposing wall masks."""
+    trees = []
+    for enabled in [False, True]:
+        out = tmp_path / str(enabled)
+        resolved = build_assets(out, caster_proxy=enabled)
+        trees.append(ET.parse(out / 'world.sdf'))
+        urdf = ET.parse(out / 'robot.urdf')
+        ball = urdf.find('link[@name="caster_ball_link"]')
+        assert float(ball.find('collision/geometry/sphere').get('radius')) == pytest.approx(
+            .00625 if enabled else .0125)
+        assert float(ball.find('visual/geometry/sphere').get('radius')) == .0125
+        assert ('caster_proxy' in resolved) == enabled
+    a, b = [t.find('.//model[@name="climbot"]/link[@name="caster_ball_link"]')
+            for t in trees]
+    assert a.findtext('inertial/mass') == b.findtext('inertial/mass')
+    assert a.findtext('pose') == b.findtext('pose')
+    assert ET.tostring(a.find('visual')) == ET.tostring(b.find('visual'))
+    for key in ['ixx', 'iyy', 'izz']:
+        assert float(b.findtext('inertial/inertia/' + key)) == pytest.approx(
+            float(a.findtext('inertial/inertia/' + key)) / 4)
+    for collision in trees[1].findall('.//model[@name="climbot"]/link/collision'):
+        assert collision.findtext('surface/contact/collide_bitmask') == (
+            '2' if collision.get('name') == 'caster_collision' else '1')
+    assert trees[1].findtext('.//model[@name="wall"]//collide_bitmask') == '1'
+    assert trees[1].findtext('.//model[@name="caster_proxy_wall"]//collide_bitmask') == '2'
+    assert trees[1].findtext('.//plugin/caster_radius_m') == '0.00625'
+    assert trees[0].find('.//model[@name="caster_proxy_wall"]') is None
+
+
+@pytest.mark.parametrize('proxy', [False, True])
+def test_compliant_wheels_preserve_mass_inertia_and_publish_moving_tf_chain(tmp_path, proxy):
+    """Axle splitting preserves the assembly and every moving TF has a state source."""
+    reference = tmp_path / 'rigid'
+    build_assets(reference, caster_proxy=proxy)
+    out = tmp_path / 'soft'
+    build_assets(out, wheel_compliance=True, caster_proxy=proxy)
+    rigid = ET.parse(reference / 'model.sdf')
+    soft = ET.parse(out / 'model.sdf')
+    urdf = ET.parse(out / 'robot.urdf')
+    published = soft.findall('.//plugin[@name="gz::sim::systems::JointStatePublisher"]/joint_name')
+    assert {n.text for n in published} == {
+        'left_wheel_joint', 'right_wheel_joint', 'left_tyre_joint', 'right_tyre_joint'}
+    assert sum(float(n.text) for n in rigid.findall('.//inertial/mass')) == pytest.approx(
+        sum(float(n.text) for n in soft.findall('.//inertial/mass')), abs=1e-12)
+    for side in ['left', 'right']:
+        original = rigid.find(f'.//link[@name="{side}_wheel_link"]')
+        wheel = soft.find(f'.//link[@name="{side}_wheel_link"]')
+        axle = soft.find(f'.//link[@name="{side}_wheel_axle_link"]')
+        assert original.findtext('pose') == wheel.findtext('pose') == axle.findtext('pose')
+        for key in ['ixx', 'iyy', 'izz']:
+            assert float(original.findtext('inertial/inertia/' + key)) == pytest.approx(
+                float(wheel.findtext('inertial/inertia/' + key)) +
+                float(axle.findtext('inertial/inertia/' + key)), abs=1e-14)
+        spring = urdf.find(f'joint[@name="{side}_tyre_joint"]')
+        rotation = urdf.find(f'joint[@name="{side}_wheel_joint"]')
+        assert spring.find('parent').get('link') == 'base_link'
+        assert spring.find('child').get('link') == rotation.find('parent').get('link')
+        assert spring.find('axis').get('xyz') == '0 0 1'
+        assert rotation.find('origin').get('xyz') == '0 0 0'
+        assert float(spring.find('limit').get('lower')) == 0
+    assert rigid.find('.//joint[@name="left_tyre_joint"]') is None

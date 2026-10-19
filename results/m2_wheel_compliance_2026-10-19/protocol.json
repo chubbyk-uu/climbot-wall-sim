@@ -1,0 +1,144 @@
+{
+  "target_m": 0.001,
+  "step_s": 0.001,
+  "gates": {
+    "target_relative_error": 0.05,
+    "tail_peak_to_peak_m": 1e-05,
+    "unloaded_residual_m": 2e-05,
+    "contact_load_error_n": 1.0,
+    "linearity_relative_error": 0.1,
+    "repeat_150_error_m": 2e-05,
+    "stop_clearance_m": 0.0001,
+    "negative_compression_tolerance_m": 1e-05
+  },
+  "zeta": 0.3,
+  "axle_mass_kg": 0.02,
+  "compression_limit_m": 0.004,
+  "profile": [
+    [
+      0,
+      0
+    ],
+    [
+      0.1,
+      0
+    ],
+    [
+      0.2,
+      50
+    ],
+    [
+      1.0,
+      50
+    ],
+    [
+      1.1,
+      150
+    ],
+    [
+      1.9,
+      150
+    ],
+    [
+      2.0,
+      300
+    ],
+    [
+      2.8,
+      300
+    ],
+    [
+      2.9,
+      150
+    ],
+    [
+      3.7,
+      150
+    ],
+    [
+      3.8,
+      0
+    ],
+    [
+      4.6,
+      0
+    ]
+  ],
+  "windows": [
+    [
+      "50_up",
+      0.7,
+      0.95,
+      50
+    ],
+    [
+      "150_up",
+      1.6,
+      1.85,
+      150
+    ],
+    [
+      "300_up",
+      2.5,
+      2.75,
+      300
+    ],
+    [
+      "150_down",
+      3.4,
+      3.65,
+      150
+    ],
+    [
+      "unloaded",
+      4.3,
+      4.55,
+      0
+    ]
+  ],
+  "mechanical_inputs": {
+    "wheel": {
+      "name": "left_wheel_link",
+      "role": "drive",
+      "mass_kg": 0.6,
+      "centre_xyz_m": [
+        0,
+        0.2175,
+        0.0475
+      ],
+      "inertia_kg_m2": [
+        [
+          0.0004488875,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.000676875,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0004488875
+        ]
+      ],
+      "shapes": [
+        {
+          "type": "cylinder",
+          "radius": 0.0475,
+          "length": 0.046999999999999986,
+          "axis": "y",
+          "centre": [
+            0,
+            0.2175,
+            0.0475
+          ]
+        }
+      ]
+    },
+    "whole_mass_kg": 15.518481452106704,
+    "sprung_mass_kg": 7.159240726053352,
+    "actuator_damping_nm_s": 0.05
+  }
+}
