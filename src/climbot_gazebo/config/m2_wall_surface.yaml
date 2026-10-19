@@ -1,0 +1,30 @@
+# Full-wall source. Metres in the shared wall work frame; no panel steps.
+# Same +/-2mm field and seam cross section as T2, extended to the actual wall.
+schema_version: 1
+roughness:
+  amplitude_m: 0.002
+  scale_range_m: [0.2, 0.8]
+  seed: 20261019
+channel_model: {drape_m: 0.001, transition_m: 0.0001, refinement: 1}
+grooves:
+  - {id: panel_v1, kind: panel_joint, cross_section: trapezoid,
+     start_m: [3.4, -0.02], end_m: [3.4, 8.02], width_m: 0.005,
+     depth_range_m: [0.003, 0.005], variation_scale_m: 0.8,
+     shoulder_fraction: 0.1, end_taper_m: 0.0}
+  - {id: panel_v2, kind: panel_joint, cross_section: trapezoid,
+     start_m: [7.0, -0.02], end_m: [7.0, 8.02], width_m: 0.005,
+     depth_range_m: [0.003, 0.005], variation_scale_m: 0.7,
+     shoulder_fraction: 0.1, end_taper_m: 0.0}
+  - {id: panel_h1, kind: panel_joint, cross_section: trapezoid,
+     start_m: [-0.02, 4.24], end_m: [10.02, 4.24], width_m: 0.005,
+     depth_range_m: [0.003, 0.005], variation_scale_m: 0.6,
+     shoulder_fraction: 0.1, end_taper_m: 0.0}
+  - {id: crack_a, kind: crack, start_m: [4.15, 2.12], end_m: [4.3, 2.32],
+     width_m: 0.002, depth_range_m: [0.001, 0.003], variation_scale_m: 0.3,
+     shoulder_fraction: 0.2, end_taper_m: 0.03}
+  - {id: crack_a_branch, kind: crack, start_m: [4.225, 2.22], end_m: [4.33, 2.20],
+     width_m: 0.001, depth_range_m: [0.001, 0.002], variation_scale_m: 0.2,
+     shoulder_fraction: 0.2, end_taper_m: 0.02}
+  - {id: crack_b, kind: crack, start_m: [8.1, 5.1], end_m: [8.35, 5.35],
+     width_m: 0.002, depth_range_m: [0.001, 0.003], variation_scale_m: 0.3,
+     shoulder_fraction: 0.2, end_taper_m: 0.03}

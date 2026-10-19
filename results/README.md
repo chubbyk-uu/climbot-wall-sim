@@ -49,6 +49,7 @@
 | M2 T0 板缝实际轮径 | [报告](m2_t0_joint_contact_2026-10-19/REPORT.md)、[摘要](m2_t0_joint_contact_2026-10-19/summary.json) | 共网格交汇与主动轮短扫描通过；球轮未通过，圆角／高度场／FCL 均未完全解决，球轮按用户要求挂起；非 T0 通过证据 |
 | M2 T0 球径／局部倒角 | [报告](m2_t0_caster_size_chamfer_2026-10-19/REPORT.md)、[摘要](m2_t0_caster_size_chamfer_2026-10-19/summary.json) | 25／40 mm 球径×原槽／短倒角四组完成；倒角改善断触和支撑，加大球径改善小，均未满足全部门槛；未改整车默认 |
 | M2 review 基础修正 | [报告](m2_review_2026-10-19/REPORT.md)、[干净需求](m2_review_2026-10-19/physical_model/summary.json) | 发行版 ODE 配置及三组 M1 对照、原生裙边止挡、C++ 唯一表面、漏气预算与旧模型整理；球轮跨缝挂起，M2 未验收 |
+| M2 墙面显示修正 | [报告](m2_wall_visual_2026-10-19/REPORT.md)、[摘要](m2_wall_visual_2026-10-19/summary.json) | OBJ纹理纵坐标重复翻转修复、恢复非金属材质；板缝及2处物理裂缝按原生几何显色，8条裂缝贴花按用户要求恢复为纯贴图（无物理槽）；非T3验收 |
 | M2 / T2代表区域收口 | [报告](m2_t2_closure_2026-10-19/REPORT.md)、[摘要](m2_t2_closure_2026-10-19/summary.json) | 积分终点漏段修复；6.5 kPa初筛、最终B/C／47°留出、62 s保持、采样与步长通过；1926项零失败／错误。T3整墙／双GUI大任务待验收，不切默认 |
 | M2 / T2入口接触复核 | [报告](m2_t2_entry_2026-10-19/REPORT.md)、[摘要](m2_t2_entry_2026-10-19/summary.json) | 历史入口诊断：真实缝／无缝峰值均紧接单步失触；最终代表区域结论见T2收口报告 |
 | M2 / T2球座侧向柔顺试验 | [报告](m2_t2_caster_float_2026-10-19/REPORT.md)、[摘要](m2_t2_caster_float_2026-10-19/summary.json) | 平墙配对通过；±0.5 mm／±2 mm板缝试验均失败，默认关闭，1.5门槛不变，T2未验收 |

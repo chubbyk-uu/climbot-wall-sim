@@ -718,3 +718,26 @@ T2其他项目、T3双GUI运动拍照RTF≥0.95及最终侧滑复核仍按原计
 代表区域T2已收口；T0整墙开销、T3控制／TF／侧滑与双GUI大采集仍未验收，
 独立大任务继续绑定v2判据。完整证据与限制见
 [T2收口报告](../results/m2_t2_closure_2026-10-19/REPORT.md)。
+
+### 起伏墙面显示修正（2026-10-19，性能优化暂缓）
+
+当前用户限定只修墙面正确性，不继续大面积采集、拼接或性能优化。v6 随机底纹保持不变；
+用 `create_diagnostic_wall.py --surface-config` 从实际 M2 源生成开口显色，恢复旧版布局中的
+涂鸦、修补与油漆标记，移除旧的平面填缝画线。
+真实板缝和裂缝的显色直接调用 native `WallSurface::grooveDepth`，保留渐变肩部及收窄端部；
+不改变已有物理几何或碰撞参数。整墙为三个板缝段、三个裂缝段（两处裂缝，其中一处分叉）。
+用户要求恢复旧版八幅裂缝贴花：视觉线宽约 2～3 mm，仍为纯贴图，无物理槽，
+轮子、球轮和裙边漏气均看不到它们，与 M1 平墙一致；不据此声称视觉与物理全部同源。
+
+重建入口（先加载 ROS 和 workspace 环境）：
+
+```bash
+python3 tools/create_diagnostic_wall.py \
+  --base-manifest "$CLIMBOT_DATA_ROOT/assets/wall_local_v6/wall_texture.json" \
+  --surface-config src/climbot_gazebo/config/m2_wall_surface.yaml \
+  --output-dir "$CLIMBOT_DATA_ROOT/m2_wall_cracks_20261019/wall"
+```
+
+输出目录必须不存在；旧资产不覆盖。M2 资产加载器核对显色源与物理源的哈希，不一致时拒绝加载。
+OBJ 纵坐标修复后重新生成显示缓存；所有 DDS 保持 0.25 mm/像素，拍照保持 1920×1080。
+生成后仅开 GUI 核对纹理连续性、可见细节与真实槽位；加载速度和实时率另行处理。

@@ -1,0 +1,64 @@
+{
+  "gutter": {
+    "mip_levels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "comparisons": 3624,
+    "mismatched_shared_regions": 0
+  },
+  "unchanged_dds_blocks": 205,
+  "changed_dds_blocks": 115,
+  "base_trace_files_identical": true,
+  "surface_sha256": "c09f3a3c8585c9af3a2734dbc9fab3f7908b8671cddd754fbda36066fd6b2005",
+  "surface_source_matches": true,
+  "feature_counts": {
+    "crack_decal": 8,
+    "graffiti_decal": 4,
+    "repair_patch": 6,
+    "surface_groove": 6
+  },
+  "scale_m_per_px": 0.00025,
+  "passed": true,
+  "scope": "M2 wall appearance correctness only; no performance/capture acceptance",
+  "gui_verified": false,
+  "asset_manifest_sha256": "1143be1da6e5f96e7327810eea6b5b11efbaf5ef7dac7ac6d1bc2ab3138a099a",
+  "asset": "$CLIMBOT_DATA_ROOT/assets/wall_local_m2_v6/wall_texture.json",
+  "external_evidence": "$CLIMBOT_DATA_ROOT/m2_wall_cracks_20261019/",
+  "git_commit": "91c41c17ceb0ac095c4914ec5fb71c3d5b93ffe3",
+  "source_dirty": true,
+  "tests": {
+    "passed": 58,
+    "failed": 0
+  },
+  "files_sha256": {
+    "tools/create_diagnostic_wall.py": "a8b88ed0c546010b08401d52ce664aea1a580585e056fdc84f83df71d1015d73",
+    "src/climbot_gazebo/climbot_gazebo/surface_mesh.py": "2d07e3dc81ad4fbdb3fa4a7b1997a01862b5b5032aa61c6da0630af20f0014c4",
+    "src/climbot_gazebo/climbot_gazebo/wall_assets.py": "a3a98665f0263dbcbb3bb0f0645d9042b19b24345d571324f6b8baf62502f742",
+    "src/climbot_gazebo/config/m2_wall_surface.yaml": "0caa3610d43b2dd59ecee0d5e4d788da34d37c565d8bf672244d6d81a96b7cf5",
+    "src/climbot_gazebo/test/test_m2_full_wall.py": "dfc973307a080718cb1b02e019f6d81bfaa61c7d74a2361203bd46141b85dd6e"
+  },
+  "crack_decals": {
+    "restored": true,
+    "physical_groove": false,
+    "apparent_width_mm": [
+      2,
+      3
+    ],
+    "note": "visual-only, as on the M1 wall"
+  },
+  "gutter_after_crack_restore": {
+    "mip_levels": [
+      0
+    ],
+    "adjacent_pairs": 318,
+    "mismatched_shared_regions": 0
+  },
+  "superseded_asset": "$CLIMBOT_DATA_ROOT/m2_wall_details_20261019/wall/ (no crack decals)",
+  "producer_sha256_at_generation": "76e4ffedde7222be8f61dd5a5c538ebae0854e949142c3000fcf2b89222413c2",
+  "files_note": "files_sha256 are the committed versions; later edits were lint-only (literal dicts, line wrapping, headers)"
+}

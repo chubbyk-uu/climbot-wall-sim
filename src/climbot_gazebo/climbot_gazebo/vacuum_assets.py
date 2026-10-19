@@ -160,7 +160,7 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                  realtime_factor=1.0, runtime_overrides=None, io_overrides=None,
                  physics_overrides=None, caster_proxy=False, wheel_compliance=False,
                  surface_patch=None, caster_compliance=False,
-                 tyre_lateral=False):
+                 tyre_lateral=False, wall_surface='flat', wall_texture=None):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
@@ -172,6 +172,10 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         raise ValueError('caster_compliance and tyre_lateral must be boolean')
     if tyre_lateral and not wheel_compliance:
         raise ValueError('tyre_lateral requires the calibrated normal wheel compliance')
+    if wall_surface not in ('flat', 'undulating'):
+        raise ValueError('unknown full-wall surface')
+    if wall_surface == 'undulating' and (not caster_proxy or surface_patch is not None):
+        raise ValueError('full undulating wall requires caster proxy and excludes surface patch')
     if surface_patch is not None and (not caster_proxy or
                                       (mode != 'fixed_pressure' and
                                        'channel_model' not in surface_patch)):
@@ -440,6 +444,20 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
             if world_plugin.find(key) is not None:
                 node(sp, key, world_plugin.findtext(key))
         node(sp, 'wall_surface_yaml', world_plugin.findtext('wall_surface_yaml'))
+    wall_assets = None
+    if wall_surface == 'undulating':
+        from .wall_assets import apply as apply_full_wall, prepare
+        source = yaml.safe_load((gazebo/'config/m2_wall_surface.yaml').read_text())
+        size = [wall['surface']['width_m'], wall['surface']['height_m']]
+        asset_dir, asset_manifest = prepare(source, size, wall_texture)
+        world_plugin = world.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
+        wall_assets = apply_full_wall(world, world_plugin, asset_dir, asset_manifest,
+                                      surface+wall['origin_rpy'], size, source)
+        for key in ['wall_surface_yaml', 'channel_drape_m', 'channel_transition_m',
+                    'channel_refinement', 'seal_corner']:
+            for item in world_plugin.findall(key):
+                sp.append(deepcopy(item))
+        wall_assets['directory'] = str(asset_dir)
     world.find('physics/max_step_size').text = str(step_s)
     world.find('physics/real_time_factor').text = str(realtime_factor)
     if not runtime['camera_enabled']:
@@ -468,5 +486,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     if patch is not None:
         resolved['surface_patch'] = patch
         resolved['wall_surface_pose'] = patch['wall_surface_pose']
+    resolved['wall_surface'] = wall_surface
+    if wall_assets is not None:
+        resolved['wall_assets'] = wall_assets
     (out / 'resolved.json').write_text(json.dumps(resolved, indent=2, allow_nan=False) + '\n')
     return resolved

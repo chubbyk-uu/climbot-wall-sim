@@ -15,6 +15,7 @@
 """Run the pressure chassis with the accepted localization, camera and GUI pipeline."""
 
 from copy import deepcopy
+import os
 from pathlib import Path
 import shutil
 import tempfile
@@ -23,9 +24,10 @@ from xml.etree import ElementTree as ET
 from ament_index_python.packages import get_package_share_directory
 from climbot_common.dds import local_dds_environment
 from climbot_description.robot_geometry import resolve_adhesion
+from climbot_description.vacuum_preview import node
 from climbot_gazebo.calibration_target import prepare_emissive_g1_target
 from climbot_gazebo.vacuum_assets import _stack_module, add_fan_visuals_gui, build_assets
-from launch.actions import DeclareLaunchArgument, LogInfo
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, LogInfo, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 import yaml
@@ -48,9 +50,14 @@ def generate_launch_description():
         try:
             io_path = LaunchConfiguration('io_config').perform(context)
             io = yaml.safe_load(Path(io_path).read_text())['vacuum_io'] if io_path else None
+            surface = LaunchConfiguration('wall_surface').perform(context)
+            soft = LaunchConfiguration('wheel_compliance').perform(context) == 'true'
+            texture = LaunchConfiguration('wall_texture').perform(context) or None
             build_assets(
                 root, mode='fan_ode' if mode == 'vacuum' else 'fixed_pressure',
-                runtime_overrides={'camera_enabled': True}, io_overrides=io)
+                runtime_overrides={'camera_enabled': True}, io_overrides=io,
+                wheel_compliance=soft, tyre_lateral=soft,
+                caster_proxy=surface == 'undulating', wall_surface=surface, wall_texture=texture)
             # Use the same actual scene options as the frozen launch. The generated
             # robot and its single force path are the only replacement here.
             world_path = Path(original_world(
@@ -76,8 +83,21 @@ def generate_launch_description():
             if len(includes) != 1 or forces:
                 raise ValueError('scene must contain one robot include and no constant wrench')
             parent.remove(includes[0])
+            if surface == 'undulating':
+                generated = ET.parse(root/'world.sdf').getroot().find('world')
+                for item in list(parent.findall('model')):
+                    if item.get('name') in ('wall', 'caster_proxy_wall'):
+                        parent.remove(item)
+                for item in generated.findall('model'):
+                    if item.get('name', '').startswith('m2_'):
+                        parent.append(deepcopy(item))
             model_tree = ET.parse(root / 'model.sdf')
             candidate = model_tree.getroot().find('model')
+            trace = LaunchConfiguration('m2_load_trace').perform(context)
+            if trace:
+                recorder = node(candidate, 'plugin', filename='libclimbot_load_recorder.so',
+                                name='climbot_gazebo::LoadRecorder')
+                node(recorder, 'path', str(Path(trace).expanduser().resolve()))
             parent.append(deepcopy(candidate))
             add_fan_visuals_gui(parent)
             ET.indent(world.getroot())
@@ -91,6 +111,18 @@ def generate_launch_description():
             stack.CONTACT_TOPIC_LEFT = prefix + 'left_wheel_link/sensor/left_contact/contact'
             stack.CONTACT_TOPIC_RIGHT = prefix + 'right_wheel_link/sensor/right_contact/contact'
             actions = original_setup(context, *args, **kwargs)
+            if surface == 'undulating':
+                from .mesa_runtime import rendering_environment
+                from .ode_runtime import environment
+                env, _ = rendering_environment(
+                    LaunchConfiguration('gpu_backend').perform(context),
+                    LaunchConfiguration('mesa').perform(context))
+                env, identity = environment(
+                    LaunchConfiguration('ode_prefix').perform(context), env)
+                index = next(i for i, a in enumerate(actions) if isinstance(a, ExecuteProcess))
+                actions[index:index] = [
+                    SetEnvironmentVariable('LD_LIBRARY_PATH', env['LD_LIBRARY_PATH']),
+                    LogInfo(msg=f'M2 private ODE: {identity}')]
             actions.insert(0, LogInfo(msg=f'Robot geometry={geometry}; adhesion={mode}'))
             routes = [
                 '/suction/pressure@sensor_msgs/msg/FluidPressure[gz.msgs.FluidPressure',
@@ -117,6 +149,13 @@ def generate_launch_description():
         DeclareLaunchArgument('adhesion_mode', default_value='vacuum'),
         DeclareLaunchArgument('io_config', default_value=''),
         DeclareLaunchArgument('resolved_assets_directory', default_value=''),
+        DeclareLaunchArgument('wall_surface', default_value='flat',
+                              choices=['flat', 'undulating']),
+        DeclareLaunchArgument('wheel_compliance', default_value='false',
+                              choices=['false', 'true']),
+        DeclareLaunchArgument('m2_load_trace', default_value=''),
+        DeclareLaunchArgument('ode_prefix', default_value=os.environ.get(
+            'CLIMBOT_ODE_PREFIX', str(Path.home()/'opt/climbot-ode-0.16.2-hashfix-ccd/install'))),
     ]:
         launch.entities.insert(0, action)
     return launch

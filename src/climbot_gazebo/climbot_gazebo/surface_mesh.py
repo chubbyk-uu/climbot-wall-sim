@@ -145,18 +145,26 @@ def write_cross_joint_mesh(path, surface, size=.8):
 
 
 def write_feature_mesh(path, surface, size=.8, tolerance=.00002,
-                       max_vertices=80000, max_rounds=16):
+                       max_vertices=80000, max_rounds=16, bounds=None, uv_bounds=None):
     """Resolve grooves locally, rejecting unresolved or over-budget exports."""
     if not 0 < tolerance <= .0001 or size <= 0 or max_vertices < 4 or max_rounds < 1:
         raise ValueError('invalid feature mesh limits')
-    axis = np.linspace(0, size, round(size/.01) + 1)
-    u, v = np.meshgrid(axis, axis)
+    x0, x1, y0, y1 = bounds if bounds is not None else (0., size, 0., size)
+    if not np.isfinite([x0, x1, y0, y1]).all() or x1 <= x0 or y1 <= y0:
+        raise ValueError('invalid feature mesh bounds')
+    axes = [np.linspace(lo, hi, max(1, round((hi-lo)/.01))+1)
+            for lo, hi in [(x0, x1), (y0, y1)]]
+    u, v = np.meshgrid(*axes)
     seeds = [np.column_stack([u.ravel(), v.ravel()])]
     for groove in surface.config['grooves']:
         a, b = np.array(groove['start_m']), np.array(groove['end_m'])
         length = np.linalg.norm(b-a)
         direction = (b-a)/length
         normal = np.array([-direction[1], direction[0]])
+        padding = groove['width_m']
+        if (max(a[0], b[0])+padding < x0 or min(a[0], b[0])-padding > x1 or
+                max(a[1], b[1])+padding < y0 or min(a[1], b[1])-padding > y1):
+            continue
         spacing = min(.002, groove['width_m'] * .5)
         along = np.linspace(0, length, int(np.ceil(length/spacing)) + 1)
         taper = groove['end_taper_m']
@@ -172,7 +180,8 @@ def write_feature_mesh(path, surface, size=.8, tolerance=.00002,
     points = np.concatenate(seeds)
     # Nanometre quantization coalesces almost coincident feature / base nodes;
     # picometre slivers otherwise survive Qhull around tapered crack tips.
-    points = np.unique(np.round(points[np.all((points >= 0) & (points <= size), axis=1)],
+    points = np.unique(np.round(points[np.all((points >= [x0, y0]) &
+                                              (points <= [x1, y1]), axis=1)],
                                 9), axis=0)
     # Edge and interior samples detect both groove caps and inaccurate facets.
     weights = np.array([[1/3, 1/3, 1/3], [.5, .5, 0], [.5, 0, .5], [0, .5, .5],
@@ -204,21 +213,45 @@ def write_feature_mesh(path, surface, size=.8, tolerance=.00002,
              (triangles[:, 2, 1]-triangles[:, 0, 1]) -
              (triangles[:, 1, 1]-triangles[:, 0, 1]) *
              (triangles[:, 2, 0]-triangles[:, 0, 0]))
+    # Qhull may retain exactly collinear facets at a clipped feature boundary.
+    # They cover zero wall area; do not export vertical optical slivers.
+    degenerate = cross == 0
+    discarded = int(degenerate.sum())
+    faces, cross = faces[~degenerate], cross[~degenerate]
+    # At nanometre-separated feature nodes Qhull's finite precision may also
+    # return a clockwise sliver. Canonicalize its winding, then audit total area.
+    reversed_faces = cross < 0
+    reoriented = int(reversed_faces.sum())
+    faces[reversed_faces] = faces[reversed_faces][:, [0, 2, 1]]
+    cross = abs(cross)
     if not np.all(cross > 0):
         raise ValueError('feature mesh contains reversed or degenerate faces')
+    if abs(cross.sum()/2-(x1-x0)*(y1-y0)) > (x1-x0)*(y1-y0)*1e-8:
+        raise ValueError('feature mesh does not cover its declared rectangle')
     with Path(path).open('x') as stream:
         stream.write('# M2 feature-refined source mesh; no underlying collision plane\n')
         for (u, v), h in zip(points, height):
-            stream.write(f'v {u-size/2:.17g} {v-size/2:.17g} {h:.17g}\n')
+            stream.write(f'v {u-(x0+x1)/2:.17g} {v-(y0+y1)/2:.17g} {h:.17g}\n')
         for normal in surface.normal(points[:, 0], points[:, 1]):
             stream.write('vn ' + ' '.join(f'{value:.17g}' for value in normal) + '\n')
+        if uv_bounds is not None:
+            u0, u1, v0, v1 = uv_bounds
+            for u, v in points:
+                # OBJ uses bottom-origin V; gz-common's OBJLoader stores
+                # 1-V to reach the renderer's top-origin image coordinates.
+                stream.write(f'vt {(u-u0)/(u1-u0):.17g} {(v-v0)/(v1-v0):.17g}\n')
         for face in faces + 1:
-            stream.write('f ' + ' '.join(f'{index}//{index}' for index in face) + '\n')
+            stream.write('f ' + ' '.join(
+                f'{index}/{index}/{index}' if uv_bounds is not None else f'{index}//{index}'
+                for index in face) + '\n')
     return {'vertices': len(points), 'triangles': len(faces),
             'sampled_height_error_max_m': maximum, 'height_tolerance_m': tolerance,
             'min_projected_double_area_m2': float(cross.min()),
+            'discarded_zero_projected_faces': discarded,
+            'reoriented_faces': reoriented,
             'refinement': history, 'vertex_budget': max_vertices,
-            'extent_m': [0., size], 'runtime_refinement': False}
+            'extent_m': [x0, x1, y0, y1] if bounds is not None else [0., size],
+            'runtime_refinement': False}
 
 
 def audit_mesh_sections(path, surface, size=.8):
