@@ -1,0 +1,222 @@
+{
+  "scope": "T0 crack-contact diagnosis and explicit wheel-only approximation; no whole-robot acceptance",
+  "t0_complete": false,
+  "default_changed": false,
+  "full_mesh_normals_passed": false,
+  "branch": "feature/m2-wall-compliance",
+  "source_modified": true,
+  "raw_data_root": "/home/jerry/climbot_data/m2_t0_20261019",
+  "runs": {
+    "features_native_isolated": {
+      "producer_summary_sha256": "4b8aff0748e160f44869d6a6637d81918fdc1b6d42212b42a7c4612867c0ebd4",
+      "source_sha256": {
+        "tools/probe_m2_wall_surface.py": "1f088ad68a1c105c4ca9d66ab937f726aec99592e898a107c53c249996a0b6bf",
+        "src/climbot_gazebo/src/wall_surface_probe.cpp": "d68187c2e42eafb9388acdf81bf26906bf69646058b294789b7fa91868f73ccd",
+        "src/climbot_gazebo/climbot_gazebo/wall_surface.py": "fda47f3aa161a5ffc41c3ca566b0c2b888c267b6d02b0f0a39cd72d5b3f2142c",
+        "src/climbot_gazebo/climbot_gazebo/surface_mesh.py": "2f5e30be607e046353b3fdf1df88633db28c73f47538f18d114b94ef3de3e0cf"
+      },
+      "binary_sha256": "df371741d49416b7a94ea538288ae449a9bd0d51db62170599ff2d1a03aefaa5",
+      "ode_runtime": {
+        "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install",
+        "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
+        "library_sha256": "5944647b24fee8b8149aced9345deef32074544a8264d81dcad2387ece535654",
+        "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
+      },
+      "git_commit": "0db120af6223b478ab3921b6efd421f0fd598a31",
+      "passed": false,
+      "cases": {
+        "cross_mesh": {
+          "passed": false,
+          "failed_assertions": [
+            "normal_error"
+          ],
+          "height_error_max_m": 3.793051728047717e-06,
+          "normal_error_max_deg": 62.717493187236535,
+          "penetration_max_m": 7.440384196222469e-06,
+          "probe_count": 29,
+          "world_sha256": "281c2c0b92ce171659bb9c4609d8d14032fd531f3c13f046dc366688d570b352",
+          "contact_policy": "full",
+          "omitted_cracks": [],
+          "mesh": {
+            "vertices": 44899,
+            "triangles": 89332,
+            "sampled_height_error_max_m": 1.9975285940903535e-05
+          }
+        },
+        "crack_mesh": {
+          "passed": false,
+          "failed_assertions": [
+            "normal_error"
+          ],
+          "height_error_max_m": 8.586876296148805e-07,
+          "normal_error_max_deg": 82.89682464527705,
+          "penetration_max_m": 7.105743195058047e-06,
+          "probe_count": 41,
+          "world_sha256": "62aee8c433de8d8611163d98a5903575a32e5a5026b3dacfd2b510106fe6e949",
+          "contact_policy": "full",
+          "omitted_cracks": [],
+          "mesh": {
+            "vertices": 65836,
+            "triangles": 131132,
+            "sampled_height_error_max_m": 1.9994863573144376e-05
+          }
+        }
+      }
+    },
+    "crack_bridge_native_isolated": {
+      "producer_summary_sha256": "617c0eed1d4a7f4e05cbf5059c0a93481dfc30543c063b6d83ba9c7233f175d9",
+      "source_sha256": {
+        "tools/probe_m2_wall_surface.py": "1f088ad68a1c105c4ca9d66ab937f726aec99592e898a107c53c249996a0b6bf",
+        "src/climbot_gazebo/src/wall_surface_probe.cpp": "d68187c2e42eafb9388acdf81bf26906bf69646058b294789b7fa91868f73ccd",
+        "src/climbot_gazebo/climbot_gazebo/wall_surface.py": "fda47f3aa161a5ffc41c3ca566b0c2b888c267b6d02b0f0a39cd72d5b3f2142c",
+        "src/climbot_gazebo/climbot_gazebo/surface_mesh.py": "2f5e30be607e046353b3fdf1df88633db28c73f47538f18d114b94ef3de3e0cf"
+      },
+      "binary_sha256": "df371741d49416b7a94ea538288ae449a9bd0d51db62170599ff2d1a03aefaa5",
+      "ode_runtime": {
+        "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install",
+        "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
+        "library_sha256": "5944647b24fee8b8149aced9345deef32074544a8264d81dcad2387ece535654",
+        "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
+      },
+      "git_commit": "0db120af6223b478ab3921b6efd421f0fd598a31",
+      "passed": true,
+      "cases": {
+        "bridged_crack_heightmap": {
+          "passed": true,
+          "failed_assertions": [],
+          "height_error_max_m": 1.0394861279196992e-06,
+          "normal_error_max_deg": 0.011383120421858198,
+          "penetration_max_m": 1.1023894161736413e-06,
+          "probe_count": 13,
+          "world_sha256": "25f5621544e0f2a192fa6d6177ffc6e1c70338da2261e7fcfbeba13fd20495e6",
+          "contact_policy": "bridge_narrow_cracks",
+          "omitted_cracks": [
+            {
+              "id": "main_crack",
+              "kind": "crack",
+              "start_m": [
+                0.15,
+                0.12
+              ],
+              "end_m": [
+                0.3,
+                0.32
+              ],
+              "width_m": 0.002,
+              "depth_range_m": [
+                0.001,
+                0.003
+              ],
+              "variation_scale_m": 0.3,
+              "shoulder_fraction": 0.2,
+              "end_taper_m": 0.03
+            },
+            {
+              "id": "branch_crack",
+              "kind": "crack",
+              "start_m": [
+                0.225,
+                0.22
+              ],
+              "end_m": [
+                0.33,
+                0.2
+              ],
+              "width_m": 0.001,
+              "depth_range_m": [
+                0.001,
+                0.002
+              ],
+              "variation_scale_m": 0.2,
+              "shoulder_fraction": 0.2,
+              "end_taper_m": 0.02
+            }
+          ],
+          "mesh": null
+        }
+      }
+    }
+  },
+  "support": {
+    "scope": "sampled static support on isolated cracked rough fixture; no tyre deformation, impact, traction, panel-joint intersection or GUI acceptance",
+    "window_half_extent_m": 0.009,
+    "sample_spacings_m": [
+      0.0001,
+      5e-05
+    ],
+    "source_sha256": {
+      "src/climbot_gazebo/config/m2_surface_fixture.yaml": "a74bb9e8f73b66a165eb77bedbe94b11d795b683ee994dcf54873786c7412f8b",
+      "src/climbot_description/config/robot.yaml": "9181458da33a0890e93c2d2a2adbc9d7024a41e9fec176335d8c1222d2b917a9",
+      "tools/check_m2_crack_bridge.py": "c47823f0c7e210911b662b88a118e3b72836e1ea938bcccd5da96ecd09d1bd26",
+      "src/climbot_gazebo/climbot_gazebo/wall_surface.py": "fda47f3aa161a5ffc41c3ca566b0c2b888c267b6d02b0f0a39cd72d5b3f2142c"
+    },
+    "wheel_geometry": {
+      "drive": [
+        0.0475,
+        0.046999999999999986
+      ],
+      "caster": [
+        0.0125,
+        0
+      ]
+    },
+    "flat_isolated_slot_sag_m": {
+      "drive": {
+        "0.0005": 6.57899292962944e-07,
+        "0.001": 2.631651848331061e-06,
+        "0.002": 1.052748239879639e-05
+      },
+      "caster": {
+        "0.0005": 2.500250050012503e-06,
+        "0.001": 1.0004003203203586e-05,
+        "0.002": 4.0064205622887716e-05
+      }
+    },
+    "max_support_difference_m": 3.743399352427318e-05,
+    "max_resolution_delta_m": 5.217307613766126e-07,
+    "support_error_gate_m": 0.0001,
+    "resolution_delta_gate_m": 2e-05,
+    "passed": true,
+    "producer_summary_sha256": "4dcb0a47be85011d49d918c22069d490554d502344f8bc0760180051e2a26427",
+    "cases": 50,
+    "per_wheel_max_m": {
+      "drive": 0.0,
+      "caster": 3.743399352427318e-05
+    }
+  },
+  "primitive": {
+    "cases": [
+      {
+        "location": "flat_face_interior",
+        "contacts": 1,
+        "normal_from_vertical_deg": 0
+      },
+      {
+        "location": "steep_face_vertex",
+        "contacts": 1,
+        "normal_from_vertical_deg": 82.87498365109819
+      }
+    ],
+    "face_normal_rule_reproduced": true,
+    "source_sha256": "f226e1772ed8e846ed3b9218c005d91fff2bae437313a8e24ebbfa62e5aad83d"
+  },
+  "fixture_correction": {
+    "overlap_confirmed": true,
+    "old_interprobe_contacts_in_steady_window": 202,
+    "old_height_error_m": 0.0001962140172897149,
+    "old_run": "features_native_radius100um",
+    "deduplicated_run": "features_native_isolated",
+    "only_surface_contact_gate_added": true
+  },
+  "contact_approximation_isolated_checks_passed": true,
+  "verification": {
+    "executor": "parallel",
+    "parallel_workers": 8,
+    "tests": 1832,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 84,
+    "log": "/tmp/climbot_m2_crack_simplification_final_20261019.log",
+    "result_log": "/tmp/climbot_m2_crack_simplification_final_result_20261019.log"
+  }
+}

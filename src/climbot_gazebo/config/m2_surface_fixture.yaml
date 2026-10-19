@@ -1,0 +1,45 @@
+# T0 small-fixture design input, not a current mission default or measured wall.
+schema_version: 1
+roughness:
+  amplitude_m: 0.002
+  scale_range_m: [0.2, 0.8]
+  seed: 20261019
+grooves:
+  - id: horizontal_joint
+    kind: panel_joint
+    cross_section: trapezoid
+    start_m: [-0.02, 0.4]
+    end_m: [0.82, 0.4]
+    width_m: 0.005
+    depth_range_m: [0.003, 0.005]
+    variation_scale_m: 0.6
+    shoulder_fraction: 0.1
+    end_taper_m: 0.0
+  - id: vertical_joint
+    kind: panel_joint
+    cross_section: trapezoid
+    start_m: [0.45, -0.02]
+    end_m: [0.45, 0.82]
+    width_m: 0.005
+    depth_range_m: [0.003, 0.005]
+    variation_scale_m: 0.8
+    shoulder_fraction: 0.1
+    end_taper_m: 0.0
+  - id: main_crack
+    kind: crack
+    start_m: [0.15, 0.12]
+    end_m: [0.3, 0.32]
+    width_m: 0.002
+    depth_range_m: [0.001, 0.003]
+    variation_scale_m: 0.3
+    shoulder_fraction: 0.2
+    end_taper_m: 0.03
+  - id: branch_crack
+    kind: crack
+    start_m: [0.225, 0.22]
+    end_m: [0.33, 0.2]
+    width_m: 0.001
+    depth_range_m: [0.001, 0.002]
+    variation_scale_m: 0.2
+    shoulder_fraction: 0.2
+    end_taper_m: 0.02

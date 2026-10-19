@@ -1,0 +1,212 @@
+{
+  "protocol": {
+    "scope": "four isolated worst-intersection sweeps; not vehicle acceptance",
+    "diameters_mm": [
+      25,
+      40
+    ],
+    "top_45_degree_chamfer_mm": [
+      0,
+      0.25
+    ],
+    "path": "cross",
+    "load_n": 80,
+    "normal_carriage_mass_kg": 5,
+    "speed_mps": 0.02,
+    "step_s": 0.001,
+    "opening_m": 0.005,
+    "depth_range_m": [
+      0.003,
+      0.005
+    ],
+    "gates_unchanged": true,
+    "native_detector": "ode",
+    "no_robot_default_change": true
+  },
+  "cases": {
+    "d25_ch0": {
+      "exit_code": 1,
+      "diameter_mm": 25,
+      "top_chamfer_mm": 0,
+      "passed": false,
+      "checks": {
+        "support": false,
+        "contact_gap": false,
+        "penetration": true,
+        "tangent_motion": true,
+        "sphere_radial_normal": false,
+        "peak_normal_force": true
+      },
+      "support_error_max_m": 0.00040868061906625813,
+      "contact_gap_max_steps": 14,
+      "penetration_max_m": 0.00011364576512087883,
+      "sphere_radial_normal_max_deg": 84.25612277340312,
+      "normal_force_peak_n": 663.5783739638944,
+      "world_sha256": "38321a897d14af91cfe4bfb2e36a8ad3f9493bc93240ef23b5f77b424a513b99",
+      "producer_summary_sha256": "15409d530a3e2ccfaf8ac5b7a2c72322ef305037eb717edfacf6aaacf2f578bd"
+    },
+    "d25_ch0.25": {
+      "exit_code": 1,
+      "diameter_mm": 25,
+      "top_chamfer_mm": 0.25,
+      "passed": false,
+      "checks": {
+        "support": true,
+        "contact_gap": true,
+        "penetration": true,
+        "tangent_motion": false,
+        "sphere_radial_normal": false,
+        "peak_normal_force": true
+      },
+      "support_error_max_m": 3.4096368888708595e-05,
+      "contact_gap_max_steps": 2,
+      "penetration_max_m": 2.0830726297114894e-05,
+      "sphere_radial_normal_max_deg": 46.084632768306314,
+      "normal_force_peak_n": 213.8401628685128,
+      "world_sha256": "298c8179d849a4265a9faa79c22b302fc04038d335015c4538744cc51eb82cd1",
+      "producer_summary_sha256": "c0df588b4dfb089aabe0e9424917e667ffa487dd3fefc92b771a467c9e962ac8"
+    },
+    "d40_ch0": {
+      "exit_code": 1,
+      "diameter_mm": 40,
+      "top_chamfer_mm": 0,
+      "passed": false,
+      "checks": {
+        "support": false,
+        "contact_gap": false,
+        "penetration": true,
+        "tangent_motion": true,
+        "sphere_radial_normal": false,
+        "peak_normal_force": true
+      },
+      "support_error_max_m": 0.00038717503560919964,
+      "contact_gap_max_steps": 14,
+      "penetration_max_m": 9.692332224188807e-05,
+      "sphere_radial_normal_max_deg": 83.53705846308566,
+      "normal_force_peak_n": 663.680882835014,
+      "world_sha256": "046624b8b7d981a640fe3bcdb9e7a13edecd7cd9f1558a812c0b02e3b15d2cdd",
+      "producer_summary_sha256": "fdba7b35f4cb266cda252c4ab1792b71482dd3871a0a4bac32aef039c5f7b33d"
+    },
+    "d40_ch0.25": {
+      "exit_code": 1,
+      "diameter_mm": 40,
+      "top_chamfer_mm": 0.25,
+      "passed": false,
+      "checks": {
+        "support": true,
+        "contact_gap": true,
+        "penetration": true,
+        "tangent_motion": false,
+        "sphere_radial_normal": false,
+        "peak_normal_force": true
+      },
+      "support_error_max_m": 2.2589442835802692e-05,
+      "contact_gap_max_steps": 2,
+      "penetration_max_m": 2.017832604244492e-05,
+      "sphere_radial_normal_max_deg": 46.40305276108019,
+      "normal_force_peak_n": 213.61036092429626,
+      "world_sha256": "875f7c9d16c52cf2c39019349b75b54bf0167ddad6531a1ccef98b945e5b958f",
+      "producer_summary_sha256": "49fd1e3a5de66cfcdab74dbef13d24a141301bb969833c6fba6b86177e392c93"
+    }
+  },
+  "source_sha256": {
+    "tools/probe_m2_joint_sweep.py": "c8865702dc1b3c0192d26e2d8ecbfb2cfeec5e8df4c0a9346fb5fecd24fbf517",
+    "tools/probe_m2_wall_surface.py": "b22f9853088ab6bce20a39c5d4deacf696951068aec128ece99caa182aab4958",
+    "src/climbot_gazebo/src/wall_surface_probe.cpp": "6167ff3dad303c33d2cb9929d6f774b6cbac5370f5eb61954c1a800d72e5e501",
+    "src/climbot_gazebo/climbot_gazebo/surface_mesh.py": "f432e0f8f6524d85d60be75bcb826c172256ef10eba3f26233c40b85cf8c87e7",
+    "src/climbot_gazebo/climbot_gazebo/surface_heightmap.py": "68283debeb8d1c40635c931d1667e63842fdf27de2fb39c0068131b1fe2030e7",
+    "src/climbot_gazebo/climbot_gazebo/wall_surface.py": "092313f920e9ff9be7002aa1ed4a88cec7e91146e181c08bd036886351ee6e9f"
+  },
+  "completed": true,
+  "all_physics_checks_passed": false,
+  "raw_root": "/home/jerry/climbot_data/m2_t0_20261019/caster_size_chamfer_final",
+  "default_changed": false,
+  "t0_complete": false,
+  "source_modified": true,
+  "comparison_sha256": "9e6b6de1d2ea977cecaf03186d39d159f32c8b16bbad9af247b6e2c2d49f450b",
+  "force_analysis": {
+    "d25_ch0": {
+      "contact_tuples": 2887,
+      "angle_over_5deg": 1123,
+      "bad_angle_force_over_0_01N": 292,
+      "bad_angle_force_magnitude_max_n": 5015.926885849168
+    },
+    "d25_ch0.25": {
+      "contact_tuples": 3237,
+      "angle_over_5deg": 1573,
+      "bad_angle_force_over_0_01N": 479,
+      "bad_angle_force_magnitude_max_n": 301.61565970864183
+    },
+    "d40_ch0": {
+      "contact_tuples": 2969,
+      "angle_over_5deg": 1131,
+      "bad_angle_force_over_0_01N": 247,
+      "bad_angle_force_magnitude_max_n": 5014.602677329292
+    },
+    "d40_ch0.25": {
+      "contact_tuples": 3493,
+      "angle_over_5deg": 1560,
+      "bad_angle_force_over_0_01N": 448,
+      "bad_angle_force_magnitude_max_n": 301.2915303959934
+    }
+  },
+  "travel_analysis": {
+    "d25_ch0": {
+      "actual_tangent_travel_m": 0.03170197048796876,
+      "expected_tangent_travel_m": 0.032,
+      "end_center_wall_uv_m": [
+        0.46111723699690155,
+        0.4111172369969014
+      ],
+      "passed_intersection_center": true
+    },
+    "d25_ch0.25": {
+      "actual_tangent_travel_m": 0.03099156779186309,
+      "expected_tangent_travel_m": 0.032,
+      "end_center_wall_uv_m": [
+        0.4606149064331119,
+        0.41061490643311194
+      ],
+      "passed_intersection_center": true
+    },
+    "d40_ch0": {
+      "actual_tangent_travel_m": 0.03170142329011147,
+      "expected_tangent_travel_m": 0.032,
+      "end_center_wall_uv_m": [
+        0.4611168500705824,
+        0.4111168500705824
+      ],
+      "passed_intersection_center": true
+    },
+    "d40_ch0.25": {
+      "actual_tangent_travel_m": 0.030876320280180027,
+      "expected_tangent_travel_m": 0.032,
+      "end_center_wall_uv_m": [
+        0.4605334141370825,
+        0.41053341413708244
+      ],
+      "passed_intersection_center": true
+    }
+  },
+  "driver_sha256": "2ef1456a530da5c876e503c33409e380add0b34705a776e9070b47c6f5653d45",
+  "section_area_note": {
+    "top_chamfer_horizontal_vertical_m": 0.00025,
+    "opening_m": 0.005,
+    "unchanged_bottom_width_m": 0.004,
+    "area_reduction_range_percent": [
+      4.62962962962963,
+      5.0
+    ],
+    "formula": "A_original=d*(0.005-0.0005); A_chamfer=A_original-c*(d-0.0005)"
+  },
+  "code_verification": {
+    "source_tests_passed": 38,
+    "tests": 1846,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 84,
+    "parallel_workers": 8,
+    "log": "/tmp/climbot_m2_caster_chamfer_final_20261019.log",
+    "result_log": "/tmp/climbot_m2_caster_chamfer_final_result_20261019.log"
+  }
+}

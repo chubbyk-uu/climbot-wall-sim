@@ -13,6 +13,9 @@ find_package(geometry_msgs REQUIRED)
 # Linked explicitly: the wall transform is a static library, so its yaml-cpp
 # symbols have to be resolved again by whoever links it.
 find_package(yaml-cpp REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+find_package(pybind11_vendor REQUIRED)
+find_package(pybind11 REQUIRED)
 find_package(gz_sim_vendor REQUIRED)
 find_package(gz-sim8 REQUIRED)
 find_package(gz_plugin_vendor REQUIRED)
@@ -55,6 +58,26 @@ target_compile_features(vacuum_sim_probe PRIVATE cxx_std_17)
 target_include_directories(vacuum_sim_probe PRIVATE include)
 target_link_libraries(vacuum_sim_probe PRIVATE gz-sim8::gz-sim8 yaml-cpp::yaml-cpp)
 install(TARGETS vacuum_sim_probe RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+# Independent T0 observer for actual vertical collision placement and normals.
+add_executable(wall_surface_probe src/wall_surface_probe.cpp)
+target_compile_features(wall_surface_probe PRIVATE cxx_std_17)
+target_link_libraries(wall_surface_probe PRIVATE gz-sim8::gz-sim8 yaml-cpp::yaml-cpp)
+install(TARGETS wall_surface_probe RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+# Single surface implementation for offline assets and future runtime queries.
+add_library(wall_surface_core src/wall_surface.cpp)
+target_compile_features(wall_surface_core PUBLIC cxx_std_17)
+target_include_directories(wall_surface_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_link_libraries(wall_surface_core PUBLIC yaml-cpp::yaml-cpp)
+set_target_properties(wall_surface_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+ament_get_python_install_dir(PYTHON_INSTALL_DIR)
+pybind11_add_module(_climbot_surface SHARED src/wall_surface_bindings.cpp)
+target_link_libraries(_climbot_surface PRIVATE wall_surface_core)
+install(TARGETS _climbot_surface DESTINATION "${PYTHON_INSTALL_DIR}")
+install(TARGETS wall_surface_core ARCHIVE DESTINATION lib LIBRARY DESTINATION lib)
 
 # S2 physics core deliberately has no ROS, Gazebo or YAML dependencies.
 add_library(vacuum_core src/vacuum_core.cpp src/pressure_sensor.cpp)
@@ -171,6 +194,8 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  ament_add_gtest(test_wall_surface_core test/test_wall_surface_core.cpp)
+  target_link_libraries(test_wall_surface_core wall_surface_core)
   ament_add_gtest(test_vacuum_core test/test_vacuum_core.cpp)
   target_link_libraries(test_vacuum_core vacuum_core)
   ament_add_gtest(test_pressure_sensor test/test_pressure_sensor.cpp)
@@ -232,6 +257,8 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_turn_profile test/test_turn_profile.py)
   ament_add_pytest_test(
     test_wall_slip_sampling test/test_wall_slip_sampling.py)
+  ament_add_pytest_test(test_ode_runtime test/test_ode_runtime.py)
+  ament_add_pytest_test(test_wall_surface test/test_wall_surface.py)
   ament_add_pytest_test(test_wall_texture test/test_wall_texture.py)
   ament_add_pytest_test(test_wall_texture_randomization test/test_wall_texture_randomization.py)
   ament_add_pytest_test(test_mesa_runtime test/test_mesa_runtime.py)

@@ -22,6 +22,8 @@
   <exec_depend>launch_ros</exec_depend>
   <depend>geometry_msgs</depend>
   <depend>yaml-cpp</depend>
+  <build_depend>pybind11_vendor</build_depend>
+  <build_depend>python3-dev</build_depend>
   <depend>gz_sim_vendor</depend>
   <depend>gz_gui_vendor</depend>
   <depend>gz_rendering_vendor</depend>
@@ -43,6 +45,7 @@
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-scipy</exec_depend>
   <exec_depend>python3-pil</exec_depend>
   <exec_depend>python3-matplotlib</exec_depend>
 
