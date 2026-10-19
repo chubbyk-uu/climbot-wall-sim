@@ -156,7 +156,8 @@ def _caster_proxy_flat_wall(world, normal, offset):
 
 def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                  realtime_factor=1.0, runtime_overrides=None, io_overrides=None,
-                 physics_overrides=None, caster_proxy=False, wheel_compliance=False):
+                 physics_overrides=None, caster_proxy=False, wheel_compliance=False,
+                 surface_patch=None):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
@@ -164,6 +165,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         raise ValueError('invalid heading or physical step')
     if type(caster_proxy) is not bool or type(wheel_compliance) is not bool:
         raise ValueError('caster_proxy and wheel_compliance must be boolean')
+    if surface_patch is not None and (mode != 'fixed_pressure' or not caster_proxy):
+        raise ValueError('surface patch requires fixed_pressure and the explicit caster proxy')
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     description = Path(get_package_share_directory('climbot_description'))
@@ -405,6 +408,15 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     node(new, 'pose', numbers(position + _rpy(orientation)))
     world.remove(includes[0])
     world.append(deepcopy(new))
+    patch = None
+    if surface_patch is not None:
+        from .surface_patch import apply as apply_surface_patch
+        world_plugin = world.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
+        patch = apply_surface_patch(world, world_plugin, out, surface_patch,
+                                    surface + wall['origin_rpy'])
+        for key in ['wall_pose', 'wall_size']:
+            sp.find(key).text = world_plugin.findtext(key)
+        node(sp, 'wall_surface_yaml', world_plugin.findtext('wall_surface_yaml'))
     world.find('physics/max_step_size').text = str(step_s)
     world.find('physics/real_time_factor').text = str(realtime_factor)
     if not runtime['camera_enabled']:
@@ -426,5 +438,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                                     'inertia_scale': .25}
     if wheel_compliance:
         resolved['wheel_compliance'] = compliance
+    if patch is not None:
+        resolved['surface_patch'] = patch
+        resolved['wall_surface_pose'] = patch['wall_surface_pose']
     (out / 'resolved.json').write_text(json.dumps(resolved, indent=2, allow_nan=False) + '\n')
     return resolved

@@ -17,6 +17,7 @@
 #include <gz/common/Console.hh>
 #include <gz/math/Matrix3.hh>
 #include <gz/sim/Link.hh>
+#include <gz/sim/Joint.hh>
 #include <gz/sim/Model.hh>
 #include <gz/sim/Server.hh>
 #include <gz/sim/ServerConfig.hh>
@@ -26,6 +27,7 @@
 #include <gz/sim/components/ContactSensorData.hh>
 #include <gz/sim/components/Inertial.hh>
 #include <gz/sim/components/JointVelocityCmd.hh>
+#include <gz/sim/components/JointVelocity.hh>
 #include <gz/sim/components/Model.hh>
 #include <gz/sim/components/Name.hh>
 #include <gz/sim/components/ParentEntity.hh>
@@ -102,7 +104,9 @@ int main(int argc, char ** argv)
     for (auto name : v::kNames) {
       frames << ",vac_" << name;
     }
-    frames << ",command_v_mps,command_omega_rps,ball_vx,ball_vy,ball_vz,ball_wx,ball_wy,ball_wz\n";
+    frames << ",command_v_mps,command_omega_rps,ball_vx,ball_vy,ball_vz,ball_wx,ball_wy,ball_wz";
+    frames << ",ball_x,ball_y,ball_z,left_x,left_y,left_z,right_x,right_y,right_z";
+    frames << ",left_joint_cmd,left_joint_vel,right_joint_cmd,right_joint_vel\n";
     contacts <<
       "iteration,sim_time_s,sensor,collision1_id,collision2_id,position_x,position_y,position_z,normal_x,normal_y,normal_z,depth,body1_fx,body1_fy,body1_fz,body2_fx,body2_fy,body2_fz,robot_fx,robot_fy,robot_fz,body1_tx,body1_ty,body1_tz,body2_tx,body2_ty,body2_tz\n";
     auto world = std::filesystem::path(argv[1]).parent_path() / request["world"].as<std::string>();
@@ -172,6 +176,9 @@ int main(int argc, char ** argv)
         if (!valid) {return;}
         try {
           initialize(ecm);
+          for (const auto & name : {"left_wheel_joint", "right_wheel_joint"}) {
+            gz::sim::Joint joint(model.JointByName(ecm, name));joint.EnableVelocityCheck(ecm);
+          }
       // Reset restores the original ECM snapshot, including removing optional
       // feedback components requested by this observer after initial loading.
           for (auto & link : links) {
@@ -313,7 +320,22 @@ int main(int argc, char ** argv)
           gz::sim::Link ball(model.LinkByName(ecm, "caster_ball_link"));
           auto ballV = ball.WorldLinearVelocity(ecm), ballW = ball.WorldAngularVelocity(ecm);
           require(ballV && ballW, "ball rolling velocity observation missing");
-          csv(frames, *ballV);csv(frames, *ballW);frames << '\n';
+          csv(frames, *ballV);csv(frames, *ballW);
+          for (const auto & name : {"caster_ball_link", "left_wheel_link", "right_wheel_link"}) {
+            gz::sim::Link wheel(model.LinkByName(ecm, name));
+            auto p = wheel.WorldPose(ecm);
+            require(p.has_value(), "support wheel pose feedback missing");
+            csv(frames, p->Pos());
+          }
+          for (const auto & name : {"left_wheel_joint", "right_wheel_joint"}) {
+            auto id = model.JointByName(ecm, name);
+            auto cmd = ecm.Component<gz::sim::components::JointVelocityCmd>(id);
+            auto vel = ecm.Component<gz::sim::components::JointVelocity>(id);
+            require(cmd && vel && cmd->Data().size() == 1 && vel->Data().size() == 1,
+              "missing actual wheel command/velocity");
+            frames << ',' << cmd->Data()[0] << ',' << vel->Data()[0];
+          }
+          frames << '\n';
         } catch (const std::exception & error) {
           valid = false;gzerr << "Native observer PostUpdate failed: " << error.what() << std::endl;
         }

@@ -1,0 +1,114 @@
+{
+  "scope": "B-mode real rough/jointed patch, not fan/leak or T2 acceptance",
+  "passed": true,
+  "metrics": {
+    "passed": true,
+    "checks": {
+      "released": true,
+      "complete_action": true,
+      "no_runtime_failure": true,
+      "no_startup_failure": true,
+      "all_wheels_crossed": true,
+      "bounded_travel": true,
+      "contact_gaps_at_most_two_steps": true,
+      "no_skirt_stop": true,
+      "finite": true
+    },
+    "release_s": 0.957,
+    "crossing_scope": "source seam position; caster uses full joint proxy; drivers bridge joints",
+    "travel_m": 0.6134853741161899,
+    "wheels_crossed": {
+      "left": true,
+      "right": true,
+      "ball": true
+    },
+    "max_contact_gap_steps": {
+      "left": 1,
+      "right": 1,
+      "ball": 1
+    },
+    "normal_load_range_n": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        263.14345180149064,
+        285.63377449876884,
+        1028.599653154133
+      ]
+    ],
+    "ball_outward_height_range_m": [
+      0.011825319721887738,
+      0.012645949343047917
+    ],
+    "pressure_range_pa": [
+      8404.442641162896,
+      8404.442641162896
+    ],
+    "plugin_cpu_us_mean": 52.69915596880624
+  },
+  "soft": true,
+  "smooth_control": false,
+  "source_commit": "10790399673d3ad701896dfac713533a68843864",
+  "source_dirty": true,
+  "binary_sha256": "3fb654e390bcc886db1afb5f3e8dfdb13b75b8ffccb29d5f90afca30dcbb3875",
+  "mesa": {
+    "backend": "wsl_d3d12",
+    "mesa": "private",
+    "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
+  },
+  "ode": {
+    "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install",
+    "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
+    "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
+    "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
+  },
+  "log_path": "/tmp/climbot_m2_patch_native_1792396697085318403.log",
+  "raw_relative_root": "m2_robot_patch_20261019_drive_bridge",
+  "patch": {
+    "size_m": 1.2,
+    "source_sha256": "1fb2a540d6e57c1b800b4176fb8e1fe601f1477820ce3e4abf72aca9f4316ec1",
+    "contact_representation": "native_heightmap",
+    "driver_collision_geometry": "heightmap",
+    "driver_surface_policy": "roughness_only",
+    "bridge_scope": "panel joints <=5 mm, no panel step; body/stops also bridged; stop error is not bounded by wheel sag",
+    "ideal_driver_omitted_sag_m": {
+      "single": 6.583509747431354e-05,
+      "cross_diagonal": 0.00013176169625896128
+    },
+    "joint_count": 2,
+    "proxy_centroid_error_m": 6.35495732041573e-06,
+    "generation_seconds": 1.7199820280002314
+  },
+  "source_snapshot_sha256": {
+    "src/climbot_gazebo/climbot_gazebo/surface_patch.py": "fe188a11b7e00787149b3855a084cba85f6c18346ed8c795804925c0ba9f5c52",
+    "src/climbot_gazebo/climbot_gazebo/surface_mesh.py": "4b488e805e2a8e10d00cd0fa75567400328ae5aa454ced6579486fb6f6d82ac7",
+    "src/climbot_gazebo/test/test_vacuum_assets.py": "923fa550f423be0bd26211773d9f029a0266b8d7dd4917f5d6976548f42f4c91",
+    "tools/probe_m2_robot_patch.py": "aedc7c4f1d56412b4b31b771a3805228560056e40449eadb5267448865478901",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "702eda4042b3e667c37a6cbdf7c55280c7dfcd4af54503abe72ebe94ecdaa5f4",
+    "src/climbot_gazebo/src/vacuum_system.cpp": "fae21c46bda263ce1bf8f78e8f7b1ce8190b29629d747e7b32f297968f367e76",
+    "src/climbot_gazebo/src/vacuum_sim_probe.cpp": "ad4cde13dc12197c31f4b8bbd5abdb327c8d6ae7ad89766d41a25d3404feb581"
+  },
+  "source_note": "Snapshot includes post-run whitespace-only formatting; no numerical change after the run.",
+  "limitations": [
+    "Fixed-pressure B only; fan/leak margin not validated",
+    "Driver/body/stops bridge panel joints <=5 mm without panel steps; stop geometry error is not bounded by wheel sag",
+    "Caster peak normal load 1028.60 N and single-step zero loads require T2 time-series review",
+    "No whole-wall, GUI, camera, or real-time-factor acceptance"
+  ],
+  "verification": {
+    "generator_and_surface_tests": 72,
+    "test_exit_code": 0,
+    "flake8_exit_code": 0,
+    "pep257_exit_code": 0,
+    "native_run_exit_code": 0,
+    "logs_sha256": {
+      "/tmp/climbot_m2_drive_bridge_tests_20261019.log": "5f9c0c1839840f90e7503193b30549b3db05fea5948d811aa483f1c113e2d2b2",
+      "/tmp/climbot_m2_drive_bridge_style_final_20261019.log": "c84160a25c1914ac3b40f9054364ab06efb8f683a9f419db46789632cdd06182",
+      "/tmp/climbot_m2_drive_bridge_docstyle_20261019.log": "0c74fa91a495139d33510105e83f1bee3fcc51e4c78e604fe4e8bd9714329b6f",
+      "/tmp/climbot_m2_drive_bridge_run_20261019.log": "2f818e812d092886b81af345aede93e4f3f7eef1825774654ebd9a6ea3c2083e"
+    }
+  }
+}

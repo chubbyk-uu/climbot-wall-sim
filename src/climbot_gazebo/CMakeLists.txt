@@ -50,7 +50,7 @@ install(TARGETS ClimbotWorldStats LIBRARY DESTINATION lib)
 add_library(climbot_vacuum_system SHARED src/vacuum_system.cpp src/vacuum_io.cpp)
 target_compile_features(climbot_vacuum_system PUBLIC cxx_std_17)
 target_link_libraries(climbot_vacuum_system PRIVATE vacuum_core
-  gz-sim8::gz-sim8 gz-plugin2::register gz-transport13::core)
+  wall_surface_core gz-sim8::gz-sim8 gz-plugin2::register gz-transport13::core)
 target_include_directories(climbot_vacuum_system PRIVATE include)
 install(TARGETS climbot_vacuum_system LIBRARY DESTINATION lib)
 add_executable(vacuum_sim_probe src/vacuum_sim_probe.cpp)

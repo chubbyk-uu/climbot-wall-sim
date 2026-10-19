@@ -15,6 +15,7 @@
 #include "climbot_gazebo/vacuum_core.hpp"
 #include "climbot_gazebo/vacuum_io.hpp"
 #include "climbot_gazebo/vacuum_state.hpp"
+#include "climbot_gazebo/wall_surface.hpp"
 #include <gz/common/Console.hh>
 #include <gz/math/Matrix3.hh>
 #include <gz/math/Pose3.hh>
@@ -107,6 +108,10 @@ public:
     std::string mode = sdf->Get<std::string>("pressure_mode");
     require(mode == "fan_ode" || mode == "fixed_pressure", "invalid vacuum source mode");
     ideal_ = mode == "fixed_pressure";
+    if (sdf->HasElement("wall_surface_yaml")) {
+      require(ideal_, "M2 contact patch requires fixed_pressure until channel validation");
+      surface_ = std::make_unique<WallSurface>(sdf->Get<std::string>("wall_surface_yaml"));
+    }
     require(mass_ > 0 && track_ > 0 && caster_ < 0 && inner_ > 0 && volumeNominal_ > 0 &&
       substep_ > 0 && substep_ <= .0001 && preload_ >= 0 && readyMargin_ >= 1 &&
       dwell_ > 0 && timeout_ > dwell_ && baseLeak_ >= 0 && fixed_ > 0 && fixed_ < 40000 &&
@@ -218,10 +223,15 @@ public:
         double present = coverage(wallPoint.X(), size_.X(), parameters_.band_m) *
           coverage(wallPoint.Y(), size_.Y(), parameters_.band_m);
         inside = inside && present >= 1 - 1e-12;
-        double gap = local.Z();
+        double gap = local.Z(), gapRate = speed.Z();
+        if (surface_) {
+          gap -= surface_->height(wallPoint.X(), wallPoint.Y());
+          auto n = surface_->normal(wallPoint.X(), wallPoint.Y());
+          gapRate += (n[0] * speed.X() + n[1] * speed.Y()) / n[2];
+        }
         require(gap >= 0, "skirt attachment penetrated wall reference plane");
         minGap = std::min(minGap, gap);maxGap = std::max(maxGap, gap);
-        samples_.push_back({local.X(), local.Y(), lengths_[i], gap, speed.Z(), speed.X(), speed.Y(),
+        samples_.push_back({local.X(), local.Y(), lengths_[i], gap, gapRate, speed.X(), speed.Y(),
             gap * (1 - present), present < 1, present});
         mean += lengths_[i] * gap;total += lengths_[i];
       }
@@ -496,6 +506,7 @@ private:
   std::vector<gz::sim::Entity> wheelCollisions_;
   std::vector<double> fanHeads_;
   std::unique_ptr<v::Chamber> core_;
+  std::unique_ptr<WallSurface> surface_;
   std::unique_ptr<v::VacuumIO> io_;
   v::SkirtParameters parameters_;
   v::Balance balance_;

@@ -16,13 +16,17 @@
 
 from copy import deepcopy
 import hashlib
+import json
 import math
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 from xml.etree import ElementTree as ET
 
 from climbot_gazebo.vacuum_assets import build_assets
+import numpy as np
+from PIL import Image
 import pytest
+import yaml
 
 
 def test_b_c_only_change_the_pressure_source(tmp_path):
@@ -203,3 +207,70 @@ def test_compliant_wheels_preserve_mass_inertia_and_publish_moving_tf_chain(tmp_
         assert rotation.find('origin').get('xyz') == '0 0 0'
         assert float(spring.find('limit').get('lower')) == 0
     assert rigid.find('.//joint[@name="left_tyre_joint"]') is None
+
+
+@pytest.mark.parametrize('representation,amplitude', [
+    ('mesh', 0), ('native_heightmap', 0), ('native_heightmap', .002)])
+def test_surface_patch_keeps_one_source_and_excludes_hidden_flat_support(
+        tmp_path, representation, amplitude):
+    """Serialize through SDF-safe flow text and partition the two contact meshes."""
+    config = yaml.safe_load((Path(__file__).parents[1] /
+                            'config/m2_surface_fixture.yaml').read_text())
+    config['roughness']['amplitude_m'] = amplitude
+    config['contact_representation'] = representation
+    config['grooves'] = config['grooves'][:2]
+    for index, groove in enumerate(config['grooves']):
+        groove['start_m'] = [-.02, .6] if index == 0 else [.6, -.02]
+        groove['end_m'] = [1.22, .6] if index == 0 else [.6, 1.22]
+    resolved = build_assets(tmp_path, mode='fixed_pressure', caster_proxy=True,
+                            surface_patch=config)
+    tree = ET.parse(tmp_path / 'world.sdf')
+    assert tree.find('.//model[@name="wall"]') is None
+    assert tree.find('.//model[@name="caster_proxy_wall"]') is None
+    real = tree.find('.//model[@name="m2_real_wall"]')
+    proxy = tree.find('.//model[@name="m2_caster_wall"]')
+    assert real.findtext('.//collide_bitmask') == '1'
+    assert proxy.findtext('.//collide_bitmask') == '2'
+    assert proxy.find('.//visual') is None
+    text = tree.findtext('.//plugin/wall_surface_yaml')
+    assert '\n' not in text
+    assert json.loads(text) == yaml.safe_load(
+        (tmp_path / 'surface_patch/source.yaml').read_text())
+    assert yaml.safe_load(' '.join(text.split())) == json.loads(text)
+    assert text == ET.parse(tmp_path / 'model.sdf').findtext('.//plugin/wall_surface_yaml')
+    assert resolved['surface_patch']['proxy_centroid_error_m'] < .00001
+    if representation == 'native_heightmap':
+        from climbot_gazebo.wall_surface import WallSurface
+        source = WallSurface(config)
+        assert source.groove_depth(.6, .6) >= .003
+        assert real.findtext('.//visual/geometry/mesh/uri').endswith('/real.obj')
+        assert proxy.findtext('.//collision/geometry/mesh/uri').endswith('/proxy.obj')
+        patch = resolved['surface_patch']
+        assert patch['driver_surface_policy'] == 'roughness_only'
+        if amplitude:
+            grid = np.linspace(0, 1.2, 257)
+            u, v = np.meshgrid(grid, grid)
+            expected = source.roughness(u, v)
+            low, high = expected.min(), expected.max()
+            shape = real.find('.//collision/geometry/heightmap')
+            assert shape is not None
+            assert list(map(float, shape.findtext('size').split())) == pytest.approx(
+                [1.2*257/256, 1.2*257/256, high-low])
+            pixels = np.flipud(np.asarray(Image.open(tmp_path / 'surface_patch/height.png')))
+            decoded = low + pixels/65535*(high-low)
+            assert np.max(np.abs(decoded-expected)) <= (high-low)/65535
+            assert abs(decoded[128, 128] - source.height(.6, .6)) > .003
+            assert patch['driver_collision_geometry'] == 'heightmap'
+        else:
+            # Zero-range roughness is exactly a plane, while the full source
+            # still contains grooves for the skirt, caster and visual.
+            assert real.find('.//collision/geometry/heightmap') is None
+            assert real.findtext('.//collision/geometry/box/size') == '1.2 1.2 0.05'
+            assert real.findtext('.//collision/pose') == '0 0 -0.025 0 0 0'
+            assert patch['driver_collision_geometry'] == 'box'
+
+
+def test_surface_patch_rejects_unvalidated_fan_coupling(tmp_path):
+    """The contact prototype cannot silently pass as a fan/leak acceptance case."""
+    with pytest.raises(ValueError, match='fixed_pressure'):
+        build_assets(tmp_path, caster_proxy=True, surface_patch={})

@@ -1,0 +1,32 @@
+{
+  "test_vacuum_assets.xunit.xml": {
+    "tests": 30,
+    "errors": 0,
+    "failures": 0
+  },
+  "test_wall_surface.xunit.xml": {
+    "tests": 40,
+    "errors": 0,
+    "failures": 0
+  },
+  "test_wall_surface_core.gtest.xml": {
+    "tests": 4,
+    "errors": 0,
+    "failures": 0
+  },
+  "test_vacuum_core.gtest.xml": {
+    "tests": 20,
+    "errors": 0,
+    "failures": 0
+  },
+  "latest_added_contract_tests": 2,
+  "latest_default_fan_pause_reset_smoke": 1,
+  "style": "Changed Python and C++ files passed direct ament style checks",
+  "logs_sha256": {
+    "climbot_m2_patch_final_checks_20261019.log": "3ee4541856dfeaf4c2aab048097191d7fcc3e5a1a12a903ce41008ab387682d0",
+    "climbot_m2_patch_contract_final_20261019.log": "55f8400720da1b9d8020b9fb69a9d122e6a67273aeb984662390d28faf333f3c",
+    "climbot_m2_patch_default_smoke_20261019.log": "af209834ef6e73a4f3fce9a1046d6e6361898a2a095c3c0016f5a3d59b1399f1",
+    "climbot_m2_patch_styles_checked_20261019.log": "72ffa2eef08e10644b744d4e3421fe5b436144246b811c4d3bac987820453322",
+    "climbot_m2_patch_cpp_style_20261019.log": "8f06dd270f6448de499d259eaa6c1e5a1bfbb88788b181bc8e2b040c19764775"
+  }
+}

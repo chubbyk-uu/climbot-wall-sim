@@ -1,0 +1,288 @@
+{
+  "scope": "T0 full-robot contact diagnosis; T0/T2/T3 not accepted",
+  "previous_work_commit": "1079039",
+  "source_commit": "10790399673d3ad701896dfac713533a68843864",
+  "source_dirty": true,
+  "cause_status": "Driver-wheel rough-trimesh contact representation confirmed by movement recovery with native heightmap; no exact collision source-line claim",
+  "cases": {
+    "rigid_joint_mesh": {
+      "raw_relative_root": "m2_robot_patch_20261019_rigid_r4",
+      "metrics": {
+        "passed": false,
+        "checks": {
+          "released": true,
+          "complete_action": true,
+          "no_runtime_failure": true,
+          "no_startup_failure": true,
+          "all_wheels_crossed": false,
+          "bounded_travel": false,
+          "contact_gaps_at_most_two_steps": true,
+          "no_skirt_stop": true,
+          "finite": true
+        },
+        "release_s": 0.505,
+        "travel_m": 0.3892458000006198,
+        "wheels_crossed": {
+          "left": true,
+          "right": true,
+          "ball": false
+        },
+        "max_contact_gap_steps": {
+          "left": 1,
+          "right": 1,
+          "ball": 1
+        },
+        "normal_load_range_n": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            635.255123853771,
+            672.5225728746957,
+            1017.2018981061022
+          ]
+        ],
+        "ball_outward_height_range_m": [
+          0.012112125777303924,
+          0.012672151155034604
+        ],
+        "pressure_range_pa": [
+          8404.442641162896,
+          8404.442641162896
+        ],
+        "plugin_cpu_us_mean": 49.970007398520295
+      },
+      "passed": false,
+      "joint_present": true,
+      "representation": "mesh",
+      "source_sha256": "ea76f25d87452f927476af340c74715f354032a03d00ee1976f6348223cff45b",
+      "binary_sha256": "29cd3704ea115496957fc229ad5fd34ad13e83005f85690ced065e0a4fa41822",
+      "real_vertices": 17205,
+      "proxy_vertices": 34225,
+      "proxy_centroid_error_m": 6.35495732041573e-06,
+      "generation_seconds": 1.6319807620020583
+    },
+    "soft_joint_mesh": {
+      "raw_relative_root": "m2_robot_patch_20261019_soft",
+      "metrics": {
+        "passed": false,
+        "checks": {
+          "released": true,
+          "complete_action": true,
+          "no_runtime_failure": true,
+          "no_startup_failure": true,
+          "all_wheels_crossed": false,
+          "bounded_travel": false,
+          "contact_gaps_at_most_two_steps": true,
+          "no_skirt_stop": true,
+          "finite": true
+        },
+        "release_s": 0.848,
+        "travel_m": 0.14306536162089545,
+        "wheels_crossed": {
+          "left": false,
+          "right": false,
+          "ball": false
+        },
+        "max_contact_gap_steps": {
+          "left": 1,
+          "right": 1,
+          "ball": 1
+        },
+        "normal_load_range_n": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            291.37532934854414,
+            274.61078818345896,
+            1232.5234279855126
+          ]
+        ],
+        "ball_outward_height_range_m": [
+          0.012278552937959873,
+          0.012710916180174558
+        ],
+        "pressure_range_pa": [
+          8404.442641162896,
+          8404.442641162896
+        ],
+        "plugin_cpu_us_mean": 49.004065186962606
+      },
+      "passed": false,
+      "joint_present": true,
+      "representation": "mesh",
+      "source_sha256": "ea76f25d87452f927476af340c74715f354032a03d00ee1976f6348223cff45b",
+      "binary_sha256": "29cd3704ea115496957fc229ad5fd34ad13e83005f85690ced065e0a4fa41822",
+      "real_vertices": 17205,
+      "proxy_vertices": 34225,
+      "proxy_centroid_error_m": 6.35495732041573e-06,
+      "generation_seconds": 1.7112585409995518
+    },
+    "soft_smooth_mesh": {
+      "raw_relative_root": "m2_robot_patch_20261019_smooth_control",
+      "metrics": {
+        "passed": false,
+        "checks": {
+          "released": true,
+          "complete_action": true,
+          "no_runtime_failure": true,
+          "no_startup_failure": true,
+          "all_wheels_crossed": false,
+          "bounded_travel": false,
+          "contact_gaps_at_most_two_steps": true,
+          "no_skirt_stop": true,
+          "finite": true
+        },
+        "release_s": 0.848,
+        "travel_m": 0.1204577887181204,
+        "wheels_crossed": {
+          "left": false,
+          "right": false,
+          "ball": false
+        },
+        "max_contact_gap_steps": {
+          "left": 1,
+          "right": 1,
+          "ball": 1
+        },
+        "normal_load_range_n": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            286.1614501839619,
+            286.87630898446207,
+            1051.3456046589492
+          ]
+        ],
+        "ball_outward_height_range_m": [
+          0.012535033364391423,
+          0.012707640054062492
+        ],
+        "pressure_range_pa": [
+          8404.442641162896,
+          8404.442641162896
+        ],
+        "plugin_cpu_us_mean": 46.0630547890422
+      },
+      "passed": false,
+      "joint_present": false,
+      "representation": "mesh",
+      "source_sha256": "c857fd096e1e95bb0a61b9ee8fcca37975aa514b245493f5cabfb68aa45d8349",
+      "binary_sha256": "3fb654e390bcc886db1afb5f3e8dfdb13b75b8ffccb29d5f90afca30dcbb3875",
+      "real_vertices": 14641,
+      "proxy_vertices": 14641,
+      "proxy_centroid_error_m": 3.6904753544855784e-06,
+      "generation_seconds": 0.294084651999583,
+      "crossing_scope": "virtual diagnostic line only; no physical joint present"
+    },
+    "soft_smooth_heightmap": {
+      "raw_relative_root": "m2_robot_patch_20261019_heightmap_control",
+      "metrics": {
+        "passed": true,
+        "checks": {
+          "released": true,
+          "complete_action": true,
+          "no_runtime_failure": true,
+          "no_startup_failure": true,
+          "all_wheels_crossed": true,
+          "bounded_travel": true,
+          "contact_gaps_at_most_two_steps": true,
+          "no_skirt_stop": true,
+          "finite": true
+        },
+        "release_s": 0.677,
+        "travel_m": 0.6090970661958222,
+        "wheels_crossed": {
+          "left": true,
+          "right": true,
+          "ball": true
+        },
+        "max_contact_gap_steps": {
+          "left": 1,
+          "right": 1,
+          "ball": 1
+        },
+        "normal_load_range_n": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            267.70928448102256,
+            284.5112920411526,
+            1092.611961774571
+          ]
+        ],
+        "ball_outward_height_range_m": [
+          0.012267791806509408,
+          0.012923028219450702
+        ],
+        "pressure_range_pa": [
+          8404.442641162896,
+          8404.442641162896
+        ],
+        "plugin_cpu_us_mean": 47.909974005198954
+      },
+      "passed": true,
+      "joint_present": false,
+      "representation": "heightmap",
+      "source_sha256": "b7ac9d72f3d770d10dfcdaac74836562fc08f25c9d6165bbbeaf1923436f4394",
+      "binary_sha256": "3fb654e390bcc886db1afb5f3e8dfdb13b75b8ffccb29d5f90afca30dcbb3875",
+      "real_vertices": 14641,
+      "proxy_vertices": 14641,
+      "proxy_centroid_error_m": 3.6904753544855784e-06,
+      "generation_seconds": 0.3194466330023715,
+      "crossing_scope": "virtual diagnostic line only; no physical joint present"
+    }
+  },
+  "aligned_cruise_comparison": {
+    "smooth_control": {
+      "vz": 0.033010237894812985,
+      "left_joint_vel": 4.210526309805513,
+      "right_joint_vel": 4.210526309815294,
+      "left_points": 10.450725362681341,
+      "right_points": 10.015007503751876,
+      "left_fx": 231.55252180950038,
+      "right_fx": 228.72575652486302,
+      "ball_fx": 497.95740975471455,
+      "ball_fz": -0.6632318774475099,
+      "vac_skirt_normal_n": 145.17231364185264,
+      "vac_skirt_fz": -3.6265712041027203,
+      "vac_delta_pa": 8404.442641162896
+    },
+    "heightmap_control": {
+      "vz": 0.16869506179220714,
+      "left_joint_vel": 4.210526309166355,
+      "right_joint_vel": 4.210526309224892,
+      "left_points": 1.0885,
+      "right_points": 1.3825,
+      "left_fx": 222.2375842714572,
+      "right_fx": 237.8990578469967,
+      "ball_fx": 498.497881300921,
+      "ball_fz": -6.076763368154958,
+      "vac_skirt_normal_n": 144.79940945192843,
+      "vac_skirt_fz": -14.469693033890502,
+      "vac_delta_pa": 8404.442641162894
+    }
+  },
+  "fan_leak_validation": false,
+  "gui_rtf_validation": false,
+  "source_sha256": {
+    "src/climbot_gazebo/CMakeLists.txt": "5f83d597bc53752c4086d9573750ab2ad792d5ca1f73ddaac038c56c4f82f7b3",
+    "src/climbot_gazebo/climbot_gazebo/surface_patch.py": "59e3ff971abb5614747d9dcb6ae57124f8abee1f2c625e5f8cc2a104f1fe58d4",
+    "src/climbot_gazebo/climbot_gazebo/surface_mesh.py": "85811b39cab85887788a9f55d04d927d5e5ac148539c415fd872556b31ec5f15",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "702eda4042b3e667c37a6cbdf7c55280c7dfcd4af54503abe72ebe94ecdaa5f4",
+    "src/climbot_gazebo/src/vacuum_system.cpp": "fae21c46bda263ce1bf8f78e8f7b1ce8190b29629d747e7b32f297968f367e76",
+    "src/climbot_gazebo/src/vacuum_sim_probe.cpp": "ad4cde13dc12197c31f4b8bbd5abdb327c8d6ae7ad89766d41a25d3404feb581",
+    "tools/probe_m2_robot_patch.py": "a9d3a6709ca93dcf6c1ab70ab6cffa0130b6c037e864a1b8aabbb87aae7dc93d"
+  }
+}
