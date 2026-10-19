@@ -1,0 +1,119 @@
+{
+  "scope": "Normal-only imposed-tangent carriage; no free rolling, whole robot, roughness, crack or GUI acceptance",
+  "passed_at_default_step": false,
+  "mask_gate": {
+    "passed": true,
+    "checks": {
+      "probe_00": true,
+      "probe_01": true,
+      "probe_02": true
+    },
+    "scope": "Nonzero bits 1 and 2: real wheel and collapsed-stop analogue exclude proxy; proxy ball excludes real wall"
+  },
+  "contract": {
+    "real_radius_m": 0.0125,
+    "proxy_radius_m": 0.00625,
+    "load_n": 500,
+    "speed_mps": 0.2,
+    "default_step_s": 0.001,
+    "diagnostic_step_s": 0.0005,
+    "support_error_gate_m": 5e-05,
+    "force_bearing_threshold_n": 0.01,
+    "loaded_normal_gate_deg": 5.0,
+    "max_contact_gap_steps": 2,
+    "normal_reference": "E one-sided normals/cone; 10um crease-location budget from the existing geometry contract; radial diagnostics not the acceptance angle",
+    "normal_carriage_mass_kg": 5.0,
+    "rotation_locked": true
+  },
+  "cases": {
+    "flat_1ms": {
+      "geometry": {
+        "vertices": 2401,
+        "triangles": 4608,
+        "vertex_error_m": 0.0,
+        "centroid_error_m": 8.673617379884035e-19,
+        "generation_seconds": 0.016005280001991196
+      },
+      "support_error_min_m": -9.228696314037693e-07,
+      "support_error_max_m": -2.1930203722084207e-07,
+      "contact_gap_max_steps": 0,
+      "loaded_radial_diagnostic_max_deg": 6.9360898910140305e-06,
+      "loaded_trajectory_normal_max_deg": 0.0,
+      "all_tuple_normal_max_deg": 6.9360898910140305e-06,
+      "force_bearing_tuples": 454,
+      "travel_m": 0.03200000000000003,
+      "checks": {
+        "support": true,
+        "contact_gap": true,
+        "ownership": true,
+        "loaded_trajectory_normals": true,
+        "travel": true
+      },
+      "passed": true
+    },
+    "single_1ms": {
+      "geometry": {
+        "vertices": 19321,
+        "triangles": 38088,
+        "vertex_error_m": 1.734723475976807e-18,
+        "centroid_error_m": 2.2862133778386168e-07,
+        "generation_seconds": 0.1603035180014558
+      },
+      "support_error_min_m": -9.688300210824313e-05,
+      "support_error_max_m": 1.1020744440527058e-06,
+      "contact_gap_max_steps": 1,
+      "loaded_radial_diagnostic_max_deg": 9.335576421458907,
+      "loaded_trajectory_normal_max_deg": 2.793967062595869,
+      "all_tuple_normal_max_deg": 13.575531123267478,
+      "force_bearing_tuples": 367,
+      "travel_m": 0.03200158512896922,
+      "checks": {
+        "support": false,
+        "contact_gap": true,
+        "ownership": true,
+        "loaded_trajectory_normals": true,
+        "travel": true
+      },
+      "passed": false
+    },
+    "single_half_ms_diagnostic": {
+      "geometry": {
+        "vertices": 19321,
+        "triangles": 38088,
+        "vertex_error_m": 1.734723475976807e-18,
+        "centroid_error_m": 2.2862133778386168e-07,
+        "generation_seconds": 0.16331229300340055
+      },
+      "support_error_min_m": -2.3576667257094175e-05,
+      "support_error_max_m": 1.4735526327747106e-06,
+      "contact_gap_max_steps": 1,
+      "loaded_radial_diagnostic_max_deg": 4.268177829999112,
+      "loaded_trajectory_normal_max_deg": 1.852091616739855,
+      "all_tuple_normal_max_deg": 7.115633166902848,
+      "force_bearing_tuples": 756,
+      "travel_m": 0.03197915473883994,
+      "checks": {
+        "support": true,
+        "contact_gap": true,
+        "ownership": true,
+        "loaded_trajectory_normals": true,
+        "travel": true
+      },
+      "passed": true
+    }
+  },
+  "cross_not_run": "Default 1ms single-slot gate failed; no matrix or whole-wall expansion",
+  "conclusion": "Stop mesh trials; discuss permission to evaluate 0.5ms as an M2 candidate with RTF>=0.95. Default remains 1ms.",
+  "raw_data_relative_root": "m2_caster_proxy_20261019",
+  "source_commit": "7329edd2c3d9b246e2a313a75e0706d77221958d",
+  "source_dirty": true,
+  "ode_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
+  "source_sha256": {
+    "tools/probe_m2_caster_proxy.py": "f0d9482ce910833ddbb013217286c261c27cf1c3937f14c0dedfc830e8fcd260",
+    "src/climbot_gazebo/src/sphere_envelope.cpp": "d9ed211f9b4062837a6e13bc8811069f0a862aad91202360c092c62a646d766c",
+    "src/climbot_gazebo/src/wall_surface_bindings.cpp": "ff57499b0b503021887034a90b1043c51785f2462f79a3eff0375cc1088a637b",
+    "src/climbot_gazebo/src/wall_surface_probe.cpp": "b64713edfdff86da59c745691888238d2c7c2153b59ac6f2f9450ede5b43ed34",
+    "src/climbot_gazebo/config/m2_surface_fixture.yaml": "a74bb9e8f73b66a165eb77bedbe94b11d795b683ee994dcf54873786c7412f8b"
+  },
+  "normal_metric_re_evaluation": "Offline replay only. Original radial reports retained as original_radial_summary.json; no physics repeated."
+}

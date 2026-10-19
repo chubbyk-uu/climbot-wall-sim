@@ -1,0 +1,126 @@
+{
+  "passed": true,
+  "scope": "Planar source panels; one diagnostic setting, no full vehicle acceptance",
+  "contract": {
+    "normal_load_n": 500.0,
+    "speed_mps": 0.2,
+    "step_s": 0.001,
+    "support_gate_m": 0.00015,
+    "step_sink_allowance_m": 9.999999999999999e-05,
+    "crease_window_m": 0.0002,
+    "loaded_normal_gate": {
+      "deg": 5.0,
+      "max_deg": 10.0,
+      "outlier_force_share": 0.05
+    },
+    "real_radius_m": 0.0125,
+    "proxy_radius_m": 0.00625,
+    "force_bearing_threshold_n": 0.01,
+    "normal_reference": "E one-sided normals; 10um crease-location budget, radial error diagnostic only"
+  },
+  "mesa": {
+    "backend": "wsl_d3d12",
+    "mesa": "private",
+    "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
+  },
+  "ode": {
+    "install": "install",
+    "library": "libode.so.8.0.2",
+    "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
+    "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
+  },
+  "cases": {
+    "flat": {
+      "geometry": {
+        "vertices": 25,
+        "triangles": 32,
+        "vertex_error_m": 0.0,
+        "centroid_error_m": 8.673617379884035e-19,
+        "generation_seconds": 0.00039506999746663496
+      },
+      "support_error_min_m": -9.55604581914446e-07,
+      "loaded_normal_outlier_force_share": 0.0,
+      "support_error_max_m": -2.3081130428107e-07,
+      "contact_gap_max_steps": 0,
+      "loaded_radial_diagnostic_max_deg": 1.9090959104164224e-06,
+      "loaded_trajectory_normal_max_deg": 0.0,
+      "all_tuple_normal_max_deg": 1.9090959104164224e-06,
+      "force_bearing_tuples": 334,
+      "travel_m": 0.03200000000000003,
+      "checks": {
+        "support": true,
+        "contact_gap": true,
+        "ownership": true,
+        "loaded_trajectory_normals": true,
+        "travel": true
+      },
+      "passed": true
+    },
+    "single": {
+      "geometry": {
+        "vertices": 285,
+        "triangles": 448,
+        "vertex_error_m": 1.734723475976807e-18,
+        "centroid_error_m": 2.2862133778386168e-07,
+        "generation_seconds": 0.002060348997474648
+      },
+      "support_error_min_m": -9.690572148602326e-05,
+      "loaded_normal_outlier_force_share": 0.03837106925627178,
+      "support_error_max_m": 2.318826250765141e-06,
+      "contact_gap_max_steps": 1,
+      "loaded_radial_diagnostic_max_deg": 12.189570747208398,
+      "loaded_trajectory_normal_max_deg": 6.319456660906441,
+      "all_tuple_normal_max_deg": 14.257850662362456,
+      "force_bearing_tuples": 307,
+      "travel_m": 0.03195007320459786,
+      "checks": {
+        "support": true,
+        "contact_gap": true,
+        "ownership": true,
+        "loaded_trajectory_normals": true,
+        "travel": true
+      },
+      "passed": true
+    },
+    "cross": {
+      "geometry": {
+        "vertices": 3249,
+        "triangles": 6272,
+        "vertex_error_m": 2.6020852139652106e-18,
+        "centroid_error_m": 5.694487873525098e-07,
+        "generation_seconds": 0.02870995299963397
+      },
+      "support_error_min_m": -9.602656616479466e-05,
+      "loaded_normal_outlier_force_share": 0.006231924889330454,
+      "support_error_max_m": 3.07434390257183e-06,
+      "contact_gap_max_steps": 1,
+      "loaded_radial_diagnostic_max_deg": 10.211359338114763,
+      "loaded_trajectory_normal_max_deg": 5.053213859573247,
+      "all_tuple_normal_max_deg": 14.536119654860792,
+      "force_bearing_tuples": 287,
+      "travel_m": 0.031966548882942855,
+      "checks": {
+        "support": true,
+        "contact_gap": true,
+        "ownership": true,
+        "loaded_trajectory_normals": true,
+        "travel": true
+      },
+      "passed": true
+    }
+  },
+  "binary_sha256": "76b91472381b98c8efacebfb07272ab163a66afa1ddce62d258c4b5d72975629",
+  "masks": {
+    "passed": true,
+    "checks": {
+      "probe_00": true,
+      "probe_01": true,
+      "probe_02": true
+    },
+    "scope": "Nonzero bits 1 and 2: real wheel and collapsed-stop analogue exclude proxy; proxy ball excludes real wall"
+  },
+  "raw_data_relative_root": "m2_caster_proxy_20261019/revised_20261019-144632",
+  "source_commit": "7329edd2c3d9b246e2a313a75e0706d77221958d",
+  "source_dirty": true,
+  "probe_source_sha256": "e7b0dc94b1078f1f6527ff895a3d65e0be9d31f25ede8549fb2fe86942139853"
+}

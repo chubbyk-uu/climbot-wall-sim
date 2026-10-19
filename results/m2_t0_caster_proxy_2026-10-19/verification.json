@@ -1,0 +1,15 @@
+{
+  "scope": "targeted checks only; no S6 rerun",
+  "cpp_surface_tests": 4,
+  "python_surface_tests": 40,
+  "fault_and_normal_contract_tests": 3,
+  "targeted_failures": 0,
+  "style_checks": "flake8 and uncrustify passed",
+  "logs_sha256": {
+    "climbot_caster_proxy_targeted_final_20261019.log": "7696b5bd2de467d0fe40840a945de0bbe5a3357a9a0fa898691674b5d7ee621c",
+    "climbot_caster_proxy_contract_final_20261019.log": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+    "climbot_caster_proxy_isotropic_20261019.log": "d75e57afc96222c436b1140a53456a007711f168c163154bbc374b0888755739",
+    "climbot_caster_proxy_half_single_20261019.log": "6a9687d34146ee69fab20fb66bde06fba4f0957338a0c1ef1605375d2a13b849",
+    "climbot_caster_proxy_normal_review_20261019.log": "7d208c8fefb8cd8e844a0e597e748b5c9fe2d3b921d12c44cff7c23a88439d6d"
+  }
+}
