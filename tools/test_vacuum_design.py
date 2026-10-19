@@ -24,6 +24,27 @@ def model(data):
     return build(c,cam,r)
 
 
+def test_uniform_explicit_skirt_quadrature_preserves_legacy_sizing(model):
+    explicit = deepcopy(model)
+    _, weights = skirt_points(model)
+    explicit['skirt_mechanical_samples_n'] = model['skirt_mechanical_n']*weights
+    s = states(np.arange(0, 360, 45), v=.2, a=.3, omega=.5)
+    for key, value in evaluate(model, s, 7000).items():
+        np.testing.assert_allclose(evaluate(explicit, s, 7000)[key], value, atol=1e-12)
+
+
+def test_asymmetric_skirt_preload_preserves_wrench_balance(model):
+    points, weights = skirt_points(model)
+    model['skirt_mechanical_samples_n'] = 30*weights*(1+points[:, 1])
+    s = states([0, 40, 90, 270], v=.2, a=.3, omega=.5)
+    e = evaluate(model, s, 7000, lateral='conservative')
+    np.testing.assert_allclose(e['force_residual_n'], 0, atol=1e-10)
+    np.testing.assert_allclose(e['moment_residual_nm'], 0, atol=1e-10)
+    p = minimum_pressure(model, s, lateral='conservative')
+    assert np.all(evaluate(model, s, p+.001, lateral='conservative')['slack_n'] >= 0)
+    assert np.all(evaluate(model, s, p-.001, lateral='conservative')['slack_n'] < 0)
+
+
 @pytest.mark.parametrize('heading', [0., 41.8, 90., 180., 270.])
 def test_revised_lateral_envelope_preserves_both_allocation_hypotheses(model, heading):
     state = states([heading], v=.189, a=.7, omega=-1.2)

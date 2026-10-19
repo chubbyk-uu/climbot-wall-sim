@@ -57,9 +57,17 @@ def evaluate(model, state, pressure, gravity=9.81, mu=1.1, margin=1.5,
     pressure_force = np.column_stack((p*0, p*0, -p*model['effective_area_m2']))
     f += pressure_force
     moment += np.cross(model['pressure_centre_xyz_m'], pressure_force)
-    nskirt = model['skirt_mechanical_n']+p*model['lip_weighted_area_m2']
     points, weights = skirt_points(model)
-    skirt_centre = weights@points
+    # Optional offline M2 quadrature preserves the spatial preload distribution.
+    # The legacy uniform preload remains exactly the default.
+    mechanical = np.asarray(model.get(
+        'skirt_mechanical_samples_n', model['skirt_mechanical_n']*weights))
+    if (mechanical.shape != weights.shape or not np.isfinite(mechanical).all() or
+            (mechanical < 0).any()):
+        raise ValueError('invalid skirt mechanical quadrature')
+    normal_samples = mechanical[None, :]+p[:, None]*model['lip_weighted_area_m2']*weights
+    nskirt = normal_samples.sum(axis=1)
+    skirt_centre = normal_samples@points/np.maximum(nskirt[:, None], 1e-30)
     fn = np.column_stack((p*0, p*0, nskirt))
     f += fn
     moment += np.cross(skirt_centre, fn)
@@ -79,11 +87,12 @@ def evaluate(model, state, pressure, gravity=9.81, mu=1.1, margin=1.5,
     velocities = (np.cross(np.column_stack((unique[:, 0]*0, unique[:, 0]*0, unique[:, 1]))[:, None, :], points)+
                   np.column_stack((unique[:, 0], unique[:, 0]*0, unique[:, 0]*0))[:, None, :])
     eps = cfg['skirt']['velocity_regularization_mps']
-    drag = (-cfg['skirt']['sliding_mu']*weights[None, :, None]*
+    drag = (-cfg['skirt']['sliding_mu']*
             velocities/np.sqrt(np.sum(velocities**2, axis=2, keepdims=True)+eps**2))
-    drag_force = nskirt[:, None]*drag.sum(axis=1)[index]
+    sample_drag = normal_samples[:, :, None]*drag[index]
+    drag_force = sample_drag.sum(axis=1)
     f += drag_force
-    moment += nskirt[:, None]*np.cross(points, drag).sum(axis=1)[index]
+    moment += np.cross(points, sample_drag).sum(axis=1)
     # Signed continuation is used only while searching. Nonpositive contact
     # trials always fail support slack and are never accepted as physical.
     rr = normals[:, 2, None]*rr_unit
@@ -128,7 +137,7 @@ def evaluate(model, state, pressure, gravity=9.81, mu=1.1, margin=1.5,
             'drive_demand_n': demand, 'drive_margin': actual_margin, 'slack_n': slack,
             'pressure_force_n': p*model['effective_area_m2'], 'skirt_normal_n': nskirt,
             'skirt_drag_n': drag_force,
-            'skirt_drag_power_w': nskirt*np.sum(drag*velocities, axis=(1, 2))[index],
+            'skirt_drag_power_w': np.sum(sample_drag*velocities[index], axis=(1, 2)),
             'ball_tangent_n': ftball+rr, 'motor_torque_nm': torques, 'wheel_speed_rps': speeds,
             'force_residual_n': residual_f, 'moment_residual_nm': residual_m}
 

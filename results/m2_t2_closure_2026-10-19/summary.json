@@ -1,0 +1,2468 @@
+{
+  "scope": "Representative-patch T2 closure only; M2 defaults and T3 remain pending",
+  "t2_representative_accepted": true,
+  "m2_all_accepted": false,
+  "checks": {
+    "saved_pose_quadrature": true,
+    "seal_thresholds": true,
+    "native_coupling_and_loads": true,
+    "updated_pressure_and_flow": true,
+    "nominal_hold_at_least_60s": true,
+    "nominal_normal_balance": true,
+    "physical_step_pressure_and_force": true,
+    "fan_response_steps": true
+  },
+  "protocol": {
+    "version": "m2_t2_close_20261019",
+    "scope": "Offline saved-pose quadrature, seal threshold and capability screening",
+    "pose_stride_s": 0.1,
+    "refinements": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "skirt_samples_per_side": [
+      32,
+      64,
+      128,
+      256
+    ],
+    "quadrature_relative_limit": 0.05,
+    "area_absolute_floor_m2": 1e-06,
+    "pressure_absolute_floor_pa": 1.0,
+    "threshold_gap_range_m": [
+      0.016,
+      0.024
+    ],
+    "threshold_gap_intervals": [
+      1000,
+      2000,
+      4000,
+      8000
+    ],
+    "threshold_refinement_note": "Initial 1000/2000-interval broad-gap scans under-resolved the smooth 0.1mm transition. Refine resolution; keep 1% limit.",
+    "transition_maximum_relative_increment": 0.01,
+    "roundtrip_absolute_area_m2": 1e-14,
+    "reverse_fractions": [
+      0.0,
+      0.01,
+      0.05,
+      0.2,
+      1.0
+    ],
+    "force_safety_factor": 1.5,
+    "drive_mu": 1.1,
+    "geometry_note": "Same nominal projected support geometry; CG height bounds include +/-2mm wall heights and 4mm normal joint travel. Lateral travel and noncoplanar contact effects remain native/T3 checks, not analytic guarantees."
+  },
+  "source": {
+    "commit": "91c41c17ceb0ac095c4914ec5fb71c3d5b93ffe3",
+    "dirty": true,
+    "tool_sha256": "613f8f8854432fc865aacf5375761a348a30d2da50c7d8368f448c910033c3d7",
+    "loads_sha256": "608bacc38be1cac1e88494540213e52e67ca10d7a0900e9f0194348e3a1f4de9",
+    "input_sha256": {
+      "src/climbot_gazebo/src/seal_channels.cpp": "55c94d086ba0a5f247ed4db58d4d752f8ec24eb103843efae6d97c1cb9a40887",
+      "src/climbot_gazebo/config/vacuum_physics.yaml": "f671793f542ab0eef898e8e69f3b19d8dc4fee01226a8909c690dd1cb0bec4b7",
+      "src/climbot_gazebo/config/m2_wheel_compliance.yaml": "bbbee1467db3c68cd1d53700cd9c40a29e4e3600927930e002b295b7cfd6ee40",
+      "src/climbot_gazebo/config/m2_tyre_lateral.yaml": "3c688d686684f244e8ffaa6e58c2171cb75ee4c762f297dd460346499eb24964",
+      "tools/probe_m2_robot_patch.py": "0206875aeaf656f0d0ea898712f7277965711828f58888176b90373ddb4eda58",
+      "tools/m2_load_criterion.py": "f4e18bcf234f66e78ef9d64ed67aa9d647cf1db264bb6ee47b36331a1fd5d0c4"
+    }
+  },
+  "finalizer_sha256": "ef7131b3e9efb3b39b7a5f584e62cd0bd63fb72948b08cf48b9b6142193220be",
+  "input_sha256": {
+    "audit": "2e31546f09441e11859748d3b2739c6cf5ea428ec230dcf739f998d8ea9348cb",
+    "coupling": "d09d4956fcb75cc22340b5e12780a7e77ad9d8c5618fb8cb13a9024b1279d4bd",
+    "pressure": "81479bd11bb5ee92d7db009890638d717ec59934004c9cfd97a02f9acf102bfb"
+  },
+  "saved_pose_audit": {
+    "rough_soft_c": {
+      "poses": 691,
+      "pose_offset_steps": -1,
+      "time_range_s": [
+        1.802,
+        69.902
+      ],
+      "maximum_runtime_recompute_area_error_m2": 9.012430558785756e-19,
+      "area_maximum_relative_error": {
+        "1": 0.0007278141907399472,
+        "2": 0.0002348404556015912,
+        "4": 3.849379788771515e-05
+      },
+      "skirt_force_maximum_relative_error": {
+        "32": 0.007375708045680074,
+        "64": 0.004597734752692145,
+        "128": 0.002062851292376244
+      },
+      "skirt_first_moment_normalized_error": {
+        "32": 0.004335422841034317,
+        "64": 0.002846871270727784,
+        "128": 0.0013541524773526823
+      },
+      "whole_scored_pressure_range_pa": [
+        7024.489485478203,
+        7914.439239127532
+      ],
+      "whole_scored_leak_range_m2": [
+        0.00020491353186630667,
+        0.00023115870256437858
+      ],
+      "source_sha256": {
+        "resolved.json": "6458c18c9069265f85fcd05e7ff2bc4258e4745e3a48511f2a6a6d9a6d50cf62",
+        "surface_patch/source.yaml": "f3d3843ec8e4116680617525b5fd8fd0f9a892e035bdd2dc7d5726e708d191ef",
+        "native/frames.csv": "858c6f9d353d0a5d06a01997743d7a38563198802503b49656c97f16663ce853"
+      },
+      "checks": {
+        "runtime_channel_reproduced": true,
+        "channel_quadrature_converged": true,
+        "skirt_force_converged": true,
+        "skirt_first_moment_converged": true
+      }
+    },
+    "holdout_clearance": {
+      "poses": 82,
+      "pose_offset_steps": -1,
+      "time_range_s": [
+        1.851,
+        8.951
+      ],
+      "maximum_runtime_recompute_area_error_m2": 1.3349239248727773e-18,
+      "area_maximum_relative_error": {
+        "1": 0.0001386930774838979,
+        "2": 4.495218652463188e-05,
+        "4": 1.3754922761854902e-05
+      },
+      "skirt_force_maximum_relative_error": {
+        "32": 0.0068271973560559696,
+        "64": 0.0024853013178663145,
+        "128": 0.0027681342089547673
+      },
+      "skirt_first_moment_normalized_error": {
+        "32": 0.0054236502495452485,
+        "64": 0.0030400531735916333,
+        "128": 0.0015175987949089128
+      },
+      "whole_scored_pressure_range_pa": [
+        6593.819425606169,
+        7897.634276019322
+      ],
+      "whole_scored_leak_range_m2": [
+        0.00021101338942540167,
+        0.00025377368376761577
+      ],
+      "source_sha256": {
+        "resolved.json": "0c07fc95540525946b27054bcb31ffd7cb0290b6f985df244542d91775b1ad0a",
+        "surface_patch/source.yaml": "dbf0f91983911463418576841c8f9cdc942f254fe65f471ef3b29f12086c36d3",
+        "native/frames.csv": "b3ee507d43c8e0c9a5f9703ec1fbd038468d454af688f5be03b117e49c437551"
+      },
+      "checks": {
+        "runtime_channel_reproduced": true,
+        "channel_quadrature_converged": true,
+        "skirt_force_converged": true,
+        "skirt_first_moment_converged": true
+      }
+    }
+  },
+  "threshold": {
+    "scope": "Algebraic gap sweep: residual-channel closure and gross seal lift; pressure/fan steady reference, no claim of dynamic hysteresis",
+    "gap_range_m": [
+      0.016,
+      0.024
+    ],
+    "scans": [
+      {
+        "intervals": 1000,
+        "maximum_normalized_increment": [
+          0.004088560176002018,
+          0.024433455190609802,
+          0.02110219264519293
+        ],
+        "roundtrip_maximum_error": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "intervals": 2000,
+        "maximum_normalized_increment": [
+          0.002044280088006942,
+          0.012229672077716778,
+          0.010564915609826612
+        ],
+        "roundtrip_maximum_error": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "intervals": 4000,
+        "maximum_normalized_increment": [
+          0.0010221400440081107,
+          0.0061427390732441195,
+          0.005302535520344491
+        ],
+        "roundtrip_maximum_error": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "intervals": 8000,
+        "maximum_normalized_increment": [
+          0.0005110700220092275,
+          0.0030783798850688884,
+          0.002656301263228524
+        ],
+        "roundtrip_maximum_error": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "checks": {
+      "roundtrip_identical": true,
+      "no_threshold_jump": true,
+      "increments_refine": true
+    }
+  },
+  "capability_screen": {
+    "scope": "Capability screening at observed preload-moment extrema, CG height +8mm bound; not an exhaustive noncoplanar/lateral-travel guarantee",
+    "cg_height_upward_bound_m": 0.008,
+    "profile_count": 149,
+    "configurations": [
+      {
+        "preload_index": 9,
+        "mechanical_n": 18.392160946172456,
+        "mechanical_first_moment_nm": [
+          -3.0200418985475315,
+          0.34030634896639517
+        ],
+        "required_pressure_pa": 6195.493103004992,
+        "rounded_pressure_pa": 6200.0,
+        "worst": {
+          "profile": "rated_grid_112",
+          "group": "actuator",
+          "state": [
+            41.5,
+            0.0,
+            0.7,
+            -1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6195.493103004992,
+          "minimum_pressure_force_n": 813.4248759728346
+        },
+        "minimum_normals_n": [
+          142.18559093827548,
+          143.75021783007506,
+          276.56216784645335
+        ],
+        "maximum_motor_torque_nm": 5.102294214517078,
+        "minimum_drive_margin": 1.5013807216875246
+      },
+      {
+        "preload_index": 10,
+        "mechanical_n": 33.710957428406346,
+        "mechanical_first_moment_nm": [
+          -2.0510477614879052,
+          0.07876151656032943
+        ],
+        "required_pressure_pa": 6498.166354140267,
+        "rounded_pressure_pa": 6500.0,
+        "worst": {
+          "profile": "rated_grid_137",
+          "group": "actuator",
+          "state": [
+            42.8,
+            0.189,
+            0.7,
+            -1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6498.166354140267,
+          "minimum_pressure_force_n": 853.1637551341382
+        },
+        "minimum_normals_n": [
+          142.78883155975316,
+          143.15095347497302,
+          296.246278880649
+        ],
+        "maximum_motor_torque_nm": 5.159010653997479,
+        "minimum_drive_margin": 1.5005489195204167
+      },
+      {
+        "preload_index": 39,
+        "mechanical_n": 17.748315134198272,
+        "mechanical_first_moment_nm": [
+          -1.3278391764600113,
+          -0.26992450472428997
+        ],
+        "required_pressure_pa": 6257.75768305175,
+        "rounded_pressure_pa": 6300.0,
+        "worst": {
+          "profile": "rated_grid_114",
+          "group": "actuator",
+          "state": [
+            138.5,
+            0.0,
+            0.7,
+            1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6257.75768305175,
+          "minimum_pressure_force_n": 821.5997794809135
+        },
+        "minimum_normals_n": [
+          144.18141198137081,
+          142.94037977574192,
+          287.6866699908839
+        ],
+        "maximum_motor_torque_nm": 5.100874502094424,
+        "minimum_drive_margin": 1.5129727146251495
+      },
+      {
+        "preload_index": 40,
+        "mechanical_n": 22.52835456558197,
+        "mechanical_first_moment_nm": [
+          -2.8793474310094567,
+          -0.37885278072844486
+        ],
+        "required_pressure_pa": 6278.323470032774,
+        "rounded_pressure_pa": 6300.0,
+        "worst": {
+          "profile": "rated_grid_114",
+          "group": "actuator",
+          "state": [
+            138.5,
+            0.0,
+            0.7,
+            1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6278.323470032774,
+          "minimum_pressure_force_n": 824.2999233510131
+        },
+        "minimum_normals_n": [
+          144.62846400396157,
+          142.88661213854346,
+          282.5159772698811
+        ],
+        "maximum_motor_torque_nm": 5.120403720371023,
+        "minimum_drive_margin": 1.506631418901402
+      },
+      {
+        "preload_index": 714,
+        "mechanical_n": 26.169226443580648,
+        "mechanical_first_moment_nm": [
+          -3.435021320573326,
+          0.27538370039692445
+        ],
+        "required_pressure_pa": 6309.072958538309,
+        "rounded_pressure_pa": 6400.0,
+        "worst": {
+          "profile": "rated_grid_112",
+          "group": "actuator",
+          "state": [
+            41.6,
+            0.0,
+            0.7,
+            -1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6309.072958538309,
+          "minimum_pressure_force_n": 828.3371159453703
+        },
+        "minimum_normals_n": [
+          145.32274629671767,
+          146.58887825256562,
+          286.14900832513365
+        ],
+        "maximum_motor_torque_nm": 5.138154865328439,
+        "minimum_drive_margin": 1.527735047382857
+      }
+    ],
+    "required_pressure_pa": 6500.0
+  },
+  "fault_budget": {
+    "required_pressure_pa": 6500.0,
+    "cases": [
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.0,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 8404.442641161026,
+        "flow_reserve_at_requirement_kg_s": 0.007606208995144986,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.0,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 7857.4120883482965,
+        "flow_reserve_at_requirement_kg_s": 0.0056510001138439635,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.0,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 7729.996681791724,
+        "flow_reserve_at_requirement_kg_s": 0.005172284541189924,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.0,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 7326.385629216904,
+        "flow_reserve_at_requirement_kg_s": 0.0035912844896000048,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.0,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 6903.042648311501,
+        "flow_reserve_at_requirement_kg_s": 0.0018164653938448783,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.0,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 6617.422894741183,
+        "flow_reserve_at_requirement_kg_s": 0.0005430274173023764,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.0,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 6617.422894741199,
+        "flow_reserve_at_requirement_kg_s": 0.0003620182782015837,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.0,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 6012.485417324702,
+        "flow_reserve_at_requirement_kg_s": -0.0015931906030994388,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.0,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 5874.83365780487,
+        "flow_reserve_at_requirement_kg_s": -0.0020719061757534787,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.0,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 5447.027761972655,
+        "flow_reserve_at_requirement_kg_s": -0.0036529062273433976,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.0,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 5011.922763410662,
+        "flow_reserve_at_requirement_kg_s": -0.005427725323098524,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.0,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 4726.355533840407,
+        "flow_reserve_at_requirement_kg_s": -0.006701163299641026,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.0,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 3469.379920537241,
+        "flow_reserve_at_requirement_kg_s": -0.006882172438741819,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.0,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 2957.7447460625785,
+        "flow_reserve_at_requirement_kg_s": -0.008837381320042841,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.0,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 2847.916849266765,
+        "flow_reserve_at_requirement_kg_s": -0.009316096892696881,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.0,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 2521.728943755322,
+        "flow_reserve_at_requirement_kg_s": -0.0108970969442868,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.0,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 2212.8307267901164,
+        "flow_reserve_at_requirement_kg_s": -0.012671916040041926,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.0,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 2022.1943574242337,
+        "flow_reserve_at_requirement_kg_s": -0.013945354016584428,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.0,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.014126363155685221,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.0,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.016081572036986243,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.0,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.016560287609640283,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.0,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.0181412876612302,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.0,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.019916106756985328,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.0,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.02118954473352783,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.01,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 8404.442641163248,
+        "flow_reserve_at_requirement_kg_s": 0.007606208995144986,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.01,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 7857.412088348586,
+        "flow_reserve_at_requirement_kg_s": 0.0056510001138439635,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.01,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 7729.996681791715,
+        "flow_reserve_at_requirement_kg_s": 0.005172284541189924,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.01,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 7326.385629216902,
+        "flow_reserve_at_requirement_kg_s": 0.0035912844896000048,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.01,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 6903.042648314873,
+        "flow_reserve_at_requirement_kg_s": 0.0018164653938448783,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.01,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 6617.422894748191,
+        "flow_reserve_at_requirement_kg_s": 0.0005430274173023764,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.01,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 6010.506599909018,
+        "flow_reserve_at_requirement_kg_s": -0.0015999766045324743,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.01,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 5472.326952968181,
+        "flow_reserve_at_requirement_kg_s": -0.003555185485833497,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.01,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 5349.769464303964,
+        "flow_reserve_at_requirement_kg_s": -0.004033901058487537,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.01,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 4968.612984624394,
+        "flow_reserve_at_requirement_kg_s": -0.005614901110077456,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.01,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 4580.491572636664,
+        "flow_reserve_at_requirement_kg_s": -0.0073897202058325825,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.01,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 4325.466315870711,
+        "flow_reserve_at_requirement_kg_s": -0.008663158182375084,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.01,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 2539.0886655080963,
+        "flow_reserve_at_requirement_kg_s": -0.010806162204209935,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.01,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 2198.6551301635736,
+        "flow_reserve_at_requirement_kg_s": -0.012761371085510956,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.01,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 2124.863718845347,
+        "flow_reserve_at_requirement_kg_s": -0.013240086658164996,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.01,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 1903.9617849247304,
+        "flow_reserve_at_requirement_kg_s": -0.014821086709754915,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.01,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 1692.0207968795432,
+        "flow_reserve_at_requirement_kg_s": -0.01659590580551004,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.01,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 1559.6650154857152,
+        "flow_reserve_at_requirement_kg_s": -0.017869343782052544,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.01,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.020012347803887394,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.01,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.021967556685188416,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.01,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.022446272257842455,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.01,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.024027272309432374,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.01,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.0258020914051875,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.01,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.027075529381730003,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.05,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 8404.442641159962,
+        "flow_reserve_at_requirement_kg_s": 0.007606208995144986,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.05,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 7857.412088348262,
+        "flow_reserve_at_requirement_kg_s": 0.0056510001138439635,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.05,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 7729.996681791737,
+        "flow_reserve_at_requirement_kg_s": 0.005172284541189924,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.05,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 7326.385629216943,
+        "flow_reserve_at_requirement_kg_s": 0.0035912844896000048,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.05,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 6903.042648311594,
+        "flow_reserve_at_requirement_kg_s": 0.0018164653938448783,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.05,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 6617.422894748144,
+        "flow_reserve_at_requirement_kg_s": 0.0005430274173023764,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.05,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 4177.282973618865,
+        "flow_reserve_at_requirement_kg_s": -0.009447956135468708,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.05,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 3835.4590363978546,
+        "flow_reserve_at_requirement_kg_s": -0.011403165016769731,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.05,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 3757.3200326460637,
+        "flow_reserve_at_requirement_kg_s": -0.011881880589423771,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.05,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 3513.5079654217166,
+        "flow_reserve_at_requirement_kg_s": -0.01346288064101369,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.05,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 3263.850428460304,
+        "flow_reserve_at_requirement_kg_s": -0.015237699736768816,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.05,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 3098.9340870952606,
+        "flow_reserve_at_requirement_kg_s": -0.01651113771331132,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.05,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 955.093895209918,
+        "flow_reserve_at_requirement_kg_s": -0.026502121266082403,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.05,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 865.7849042163965,
+        "flow_reserve_at_requirement_kg_s": -0.028457330147383424,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.05,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 845.7550247954578,
+        "flow_reserve_at_requirement_kg_s": -0.028936045720037464,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.05,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 784.1519082190017,
+        "flow_reserve_at_requirement_kg_s": -0.030517045771627383,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.05,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 722.4369080967001,
+        "flow_reserve_at_requirement_kg_s": -0.03229186486738251,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.05,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 682.4010303573605,
+        "flow_reserve_at_requirement_kg_s": -0.03356530284392501,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.05,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.04355628639669609,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.05,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.04551149527799712,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.05,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.04599021085065116,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.05,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.047571210902241076,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.05,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.0493460299979962,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.05,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.0506194679745387,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.2,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 8404.442641159934,
+        "flow_reserve_at_requirement_kg_s": 0.007606208995144986,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.2,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 7857.41208834825,
+        "flow_reserve_at_requirement_kg_s": 0.0056510001138439635,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.2,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 7729.996681791715,
+        "flow_reserve_at_requirement_kg_s": 0.005172284541189924,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.2,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 7326.385629216909,
+        "flow_reserve_at_requirement_kg_s": 0.0035912844896000048,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.2,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 6903.042648311485,
+        "flow_reserve_at_requirement_kg_s": 0.0018164653938448783,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 0.2,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 6617.422894757723,
+        "flow_reserve_at_requirement_kg_s": 0.0005430274173023764,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.2,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 1415.6394662588793,
+        "flow_reserve_at_requirement_kg_s": -0.03887787937647958,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.2,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 1335.2277102932023,
+        "flow_reserve_at_requirement_kg_s": -0.040833088257780606,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.2,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 1316.523628214165,
+        "flow_reserve_at_requirement_kg_s": -0.041311803830434646,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.2,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 1257.3162680702424,
+        "flow_reserve_at_requirement_kg_s": -0.042892803882024565,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.2,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 1195.2439008251645,
+        "flow_reserve_at_requirement_kg_s": -0.04466762297777969,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 0.2,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 1153.353574204633,
+        "flow_reserve_at_requirement_kg_s": -0.04594106095432219,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.2,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 144.16057759235818,
+        "flow_reserve_at_requirement_kg_s": -0.08536196774810415,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.2,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 138.38336295090338,
+        "flow_reserve_at_requirement_kg_s": -0.08731717662940518,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.2,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 137.02143761451939,
+        "flow_reserve_at_requirement_kg_s": -0.08779589220205922,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.2,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 132.66267927677492,
+        "flow_reserve_at_requirement_kg_s": -0.08937689225364913,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.2,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 128.0113206438068,
+        "flow_reserve_at_requirement_kg_s": -0.09115171134940425,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 0.2,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 124.82213791574799,
+        "flow_reserve_at_requirement_kg_s": -0.09242514932594675,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.2,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.13184605611972872,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.2,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.13380126500102973,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.2,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.1342799805736838,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.2,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.1358609806252737,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.2,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.13763579972102882,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 0.2,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.13890923769757132,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 1.0,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 8404.442641159969,
+        "flow_reserve_at_requirement_kg_s": 0.007606208995144986,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 1.0,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 7857.412088348255,
+        "flow_reserve_at_requirement_kg_s": 0.0056510001138439635,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 1.0,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 7729.996681791718,
+        "flow_reserve_at_requirement_kg_s": 0.005172284541189924,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 1.0,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 7326.385629216906,
+        "flow_reserve_at_requirement_kg_s": 0.0035912844896000048,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 1.0,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 6903.042648311485,
+        "flow_reserve_at_requirement_kg_s": 0.0018164653938448783,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 3,
+        "reverse_fraction": 1.0,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 6617.422894747996,
+        "flow_reserve_at_requirement_kg_s": 0.0005430274173023764,
+        "above_requirement": true
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 1.0,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 112.33639935881104,
+        "flow_reserve_at_requirement_kg_s": -0.19583746999520424,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 1.0,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 110.31080910930976,
+        "flow_reserve_at_requirement_kg_s": -0.19779267887650526,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 1.0,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 109.8231652851363,
+        "flow_reserve_at_requirement_kg_s": -0.1982713944491593,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 1.0,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 108.23532489865379,
+        "flow_reserve_at_requirement_kg_s": -0.19985239450074924,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 1.0,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 106.49329600556173,
+        "flow_reserve_at_requirement_kg_s": -0.20162721359650435,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 2,
+        "reverse_fraction": 1.0,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 105.26903398812078,
+        "flow_reserve_at_requirement_kg_s": -0.20290065157304685,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 1.0,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 7.6392046821467305,
+        "flow_reserve_at_requirement_kg_s": -0.39928114898555345,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 1.0,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 7.566345363025287,
+        "flow_reserve_at_requirement_kg_s": -0.4012363578668545,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 1.0,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 7.54866524289077,
+        "flow_reserve_at_requirement_kg_s": -0.4017150734395085,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 1.0,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 7.4907132572896185,
+        "flow_reserve_at_requirement_kg_s": -0.4032960734910985,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 1.0,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 7.4264482718233715,
+        "flow_reserve_at_requirement_kg_s": -0.4050708925868536,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 1,
+        "reverse_fraction": 1.0,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 7.380846132201355,
+        "flow_reserve_at_requirement_kg_s": -0.4063443305633961,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 1.0,
+        "area_mm2": 180.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.6027248279759028,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 1.0,
+        "area_mm2": 204.91353186630667,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.6046800368572037,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 1.0,
+        "area_mm2": 211.01338942540167,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.6051587524298578,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 1.0,
+        "area_mm2": 231.1587025643786,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.6067397524814477,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 1.0,
+        "area_mm2": 253.77368376761578,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.6085145715772028,
+        "above_requirement": false
+      },
+      {
+        "running_fans": 0,
+        "reverse_fraction": 1.0,
+        "area_mm2": 270.0,
+        "equilibrium_pa": 0.0,
+        "flow_reserve_at_requirement_kg_s": -0.6097880095537453,
+        "above_requirement": false
+      }
+    ],
+    "interpretation": "Fault boundaries, not a universal fault-tolerance pass. Parallel fan heads do not add; stopped ports retain specified backflow."
+  },
+  "native_coupling": {
+    "rough_soft_c": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "load_criterion_v2": true,
+        "no_stop_contact": true
+      },
+      "release_s": 0.801,
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 2,
+          "longest_requirement_violation_steps": 1,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 0
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 4,
+          "longest_requirement_violation_steps": 1,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 1
+        }
+      },
+      "load_acceptance": {
+        "criterion": {
+          "version": "m2_load_v2_20261019",
+          "mu": 1.1,
+          "window_ms": 50,
+          "minimum_window_margin": 1.5,
+          "minimum_loaded_instant_margin_exclusive": 1.0,
+          "loaded_drive_threshold_n": 5.0,
+          "support_floors_n_left_right_ball": [
+            5.0,
+            5.0,
+            10.0
+          ],
+          "maximum_contact_or_low_load_run_steps": 2,
+          "start_after_release_s": 1.0,
+          "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+          "sensitivity_windows_ms": [
+            20,
+            50,
+            100
+          ]
+        },
+        "passed": true,
+        "checks": {
+          "sustained_50ms_margin_at_least_1_5": true,
+          "every_loaded_drive_frame_margin_above_1": true,
+          "contact_or_low_load_runs_at_most_two_steps": true
+        },
+        "step_s": 0.0009999999999994458,
+        "samples": 68199,
+        "scoring_time_range_s": [
+          1.802,
+          70.0
+        ],
+        "minimum_loaded_instant_margin_left_right": [
+          1.5118023306122648,
+          1.404403691795757
+        ],
+        "window_sensitivity_ms": {
+          "20": {
+            "samples": 20,
+            "minimum_margin_left_right": [
+              1.8390225918071264,
+              2.0353376467393294
+            ]
+          },
+          "50": {
+            "samples": 50,
+            "minimum_margin_left_right": [
+              2.02946065223145,
+              2.336314686420323
+            ]
+          },
+          "100": {
+            "samples": 100,
+            "minimum_margin_left_right": [
+              2.053124027853199,
+              2.379606125899104
+            ]
+          }
+        },
+        "raw": {
+          "minimum_drive_margin_left_right": [
+            0.0,
+            0.0
+          ],
+          "drive_below_1_5_frames_left_right": [
+            2,
+            4
+          ],
+          "loaded_drive_below_1_5_frames_left_right": [
+            0,
+            1
+          ],
+          "loaded_drive_at_or_below_1_frames_left_right": [
+            0,
+            0
+          ],
+          "maximum_contact_loss_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "contact_loss_frames_left_right_ball": [
+            2,
+            3,
+            6
+          ],
+          "low_load_frames_left_right_ball": [
+            2,
+            3,
+            6
+          ],
+          "contact_or_low_load_frames_left_right_ball": [
+            2,
+            3,
+            6
+          ],
+          "maximum_low_load_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "maximum_contact_or_low_load_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "maximum_simultaneous_contact_losses": 1
+        }
+      },
+      "raw_checks": {
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false
+      },
+      "strict_raw_load_checks_pass": false,
+      "pressure_range_pa": [
+        7024.489485478203,
+        7914.439239127532
+      ],
+      "conservative_pressure_bounds_pa": [
+        6046.704633627087,
+        6077.904860721901,
+        6109.105112263933
+      ],
+      "conservative_required_pressure_pa": 6109.105112263933,
+      "minimum_pressure_slack_pa": 915.3843732142705,
+      "channel_area_range_mm2": [
+        24.913531866306663,
+        51.158702564378565
+      ],
+      "total_leak_area_range_mm2": [
+        204.91353186630667,
+        231.1587025643786
+      ],
+      "independent_mass_rate_error_kg_s": 4.85722573273506e-17,
+      "minimum_flow_reserve_at_requirement_kg_s": 0.005333496056180253,
+      "plugin_cpu_us_mean_p95_p99": [
+        123.05756540000002,
+        136.65945,
+        152.22005000000016
+      ],
+      "channel_query_cpu_us_mean": 29.8880178,
+      "hold": {
+        "duration_s": 62.199,
+        "maximum_equilibrium_error_pa": 0.003307141857476381,
+        "minimum_normals_n": [
+          214.50293497915655,
+          213.38707290220574,
+          467.34652326125234
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      }
+    },
+    "rough_soft_b": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "load_criterion_v2": true,
+        "no_stop_contact": true
+      },
+      "release_s": 0.676,
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 6,
+          "longest_requirement_violation_steps": 1,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 1
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 6,
+          "longest_requirement_violation_steps": 1,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 1
+        }
+      },
+      "load_acceptance": {
+        "criterion": {
+          "version": "m2_load_v2_20261019",
+          "mu": 1.1,
+          "window_ms": 50,
+          "minimum_window_margin": 1.5,
+          "minimum_loaded_instant_margin_exclusive": 1.0,
+          "loaded_drive_threshold_n": 5.0,
+          "support_floors_n_left_right_ball": [
+            5.0,
+            5.0,
+            10.0
+          ],
+          "maximum_contact_or_low_load_run_steps": 2,
+          "start_after_release_s": 1.0,
+          "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+          "sensitivity_windows_ms": [
+            20,
+            50,
+            100
+          ]
+        },
+        "passed": true,
+        "checks": {
+          "sustained_50ms_margin_at_least_1_5": true,
+          "every_loaded_drive_frame_margin_above_1": true,
+          "contact_or_low_load_runs_at_most_two_steps": true
+        },
+        "step_s": 0.0009999999999998899,
+        "samples": 7324,
+        "scoring_time_range_s": [
+          1.677,
+          9.0
+        ],
+        "minimum_loaded_instant_margin_left_right": [
+          1.4757742046128515,
+          1.403232819116278
+        ],
+        "window_sensitivity_ms": {
+          "20": {
+            "samples": 20,
+            "minimum_margin_left_right": [
+              1.8944683005777607,
+              2.1362219008743724
+            ]
+          },
+          "50": {
+            "samples": 50,
+            "minimum_margin_left_right": [
+              2.099209613129241,
+              2.2195847211161803
+            ]
+          },
+          "100": {
+            "samples": 100,
+            "minimum_margin_left_right": [
+              2.1959465905488593,
+              2.3062109231452843
+            ]
+          }
+        },
+        "raw": {
+          "minimum_drive_margin_left_right": [
+            0.0,
+            0.0
+          ],
+          "drive_below_1_5_frames_left_right": [
+            6,
+            6
+          ],
+          "loaded_drive_below_1_5_frames_left_right": [
+            1,
+            1
+          ],
+          "loaded_drive_at_or_below_1_frames_left_right": [
+            0,
+            0
+          ],
+          "maximum_contact_loss_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "contact_loss_frames_left_right_ball": [
+            5,
+            5,
+            13
+          ],
+          "low_load_frames_left_right_ball": [
+            5,
+            5,
+            13
+          ],
+          "contact_or_low_load_frames_left_right_ball": [
+            5,
+            5,
+            13
+          ],
+          "maximum_low_load_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "maximum_contact_or_low_load_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "maximum_simultaneous_contact_losses": 1
+        }
+      },
+      "raw_checks": {
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false
+      },
+      "strict_raw_load_checks_pass": false,
+      "pressure_range_pa": [
+        8404.442641162896,
+        8404.442641162896
+      ],
+      "conservative_pressure_bounds_pa": [
+        6046.704633627087,
+        6077.904860721901,
+        6109.105112263933
+      ],
+      "conservative_required_pressure_pa": 6109.105112263933,
+      "minimum_pressure_slack_pa": 2295.337528898963,
+      "channel_area_range_mm2": [
+        24.942108255148757,
+        51.16371969881803
+      ],
+      "total_leak_area_range_mm2": [
+        204.94210825514878,
+        231.16371969881803
+      ],
+      "independent_mass_rate_error_kg_s": 6.071532165918825e-18,
+      "minimum_flow_reserve_at_requirement_kg_s": 0.005333739165820044,
+      "plugin_cpu_us_mean_p95_p99": [
+        86.6867392,
+        92.4708,
+        106.73407
+      ],
+      "channel_query_cpu_us_mean": 30.522434399999998,
+      "hold": {
+        "duration_s": 1.3239999999999998,
+        "maximum_equilibrium_error_pa": 547.6338343287962,
+        "minimum_normals_n": [
+          231.70240251633092,
+          229.62854622968771,
+          497.55167859705875
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      }
+    },
+    "holdout_clearance": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "load_criterion_v2": true,
+        "no_stop_contact": true
+      },
+      "release_s": 0.851,
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 43,
+          "longest_requirement_violation_steps": 9,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 36
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 7,
+          "longest_requirement_violation_steps": 1,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 0
+        }
+      },
+      "load_acceptance": {
+        "criterion": {
+          "version": "m2_load_v2_20261019",
+          "mu": 1.1,
+          "window_ms": 50,
+          "minimum_window_margin": 1.5,
+          "minimum_loaded_instant_margin_exclusive": 1.0,
+          "loaded_drive_threshold_n": 5.0,
+          "support_floors_n_left_right_ball": [
+            5.0,
+            5.0,
+            10.0
+          ],
+          "maximum_contact_or_low_load_run_steps": 2,
+          "start_after_release_s": 1.0,
+          "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+          "sensitivity_windows_ms": [
+            20,
+            50,
+            100
+          ]
+        },
+        "passed": true,
+        "checks": {
+          "sustained_50ms_margin_at_least_1_5": true,
+          "every_loaded_drive_frame_margin_above_1": true,
+          "contact_or_low_load_runs_at_most_two_steps": true
+        },
+        "step_s": 0.0009999999999998899,
+        "samples": 7150,
+        "scoring_time_range_s": [
+          1.851,
+          9.0
+        ],
+        "minimum_loaded_instant_margin_left_right": [
+          1.14261502264371,
+          1.528837703845954
+        ],
+        "window_sensitivity_ms": {
+          "20": {
+            "samples": 20,
+            "minimum_margin_left_right": [
+              1.304621528307296,
+              2.060952148847346
+            ]
+          },
+          "50": {
+            "samples": 50,
+            "minimum_margin_left_right": [
+              1.6610085702512314,
+              2.3181273347141667
+            ]
+          },
+          "100": {
+            "samples": 100,
+            "minimum_margin_left_right": [
+              1.758773858042228,
+              2.369802223705591
+            ]
+          }
+        },
+        "raw": {
+          "minimum_drive_margin_left_right": [
+            0.0,
+            0.0
+          ],
+          "drive_below_1_5_frames_left_right": [
+            43,
+            7
+          ],
+          "loaded_drive_below_1_5_frames_left_right": [
+            36,
+            0
+          ],
+          "loaded_drive_at_or_below_1_frames_left_right": [
+            0,
+            0
+          ],
+          "maximum_contact_loss_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "contact_loss_frames_left_right_ball": [
+            7,
+            7,
+            37
+          ],
+          "low_load_frames_left_right_ball": [
+            7,
+            7,
+            37
+          ],
+          "contact_or_low_load_frames_left_right_ball": [
+            7,
+            7,
+            37
+          ],
+          "maximum_low_load_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "maximum_contact_or_low_load_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "maximum_simultaneous_contact_losses": 1
+        }
+      },
+      "raw_checks": {
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false
+      },
+      "strict_raw_load_checks_pass": false,
+      "pressure_range_pa": [
+        6593.819425606169,
+        7897.634276019322
+      ],
+      "conservative_pressure_bounds_pa": [
+        6046.704633627087,
+        6077.904860721901,
+        6109.105112263933
+      ],
+      "conservative_required_pressure_pa": 6109.105112263933,
+      "minimum_pressure_slack_pa": 484.714313342236,
+      "channel_area_range_mm2": [
+        31.013389425401652,
+        73.77368376761572
+      ],
+      "total_leak_area_range_mm2": [
+        211.01338942540167,
+        253.77368376761578
+      ],
+      "independent_mass_rate_error_kg_s": 5.724587470723463e-17,
+      "minimum_flow_reserve_at_requirement_kg_s": 0.003610807722020576,
+      "plugin_cpu_us_mean_p95_p99": [
+        130.43583083383325,
+        141.937,
+        155.218
+      ],
+      "channel_query_cpu_us_mean": 31.24784383123375,
+      "hold": {
+        "duration_s": 1.149,
+        "maximum_equilibrium_error_pa": 0.000877650486472703,
+        "minimum_normals_n": [
+          191.2374163708826,
+          237.34661963263085,
+          449.0995443025872
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      }
+    },
+    "rough_soft_c_half_step": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "load_criterion_v2": true,
+        "no_stop_contact": true
+      },
+      "release_s": 0.7165,
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 12,
+          "longest_requirement_violation_steps": 1,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 2
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 27,
+          "longest_requirement_violation_steps": 6,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 11
+        }
+      },
+      "load_acceptance": {
+        "criterion": {
+          "version": "m2_load_v2_20261019",
+          "mu": 1.1,
+          "window_ms": 50,
+          "minimum_window_margin": 1.5,
+          "minimum_loaded_instant_margin_exclusive": 1.0,
+          "loaded_drive_threshold_n": 5.0,
+          "support_floors_n_left_right_ball": [
+            5.0,
+            5.0,
+            10.0
+          ],
+          "maximum_contact_or_low_load_run_steps": 2,
+          "start_after_release_s": 1.0,
+          "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+          "sensitivity_windows_ms": [
+            20,
+            50,
+            100
+          ]
+        },
+        "passed": true,
+        "checks": {
+          "sustained_50ms_margin_at_least_1_5": true,
+          "every_loaded_drive_frame_margin_above_1": true,
+          "contact_or_low_load_runs_at_most_two_steps": true
+        },
+        "step_s": 0.0004999999999997229,
+        "samples": 14568,
+        "scoring_time_range_s": [
+          1.7165,
+          9.0
+        ],
+        "minimum_loaded_instant_margin_left_right": [
+          1.483453939359598,
+          1.3812748371057897
+        ],
+        "window_sensitivity_ms": {
+          "20": {
+            "samples": 40,
+            "minimum_margin_left_right": [
+              1.9180639836172861,
+              1.8250110896790648
+            ]
+          },
+          "50": {
+            "samples": 100,
+            "minimum_margin_left_right": [
+              2.0123037483871427,
+              2.1680684099233147
+            ]
+          },
+          "100": {
+            "samples": 200,
+            "minimum_margin_left_right": [
+              2.1241657402451937,
+              2.301919951081414
+            ]
+          }
+        },
+        "raw": {
+          "minimum_drive_margin_left_right": [
+            0.0,
+            0.0
+          ],
+          "drive_below_1_5_frames_left_right": [
+            12,
+            27
+          ],
+          "loaded_drive_below_1_5_frames_left_right": [
+            2,
+            11
+          ],
+          "loaded_drive_at_or_below_1_frames_left_right": [
+            0,
+            0
+          ],
+          "maximum_contact_loss_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "contact_loss_frames_left_right_ball": [
+            10,
+            16,
+            20
+          ],
+          "low_load_frames_left_right_ball": [
+            10,
+            16,
+            20
+          ],
+          "contact_or_low_load_frames_left_right_ball": [
+            10,
+            16,
+            20
+          ],
+          "maximum_low_load_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "maximum_contact_or_low_load_steps_left_right_ball": [
+            1,
+            1,
+            1
+          ],
+          "maximum_simultaneous_contact_losses": 1
+        }
+      },
+      "raw_checks": {
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false
+      },
+      "strict_raw_load_checks_pass": false,
+      "pressure_range_pa": [
+        6997.541539466387,
+        7889.7001925829245
+      ],
+      "conservative_pressure_bounds_pa": [
+        6046.704633627087,
+        6077.904860721901,
+        6109.105112263933
+      ],
+      "conservative_required_pressure_pa": 6109.105112263933,
+      "minimum_pressure_slack_pa": 888.4364272024541,
+      "channel_area_range_mm2": [
+        24.90528915680807,
+        51.15755416330773
+      ],
+      "total_leak_area_range_mm2": [
+        204.90528915680807,
+        231.15755416330776
+      ],
+      "independent_mass_rate_error_kg_s": 5.724587470723463e-17,
+      "minimum_flow_reserve_at_requirement_kg_s": 0.005333760389508399,
+      "plugin_cpu_us_mean_p95_p99": [
+        104.09037936206377,
+        112.604,
+        126.555
+      ],
+      "channel_query_cpu_us_mean": 29.65410778922108,
+      "hold": {
+        "duration_s": 1.2835,
+        "maximum_equilibrium_error_pa": 0.002653772417943401,
+        "minimum_normals_n": [
+          215.3326173324751,
+          214.18273914147537,
+          467.24897991277555
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      }
+    }
+  },
+  "complete_trace_checks": {
+    "rough_soft_c": {
+      "frames_sha256": "858c6f9d353d0a5d06a01997743d7a38563198802503b49656c97f16663ce853",
+      "scored_samples": 68199,
+      "pressure_range_pa": [
+        7024.489485478203,
+        7914.439239127532
+      ],
+      "minimum_pressure_slack_pa": 524.4894854782033,
+      "minimum_flow_reserve_at_requirement_kg_s": 0.0035912844895901134,
+      "minimum_shutoff_headroom_pa": 6085.560760872468,
+      "hold_duration_s": 62.199,
+      "hold_mean_force_residual_n": [
+        2.1325978810677966e-11,
+        -5.111879362586622e-09,
+        6.350958915610278e-11
+      ],
+      "hold_mean_moment_residual_nm": [
+        3.46831001065651e-06,
+        -0.00044415165806168777,
+        -2.9057290726292354e-05
+      ],
+      "hold_normal_balance_relative": 2.067227005662746e-14,
+      "hold_position_drift_m": 0.00017045924571974634,
+      "common_hold_mean_pressure_pa": 7857.4118014545,
+      "common_hold_mean_pressure_force_n": 1031.6231676483658,
+      "checks": {
+        "whole_trace_pressure_meets_screen": true,
+        "whole_trace_flow_reserve": true,
+        "whole_trace_no_stop": true
+      }
+    },
+    "rough_soft_b": {
+      "frames_sha256": "b6ed2cd8cd8ca2c2dcb176bd2f8fcdc62cc2a727be8d9d8bc7759f60c0e0a35a",
+      "scored_samples": 7324,
+      "pressure_range_pa": [
+        8404.442641162896,
+        8404.442641162896
+      ],
+      "minimum_pressure_slack_pa": 1904.4426411628956,
+      "minimum_flow_reserve_at_requirement_kg_s": 0.003590890745915119,
+      "minimum_shutoff_headroom_pa": 5595.557358837104,
+      "hold_duration_s": 1.3239999999999998,
+      "hold_mean_force_residual_n": [
+        -1.773907102550817e-09,
+        -7.834205400797065e-09,
+        9.265231882345002e-10
+      ],
+      "hold_mean_moment_residual_nm": [
+        9.687659495880092e-06,
+        -0.00048072982712758783,
+        -0.00011205869355895204
+      ],
+      "hold_normal_balance_relative": 1.607608830663065e-12,
+      "hold_position_drift_m": 3.085428922152417e-06,
+      "common_hold_mean_pressure_pa": 8404.442641162896,
+      "common_hold_mean_pressure_force_n": 1103.4444876862,
+      "checks": {
+        "whole_trace_pressure_meets_screen": true,
+        "whole_trace_flow_reserve": true,
+        "whole_trace_no_stop": true
+      }
+    },
+    "holdout_clearance": {
+      "frames_sha256": "b3ee507d43c8e0c9a5f9703ec1fbd038468d454af688f5be03b117e49c437551",
+      "scored_samples": 7150,
+      "pressure_range_pa": [
+        6593.819425606169,
+        7897.634276019322
+      ],
+      "minimum_pressure_slack_pa": 93.8194256061688,
+      "minimum_flow_reserve_at_requirement_kg_s": 0.0018164652049985838,
+      "minimum_shutoff_headroom_pa": 6102.365723980678,
+      "hold_duration_s": 1.149,
+      "hold_mean_force_residual_n": [
+        3.098641615686713e-05,
+        0.013554555657920412,
+        -0.010960694410010576
+      ],
+      "hold_mean_moment_residual_nm": [
+        0.002632778121411075,
+        6.51485410791716e-05,
+        9.236827293503293e-05
+      ],
+      "hold_normal_balance_relative": 3.053798145893372e-08,
+      "hold_position_drift_m": 3.5067963858228565e-06,
+      "common_hold_mean_pressure_pa": 7729.9678954783585,
+      "common_hold_mean_pressure_force_n": 1014.6845160412732,
+      "checks": {
+        "whole_trace_pressure_meets_screen": true,
+        "whole_trace_flow_reserve": true,
+        "whole_trace_no_stop": true
+      }
+    },
+    "rough_soft_c_half_step": {
+      "frames_sha256": "bf4db2e415856f50fc41b005fd60a5e51eb9ad940f8b59376a00590937502a9c",
+      "scored_samples": 14568,
+      "pressure_range_pa": [
+        6997.541539466387,
+        7889.7001925829245
+      ],
+      "minimum_pressure_slack_pa": 497.5415394663869,
+      "minimum_flow_reserve_at_requirement_kg_s": 0.003591374615871083,
+      "minimum_shutoff_headroom_pa": 6110.2998074170755,
+      "hold_duration_s": 1.2835,
+      "hold_mean_force_residual_n": [
+        4.934503890301464e-09,
+        -1.6963292895658218e-09,
+        -2.162806413022631e-09
+      ],
+      "hold_mean_moment_residual_nm": [
+        3.584037663440222e-06,
+        -0.00044522756740130966,
+        -2.6827264447591164e-05
+      ],
+      "hold_normal_balance_relative": 4.783136724941243e-12,
+      "hold_position_drift_m": 1.0019008927765265e-06,
+      "common_hold_mean_pressure_pa": 7857.585752756766,
+      "common_hold_mean_pressure_force_n": 1031.6460062366941,
+      "checks": {
+        "whole_trace_pressure_meets_screen": true,
+        "whole_trace_flow_reserve": true,
+        "whole_trace_no_stop": true
+      }
+    }
+  },
+  "physical_step_relative_difference": {
+    "common_hold_mean_pressure_pa": 2.2138498867219487e-05,
+    "common_hold_mean_pressure_force_n": 2.213849886718083e-05
+  },
+  "pressure_time_integration": {
+    "protocol": {
+      "areas_m2": [
+        0.00020491353186630667,
+        0.00025377368376761577
+      ],
+      "volume_m3": 0.0023741668832761432,
+      "observed_volume_bounds_m3": [
+        0.002233877768998911,
+        0.0023741668832761432
+      ],
+      "step_s": [
+        0.001,
+        0.0005,
+        5e-05,
+        2.5e-05
+      ],
+      "steady_relative_limit": 0.02,
+      "response_relative_limit": 0.02,
+      "response_absolute_limit_s": 0.0001,
+      "scope": "Pressure-core isolation, no change to tyre 1ms calibration and no claim of full mechanical 0.5ms convergence"
+    },
+    "checks": {
+      "pressure_converged": true,
+      "response_converged": true
+    },
+    "cases": [
+      {
+        "area_m2": 0.00020491353186630667,
+        "action": "startup",
+        "metrics": [
+          {
+            "dt_s": 0.001,
+            "final_pressure_pa": 7836.830587043078,
+            "response": {
+              "t10_s": 0.05883700364383741,
+              "t90_s": 0.4461050968656021,
+              "t10_90_s": 0.3872680932217647
+            },
+            "relative_final_pressure_error": 8.928312655691298e-06,
+            "response_absolute_error_s": 1.833206882845273e-05,
+            "response_relative_error": 4.733913527505795e-05
+          },
+          {
+            "dt_s": 0.0005,
+            "final_pressure_pa": 7836.866500842967,
+            "response": {
+              "t10_s": 0.058591892064433,
+              "t90_s": 0.4458504658591443,
+              "t10_90_s": 0.3872585737947113
+            },
+            "relative_final_pressure_error": 4.3456591402345885e-06,
+            "response_absolute_error_s": 8.812641775046703e-06,
+            "response_relative_error": 2.275699731565834e-05
+          },
+          {
+            "dt_s": 5e-05,
+            "final_pressure_pa": 7836.898766869417,
+            "response": {
+              "t10_s": 0.05837104974596152,
+              "t90_s": 0.4456212606506155,
+              "t10_90_s": 0.387250210904654
+            },
+            "relative_final_pressure_error": 2.2846686326204707e-07,
+            "response_absolute_error_s": 4.4975171775707423e-07,
+            "response_relative_error": 1.1613996001393378e-06
+          },
+          {
+            "dt_s": 2.5e-05,
+            "final_pressure_pa": 7836.900557341505,
+            "response": {
+              "t10_s": 0.058358773608543316,
+              "t90_s": 0.44560853476147955,
+              "t10_90_s": 0.38724976115293624
+            },
+            "relative_final_pressure_error": 0.0,
+            "response_absolute_error_s": 0.0,
+            "response_relative_error": 0.0
+          }
+        ]
+      },
+      {
+        "area_m2": 0.00020491353186630667,
+        "action": "one_fan_off",
+        "metrics": [
+          {
+            "dt_s": 0.001,
+            "final_pressure_pa": 3835.4642720396223,
+            "response": {
+              "t10_s": 0.0189589911905972,
+              "t90_s": 0.1629039559630159,
+              "t10_90_s": 0.1439449647724187
+            },
+            "relative_final_pressure_error": 9.230276166967458e-09,
+            "response_absolute_error_s": 0.00014221241470543933,
+            "response_relative_error": 0.0009889408399616864
+          },
+          {
+            "dt_s": 0.0005,
+            "final_pressure_pa": 3835.464253093349,
+            "response": {
+              "t10_s": 0.01875530844182293,
+              "t90_s": 0.16262684191354365,
+              "t10_90_s": 0.14387153347172071
+            },
+            "relative_final_pressure_error": 4.290515992900524e-09,
+            "response_absolute_error_s": 6.878111400746012e-05,
+            "response_relative_error": 0.000478301791028069
+          },
+          {
+            "dt_s": 5e-05,
+            "final_pressure_pa": 3835.4642365689797,
+            "response": {
+              "t10_s": 0.018571218903031112,
+              "t90_s": 0.1623775322384217,
+              "t10_90_s": 0.14380631333539057
+            },
+            "relative_final_pressure_error": 1.7794060434488083e-11,
+            "response_absolute_error_s": 3.5609776773137813e-06,
+            "response_relative_error": 2.4762931299504983e-05
+          },
+          {
+            "dt_s": 2.5e-05,
+            "final_pressure_pa": 3835.464236637228,
+            "response": {
+              "t10_s": 0.018560951215780278,
+              "t90_s": 0.16236370357349353,
+              "t10_90_s": 0.14380275235771325
+            },
+            "relative_final_pressure_error": 0.0,
+            "response_absolute_error_s": 0.0,
+            "response_relative_error": 0.0
+          }
+        ]
+      },
+      {
+        "area_m2": 0.00025377368376761577,
+        "action": "startup",
+        "metrics": [
+          {
+            "dt_s": 0.001,
+            "final_pressure_pa": 6885.060933057932,
+            "response": {
+              "t10_s": 0.058632869389149286,
+              "t90_s": 0.4453538359270771,
+              "t10_90_s": 0.3867209665379278
+            },
+            "relative_final_pressure_error": 8.839770901736177e-06,
+            "response_absolute_error_s": 1.6599954782203774e-05,
+            "response_relative_error": 4.292673219306564e-05
+          },
+          {
+            "dt_s": 0.0005,
+            "final_pressure_pa": 6885.092172009667,
+            "response": {
+              "t10_s": 0.058387737418109216,
+              "t90_s": 0.44509967196550104,
+              "t10_90_s": 0.38671193454739183
+            },
+            "relative_final_pressure_error": 4.3026032726621436e-06,
+            "response_absolute_error_s": 7.567964246224523e-06,
+            "response_relative_error": 1.9570413215381495e-05
+          },
+          {
+            "dt_s": 5e-05,
+            "final_pressure_pa": 6885.120238252013,
+            "response": {
+              "t10_s": 0.05816658974941367,
+              "t90_s": 0.4448713413832922,
+              "t10_90_s": 0.3867047516338785
+            },
+            "relative_final_pressure_error": 2.262422178700777e-07,
+            "response_absolute_error_s": 3.8505073290950875e-07,
+            "response_relative_error": 9.957237781195798e-07
+          },
+          {
+            "dt_s": 2.5e-05,
+            "final_pressure_pa": 6885.121795957239,
+            "response": {
+              "t10_s": 0.058154295361786,
+              "t90_s": 0.4448586619449316,
+              "t10_90_s": 0.3867043665831456
+            },
+            "relative_final_pressure_error": 0.0,
+            "response_absolute_error_s": 0.0,
+            "response_relative_error": 0.0
+          }
+        ]
+      },
+      {
+        "area_m2": 0.00025377368376761577,
+        "action": "one_fan_off",
+        "metrics": [
+          {
+            "dt_s": 0.001,
+            "final_pressure_pa": 3263.8553609086375,
+            "response": {
+              "t10_s": 0.01889679617914689,
+              "t90_s": 0.16696992947268519,
+              "t10_90_s": 0.1480731332935383
+            },
+            "relative_final_pressure_error": 1.0034213216584648e-08,
+            "response_absolute_error_s": 0.0001202680602640227,
+            "response_relative_error": 0.0008128809136233927
+          },
+          {
+            "dt_s": 0.0005,
+            "final_pressure_pa": 3263.855343231786,
+            "response": {
+              "t10_s": 0.018685140766599405,
+              "t90_s": 0.16669621068105167,
+              "t10_90_s": 0.14801106991445226
+            },
+            "relative_final_pressure_error": 4.618271045477091e-09,
+            "response_absolute_error_s": 5.820468117798128e-05,
+            "response_relative_error": 0.0003934001621814565
+          },
+          {
+            "dt_s": 5e-05,
+            "final_pressure_pa": 3263.8553278767504,
+            "response": {
+              "t10_s": 0.018493454987956435,
+              "t90_s": 0.16644931193730644,
+              "t10_90_s": 0.14795585694935
+            },
+            "relative_final_pressure_error": 8.629882235595142e-11,
+            "response_absolute_error_s": 2.99171607573423e-06,
+            "response_relative_error": 2.0220737672212376e-05
+          },
+          {
+            "dt_s": 2.5e-05,
+            "final_pressure_pa": 3263.8553281584173,
+            "response": {
+              "t10_s": 0.018482763053508888,
+              "t90_s": 0.16643562828678315,
+              "t10_90_s": 0.14795286523327428
+            },
+            "relative_final_pressure_error": 0.0,
+            "response_absolute_error_s": 0.0,
+            "response_relative_error": 0.0
+          }
+        ]
+      }
+    ],
+    "probe_sha256": "49b060b681e6f9d1c4f48287099618d34117d34e69d437f0214e7a12d44cc6b0",
+    "closure_sha256": "2e31546f09441e11859748d3b2739c6cf5ea428ec230dcf739f998d8ea9348cb"
+  },
+  "pending": [
+    "T3 large complete capture with Gazebo GUI and RViz, mean RTF >=0.95",
+    "T3 control/slip/TF checks and independent load criterion verification",
+    "Full-wall geometry, startup/performance and default adoption after acceptance"
+  ]
+}

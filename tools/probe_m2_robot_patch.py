@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 import time
 import uuid
+from xml.etree import ElementTree as ET
 
 from ament_index_python.packages import get_package_prefix
 from climbot_description.geometry import quaternion_from_rpy, rotate_vector
@@ -119,6 +120,8 @@ def main():
     parser.add_argument('--drape-m', type=float)
     parser.add_argument('--refinement', type=int)
     parser.add_argument('--duration-s', type=float, default=9)
+    parser.add_argument('--diagnostic-step-s', type=float, choices=[.001, .0005], default=.001,
+                        help='isolated step comparison; does not extend tyre calibration')
     parser.add_argument('--patch-size-m', type=float, default=1.2)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
@@ -142,7 +145,8 @@ def main():
     if args.native_heightmap:
         source['contact_representation'] = 'native_heightmap'
     write(args.output / 'protocol.json', {
-        'scope': 'M2 patch motion; detailed T2 checks independent', 'step_s': .001,
+        'scope': 'M2 patch motion; detailed T2 checks independent',
+        'step_s': args.diagnostic_step_s, 'tyre_calibration_step_s': .001,
         'profile': PROFILE, 'duration_s': args.duration_s, 'source': source,
         'mode': args.mode, 'heading_deg': args.heading_deg,
         'max_contact_gap_steps': 2, 'travel_range_m': [.45, .7], 'soft': args.soft,
@@ -153,7 +157,18 @@ def main():
                             heading_deg=args.heading_deg, realtime_factor=0,
                             caster_compliance=args.caster_compliance,
                             tyre_lateral=args.tyre_lateral)
-    request = {'world': 'world.sdf', 'step_s': .001, 'duration_s': args.duration_s,
+    if args.diagnostic_step_s != .001:
+        # Production generation still rejects uncalibrated tyre timesteps.
+        # Only this explicitly labelled numerical diagnostic alters the world.
+        world_path = args.output / 'world.sdf'
+        world = ET.parse(world_path)
+        world.find('.//physics/max_step_size').text = str(args.diagnostic_step_s)
+        world.write(world_path, encoding='unicode', xml_declaration=True)
+        resolved['step_s'] = args.diagnostic_step_s
+        resolved['diagnostic_uncalibrated_tyre_step'] = True
+        write(args.output / 'resolved.json', resolved)
+    request = {'world': 'world.sdf', 'step_s': args.diagnostic_step_s,
+               'duration_s': args.duration_s,
                'track_m': resolved['model']['track_m'],
                'radius_m': resolved['model']['config']['wheel']['radius_m'],
                'motion_profile': [dict(zip(['after_release_s', 'linear_mps', 'angular_rps'], p))
