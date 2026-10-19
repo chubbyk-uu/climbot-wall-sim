@@ -3,10 +3,12 @@
 
 import argparse
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 
 from climbot_description.vacuum_loads import minimum_pressure
+from m2_load_criterion import evaluate as evaluate_loads
 import numpy as np
 from probe_m2_robot_patch import gap_steps
 from validate_vacuum_motion import frame_data
@@ -79,22 +81,26 @@ def case_metrics(root):
         }
     channels = c['vac_surface_channel_area_m2'][ids]
     leak = c['vac_leak_area_m2'][ids]
+    load_acceptance = evaluate_loads(c, release)
+    raw_checks = {
+        'each_drive_raw_frame_meets_demand': bool(np.all(~deficient[ids])),
+        'ball_raw_floor': bool(np.all(normals[ids, 2] >= 10)),
+    }
     checks = {
         'no_runtime_failure': not bool(np.any(c['vac_runtime_failed'])),
         'no_startup_failure': not bool(np.any(c['vac_startup_failed'])),
         'pressure_meets_conservative_envelope': bool(np.all(pressure >= minimum)),
         'flow_reserve_at_required_pressure': bool(reserve.min() >= 0),
         'independent_flow_equation': bool(flow_error <= 1e-10),
-        'each_drive_raw_frame_meets_demand': bool(np.all(~deficient[ids])),
-        'ball_raw_floor': bool(np.all(normals[ids, 2] >= 10)),
+        'load_criterion_v2': load_acceptance['passed'],
         'no_stop_contact': bool(np.all(c['vac_skirt_stop_previous_normal_n'][ids] == 0)),
     }
     cpu_us = c['vac_cpu_ns'][ids] / 1000
     cpu_summary = [float(cpu_us.mean()), *np.percentile(cpu_us, [95, 99]).tolist()]
     return {
         'checks': checks, 'release_s': release, 'native_loads': native,
-        'strict_raw_load_checks_pass': checks['each_drive_raw_frame_meets_demand'] and
-        checks['ball_raw_floor'],
+        'load_acceptance': load_acceptance, 'raw_checks': raw_checks,
+        'strict_raw_load_checks_pass': all(raw_checks.values()),
         'pressure_range_pa': [float(pressure.min()), float(pressure.max())],
         'conservative_pressure_bounds_pa': pressure_bounds,
         'conservative_required_pressure_pa': minimum,
@@ -114,14 +120,32 @@ def main():
     parser.add_argument('--data-root', required=True, type=Path)
     parser.add_argument('--case', action='append', required=True)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--loads-only', action='store_true',
+                        help='reassess saved forces without recomputing pressure subchecks')
     args = parser.parse_args()
-    result = {'scope': 'T2 subchecks; strict per-frame failures remain explicit',
-              'cases': {name: case_metrics(args.data_root / name) for name in args.case}}
+    if args.loads_only:
+        cases = {}
+        for name in args.case:
+            path = args.data_root / name / 'native/frames.csv'
+            c = frame_data(path)
+            released = c['vac_fixture_active'] == 0
+            if not released.any():
+                raise ValueError(f'{name}: fixture never released')
+            release = float(c['vac_release_time_s'][released][0])
+            cases[name] = evaluate_loads(c, release)
+            cases[name]['frames_sha256'] = hashlib.sha256(path.read_bytes()).hexdigest()
+        result = {'scope': 'M2 load subcheck only; original samples retained', 'cases': cases}
+    else:
+        result = {'scope': 'T2 subchecks; strict per-frame failures remain explicit',
+                  'cases': {name: case_metrics(args.data_root / name) for name in args.case}}
     args.output.write_text(json.dumps(result, indent=2, allow_nan=False) + '\n')
     for name, c in result['cases'].items():
-        print(json.dumps({'case': name, 'checks': c['checks'],
-                          'pressure_slack_pa': c['minimum_pressure_slack_pa'],
-                          'loads': c['native_loads'], 'hold': c['hold']}))
+        summary = {'case': name, 'checks': c['checks'],
+                   'load_passed': c.get('passed', c.get('load_acceptance', {}).get('passed'))}
+        if not args.loads_only:
+            summary.update(pressure_slack_pa=c['minimum_pressure_slack_pa'],
+                           loads=c['native_loads'], raw_checks=c['raw_checks'], hold=c['hold'])
+        print(json.dumps(summary))
     return 0
 
 
