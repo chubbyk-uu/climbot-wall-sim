@@ -1,4 +1,4 @@
-# S1 candidate inputs only. The current launch still reads robot.yaml.
+# Shared geometry/mass inputs for the accepted default vacuum chassis.
 # All material/mass/contact choices below are provisional simulation proxies.
 vacuum_chassis:
   schema_version: 1

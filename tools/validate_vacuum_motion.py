@@ -18,7 +18,7 @@ from climbot_description.geometry import quaternion_from_rpy, rotate_vector
 from climbot_description.vacuum_loads import minimum_pressure
 from climbot_gazebo.mesa_runtime import rendering_environment
 from climbot_gazebo.vacuum_assets import build_assets
-from freeze_suction_baseline import verify_legacy_inputs
+from freeze_suction_baseline import legacy_input_path, verify_legacy_inputs
 import numpy as np
 from validate_vacuum_physics import reference_pressure, reference_rate, response_time
 import yaml
@@ -326,7 +326,7 @@ def main():
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     write(args.output / 'source_manifest.json', {
         'revision': revision,
-        'source_sha256': {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
+        'source_sha256': {name: hashlib.sha256(legacy_input_path(ROOT, name).read_bytes()).hexdigest()
                           for name in source_paths},
         'legacy_inputs_byte_identical': frozen,
         'legacy_source_acceptance': legacy_acceptance,

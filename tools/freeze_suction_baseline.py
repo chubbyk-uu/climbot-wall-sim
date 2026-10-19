@@ -44,6 +44,22 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+# Retired models are inert test text, never installed as runtime robot choices.
+ARCHIVED_INPUTS = {
+    'src/climbot_description/urdf/climbot.urdf.xacro':
+        'tools/testdata/legacy_contract/climbot.urdf.xacro.txt',
+    'src/climbot_gazebo/models/climbot/model.sdf.xacro':
+        'tools/testdata/legacy_contract/model.sdf.xacro.txt',
+}
+
+
+def legacy_input_path(root, name):
+    current = root / name
+    if not current.exists() and name in ARCHIVED_INPUTS:
+        return root / ARCHIVED_INPUTS[name]
+    return current
+
+
 def verify_legacy_inputs(root=ROOT):
     """Accept S0 bytes or exact reviewed GUI and local DDS launch revisions.
 
@@ -63,22 +79,25 @@ def verify_legacy_inputs(root=ROOT):
             'e902e090a9fa98152ade8490070275fcece82f2f7f1fde22f2e0b53a68530761'),
     }
     baseline = root/'results/suction_s0_2026-10-17/inputs'
-    identical = {};accepted_gui = {};accepted_transport = {};rejected=[]
+    identical = {};accepted_gui = {};accepted_transport = {};accepted_comments = {};rejected=[]
     transport_pair = ('a85aa961de7354404290fb6bf1069707eeb176074cbea6d4b9f71444e96ec3c0',
                       'db5f1fda71ef417b5320a1dbd737a41d3a0d1bb24002e29bf9b756a9dcf91099')
     for name in INPUTS:
-        old=(baseline/name).read_bytes();current=(root/name).read_bytes()
+        old=(baseline/name).read_bytes();current=legacy_input_path(root, name).read_bytes()
         identical[name]=old==current
         pair=(digest(old),digest(current))
         if not identical[name]:
             if pair==approved.get(name):accepted_gui[name]={'s0_sha256':pair[0],'current_sha256':pair[1]}
             elif name.endswith('/launch/climbot_wall.launch.py') and pair==transport_pair:
                 accepted_transport[name]={'s0_sha256':pair[0],'current_sha256':pair[1]}
+            elif (name == 'src/climbot_gazebo/config/simulation.yaml' and
+                  yaml.safe_load(old) == yaml.safe_load(current)):
+                accepted_comments[name] = {'s0_sha256': pair[0], 'current_sha256': pair[1]}
             else:rejected.append(name)
     if rejected:raise ValueError('unapproved frozen legacy input change: '+', '.join(rejected))
     return {'byte_identical':identical,'approved_gui_only':accepted_gui,
             'gui_reference_commit':'1bb48c1','approved_local_dds':accepted_transport,
-            'all_accepted':True}
+            'approved_comment_only':accepted_comments, 'all_accepted':True}
 
 
 def git(*args):

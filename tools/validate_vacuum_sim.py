@@ -19,7 +19,7 @@ from ament_index_python.packages import get_package_prefix
 from climbot_gazebo.mesa_runtime import rendering_environment
 from climbot_gazebo.vacuum_assets import build_assets
 from design_vacuum_chassis import inputs, profiles
-from freeze_suction_baseline import verify_legacy_inputs
+from freeze_suction_baseline import legacy_input_path, verify_legacy_inputs
 from vacuum_layout import build
 from vacuum_loads import evaluate, minimum_pressure, states
 
@@ -258,7 +258,7 @@ def main():
     write(out / 'source_manifest.json', {
         'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
         'dirty': bool(subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=ROOT)),
-        'sha256': {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest() for p in sources},
+        'sha256': {p: hashlib.sha256(legacy_input_path(ROOT, p).read_bytes()).hexdigest() for p in sources},
         'native_binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
         'legacy_inputs_byte_identical': frozen,
         'legacy_source_acceptance': legacy_acceptance,
