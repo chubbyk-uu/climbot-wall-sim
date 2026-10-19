@@ -22,7 +22,7 @@ vacuum_physics:
     # Chosen from the calibration interval before running the holdout cases.
     maximum_normal_opening_multiplier: 2.0
     # Updated mass/CG budget for the accepted handle. Curves stay unchanged.
-    requirement_source: results/suction_s6_2026-10-18/physical_model/summary.json
+    requirement_source: results/m2_review_2026-10-19/physical_model/summary.json
   skirt:
     damping_ns_m: 40.0
     maximum_compression_m: 0.010

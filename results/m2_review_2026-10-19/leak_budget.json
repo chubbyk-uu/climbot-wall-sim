@@ -1,0 +1,62 @@
+{
+  "scope": "Pre-T2 area budget, not coupled rough-wall or hardware validation",
+  "decision": "Keep existing fan curves; report boundary rather than retune per case",
+  "pressure_requirement_pa": 6100.0,
+  "baseline_area_mm2": 180.0,
+  "maximum_area_at_requirement_mm2": 301.68598930713875,
+  "pressure_budget_passed": true,
+  "assumptions": [
+    "Baseline 180 mm2 is the conservative normal M1 opening, not measured hardware leakage.",
+    "Add connected groove channels to baseline; no silent absorption into its existing allowance.",
+    "Trapezoid section is depth*(opening+floor)/2; shared openings must not be counted twice.",
+    "Mild roughness adds no arbitrary leakage while the seal follows it; actual loss of conformity must be computed.",
+    "Cracks, extra lift, transients and changed wheel/skirt loads are not certified by this static budget.",
+    "6100 Pa is the old rigid-flat nominal capability envelope, pending M2 load recomputation."
+  ],
+  "cases": [
+    {
+      "crossings": 0,
+      "depth_mm": 0,
+      "geometric_channel_mm2": 0.0,
+      "total_area_mm2": 180.0,
+      "equilibrium_delta_pa": 8404.442641159962,
+      "remaining_area_at_requirement_mm2": 121.68598930713874
+    },
+    {
+      "crossings": 2,
+      "depth_mm": 3,
+      "geometric_channel_mm2": 27.0,
+      "total_area_mm2": 207.00000000000003,
+      "equilibrium_delta_pa": 7813.549610677447,
+      "remaining_area_at_requirement_mm2": 94.68598930713874
+    },
+    {
+      "crossings": 2,
+      "depth_mm": 5,
+      "geometric_channel_mm2": 45.0,
+      "total_area_mm2": 225.0,
+      "equilibrium_delta_pa": 7447.038118947063,
+      "remaining_area_at_requirement_mm2": 76.68598930713877
+    },
+    {
+      "crossings": 4,
+      "depth_mm": 3,
+      "geometric_channel_mm2": 54.0,
+      "total_area_mm2": 234.0,
+      "equilibrium_delta_pa": 7271.514487367151,
+      "remaining_area_at_requirement_mm2": 67.68598930713875
+    },
+    {
+      "crossings": 4,
+      "depth_mm": 5,
+      "geometric_channel_mm2": 90.0,
+      "total_area_mm2": 270.0,
+      "equilibrium_delta_pa": 6617.422894748144,
+      "remaining_area_at_requirement_mm2": 31.68598930713875
+    }
+  ],
+  "input_sha256": {
+    "vacuum_physics.yaml": "f671793f542ab0eef898e8e69f3b19d8dc4fee01226a8909c690dd1cb0bec4b7",
+    "requirement_summary.json": "13993f7f4ce091e7214879825f7d11ec0cc640728b101458c7ab8789e7d12aa6"
+  }
+}

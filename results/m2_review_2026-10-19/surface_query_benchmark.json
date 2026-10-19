@@ -1,0 +1,7 @@
+{
+  "queries": 1280000,
+  "batches": 10000,
+  "seconds": 0.09362642300038715,
+  "mean_batch_us": 9.362642300038715,
+  "scope": "Python binding batch benchmark; no GUI RTF claim"
+}

@@ -1,0 +1,27 @@
+{
+  "scope": "isolated seal bench, wheels masked, explicit bench gravity support; not free vehicle acceptance",
+  "cases": [
+    {
+      "case": "test_bottomed_skirt_keeps_pres0",
+      "frames": 2000,
+      "steady_samples": 500,
+      "minimum_pressure_pa": 8403.673869425125,
+      "minimum_stop_reaction_n": 1010.901425163255,
+      "minimum_gap_m": 0.011999982106601567,
+      "maximum_gap_m": 0.011999987508529292,
+      "runtime_failed": false,
+      "frames_sha256": "8fac884caf27000cc1e24f022813c5aa37881c62c8f6e5c1088bdba1ec9818d7"
+    },
+    {
+      "case": "test_bottomed_skirt_keeps_pres1",
+      "frames": 4000,
+      "steady_samples": 1000,
+      "minimum_pressure_pa": 8403.671286352357,
+      "minimum_stop_reaction_n": 1010.9014229383679,
+      "minimum_gap_m": 0.01199999553035605,
+      "maximum_gap_m": 0.011999996877765345,
+      "runtime_failed": false,
+      "frames_sha256": "ab6c49b7fc5345066845422cc94f76eae773f021f01d33c9d5047647000fe5a2"
+    }
+  ]
+}

@@ -49,7 +49,8 @@ def add_panel_heightmaps(world, out, surface):
         # Remove coarse support under fine features; never cover the groove mouth.
         lower = np.zeros(u.shape, dtype=bool)
         if name == 'base':
-            lower = (np.abs(u-center_u) < half_width-1e-12) | (np.abs(v-center_v) < half_width-1e-12)
+            lower = ((np.abs(u-center_u) < half_width-1e-12) |
+                     (np.abs(v-center_v) < half_width-1e-12))
         elif name == 'vertical':
             lower = np.abs(v-center_v) < half_width-1e-12
         elif name == 'horizontal':

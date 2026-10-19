@@ -1,0 +1,270 @@
+{
+  "scope": "Three representative M1 motion cases, including initial static hold; not full M1/M2 acceptance",
+  "passed": true,
+  "comparisons": {
+    "straight_270_fan_ode": {
+      "load_relative_error": 0.0,
+      "pressure_error_pa": 0.0,
+      "friction_margin_relative_error": 0.0,
+      "passed": true
+    },
+    "turn_000_fan_ode": {
+      "load_relative_error": 0.0,
+      "pressure_error_pa": 0.0,
+      "friction_margin_relative_error": 0.0,
+      "passed": true
+    },
+    "mixed_270_fan_ode": {
+      "load_relative_error": 0.0,
+      "pressure_error_pa": 0.0,
+      "friction_margin_relative_error": 0.0,
+      "passed": true
+    }
+  },
+  "metrics": {
+    "system": {
+      "straight_270_fan_ode": {
+        "checks": {
+          "released": true,
+          "no_runtime_failure": true,
+          "all_native_contacts_present": true,
+          "each_drive_normal_meets_demand": true,
+          "ball_normal_meets_floor": true,
+          "pressure_above_inverse_dynamic_requirement": true,
+          "fixture_removed_in_scored_window": true,
+          "flow_capacity_at_required_pressure": true,
+          "nonpositive_skirt_drag_power": true
+        },
+        "release_s": 0.636,
+        "scored_samples": 10001,
+        "minimum_normals_n": [
+          276.38718779913125,
+          276.38718786244624,
+          404.4674859278324
+        ],
+        "minimum_friction_margin": 3.4926536796565704,
+        "minimum_pressure_slack_pa": 5269.5921179097495,
+        "maximum_inverse_requirement_pa": 3134.8505232017487,
+        "minimum_pressure_pa": 8404.44223236959,
+        "minimum_flow_reserve_at_required_pressure_kg_s": 0.02260503408845016,
+        "minimum_head_margin_pa": 5595.557114264724,
+        "maximum_skirt_power_w": -2.5104254171202993e-08,
+        "maximum_abs_actual_a_mps2": 0.8449837077825224,
+        "maximum_abs_actual_alpha_rps2": 7.227944873047454e-12,
+        "end_pose_m": [
+          0.04999996447540672,
+          4.820059560958301e-12,
+          1.792133927681671
+        ],
+        "plugin_cpu_us_mean": 34.522751124887506
+      },
+      "turn_000_fan_ode": {
+        "checks": {
+          "released": true,
+          "no_runtime_failure": true,
+          "all_native_contacts_present": true,
+          "each_drive_normal_meets_demand": true,
+          "ball_normal_meets_floor": true,
+          "pressure_above_inverse_dynamic_requirement": true,
+          "fixture_removed_in_scored_window": true,
+          "flow_capacity_at_required_pressure": true,
+          "nonpositive_skirt_drag_power": true
+        },
+        "release_s": 0.723,
+        "scored_samples": 10001,
+        "minimum_normals_n": [
+          215.74896411175592,
+          218.34891686993478,
+          451.666031018256
+        ],
+        "minimum_friction_margin": 2.2230851951193595,
+        "minimum_pressure_slack_pa": 2617.32706483324,
+        "maximum_inverse_requirement_pa": 5787.1155958855525,
+        "minimum_pressure_pa": 8404.44240967647,
+        "minimum_flow_reserve_at_required_pressure_kg_s": 0.010594143150406196,
+        "minimum_head_margin_pa": 5595.557222287618,
+        "maximum_skirt_power_w": -4.586978080840695e-09,
+        "maximum_abs_actual_a_mps2": 0.025674195629603325,
+        "maximum_abs_actual_alpha_rps2": 2.943749328691702,
+        "end_pose_m": [
+          0.0499999674989847,
+          5.217734420269967e-06,
+          1.8892342585731066
+        ],
+        "plugin_cpu_us_mean": 28.306684631536847
+      },
+      "mixed_270_fan_ode": {
+        "checks": {
+          "released": true,
+          "no_runtime_failure": true,
+          "all_native_contacts_present": true,
+          "each_drive_normal_meets_demand": true,
+          "ball_normal_meets_floor": true,
+          "pressure_above_inverse_dynamic_requirement": true,
+          "fixture_removed_in_scored_window": true,
+          "flow_capacity_at_required_pressure": true,
+          "nonpositive_skirt_drag_power": true
+        },
+        "release_s": 0.636,
+        "scored_samples": 12001,
+        "minimum_normals_n": [
+          225.41341793359572,
+          276.8113242806313,
+          406.2307670917421
+        ],
+        "minimum_friction_margin": 1.5864599666546615,
+        "minimum_pressure_slack_pa": 3828.8997561730794,
+        "maximum_inverse_requirement_pa": 4575.542887905613,
+        "minimum_pressure_pa": 8404.44223236959,
+        "minimum_flow_reserve_at_required_pressure_kg_s": 0.015882390539647413,
+        "minimum_head_margin_pa": 5595.557114264724,
+        "maximum_skirt_power_w": -2.510454001414241e-08,
+        "maximum_abs_actual_a_mps2": 0.39867357540061915,
+        "maximum_abs_actual_alpha_rps2": 0.6887680186757626,
+        "end_pose_m": [
+          0.04999996459432192,
+          -0.04977274297517283,
+          1.790267302313361
+        ],
+        "plugin_cpu_us_mean": 31.23334930422465
+      }
+    },
+    "private": {
+      "straight_270_fan_ode": {
+        "checks": {
+          "released": true,
+          "no_runtime_failure": true,
+          "all_native_contacts_present": true,
+          "each_drive_normal_meets_demand": true,
+          "ball_normal_meets_floor": true,
+          "pressure_above_inverse_dynamic_requirement": true,
+          "fixture_removed_in_scored_window": true,
+          "flow_capacity_at_required_pressure": true,
+          "nonpositive_skirt_drag_power": true
+        },
+        "release_s": 0.636,
+        "scored_samples": 10001,
+        "minimum_normals_n": [
+          276.38718779913125,
+          276.38718786244624,
+          404.4674859278324
+        ],
+        "minimum_friction_margin": 3.4926536796565704,
+        "minimum_pressure_slack_pa": 5269.5921179097495,
+        "maximum_inverse_requirement_pa": 3134.8505232017487,
+        "minimum_pressure_pa": 8404.44223236959,
+        "minimum_flow_reserve_at_required_pressure_kg_s": 0.02260503408845016,
+        "minimum_head_margin_pa": 5595.557114264724,
+        "maximum_skirt_power_w": -2.5104254171202993e-08,
+        "maximum_abs_actual_a_mps2": 0.8449837077825224,
+        "maximum_abs_actual_alpha_rps2": 7.227944873047454e-12,
+        "end_pose_m": [
+          0.04999996447540672,
+          4.820059560958301e-12,
+          1.792133927681671
+        ],
+        "plugin_cpu_us_mean": 27.189497350264972
+      },
+      "turn_000_fan_ode": {
+        "checks": {
+          "released": true,
+          "no_runtime_failure": true,
+          "all_native_contacts_present": true,
+          "each_drive_normal_meets_demand": true,
+          "ball_normal_meets_floor": true,
+          "pressure_above_inverse_dynamic_requirement": true,
+          "fixture_removed_in_scored_window": true,
+          "flow_capacity_at_required_pressure": true,
+          "nonpositive_skirt_drag_power": true
+        },
+        "release_s": 0.723,
+        "scored_samples": 10001,
+        "minimum_normals_n": [
+          215.74896411175592,
+          218.34891686993478,
+          451.666031018256
+        ],
+        "minimum_friction_margin": 2.2230851951193595,
+        "minimum_pressure_slack_pa": 2617.32706483324,
+        "maximum_inverse_requirement_pa": 5787.1155958855525,
+        "minimum_pressure_pa": 8404.44240967647,
+        "minimum_flow_reserve_at_required_pressure_kg_s": 0.010594143150406196,
+        "minimum_head_margin_pa": 5595.557222287618,
+        "maximum_skirt_power_w": -4.586978080840695e-09,
+        "maximum_abs_actual_a_mps2": 0.025674195629603325,
+        "maximum_abs_actual_alpha_rps2": 2.943749328691702,
+        "end_pose_m": [
+          0.0499999674989847,
+          5.217734420269967e-06,
+          1.8892342585731066
+        ],
+        "plugin_cpu_us_mean": 27.181400659934006
+      },
+      "mixed_270_fan_ode": {
+        "checks": {
+          "released": true,
+          "no_runtime_failure": true,
+          "all_native_contacts_present": true,
+          "each_drive_normal_meets_demand": true,
+          "ball_normal_meets_floor": true,
+          "pressure_above_inverse_dynamic_requirement": true,
+          "fixture_removed_in_scored_window": true,
+          "flow_capacity_at_required_pressure": true,
+          "nonpositive_skirt_drag_power": true
+        },
+        "release_s": 0.636,
+        "scored_samples": 12001,
+        "minimum_normals_n": [
+          225.41341793359572,
+          276.8113242806313,
+          406.2307670917421
+        ],
+        "minimum_friction_margin": 1.5864599666546615,
+        "minimum_pressure_slack_pa": 3828.8997561730794,
+        "maximum_inverse_requirement_pa": 4575.542887905613,
+        "minimum_pressure_pa": 8404.44223236959,
+        "minimum_flow_reserve_at_required_pressure_kg_s": 0.015882390539647413,
+        "minimum_head_margin_pa": 5595.557114264724,
+        "maximum_skirt_power_w": -2.510454001414241e-08,
+        "maximum_abs_actual_a_mps2": 0.39867357540061915,
+        "maximum_abs_actual_alpha_rps2": 0.6887680186757626,
+        "end_pose_m": [
+          0.04999996459432192,
+          -0.04977274297517283,
+          1.790267302313361
+        ],
+        "plugin_cpu_us_mean": 27.241263811349054
+      }
+    }
+  },
+  "selected_ode": {
+    "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
+    "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
+  },
+  "source_commit": "0db120af6223b478ab3921b6efd421f0fd598a31",
+  "probe_sha256": "d8a9200e709fc07d04c737048c370ceb66bffeaff5e3159247e8f9d7a422c682",
+  "raw_data_relative_root": "m2_review_20261019/ode_comparison_final",
+  "run_source_dirty": true,
+  "reproduction_checkpoint": "752e1a11ebacd144607f6fee56484254e932ef69",
+  "provenance_note": "Original runs preceded the source checkpoint; frozen generated inputs and probe hash are retained. Later diagnostic-heightmap changes do not participate in these flat M1 cases.",
+  "frozen_case_input_sha256": {
+    "private/mixed_270_fan_ode/request.yaml": "e07fe58cabdae5101b2e9ec6a27dac2b21789cad389516d57ae7610922cbe504",
+    "private/mixed_270_fan_ode/resolved.json": "18f55414e5dcdb88cb784b7092c5a671a861a49eb7168af86dff2b65064b4044",
+    "private/mixed_270_fan_ode/world.sdf": "e597b6a79a5a36b0b8ad144d8ccaee97cef00fd89be7e57d2acc72ba822296d9",
+    "private/straight_270_fan_ode/request.yaml": "58d2f8bdddd32455191c7bbf8b117d968befc4bc76590c464dc49ccdb0ecee0d",
+    "private/straight_270_fan_ode/resolved.json": "18f55414e5dcdb88cb784b7092c5a671a861a49eb7168af86dff2b65064b4044",
+    "private/straight_270_fan_ode/world.sdf": "993d8b1da89f22a6aaccce0a570b4dfede27d529fdf2d7ab7845c5c318c59122",
+    "private/turn_000_fan_ode/request.yaml": "d36d2e2c60c4c6c2c4666ee84b1ffb4e9f89ada431de1d7147182ddf75bc097a",
+    "private/turn_000_fan_ode/resolved.json": "d46c77f11d729b240a97d23cf833bbd48762bb7f527082a5aa0d2635bc9f20b9",
+    "private/turn_000_fan_ode/world.sdf": "0666afdf28ec3ebfb1fbb95155f656084faeccfd5d862dd0c6b5d7f735679236",
+    "system/mixed_270_fan_ode/request.yaml": "e07fe58cabdae5101b2e9ec6a27dac2b21789cad389516d57ae7610922cbe504",
+    "system/mixed_270_fan_ode/resolved.json": "18f55414e5dcdb88cb784b7092c5a671a861a49eb7168af86dff2b65064b4044",
+    "system/mixed_270_fan_ode/world.sdf": "e097463860acff1968b0bc371a7a0a6580f2ef234f4fcfcd970a85d6e458e386",
+    "system/straight_270_fan_ode/request.yaml": "58d2f8bdddd32455191c7bbf8b117d968befc4bc76590c464dc49ccdb0ecee0d",
+    "system/straight_270_fan_ode/resolved.json": "18f55414e5dcdb88cb784b7092c5a671a861a49eb7168af86dff2b65064b4044",
+    "system/straight_270_fan_ode/world.sdf": "7fb02c6d83c76222032495956142b28f01fe068edcc81e59a17c3103ccea7425",
+    "system/turn_000_fan_ode/request.yaml": "d36d2e2c60c4c6c2c4666ee84b1ffb4e9f89ada431de1d7147182ddf75bc097a",
+    "system/turn_000_fan_ode/resolved.json": "d46c77f11d729b240a97d23cf833bbd48762bb7f527082a5aa0d2635bc9f20b9",
+    "system/turn_000_fan_ode/world.sdf": "99c5058fe955a6549d9537c3714985952c447b0b5cb0cc3a1e94fb5cec7ef5f9"
+  }
+}

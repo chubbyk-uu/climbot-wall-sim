@@ -45,8 +45,9 @@
 | M2 T0 接触漏检与首条板缝 | [报告](m2_t0_hashspace_2026-10-19/REPORT.md)、[摘要](m2_t0_hashspace_2026-10-19/summary.json) | ODE 跨零哈希漏检已用局部补丁与受控 A/B 修复；平滑面及单条真实板缝探针通过，T0／M2 和 GUI 性能未整体验收 |
 | M2 T0 高度场边界 | [报告](m2_t0_extent_2026-10-19/REPORT.md)、[摘要](m2_t0_extent_2026-10-19/summary.json) | 按引擎采样跨度补偿 SDF 尺寸；四组近边界检查及原有五组接触回归通过，整墙与 GUI 尚未验收 |
 | M2 T0 裂缝接触简化 | [报告](m2_t0_crack_bridge_2026-10-19/REPORT.md)、[摘要](m2_t0_crack_bridge_2026-10-19/summary.json) | 已纠正量规互撞；真实网格法向仍未通过，显式窄裂缝轮接触近似的静态支撑及隔离接触通过，T0 未整体验收 |
-| M2 T0 板缝实际轮径 | [报告](m2_t0_joint_contact_2026-10-19/REPORT.md)、[摘要](m2_t0_joint_contact_2026-10-19/summary.json) | 共网格交汇与主动轮短扫描通过；球轮未通过，圆角／高度场／FCL 均未完全解决，待选择球轮支撑方案；非 T0 通过证据 |
+| M2 T0 板缝实际轮径 | [报告](m2_t0_joint_contact_2026-10-19/REPORT.md)、[摘要](m2_t0_joint_contact_2026-10-19/summary.json) | 共网格交汇与主动轮短扫描通过；球轮未通过，圆角／高度场／FCL 均未完全解决，球轮按用户要求挂起；非 T0 通过证据 |
 | M2 T0 球径／局部倒角 | [报告](m2_t0_caster_size_chamfer_2026-10-19/REPORT.md)、[摘要](m2_t0_caster_size_chamfer_2026-10-19/summary.json) | 25／40 mm 球径×原槽／短倒角四组完成；倒角改善断触和支撑，加大球径改善小，均未满足全部门槛；未改整车默认 |
+| M2 review 基础修正 | [报告](m2_review_2026-10-19/REPORT.md)、[干净需求](m2_review_2026-10-19/physical_model/summary.json) | 发行版 ODE 配置及三组 M1 对照、原生裙边止挡、C++ 唯一表面、漏气预算与旧模型整理；球轮跨缝挂起，M2 未验收 |
 | 吸附专项 S0 | [基线与诊断报告](suction_s0_2026-10-17/REPORT.md)、[输入摘要](suction_s0_2026-10-17/baseline_summary.json)、[A 组复测](suction_s0_2026-10-17/a_loads_summary.json) | 冻结旧模型的 34 工况轮压复现与旧质量静力诊断，不是新底盘／负压模型通过；首次回归异常、夹具修复与剩余问题分别保留 |
 | 吸附专项 S1 | [新结构与逐轮设计](suction_s1_rearward_2026-10-17/REPORT.md)、[质量与几何](suction_s1_rearward_2026-10-17/layout.json)、[计算摘要](suction_s1_rearward_2026-10-17/summary.json) | 平墙刚性轮离线候选；质量和材料假设、静态／运动需求与交叉敏感性分列。阶段离线设计；运行模型与新提手质量的最终结果见 S6／S7 |
 | 吸附专项 S2 | [纯核心隔离报告](suction_s2_2026-10-17/REPORT.md)、[检查与原始数据索引](suction_s2_2026-10-17/summary.json) | C++ 单腔风机／裙边数学参考、留出与数值检查通过；名义漏气范围与不利参数失败分列，不是实机曲线或 Gazebo 整车验收 |

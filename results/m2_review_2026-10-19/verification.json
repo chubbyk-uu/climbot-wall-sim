@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "scope": "M2 review corrections only; caster deferred; no M2 or dual-GUI acceptance",
+  "full_suite": {
+    "command": "colcon test --executor parallel --parallel-workers 8",
+    "result_command": "colcon test-result --verbose",
+    "tests": 1868,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 88
+  },
+  "source_base_commit": "752e1a11ebacd144607f6fee56484254e932ef69",
+  "source_note": "Final source differs from the base only in a heightmap line-wrap correction and requirement_source metadata. Source hashes below identify the tested implementation; report artifacts were completed afterward.",
+  "source_sha256": {
+    "src/climbot_gazebo/src/vacuum_core.cpp": "d32f15705b881f340a899319c55c3f7fa7d16dc8d78d5eaabbb88157b323ee5b",
+    "src/climbot_gazebo/src/vacuum_system.cpp": "e7b74ec2b9e1645c8959b6f49989434fce1b41641b2dbcb0354c931feb91f7ec",
+    "src/climbot_gazebo/src/vacuum_sim_probe.cpp": "942fe5778d9df301a1e1e94e21546bc693108bd9343bc0177ac4bcd09f397cde",
+    "src/climbot_gazebo/src/wall_surface.cpp": "f4538ce96520fbf2f4f6238d30dcac7671afca72d433df0a62bcc2d3c99da3ec",
+    "src/climbot_gazebo/src/wall_surface_bindings.cpp": "490a1fc0b45772d376e3836775bc18336039f1a9039d189dc8236195f5f3aff2",
+    "src/climbot_gazebo/include/climbot_gazebo/vacuum_state.hpp": "0440128361a0ab3865692008dd4f6539db09b63938c160557c4483e9539feaca",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "30e3b54008800773f23d18fd529d2240ba70fe715477a35f5eb82e1336674ec6",
+    "src/climbot_gazebo/climbot_gazebo/wall_surface.py": "f6a99df6aec7e73675118d0e998a2ef6c0c2501860a8d60f5cd95e5564ed63e1",
+    "src/climbot_gazebo/climbot_gazebo/surface_heightmap.py": "36d1398c3f9d67934e7945f12f652144c740f20575ba06e8e2d025b4d760a4cd",
+    "src/climbot_gazebo/config/vacuum_physics.yaml": "f671793f542ab0eef898e8e69f3b19d8dc4fee01226a8909c690dd1cb0bec4b7",
+    "src/climbot_control/test/test_coverage_manager_hold_release.py": "2aaf48c0af5257ab914b18ddc357473645c0f9f8227917a740fdea48d0985394"
+  },
+  "logs_sha256": {
+    "climbot_m2_review_full_tests_accepted_20261019.log": "7bbdc73f6c6dbcaf9ef2ba46fb166cda18a1fd0f9da2538e01a3e2487327c946",
+    "climbot_m2_review_full_result_accepted_20261019.log": "c579a6f17bfa1523e1d848f275e0772874fef81aa2f043d7ab9be9b76ace6f5b",
+    "climbot_m2_ode_comparison_final_20261019.log": "8a820c7f2122f2c6fe3bca50bbe613ef141c9c14e2cec42f2f826db2d9622cab",
+    "climbot_m2_stop_evidence_20261019.log": "5c27f5673563b0f89e95fdeaf00952d5853de9aa89bdc55bf3d723703d06bfb3",
+    "climbot_m2_review_contracts_r2_20261019.log": "d0be9e016bbe7ef66dcc417e994e8bef59d1041e2d42e6bcf8a5eac9fc3cc82a",
+    "climbot_m2_design_clean_20261019.log": "6e5c3ce179f100dac3a61279d63141a3a44ca1d137ded534d47e78fac1807399"
+  },
+  "other_checks": {
+    "surface_and_historical_contract_tests": 86,
+    "native_stop_cases": 2,
+    "m1_ode_pairs": 3,
+    "m1_ode_pairs_passed": 3,
+    "clean_requirement_source_dirty": false
+  },
+  "outstanding": [
+    "Caster crossing contact deferred by user",
+    "T1 compliant drive wheels not implemented",
+    "T2 coupled leakage/load validation and T3 GUI performance/default rollout not accepted"
+  ],
+  "published_to_remote": false
+}

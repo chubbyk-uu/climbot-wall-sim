@@ -1,0 +1,31 @@
+{
+  "version": "0.16.2",
+  "source_url": "https://codeload.github.com/odedevs/ode/tar.gz/refs/tags/0.16.2",
+  "source_sha256": "28b547ac9c3f2c8ba4c23a9cbe579667447616876c61b507a184f8607143050e",
+  "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747",
+  "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
+  "build_profile": "ubuntu-noble-system-ccd-assertions",
+  "packaging_compile_options": [
+    "-UdNODEBUG"
+  ],
+  "packaging_cmake_fixes": [
+    "system-libccd-target-case",
+    "libccd-custom-header-path",
+    "ubuntu-libccd-exported-target"
+  ],
+  "ode_configuration": "ODE ODE_EXT_trimesh ODE_EXT_opcode ODE_OPC_new_collider ODE_EXT_threading ODE_THR_builtin_impl ODE_double_precision",
+  "regression_passed": true,
+  "cmake_options": [
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DCMAKE_INSTALL_LIBDIR=lib",
+    "-DODE_DOUBLE_PRECISION=ON",
+    "-DODE_WITH_DEMOS=OFF",
+    "-DODE_WITH_TESTS=OFF",
+    "-DODE_WITH_LIBCCD=ON",
+    "-DODE_WITH_LIBCCD_SYSTEM=ON",
+    "-DODE_WITH_LIBCCD_BOX_CYL=OFF",
+    "-DBUILD_SHARED_LIBS=ON"
+  ],
+  "ubuntu_packaging_url": "https://archive.ubuntu.com/ubuntu/pool/universe/o/ode/ode_0.16.2-1.1build1.debian.tar.xz",
+  "ubuntu_packaging_sha256": "5de12a78777541f3a6d64cfad3579f60c85390f16419d406d60bcce8a41add58"
+}
