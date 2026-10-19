@@ -131,6 +131,28 @@ def prepare(config, size, texture_manifest=None):
         for col, (x0, x1) in enumerate(columns):
             proxy.append(proxy_tile(out/f'caster_{row}_{col}.obj', contact_source,
                                     (x0, x1, y0, y1)))
+    # ODE's hash space compares every static geom's box each step; one merged
+    # caster mesh (same triangles, OPCODE tree inside) removes that broadphase.
+    merged = out/'caster.obj'
+    with merged.open('x') as stream:
+        stream.write('# M2 caster proxy: one-metre source tiles in wall coordinates\n')
+        offset = 0
+        for tile in proxy:
+            x0, x1, y0, y1 = tile['bounds_m']
+            count = 0
+            for line in (out/tile['file']).read_text().splitlines():
+                if line.startswith('v '):
+                    x, y, z = map(float, line.split()[1:])
+                    stream.write(f'v {x+(x0+x1)/2:.17g} {y+(y0+y1)/2:.17g} {z:.17g}\n')
+                    count += 1
+                elif line.startswith('vn '):
+                    stream.write(line+'\n')
+                elif line.startswith('f '):
+                    stream.write('f '+' '.join(
+                        f'{int(i.split("//")[0])+offset}//{int(i.split("//")[1])+offset}'
+                        for i in line.split()[1:])+'\n')
+            offset += count
+    caster_mesh = {'file': merged.name, 'triangles': sum(p['triangles'] for p in proxy)}
     visuals = []
     blocks = manifest['maps']['albedo']['blocks'] if manifest else [
         {'row': r, 'column': c, 'bounds': (c, min(c+1, width), r, min(r+1, height))}
@@ -155,7 +177,8 @@ def prepare(config, size, texture_manifest=None):
                         'sampled_error_m': mesh['sampled_height_error_max_m'],
                         'texture': str(Path(texture_directory, block['file']).resolve())
                         if manifest else None})
-    result = {'identity': identity, 'driver': driver, 'proxy': proxy, 'visuals': visuals,
+    result = {'identity': identity, 'driver': driver, 'proxy': proxy,
+              'caster_mesh': caster_mesh, 'visuals': visuals,
               'build_seconds': time.monotonic()-start,
               'omitted_contact_cracks': contact_source.config['omitted_cracks'],
               'files_sha256': {p.name: digest(p) for p in out.iterdir() if p.is_file()}}
@@ -199,15 +222,26 @@ def apply(world, plugin, assets, manifest, surface_pose, size, config):
         node(ode, 'mu2', 1.1)
 
     friction(collision, 1)
-    for i, tile in enumerate(manifest['proxy']):
-        parent = link(f'm2_caster_{i}', tile['bounds_m'])
-        collision = node(parent, 'collision', name='surface_collision')
-        node(node(node(collision, 'geometry'), 'mesh'), 'uri', (assets/tile['file']).as_uri())
-        friction(collision, 2)
+
+    def tile_pose(element, bounds):
+        x0, x1, y0, y1 = bounds
+        node(element, 'pose', numbers([(x0+x1)/2, (y0+y1)/2, 0, 0, 0, 0]))
+
+    # One static link per role, as on the M1 wall: hundreds of separate static
+    # models each become a DART skeleton whose pose bookkeeping runs every step
+    # and cut the real-time factor to about 0.6 without touching any contact.
+    caster = link('m2_caster_proxy', (0, 0, 0, 0))
+    collision = node(caster, 'collision', name='surface_collision')
+    node(node(node(collision, 'geometry'), 'mesh'), 'uri',
+         (assets/manifest['caster_mesh']['file']).as_uri())
+    friction(collision, 2)
+    optical = link('m2_optical_wall', (0, 0, 0, 0))
     for i, tile in enumerate(manifest['visuals']):
-        parent = link(f'm2_optical_{i}', tile['bounds_m'])
-        visual = node(parent, 'visual', name='surface_visual')
-        node(visual, 'cast_shadows', 'true')
+        visual = node(optical, 'visual', name=f'tile_{i}')
+        tile_pose(visual, tile['bounds_m'])
+        # Same as the M1 wall: the camera lamp is in front, so wall shadows only
+        # add a full-wall shadow pass and never shade the robot or the photo.
+        node(visual, 'cast_shadows', 'false')
         node(node(node(visual, 'geometry'), 'mesh'), 'uri', (assets/tile['file']).as_uri())
         material = node(visual, 'material')
         node(material, 'ambient', '1 1 1 1')

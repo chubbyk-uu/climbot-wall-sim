@@ -76,6 +76,54 @@ def test_interrupted_build_does_not_block_the_next_launch(tmp_path, monkeypatch)
     assert prepare(config(), [.08, .08])[0] == directory
 
 
+def test_wall_tiles_share_one_static_link_per_role(tmp_path, monkeypatch):
+    from xml.etree import ElementTree as ET
+
+    from climbot_description.geometry import quaternion_from_rpy, rotate_vector
+    from climbot_gazebo.wall_assets import apply
+    monkeypatch.setenv('CLIMBOT_DATA_ROOT', str(tmp_path))
+    size = [1.2, .3]
+    directory, manifest = prepare(config(), size)
+    world = ET.fromstring('<world/>')
+    plugin = ET.fromstring('<plugin><sample><attachment>.1 .1 .02</attachment></sample>'
+                           '<sample><attachment>.3 .2 .02</attachment></sample></plugin>')
+    pose = [.4, -1., 2., 0., -1.2, .7]
+    apply(world, plugin, directory, manifest, pose, size, config())
+    # Separate static models each become a DART skeleton updated every step.
+    assert sorted(m.get('name') for m in world.findall('model')) == [
+        'm2_caster_proxy', 'm2_driver_wall', 'm2_optical_wall']
+    q = quaternion_from_rpy(*pose[3:])
+    caster = world.find('model[@name="m2_caster_proxy"]')
+    np.testing.assert_allclose([float(x) for x in caster.findtext('pose').split()], pose)
+    assert len(caster.findall('link/collision')) == 1
+    # The merged caster mesh is the tiles shifted into wall coordinates, unchanged.
+    merged = [line.split() for line in (directory/'caster.obj').read_text().splitlines()]
+    expected, faces = [], 0
+    for tile in manifest['proxy']:
+        x0, x1, y0, y1 = tile['bounds_m']
+        rows = [line.split() for line in (directory/tile['file']).read_text().splitlines()]
+        expected += [[float(r[1])+(x0+x1)/2, float(r[2])+(y0+y1)/2, float(r[3])]
+                     for r in rows if r and r[0] == 'v']
+        faces += sum(1 for r in rows if r and r[0] == 'f')
+    np.testing.assert_array_equal(
+        [[float(x) for x in r[1:]] for r in merged if r and r[0] == 'v'], expected)
+    assert sum(1 for r in merged if r and r[0] == 'f') == faces == \
+        manifest['caster_mesh']['triangles']
+    for name, tag, tiles in [('m2_optical_wall', 'visual', manifest['visuals'])]:
+        model = world.find(f'model[@name="{name}"]')
+        np.testing.assert_allclose([float(x) for x in model.findtext('pose').split()], pose)
+        elements = model.findall(f'link/{tag}')
+        assert len(elements) == len(tiles) == 2
+        for element, tile in zip(elements, tiles):
+            x0, x1, y0, y1 = tile['bounds_m']
+            local = [float(x) for x in element.findtext('pose').split()]
+            # Same world placement as the former one-model-per-tile layout.
+            np.testing.assert_allclose(
+                np.array(pose[:3])+rotate_vector(q, local[:3]),
+                np.array(pose[:3])+rotate_vector(q, [(x0+x1)/2, (y0+y1)/2, 0]))
+            assert local[3:] == [0, 0, 0]
+
+
 def test_clipped_full_wall_joint_has_no_zero_area_optical_slivers(tmp_path):
     cfg = yaml.safe_load((Path(__file__).parents[1]/'config/m2_wall_surface.yaml').read_text())
     result = write_feature_mesh(tmp_path/'joint.obj', WallSurface(cfg),
