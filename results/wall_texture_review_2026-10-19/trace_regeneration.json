@@ -1,0 +1,56 @@
+{
+  "scope": "Regenerated v6 metadata and byte-for-byte rendering-asset equivalence review",
+  "passed": true,
+  "producer_commit": "30ad9783478b01e94bf6b3ded736d720dcccc443",
+  "assets": {
+    "wall": {
+      "old_root": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/v6_wall_10x8_seed20261018",
+      "new_root": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/v6_trace_fix_20261019/wall",
+      "old_manifest_sha256": "283bbc8fe5726ee31b9345e215817b0ada62b4ff4c3f5bf51b38409ae87c11a6",
+      "new_manifest_sha256": "56cf60ed9afcf1fc60c024dbb48c304fc658e2f3f12a6a57482a643cb36203a4",
+      "dds_count": 320,
+      "dds_actual_hashes_equal": true,
+      "trace_records_equal_except_algorithm": true,
+      "masks_equal": true,
+      "manifest_changed_fields": [
+        ".recorded_utc",
+        ".git_commit",
+        ".producer_files_sha256.bake_wall_texture.py",
+        ".producer_files_sha256.wall_texture_randomization.py",
+        ".quilt.trace_files[0].sha256"
+      ],
+      "producer_hashes_match_repository": true,
+      "default_link": "$CLIMBOT_DATA_ROOT/assets/wall_local_v6",
+      "default_link_target_verified": true
+    },
+    "diagnostic": {
+      "old_root": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/v6_wall_diagnostic_final_10x8_seed20261018",
+      "new_root": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/v6_trace_fix_20261019/diagnostic",
+      "old_manifest_sha256": "d3467019d2de36b9eee1d14ce421ee894506c5c0f7868d0d651b38f0fdc86f78",
+      "new_manifest_sha256": "467866fb8d4c5844a19f996327b82955259db5861babb600bc415e65fb730d80",
+      "dds_count": 320,
+      "dds_actual_hashes_equal": true,
+      "trace_records_equal_except_algorithm": true,
+      "masks_equal": true,
+      "manifest_changed_fields": [
+        ".recorded_utc",
+        ".git_commit",
+        ".producer_files_sha256.bake_wall_texture.py",
+        ".producer_files_sha256.wall_texture_randomization.py",
+        ".quilt.trace_files[0].sha256",
+        ".diagnostic_wall.base_manifest",
+        ".diagnostic_wall.base_manifest_sha256",
+        ".diagnostic_wall.decal_atlas"
+      ],
+      "producer_hashes_match_repository": true,
+      "default_link": "$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6",
+      "default_link_target_verified": true
+    }
+  },
+  "diagnostic_relative_reference_base": "parent of diagnostic asset directory, per producer",
+  "diagnostic_source_references_and_hashes_verified": true,
+  "regeneration_log": "climbot_v6_regen_20261019-163027.log",
+  "independent_review_log": "climbot_v6_asset_review_20261019.log",
+  "evidence_scope": "Reuse the existing 70+680-image rendering/capture evidence through manifest-hash equivalence; original capture provenance is not rewritten. No new M2 physics acceptance.",
+  "old_assets_retained": true
+}
