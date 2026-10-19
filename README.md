@@ -498,6 +498,7 @@ hard-cut 融合，不改变前面的特征匹配和位姿图。
 | 批量回归、参数变体与故障处置 | [OPERATION](docs/OPERATION.md) |
 | 当前验收状态与正式证据 | [ACCEPTANCE](docs/ACCEPTANCE.md) |
 | 当前项目状态、风险与下一步 | [STATUS](docs/STATUS.md) |
+| 起伏墙、真实缝隙与柔顺轮计划 | [SUCTION_M2_PLAN](docs/SUCTION_M2_PLAN.md) |
 | 离线拼接设计与门禁 | [MOSAIC_PLAN](docs/MOSAIC_PLAN.md) |
 | 隐蔽故障、偶发竞态与排查经验 | [INCIDENTS](docs/INCIDENTS.md) |
 | 结果有效性、基线与重生成入口 | [results/README.md](results/README.md) |
