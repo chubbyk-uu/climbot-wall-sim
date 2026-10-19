@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import tempfile
 import time
 
 from climbot_description.geometry import quaternion_from_rpy, rotate_vector
@@ -101,7 +102,11 @@ def prepare(config, size, texture_manifest=None):
                 for name, sha in result['files_sha256'].items()):
             raise ValueError('M2 cached asset checksum mismatch; rebuild explicitly')
         return out, result
-    out.mkdir(parents=True, exist_ok=False)
+    # Build beside the cache entry and publish it with one rename: a launch
+    # interrupted mid-build must not leave a half-written entry blocking reuse.
+    final = out
+    final.parent.mkdir(parents=True, exist_ok=True)
+    out = Path(tempfile.mkdtemp(prefix=final.name+'.partial-', dir=final.parent))
     start = time.monotonic()
     (out/'source.yaml').write_text(source.resolved_yaml)
     # Driver/body/stop collision: no grooves. Same vertical transform and
@@ -154,8 +159,9 @@ def prepare(config, size, texture_manifest=None):
               'build_seconds': time.monotonic()-start,
               'omitted_contact_cracks': contact_source.config['omitted_cracks'],
               'files_sha256': {p.name: digest(p) for p in out.iterdir() if p.is_file()}}
-    complete.write_text(json.dumps(result, indent=2)+'\n')
-    return out, result
+    (out/'manifest.json').write_text(json.dumps(result, indent=2)+'\n')
+    out.rename(final)
+    return final, result
 
 
 def apply(world, plugin, assets, manifest, surface_pose, size, config):

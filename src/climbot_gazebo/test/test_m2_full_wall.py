@@ -59,6 +59,23 @@ def test_cache_reuse_and_corruption_are_explicit(tmp_path, monkeypatch):
         prepare(config(), [.08, .08])
 
 
+def test_interrupted_build_does_not_block_the_next_launch(tmp_path, monkeypatch):
+    from climbot_gazebo import wall_assets
+    monkeypatch.setenv('CLIMBOT_DATA_ROOT', str(tmp_path))
+
+    def interrupted(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(wall_assets, 'write_feature_mesh', interrupted)
+    with pytest.raises(KeyboardInterrupt):
+        prepare(config(), [.08, .08])
+    monkeypatch.undo()
+    monkeypatch.setenv('CLIMBOT_DATA_ROOT', str(tmp_path))
+    directory, result = prepare(config(), [.08, .08])
+    assert (directory/'manifest.json').is_file() and len(result['visuals']) == 1
+    assert prepare(config(), [.08, .08])[0] == directory
+
+
 def test_clipped_full_wall_joint_has_no_zero_area_optical_slivers(tmp_path):
     cfg = yaml.safe_load((Path(__file__).parents[1]/'config/m2_wall_surface.yaml').read_text())
     result = write_feature_mesh(tmp_path/'joint.obj', WallSurface(cfg),
