@@ -399,8 +399,8 @@ def test_native_joint_patches_do_not_cover_the_groove_with_old_support(tmp_path)
         image = np.array(Image.open(shape.findtext('uri')))
         count = len(image)
         loaded_u_span = span[0]/count*(count-1)
-        assert loaded_u_span == pytest.approx(.016)
-        assert image.min() == 0 and image.max() == 65535
+        assert loaded_u_span == pytest.approx(.025)
+        assert 0 <= image.min() < image.max() <= 65535
         height = lo+image[count//2, count//2]/65535*span[2]
         if name == 'vertical':
             assert height < float(source.height(.45, .4))-.005
@@ -471,3 +471,35 @@ def test_native_port_matches_frozen_pre_port_reference():
         np.testing.assert_allclose(restored.evaluate(u, v, 0), case['height'], atol=2e-14)
         assert surface.height(.1, .2).shape == ()
         assert surface.height(u[:, None], v).shape == (len(u), len(v))
+
+
+def test_diagnostic_heightmap_underlays_meet_on_shared_boundaries(tmp_path):
+    """Reject the old 6--8 mm duplicate support band; shared rims encode identically."""
+    from xml.etree import ElementTree as ET
+    from climbot_gazebo.surface_heightmap import add_panel_heightmaps
+    from PIL import Image
+    cfg = config()
+    cfg['grooves'] = cfg['grooves'][:2]
+    world = ET.Element('world')
+    report = add_panel_heightmaps(world, tmp_path, WallSurface(cfg))
+    patches = {p['name']: p for p in report['patches']}
+    base = np.flipud(np.asarray(Image.open(tmp_path/'base.png')))
+    vertical = np.flipud(np.asarray(Image.open(tmp_path/'vertical.png')))
+    horizontal = np.flipud(np.asarray(Image.open(tmp_path/'horizontal.png')))
+    intersection = np.flipud(np.asarray(Image.open(tmp_path/'intersection.png')))
+    u0, u1 = patches['vertical']['u_range_m']
+    v0, v1 = patches['horizontal']['v_range_m']
+    cols = np.rint(np.array([u0, u1])/(.8/256)).astype(int)
+    # Keep samples away from the crossing, which is covered by the third patch.
+    assert np.array_equal(base[:100:2, cols[0]], vertical[:50, 0])
+    assert np.array_equal(base[:100:2, cols[1]], vertical[:50, -1])
+    cross_rows = np.rint(np.array([v0, v1])/(.8/128)).astype(int)
+    cross_cols = np.rint(np.array([u0, u1])/(.8/128)).astype(int)
+    assert np.array_equal(vertical[cross_rows[0]], intersection[0])
+    assert np.array_equal(vertical[cross_rows[1]], intersection[-1])
+    assert np.array_equal(horizontal[:, cross_cols[0]], intersection[:, 0])
+    assert np.array_equal(horizontal[:, cross_cols[1]], intersection[:, -1])
+    # Former duplicate band (+/- 6--8 mm) is now strictly below the source.
+    for offset in [-.00625, .00625]:
+        column = round((.45+offset)/(.8/256))
+        assert base[20, column] < base[20, cols[0]]-10000

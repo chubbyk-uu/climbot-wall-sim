@@ -213,6 +213,7 @@ def make_fixture(out, config, samples, step, orientation, representation='height
         element(ode, 'mu2', 0)
     ET.ElementTree(root).write(out / 'world.sdf', encoding='unicode')
     (out / 'source.yaml').write_text(yaml.safe_dump(config))
+    (out / 'surface_resolved.yaml').write_text(surface.resolved_yaml)
     request = {'world': 'world.sdf', 'iterations': round(.35 / step)}
     (out / 'request.yaml').write_text(yaml.safe_dump(request))
     return {'samples': samples, 'step_s': step, 'orientation': orientation,
