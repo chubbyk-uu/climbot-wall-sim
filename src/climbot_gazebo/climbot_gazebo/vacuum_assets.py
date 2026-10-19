@@ -30,6 +30,7 @@ import yaml
 
 from .caster_compliance import apply as apply_caster_compliance
 from .wheel_compliance import apply as apply_wheel_compliance
+from .wheel_compliance import apply_crown as apply_tyre_crown
 from .wheel_compliance import apply_lateral as apply_tyre_lateral
 
 
@@ -160,7 +161,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                  realtime_factor=1.0, runtime_overrides=None, io_overrides=None,
                  physics_overrides=None, caster_proxy=False, wheel_compliance=False,
                  surface_patch=None, caster_compliance=False,
-                 tyre_lateral=False, wall_surface='flat', wall_texture=None):
+                 tyre_lateral=False, wall_surface='flat', wall_texture=None,
+                 tyre_crown=False):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
@@ -172,6 +174,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         raise ValueError('caster_compliance and tyre_lateral must be boolean')
     if tyre_lateral and not wheel_compliance:
         raise ValueError('tyre_lateral requires the calibrated normal wheel compliance')
+    if type(tyre_crown) is not bool or (tyre_crown and not wheel_compliance):
+        raise ValueError('tyre_crown must be boolean and requires wheel compliance')
     if wall_surface not in ('flat', 'undulating'):
         raise ValueError('unknown full-wall surface')
     if wall_surface == 'undulating' and (not caster_proxy or surface_patch is not None):
@@ -402,6 +406,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     if tyre_lateral:
         lateral = _read(gazebo / 'config/m2_tyre_lateral.yaml', 'm2_tyre_lateral')
         apply_tyre_lateral(new, urdf, lateral)
+    if tyre_crown:
+        apply_tyre_crown(new)
     if caster_compliance:
         caster_spring = _read(gazebo / 'config/m2_caster_compliance.yaml',
                               'm2_caster_compliance')
@@ -483,6 +489,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         resolved['caster_compliance'] = caster_spring
     if tyre_lateral:
         resolved['tyre_lateral'] = lateral
+    if tyre_crown:
+        resolved['tyre_contact'] = 'sphere'
     if patch is not None:
         resolved['surface_patch'] = patch
         resolved['wall_surface_pose'] = patch['wall_surface_pose']

@@ -52,11 +52,20 @@ def generate_launch_description():
             io = yaml.safe_load(Path(io_path).read_text())['vacuum_io'] if io_path else None
             surface = LaunchConfiguration('wall_surface').perform(context)
             soft = LaunchConfiguration('wheel_compliance').perform(context) == 'true'
+            # The lateral tyre spring follows the normal one unless a diagnostic
+            # run separates them; it cannot be enabled on its own.
+            lateral = LaunchConfiguration('tyre_lateral').perform(context)
+            lateral = soft if lateral == 'auto' else lateral == 'true'
+            # Crowned tyre contact is part of the compliant wheel; 'false' keeps
+            # the former flat-edged cylinder for comparison runs.
+            crown = LaunchConfiguration('tyre_crown').perform(context)
+            crown = soft if crown == 'auto' else crown == 'true'
             texture = LaunchConfiguration('wall_texture').perform(context) or None
             build_assets(
                 root, mode='fan_ode' if mode == 'vacuum' else 'fixed_pressure',
                 runtime_overrides={'camera_enabled': True}, io_overrides=io,
-                wheel_compliance=soft, tyre_lateral=soft,
+                wheel_compliance=soft, tyre_lateral=lateral,
+                tyre_crown=crown,
                 caster_proxy=surface == 'undulating', wall_surface=surface, wall_texture=texture)
             # Use the same actual scene options as the frozen launch. The generated
             # robot and its single force path are the only replacement here.
@@ -151,6 +160,10 @@ def generate_launch_description():
         DeclareLaunchArgument('resolved_assets_directory', default_value=''),
         DeclareLaunchArgument('wall_surface', default_value='flat',
                               choices=['flat', 'undulating']),
+        DeclareLaunchArgument('tyre_crown', default_value='auto',
+                              choices=['auto', 'false', 'true']),
+        DeclareLaunchArgument('tyre_lateral', default_value='auto',
+                              choices=['auto', 'false', 'true']),
         DeclareLaunchArgument('wheel_compliance', default_value='false',
                               choices=['false', 'true']),
         DeclareLaunchArgument('m2_load_trace', default_value=''),

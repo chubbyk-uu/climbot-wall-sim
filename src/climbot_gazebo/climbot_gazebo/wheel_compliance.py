@@ -154,3 +154,23 @@ def apply_lateral(model, urdf, cfg):
                 node(dynamics, 'spring_stiffness', cfg['stiffness_n_m'])
                 node(dynamics, 'damping', cfg['damping_n_s_m'])
         node(publisher, 'joint_name', spring_name)
+
+
+def apply_crown(model):
+    """
+    Replace each drive tyre's flat-edged contact cylinder by a same-radius sphere.
+
+    The prismatic tyre springs keep the wheel axle parallel to the chassis, so on
+    a few-degree local wall slope a 47 mm wide cylinder touches only one rim and
+    the contact jumps between rims. A crowned (spherical) contact moves smoothly
+    and keeps the rolling radius; the visual cylinder is unchanged.
+    """
+    for side in ['left', 'right']:
+        collision = model.find(
+            f'link[@name="{side}_wheel_link"]/collision[@name="{side}_collision"]')
+        geometry = collision.find('geometry')
+        radius = geometry.findtext('cylinder/radius')
+        if radius is None:
+            raise ValueError('tyre crown requires the cylindrical drive collision')
+        geometry.remove(geometry.find('cylinder'))
+        node(node(geometry, 'sphere'), 'radius', radius)

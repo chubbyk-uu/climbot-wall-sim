@@ -79,6 +79,9 @@ INSPECTION_OUTPUT_ROOT=${INSPECTION_OUTPUT_ROOT:-}
 WALL_TEXTURE=${WALL_TEXTURE:-}
 WALL_SURFACE=${WALL_SURFACE:-flat}
 WHEEL_COMPLIANCE=${WHEEL_COMPLIANCE:-false}
+TYRE_LATERAL=${TYRE_LATERAL:-auto}
+TYRE_CROWN=${TYRE_CROWN:-auto}
+G2_CONTROL_CONFIG=${G2_CONTROL_CONFIG:-}
 G2_CONFIG_FILE=${G2_CONFIG_FILE:-}
 M2_LOAD_TRACE=${M2_LOAD_TRACE:-}
 G2_RESOLVED_ASSETS=${G2_RESOLVED_ASSETS:-}
@@ -303,7 +306,8 @@ run_case() {
   echo "[$case_name] starting (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, GZ_PARTITION=$GZ_PARTITION)"
   start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo "$SIMULATION_LAUNCH" \
     adhesion_mode:="$ADHESION_MODE" \
-    wall_surface:="$WALL_SURFACE" wheel_compliance:="$WHEEL_COMPLIANCE" \
+    wall_surface:="$WALL_SURFACE" wheel_compliance:="$WHEEL_COMPLIANCE" tyre_lateral:="$TYRE_LATERAL" \
+    tyre_crown:="$TYRE_CROWN" \
     ${M2_LOAD_TRACE:+m2_load_trace:="$M2_LOAD_TRACE"} \
     ${G2_RESOLVED_ASSETS:+resolved_assets_directory:="$G2_RESOLVED_ASSETS"} \
     use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:="$G2_GPU_BACKEND" wall_grid_spacing:=0 \
@@ -363,6 +367,7 @@ run_case() {
     use_sim_time:=true inspection_output_root:="$archive" || return 1
   start_group "$case_dir/executor.log" ros2 launch climbot_control coverage_executor.launch.py \
     use_sim_time:=true inspection_default_enabled:=true \
+    ${G2_CONTROL_CONFIG:+control_config_file:="$G2_CONTROL_CONFIG"} \
     inspection_output_root:="$archive" || return 1
   if ! wait_for_service /coverage/start_configured climbot_interfaces/srv/StartCoverage; then
     echo "[$case_name] coverage manager did not become ready; see $case_dir/executor.log" >&2

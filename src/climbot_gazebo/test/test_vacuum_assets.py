@@ -269,6 +269,26 @@ def test_lateral_tyre_spring_extends_the_normal_spring_chain(tmp_path):
             model.find(f'.//link[@name="{side}_wheel_link"]').findtext('pose')
 
 
+def test_crowned_tyre_contact_keeps_rolling_radius_and_visual_cylinder(tmp_path):
+    """Only the drive collision becomes a same-radius sphere; visuals stay cylinders."""
+    with pytest.raises(ValueError, match='requires wheel compliance'):
+        build_assets(tmp_path / 'rigid', tyre_crown=True)
+    build_assets(tmp_path / 'flat', wheel_compliance=True, tyre_lateral=True)
+    resolved = build_assets(tmp_path / 'crown', wheel_compliance=True, tyre_lateral=True,
+                            tyre_crown=True)
+    assert resolved['tyre_contact'] == 'sphere'
+    flat = ET.parse(tmp_path / 'flat/model.sdf')
+    crown = ET.parse(tmp_path / 'crown/model.sdf')
+    for side in ['left', 'right']:
+        path = f'.//link[@name="{side}_wheel_link"]'
+        before = flat.find(path + f'/collision[@name="{side}_collision"]/geometry')
+        after = crown.find(path + f'/collision[@name="{side}_collision"]/geometry')
+        assert after.find('cylinder') is None
+        assert after.findtext('sphere/radius') == before.findtext('cylinder/radius')
+        assert [ET.tostring(v) for v in flat.findall(path + '/visual')] == \
+            [ET.tostring(v) for v in crown.findall(path + '/visual')]
+
+
 @pytest.mark.parametrize('representation,amplitude,radius', [
     ('mesh', 0, .0475), ('native_heightmap', 0, .05),
     ('native_heightmap', .002, .0475)])
