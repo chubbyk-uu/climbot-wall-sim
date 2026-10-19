@@ -56,7 +56,10 @@ SealLeak WallSurface::sealLeak(
         if (s >= 0 && s <= length) {require(count < cuts.size());cuts[count++] = s;}
       };
     int base = static_cast<int>(std::ceil(length / .02)) * refinement;
-    for (int i = 0; i <= base; ++i) {
+    // Multiplying then dividing the final index can round past length; add()
+    // would reject it and silently omit the last part of this seal edge.
+    add(0);add(length);
+    for (int i = 1; i < base; ++i) {
       add(length * i / base);
     }
     for (const auto & g : grooves_) {

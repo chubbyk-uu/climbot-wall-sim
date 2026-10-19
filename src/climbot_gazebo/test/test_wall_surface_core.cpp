@@ -81,6 +81,24 @@ TEST(SealChannels, TrapezoidApertureMatchesIndependentIntegralAndRefinement)
   EXPECT_DOUBLE_EQ(coarse.area_m2, coarse.channel_area_m2);
   EXPECT_GT(coarse.evaluations, 0u);
 }
+TEST(SealChannels, FinalEndpointCannotRoundOutsideAndOmitAnEdgeTail)
+{
+  auto text = source();text = text.substr(0, text.find("grooves:")) + "grooves: []\n";
+  climbot_gazebo::WallSurface s(text);
+  Corners c{{{.8434144045362073, .38079047857754444, .024},
+    {1.1190031995429564, .6796075089745737, .024},
+    {.8823001722544711, .8979088374992943, .024},
+    {.606711377247722, .5990918071022653, .024}}};
+  double perimeter = 0;
+  for (int i = 0; i < 4; ++i) {
+    perimeter += std::hypot(c[i][0] - c[(i + 1) % 4][0], c[i][1] - c[(i + 1) % 4][1]);
+  }
+  double expected = perimeter * (.024 - .022 - .0001 / 2);
+  for (int refinement : {1, 2, 4, 8}) {
+    EXPECT_NEAR(s.sealLeak(c, .02, .022, 0, .0001, {1.6, 1.6}, refinement).area_m2,
+      expected, 1e-14);
+  }
+}
 TEST(SealChannels, ObliqueCrossingAndDuplicateSourcesDoNotInflateFlowArea)
 {
   auto text = channelSource();climbot_gazebo::WallSurface s(text);
