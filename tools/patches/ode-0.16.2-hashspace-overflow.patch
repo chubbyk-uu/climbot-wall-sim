@@ -1,0 +1,30 @@
+--- a/ode/src/collision_space.cpp
++++ b/ode/src/collision_space.cpp
+@@ -508,9 +508,11 @@
+             const int yend = dbounds[3];
+             for (int yi = dbounds[2]; yi <= yend; yi++) {
+                 int zbegin = dbounds[4];
+-                unsigned long hi = (getVirtualAddressBase(aabb->level,xi,yi) + zbegin) % sz;
++                const unsigned long base = getVirtualAddressBase(aabb->level, xi, yi);
+                 const int zend = dbounds[5];
+-                for (int zi = zbegin; zi <= zend; (hi = hi + 1U != sz ? hi + 1U : 0UL), zi++) {
++                for (int zi = zbegin; zi <= zend; zi++) {
++                    // Recompute after unsigned wrap: advancing a reduced bucket loses it.
++                    const unsigned long hi = (base + zi) % sz;
+                     // get the hash index
+                     // add a new node to the hash table
+                     Node *node = new Node;
+@@ -542,9 +544,11 @@
+                 for (int yi = db[2]; yi <= yend; yi++) {
+                     int zbegin = db[4];
+                     // get the hash index
+-                    unsigned long hi = (getVirtualAddressBase(level, xi, yi) + zbegin) % sz;
++                    const unsigned long base = getVirtualAddressBase(level, xi, yi);
+                     const int zend = db[5];
+-                    for (int zi = zbegin; zi <= zend; (hi = hi + 1U != sz ? hi + 1U : 0UL), zi++) {
++                    for (int zi = zbegin; zi <= zend; zi++) {
++                        // Recompute after unsigned wrap: advancing a reduced bucket loses it.
++                        const unsigned long hi = (base + zi) % sz;
+                         // search all nodes at this index
+                         for (Node* node = table[hi]; node; node=node->next) {
+                             // node points to an AABB that may intersect aabb

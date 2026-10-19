@@ -1,0 +1,506 @@
+{
+  "schema_version": 1,
+  "scope": "M2 T0 hash-space root cause and isolated smooth/joint fixtures; not full T0/M2 acceptance",
+  "git_commit": "0db120af6223b478ab3921b6efd421f0fd598a31",
+  "source_modified": true,
+  "defaults_changed": false,
+  "root_cause": {
+    "library": "ODE 0.16.2",
+    "phase": "hash-space broad phase",
+    "mechanism": "unsigned virtual-address wrap lost by incrementing a reduced hash bucket",
+    "64bit_two_geometry_example": {
+      "table_size": 31,
+      "inserted_bucket_for_z_zero_before_fix": 16,
+      "queried_bucket_for_z_zero": 0
+    }
+  },
+  "source_url": "https://codeload.github.com/odedevs/ode/tar.gz/refs/tags/0.16.2",
+  "source_archive_sha256": "28b547ac9c3f2c8ba4c23a9cbe579667447616876c61b507a184f8607143050e",
+  "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747",
+  "libraries": {
+    "upstream": "0040f98469a2f3c35919f0fbc7649d79208b88d3afcfed768fe169d64eb0aea8",
+    "hashfix": "5944647b24fee8b8149aced9345deef32074544a8264d81dcad2387ece535654",
+    "fresh_recipe": "a0c602053da4b53fc6d543ba354cd0aac14fb1897301659829cecf5dc5509c2f"
+  },
+  "native_primitive_regression": {
+    "upstream": {
+      "cases": [
+        {
+          "offset_case": 0,
+          "space": "hash",
+          "candidates": 0,
+          "contacts": 0
+        },
+        {
+          "offset_case": 0,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 1,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 1,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 2,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 2,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 3,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 3,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 4,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 4,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        }
+      ],
+      "passed": false
+    },
+    "hashfix": {
+      "cases": [
+        {
+          "offset_case": 0,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 0,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 1,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 1,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 2,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 2,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 3,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 3,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 4,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 4,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        }
+      ],
+      "passed": true
+    },
+    "fresh_recipe": {
+      "cases": [
+        {
+          "offset_case": 0,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 0,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 1,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 1,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 2,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 2,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 3,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 3,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 4,
+          "space": "hash",
+          "candidates": 1,
+          "contacts": 1
+        },
+        {
+          "offset_case": 4,
+          "space": "simple",
+          "candidates": 1,
+          "contacts": 1
+        }
+      ],
+      "passed": true
+    }
+  },
+  "native_cases": {
+    "flat_vertical_box_control": {
+      "passed": true,
+      "height_error_max_m": 4.163336342344337e-17,
+      "normal_error_max_deg": 0.0,
+      "penetration_max_m": 8.255349597022753e-07,
+      "assertions": {
+        "probe_00_continuous_contact": true,
+        "probe_01_continuous_contact": true,
+        "probe_02_continuous_contact": true,
+        "probe_03_continuous_contact": true,
+        "probe_04_continuous_contact": true,
+        "probe_05_continuous_contact": true,
+        "probe_06_continuous_contact": true,
+        "probe_07_continuous_contact": true,
+        "probe_08_continuous_contact": true,
+        "probe_09_continuous_contact": true,
+        "probe_10_continuous_contact": true,
+        "probe_11_continuous_contact": true,
+        "probe_12_continuous_contact": true,
+        "probe_13_continuous_contact": true,
+        "probe_14_continuous_contact": true,
+        "probe_15_continuous_contact": true,
+        "probe_16_outside": true,
+        "probe_17_outside": true,
+        "probe_18_outside": true,
+        "probe_19_outside": true,
+        "has_independent_contacts": true,
+        "max_height_error": true,
+        "normal_error": true,
+        "penetration": true
+      },
+      "world_sha256": "47ed6ea5af8a3ecae9d7cab95596cd498aedadbd7668680cf3b1bc828fc3140a",
+      "scope": "smooth_roughness_only",
+      "step_s": 0.001,
+      "probes": 20,
+      "gauge_mass_kg": 0.1,
+      "gauge_radius_m": 0.0025,
+      "loaded_libraries": [
+        "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2"
+      ]
+    },
+    "rough_horizontal_control": {
+      "passed": true,
+      "height_error_max_m": 1.4388088216120442e-05,
+      "normal_error_max_deg": 0.021185695121188883,
+      "penetration_max_m": 2.0870185961090366e-06,
+      "assertions": {
+        "probe_00_continuous_contact": true,
+        "probe_01_continuous_contact": true,
+        "probe_02_continuous_contact": true,
+        "probe_03_continuous_contact": true,
+        "probe_04_continuous_contact": true,
+        "probe_05_continuous_contact": true,
+        "probe_06_continuous_contact": true,
+        "probe_07_continuous_contact": true,
+        "probe_08_continuous_contact": true,
+        "probe_09_continuous_contact": true,
+        "probe_10_continuous_contact": true,
+        "probe_11_continuous_contact": true,
+        "probe_12_continuous_contact": true,
+        "probe_13_continuous_contact": true,
+        "probe_14_continuous_contact": true,
+        "probe_15_continuous_contact": true,
+        "probe_16_outside": true,
+        "probe_17_outside": true,
+        "probe_18_outside": true,
+        "probe_19_outside": true,
+        "has_independent_contacts": true,
+        "max_height_error": true,
+        "normal_error": true,
+        "penetration": true
+      },
+      "world_sha256": "67fed44645016fe96087d7cf955a2fd580a873b81d4180ad7ebdf365bb629748",
+      "scope": "smooth_roughness_only",
+      "step_s": 0.001,
+      "probes": 20,
+      "gauge_mass_kg": 0.1,
+      "gauge_radius_m": 0.0025,
+      "loaded_libraries": [
+        "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2"
+      ]
+    },
+    "rough_vertical": {
+      "passed": true,
+      "height_error_max_m": 1.4388088216162184e-05,
+      "normal_error_max_deg": 0.021185695086782204,
+      "penetration_max_m": 2.0870185961047e-06,
+      "assertions": {
+        "probe_00_continuous_contact": true,
+        "probe_01_continuous_contact": true,
+        "probe_02_continuous_contact": true,
+        "probe_03_continuous_contact": true,
+        "probe_04_continuous_contact": true,
+        "probe_05_continuous_contact": true,
+        "probe_06_continuous_contact": true,
+        "probe_07_continuous_contact": true,
+        "probe_08_continuous_contact": true,
+        "probe_09_continuous_contact": true,
+        "probe_10_continuous_contact": true,
+        "probe_11_continuous_contact": true,
+        "probe_12_continuous_contact": true,
+        "probe_13_continuous_contact": true,
+        "probe_14_continuous_contact": true,
+        "probe_15_continuous_contact": true,
+        "probe_16_outside": true,
+        "probe_17_outside": true,
+        "probe_18_outside": true,
+        "probe_19_outside": true,
+        "has_independent_contacts": true,
+        "max_height_error": true,
+        "normal_error": true,
+        "penetration": true
+      },
+      "world_sha256": "a8e095b992fa91270904111ea0cb7e1326917161266a6d1affb100c515d5c24f",
+      "scope": "smooth_roughness_only",
+      "step_s": 0.001,
+      "probes": 20,
+      "gauge_mass_kg": 0.1,
+      "gauge_radius_m": 0.0025,
+      "loaded_libraries": [
+        "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2"
+      ]
+    },
+    "rough_vertical_half_step": {
+      "passed": true,
+      "height_error_max_m": 1.518568881875705e-05,
+      "normal_error_max_deg": 0.021185695086782204,
+      "penetration_max_m": 1.3159281845231616e-07,
+      "assertions": {
+        "probe_00_continuous_contact": true,
+        "probe_01_continuous_contact": true,
+        "probe_02_continuous_contact": true,
+        "probe_03_continuous_contact": true,
+        "probe_04_continuous_contact": true,
+        "probe_05_continuous_contact": true,
+        "probe_06_continuous_contact": true,
+        "probe_07_continuous_contact": true,
+        "probe_08_continuous_contact": true,
+        "probe_09_continuous_contact": true,
+        "probe_10_continuous_contact": true,
+        "probe_11_continuous_contact": true,
+        "probe_12_continuous_contact": true,
+        "probe_13_continuous_contact": true,
+        "probe_14_continuous_contact": true,
+        "probe_15_continuous_contact": true,
+        "probe_16_outside": true,
+        "probe_17_outside": true,
+        "probe_18_outside": true,
+        "probe_19_outside": true,
+        "has_independent_contacts": true,
+        "max_height_error": true,
+        "normal_error": true,
+        "penetration": true
+      },
+      "world_sha256": "09d1c376dae243f41ee354fdba7c7dcdc504cd7d5a0736aae9c7469f11499e2b",
+      "scope": "smooth_roughness_only",
+      "step_s": 0.0005,
+      "probes": 20,
+      "gauge_mass_kg": 0.1,
+      "gauge_radius_m": 0.0025,
+      "loaded_libraries": [
+        "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2"
+      ]
+    },
+    "vertical_joint_mesh": {
+      "passed": true,
+      "height_error_max_m": 4.3249642902665544e-07,
+      "normal_error_max_deg": 0.08422349209149523,
+      "penetration_max_m": 7.369491313410181e-06,
+      "assertions": {
+        "probe_00_continuous_contact": true,
+        "probe_01_continuous_contact": true,
+        "probe_02_continuous_contact": true,
+        "probe_03_continuous_contact": true,
+        "probe_04_continuous_contact": true,
+        "probe_05_continuous_contact": true,
+        "probe_06_continuous_contact": true,
+        "probe_07_continuous_contact": true,
+        "probe_08_continuous_contact": true,
+        "probe_09_continuous_contact": true,
+        "probe_10_continuous_contact": true,
+        "probe_11_continuous_contact": true,
+        "probe_12_continuous_contact": true,
+        "probe_13_continuous_contact": true,
+        "probe_14_continuous_contact": true,
+        "probe_15_outside": true,
+        "probe_16_outside": true,
+        "probe_17_outside": true,
+        "probe_18_outside": true,
+        "has_independent_contacts": true,
+        "max_height_error": true,
+        "normal_error": true,
+        "penetration": true
+      },
+      "world_sha256": "71d7784bfacd4851b2e57871ff75908296bcba6e283a66fe43c37e1d84ec237b",
+      "scope": "one_horizontal_joint",
+      "step_s": 0.001,
+      "probes": 19,
+      "gauge_mass_kg": 0.0001,
+      "gauge_radius_m": 0.0001,
+      "loaded_libraries": [
+        "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2"
+      ],
+      "mesh": {
+        "vertices": 7371,
+        "triangles": 14400,
+        "height_range_m": [
+          -0.005710922355049268,
+          0.001454942006461307
+        ]
+      }
+    }
+  },
+  "matched_upstream_horizontal": {
+    "passed": false,
+    "assertions": {
+      "probe_00_continuous_contact": true,
+      "probe_01_continuous_contact": true,
+      "probe_02_continuous_contact": true,
+      "probe_03_continuous_contact": true,
+      "probe_04_continuous_contact": true,
+      "probe_05_continuous_contact": true,
+      "probe_06_continuous_contact": true,
+      "probe_07_continuous_contact": true,
+      "probe_08_continuous_contact": true,
+      "probe_09_continuous_contact": true,
+      "probe_10_continuous_contact": true,
+      "probe_11_continuous_contact": true,
+      "probe_12_continuous_contact": true,
+      "probe_13_continuous_contact": true,
+      "probe_14_continuous_contact": true,
+      "probe_15_continuous_contact": false,
+      "probe_16_outside": true,
+      "probe_17_outside": true,
+      "probe_18_outside": true,
+      "probe_19_outside": true,
+      "has_independent_contacts": true,
+      "max_height_error": false,
+      "normal_error": true,
+      "penetration": false
+    },
+    "height_error_max_m": 0.0007374505289360787,
+    "normal_error_max_deg": 0.021185695121188883,
+    "penetration_max_m": 0.0007397464756541095,
+    "center_minus_radius_error_max_m": 0.0007314427913840448,
+    "native_run": {
+      "wall_seconds": 2.100281813,
+      "iterations": 350,
+      "probes": 20,
+      "ode_libraries": [
+        "/home/jerry/opt/climbot-ode-0.16.2-upstream-ab/install/lib/libode.so.8.0.2"
+      ]
+    }
+  },
+  "native_source_sha256": {
+    "tools/probe_m2_wall_surface.py": "ffba850012af328ecf6cc4823f71973657c9f3763e58b7103d86b5478851d2a9",
+    "src/climbot_gazebo/src/wall_surface_probe.cpp": "d68187c2e42eafb9388acdf81bf26906bf69646058b294789b7fa91868f73ccd",
+    "src/climbot_gazebo/climbot_gazebo/wall_surface.py": "100ba6d802d6002c080fbb8f04be5912e0ce97e0c097e5c877070f5afc405436"
+  },
+  "native_binary_sha256": "df371741d49416b7a94ea538288ae449a9bd0d51db62170599ff2d1a03aefaa5",
+  "tested_source_bundle_sha256": "53186e7663fb4aa533717c3e38ba5648d24ff98201fc33159e306b8423e7c08c",
+  "source_bundle": "local data root: m2_t0_20261019/contact_resolution_final/tested_source.tar.gz",
+  "native_data_root": "local data root: m2_t0_20261019/contact_resolution_final",
+  "fresh_build_recipe_completed": true,
+  "full_regression": {
+    "command": "colcon test --executor parallel --parallel-workers 8",
+    "tests": 1816,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 84,
+    "log": "/tmp/climbot_m2_contact_resolution_final_contract_20261019.log"
+  },
+  "T0_complete": false,
+  "M2_complete": false,
+  "GUI_RTF_verified": false,
+  "remaining": [
+    "oblique and intersecting joints",
+    "real branching cracks",
+    "dense boundary and independent-seed checks",
+    "visual alignment and skirt/leak queries",
+    "whole-wall loading and GUI performance",
+    "T1/T2/T3 and final default switch"
+  ]
+}

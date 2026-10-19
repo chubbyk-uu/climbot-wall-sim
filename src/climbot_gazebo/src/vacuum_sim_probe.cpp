@@ -328,6 +328,7 @@ int main(int argc, char ** argv)
     // Record actual loaded objects, not merely requested environment values.
     // Paths stay out of the portable evidence; the runner freezes their hashes.
     std::ifstream maps("/proc/self/maps");std::string mapping;
+    std::set<std::string> mappedPhysics;
     std::set<std::string> mappedMesa;unsigned privateObjects = 0;bool systemGallium = false;
     auto dri = std::getenv("LIBGL_DRIVERS_PATH");
     auto privateDirectory = dri ? std::filesystem::path(dri).parent_path().string() : "";
@@ -335,6 +336,9 @@ int main(int argc, char ** argv)
     while (std::getline(maps, mapping)) {
       auto start = mapping.find('/');if (start == std::string::npos) {continue;}
       auto path = mapping.substr(start);auto name = std::filesystem::path(path).filename().string();
+      if (name.rfind("libode.so", 0) == 0 || name.rfind("libccd.so", 0) == 0) {
+        mappedPhysics.insert(path);
+      }
       bool mesa = name.find("libgallium") == 0 || name.find("libGLX_mesa") == 0 ||
         name.find("libEGL_mesa") == 0 || name.find("libgbm.so") == 0;
       if (!mesa) {continue;}
@@ -350,6 +354,12 @@ int main(int argc, char ** argv)
     for (const auto & name : mappedMesa) {
       if (!firstLibrary) {libraryRecord << ',';} firstLibrary = false;
       libraryRecord << '"' << name << '"';
+    }
+    libraryRecord << "],\"physics_libraries\":[";
+    bool firstPhysics = true;
+    for (const auto & path : mappedPhysics) {
+      if (!firstPhysics) {libraryRecord << ',';} firstPhysics = false;
+      libraryRecord << '"' << path << '"';
     }
     libraryRecord << "],\"private_mapping_complete\":" << (privateObjects == 4 ? "true" : "false")
                   << ",\"system_gallium_mapped\":" << (systemGallium ? "true" : "false") << "}\n";
