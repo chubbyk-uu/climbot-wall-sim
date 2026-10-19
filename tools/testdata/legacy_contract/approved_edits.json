@@ -1,0 +1,118 @@
+{
+  "src/climbot_gazebo/worlds/climbot_wall.sdf.xacro": {
+    "baseline_sha256": "077d78dc55cdc51f060e6caf10de3612a4d1e6e9e21073988a6a2b98ea217b55",
+    "approved_sha256": "334738b78cf188d0c423f11f47c1a3fd33730f5ceb809cd5ce357aa9e64592c1",
+    "edits": [
+      {
+        "old": "        <ambient_light>$(arg ambient_r) $(arg ambient_g) $(arg ambient_b)</ambient_light>\n",
+        "new": "        <!-- Editor lighting only: keep night-time sensor lighting in <scene>. -->\n        <ambient_light>0.30 0.30 0.30</ambient_light>\n",
+        "line_start": 358,
+        "line_end": 359
+      },
+      {
+        "old": "",
+        "new": "      <plugin filename=\"ClimbotWorldStats\" name=\"Realtime factor\">\n        <gz-gui>\n          <title>Realtime factor</title>\n          <property type=\"string\" key=\"cardBackground\">transparent</property>\n          <property type=\"bool\" key=\"showTitleBar\">false</property>\n          <property type=\"bool\" key=\"resizable\">false</property>\n          <property type=\"double\" key=\"height\">32</property>\n          <property type=\"double\" key=\"width\">132</property>\n          <property type=\"double\" key=\"z\">1</property>\n          <property type=\"string\" key=\"state\">floating</property>\n          <anchors target=\"Climbot Wall Simulation\">\n            <line own=\"right\" target=\"right\"/>\n            <line own=\"bottom\" target=\"bottom\"/>\n          </anchors>\n        </gz-gui>\n      </plugin>\n",
+        "line_start": 431,
+        "line_end": 431
+      }
+    ],
+    "baseline_fixture": "climbot_wall.sdf.xacro.txt"
+  },
+  "src/climbot_gazebo/launch/climbot_wall.launch.py": {
+    "baseline_sha256": "a85aa961de7354404290fb6bf1069707eeb176074cbea6d4b9f71444e96ec3c0",
+    "approved_sha256": "db5f1fda71ef417b5320a1dbd737a41d3a0d1bb24002e29bf9b756a9dcf91099",
+    "edits": [
+      {
+        "old": "",
+        "new": "from climbot_common.dds import local_dds_environment\n",
+        "line_start": 24,
+        "line_end": 24
+      },
+      {
+        "old": "",
+        "new": "            name='GZ_GUI_PLUGIN_PATH',\n            value=os.pathsep.join(filter(None, [\n                library_path, os.environ.get('GZ_GUI_PLUGIN_PATH')])),\n        ),\n        SetEnvironmentVariable(\n",
+        "line_start": 462,
+        "line_end": 462
+      },
+      {
+        "old": "    gui_command = [gazebo_supervisor, 'gui']\n",
+        "new": "    gui_command = [gazebo_supervisor, 'gui', '--wait-for-render-ready']\n",
+        "line_start": 505,
+        "line_end": 506
+      },
+      {
+        "old": "",
+        "new": "    common_share = get_package_share_directory('climbot_common')\n    control_environment = local_dds_environment(\n        os.path.join(common_share, 'config', 'fastdds_control_local.xml'),\n        context.environment)\n",
+        "line_start": 529,
+        "line_end": 529
+      },
+      {
+        "old": "        common_share = get_package_share_directory('climbot_common')\n",
+        "new": "",
+        "line_start": 531,
+        "line_end": 532
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 549,
+        "line_end": 549
+      },
+      {
+        "old": "",
+        "new": "            additional_env=control_environment,\n",
+        "line_start": 595,
+        "line_end": 595
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 613,
+        "line_end": 613
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 658,
+        "line_end": 658
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 700,
+        "line_end": 700
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 711,
+        "line_end": 711
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 728,
+        "line_end": 728
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 742,
+        "line_end": 742
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 755,
+        "line_end": 755
+      },
+      {
+        "old": "",
+        "new": "        additional_env=control_environment,\n",
+        "line_start": 770,
+        "line_end": 770
+      }
+    ],
+    "baseline_fixture": "climbot_wall.launch.py.txt"
+  }
+}

@@ -23,6 +23,10 @@
 
 | 范围 | 证据 | 地位 |
 | --- | --- | --- |
+| 新墙面独立审核与默认切换 | [报告](wall_texture_review_2026-10-19/REPORT.md)、[摘要](wall_texture_review_2026-10-19/summary.json) | 640 DDS／两套各 3624 次共区通过；采集默认新版，模型预览纯色；旧资产保留供历史复查 |
+| 新墙面代表性及全墙采集 | [报告](wall_texture_capture_2026-10-19/REPORT.md)、[摘要](wall_texture_capture_2026-10-19/summary.json) | **专项完成并收尾**：70＋680 张、全墙 RTF 0.988472、CUDA 无回退，验证与清理完成；边缘 feature 0.484% 未覆盖另列后续 |
+| 墙面局部减复用当前配置 | [报告](wall_texture_local_2026-10-18/REPORT.md)、[摘要](wall_texture_local_2026-10-18/summary.json) | 单源三种子各 40/40 正重叠通过；最终覆盖物 gutter 修复通过（3624 次共区零差异），完整 -j8 1779 项零失败；10-18 离线修复完成；10-19 采集进度见上行 |
+| 墙面随机变换首版试验 | [报告](wall_texture_randomization_2026-10-18/REPORT.md)、[精简摘要](wall_texture_randomization_2026-10-18/summary.json) | **未通过专项验收**；局部明显改善，两个独立种子仍有局部错配，远距离压力测试未达标；不替换旧资产或引用旧 P2/S6/S7 通过结论 |
 | S6 追加数据精简 | [清理范围与记录](suction_retention_2026-10-18/REPORT.md) | 最终旧／新各 1340 张原图保留；R2 照片、可重建 processed PNG 与 170 个 tile 按用户授权清理；21 个已复核样本及元数据保留 |
 | 三风机吸附 S7 默认收口 | [S7 报告](suction_s7_2026-10-18/REPORT.md)、[运行门禁](suction_s7_2026-10-18/RUNTIME_GATE.json) | 新模型为默认，旧恒力路径删除；双 GUI reset、70/70 张中等采集及 CUDA 拼接通过，RTF 0.988452，已合并 main |
 | 三风机吸附 S6 最终验收 | [最终报告](suction_s6_2026-10-18/REPORT.md)、[总门禁](suction_s6_2026-10-18/FINAL_GATE.json) | 新质量 91 组、九组双 GUI 控制、四项传感、2680 张原精度照片与 CUDA 链通过；最终 1727 项零失败，总门禁 40 项通过；新结构拍照 RTF 0.986212／0.986974 |

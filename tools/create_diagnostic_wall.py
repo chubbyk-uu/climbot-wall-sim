@@ -27,8 +27,8 @@ cannot create a block seam at a diagnostic feature.
 """
 
 import argparse
-import copy
 from concurrent.futures import ProcessPoolExecutor
+import copy
 import hashlib
 import json
 import math
@@ -38,12 +38,12 @@ import sys
 import tempfile
 import time
 
-import cv2
-import numpy as np
-from PIL import Image, ImageDraw
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from bake_wall_texture import publish_new_directory  # noqa: E402
 from bc1 import write_dds_bc1  # noqa: E402
+import cv2  # noqa: E402
+import numpy as np  # noqa: E402
+from PIL import Image, ImageDraw  # noqa: E402
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -93,7 +93,7 @@ def _repair_polygon(center, width, height, angle_rad, jitter):
     return points
 
 
-def feature_layout(origin, region, seed):
+def feature_layout(origin, region, seed, joint_profile='legacy'):
     """Build the complete deterministic P2.7a feature specification.
 
     The positions are intentionally expressed relative to the requested wall
@@ -104,6 +104,8 @@ def feature_layout(origin, region, seed):
     """
     if len(origin) != 2 or len(region) != 2 or min(region) <= 0.0:
         raise ValueError('origin and positive two-dimensional region are required')
+    if joint_profile not in ('legacy', 'filled'):
+        raise ValueError('joint profile must be legacy or filled')
     rng = np.random.default_rng(seed)
     features = []
 
@@ -115,7 +117,7 @@ def feature_layout(origin, region, seed):
         ((0.0, 0.53), (1.0, 0.53)),
     )
     for index, path in enumerate(seam_paths, start=1):
-        seam_width = 0.011
+        seam_width = 0.0125 if joint_profile == 'filled' else 0.011
         points = [_point(origin, region, point) for point in path]
         # Keep the full painted width inside the declared wall.  This is only
         # 5.5 mm short of an edge, yet retains a valid metric feature extent.
@@ -131,6 +133,18 @@ def feature_layout(origin, region, seed):
             'width_m': seam_width,
             'rgba': [64, 59, 53, 128],
         })
+        if joint_profile == 'filled':
+            # Visual-only analogue of Subway_scan_bot_sim's grey mortar,
+            # softened shoulders and smooth metric edge wiggle. No groove mesh.
+            joint_rng = np.random.default_rng(np.random.SeedSequence([seed, 701, index]))
+            features[-1]['joint_profile'] = {
+                'name': 'grey-filled-visual-v1', 'filler_width_m': .008,
+                'shoulder_width_m': .0015, 'edge_transition_m': .0005,
+                'wiggle_rms_m': .00015, 'wavelengths_m': [.06, .11, .23],
+                'phases_rad': joint_rng.uniform(0, 2 * math.pi, 3).tolist(),
+                'filler_rgb': [116, 113, 107], 'edge_rgb': [77, 74, 69],
+                'opacity': .78, 'physical_depth_m': 0.0,
+            }
 
     # Eight distinct generated alpha decals replace the former procedural
     # polylines.  Their source geometry is already hairline-thin, branched and
@@ -306,6 +320,9 @@ def _draw_feature(overlay, feature, origin, region, scale, sample_x, sample_y,
         return (round(x - sample_x), round(y - sample_y))
 
     kind = feature['kind']
+    if kind == 'construction_seam' and 'joint_profile' in feature:
+        _draw_filled_joint(overlay, feature, origin, region, scale, sample_x, sample_y)
+        return
     if kind in ('construction_seam', 'crack'):
         def draw_path(points, widths):
             if widths:
@@ -322,10 +339,23 @@ def _draw_feature(overlay, feature, origin, region, scale, sample_x, sample_y,
                                   feature.get('branch_widths_m', [])):
             draw_path(branch, widths)
     elif kind == 'repair_patch':
-        polygon = [local(point) for point in feature['polygon_m']]
-        draw.polygon(polygon, fill=tuple(feature['rgba']))
-        draw.line(polygon + [polygon[0]], fill=tuple(feature['edge_rgba']),
-                  width=max(1, round(0.003 / scale)), joint='curve')
+        # PIL clips slanted polygon edges differently at different tile bounds.
+        # Rasterize the complete patch once in its own global pixel bounds,
+        # then crop through compositing so shared gutters receive equal pixels.
+        polygon = [tuple(round(v) for v in _world_to_pixel(point, origin, region, scale))
+                   for point in feature['polygon_m']]
+        width = max(1, round(0.003 / scale))
+        left = min(p[0] for p in polygon) - width
+        top = min(p[1] for p in polygon) - width
+        right = max(p[0] for p in polygon) + width + 1
+        bottom = max(p[1] for p in polygon) + width + 1
+        layer = Image.new('RGBA', (right - left, bottom - top), (0, 0, 0, 0))
+        patch_draw = ImageDraw.Draw(layer, 'RGBA')
+        polygon = [(x - left, y - top) for x, y in polygon]
+        patch_draw.polygon(polygon, fill=tuple(feature['rgba']))
+        patch_draw.line(polygon + [polygon[0]], fill=tuple(feature['edge_rgba']),
+                        width=width, joint='curve')
+        overlay.alpha_composite(layer, dest=(left - sample_x, top - sample_y))
     elif kind == 'paint_mark':
         cx, cy = local(feature['center_m'])
         radius = max(1, round(feature['radius_m'] / scale))
@@ -347,6 +377,49 @@ def _draw_feature(overlay, feature, origin, region, scale, sample_x, sample_y,
         overlay.alpha_composite(layer)
     else:
         raise ValueError('unsupported diagnostic feature kind %s' % kind)
+
+
+def _draw_filled_joint(overlay, feature, origin, region, scale, sample_x, sample_y):
+    """Sample a fixed metric mortar profile identically in all DDS gutters."""
+    profile = feature['joint_profile']
+    start, end = np.asarray(feature['points_m'], np.float64)
+    direction = end - start
+    length = float(np.linalg.norm(direction))
+    direction /= length
+    # Evaluate a local bounding box; all functions use global wall metres.
+    bounds = _feature_bounds(feature)
+    px0, py1 = _world_to_pixel((bounds[0], bounds[1]), origin, region, scale)
+    px1, py0 = _world_to_pixel((bounds[2], bounds[3]), origin, region, scale)
+    left, right = max(0, math.floor(px0 - sample_x)), min(overlay.width,
+                                                          math.ceil(px1 - sample_x) + 1)
+    top, bottom = max(0, math.floor(py0 - sample_y)), min(overlay.height,
+                                                          math.ceil(py1 - sample_y) + 1)
+    if left >= right or top >= bottom:
+        return
+    x = origin[0] + (sample_x + np.arange(left, right)) * scale
+    y = origin[1] + region[1] - (sample_y + np.arange(top, bottom)) * scale
+    dx, dy = x[None, :] - start[0], y[:, None] - start[1]
+    along = dx * direction[0] + dy * direction[1]
+    across = -dx * direction[1] + dy * direction[0]
+    clipped = np.clip(along, 0, length)
+    wiggle = np.zeros(np.broadcast_shapes(along.shape, across.shape), np.float64)
+    amplitude = profile['wiggle_rms_m'] * math.sqrt(2 / len(profile['phases_rad']))
+    for wavelength, phase in zip(profile['wavelengths_m'], profile['phases_rad']):
+        wiggle += amplitude * np.sin(2 * math.pi * clipped / wavelength + phase)
+    wiggle *= np.sin(math.pi * clipped / length)
+    distance = np.abs(across - wiggle)
+    half = profile['filler_width_m'] / 2
+    shoulder = profile['shoulder_width_m']
+    transition = profile['edge_transition_m']
+    edge = np.exp(-.5 * ((distance - half) / transition) ** 2)
+    colour = np.asarray(profile['filler_rgb'])[None, None, :] * (1 - edge[:, :, None])
+    colour += np.asarray(profile['edge_rgb'])[None, None, :] * edge[:, :, None]
+    alpha = np.clip((half + shoulder - distance) / shoulder, 0, 1) * profile['opacity']
+    alpha *= (along >= 0) & (along <= length)
+    rgba = np.empty(distance.shape + (4,), np.uint8)
+    rgba[:, :, :3] = np.clip(colour, 0, 255).astype(np.uint8)
+    rgba[:, :, 3] = np.round(alpha * 255).astype(np.uint8)
+    overlay.alpha_composite(Image.fromarray(rgba), dest=(left, top))
 
 
 def render_sample(image, features, origin, region, scale, sample_x, sample_y,
@@ -396,11 +469,50 @@ def _encode_modified_block(task):
             atlas = atlas_file.convert('RGBA')
         _ATLAS_CACHE[decal_atlas_path] = atlas
     with Image.open(source) as decoded:
+        original = np.asarray(decoded.convert('RGB'), dtype=np.uint8)
         sample = render_sample(decoded, features, origin, region, scale,
                                int(block['sample_x_px']),
                                int(block['sample_y_px']), atlas)
-    write_dds_bc1(destination, np.asarray(sample, dtype=np.uint8))
+    painted = np.asarray(sample, dtype=np.uint8)
+    write_dds_bc1(destination, painted)
+    _preserve_unpainted_bc1(source, destination, original, painted)
     return block['file'], sha256(destination)
+
+
+def _preserve_unpainted_bc1(source, destination, original, painted):
+    """Keep original BC1 bytes wherever the overlay changed no input texels.
+
+    Decoding and encoding BC1 again is lossy. A modified tile must not change
+    its unpainted gutter relative to a neighbouring, linked base tile. Apply
+    the same protection at every mip, propagating the actual paint footprint
+    through the encoder's box downsampling.
+    """
+    with open(source, 'rb') as handle:
+        base = handle.read()
+    with open(destination, 'rb') as handle:
+        output = bytearray(handle.read())
+    changed = np.any(original != painted, axis=2)
+    offset = 128
+    while True:
+        height, width = changed.shape
+        rows, columns = (height + 3) // 4, (width + 3) // 4
+        padded = np.pad(changed, ((0, rows * 4 - height),
+                                  (0, columns * 4 - width)), mode='edge')
+        affected = padded.reshape(rows, 4, columns, 4).any(axis=(1, 3))
+        size = rows * columns * 8
+        old = np.frombuffer(base[offset:offset + size], np.uint8).reshape(rows, columns, 8)
+        new = np.frombuffer(output, np.uint8, count=size, offset=offset).reshape(rows, columns, 8)
+        new[~affected] = old[~affected]
+        offset += size
+        if offset == len(output):
+            break
+        if height > 1:
+            changed = changed[:height // 2 * 2].reshape(height // 2, 2, width).any(axis=1)
+        if width > 1:
+            changed = changed[:, :width // 2 *
+                              2].reshape(changed.shape[0], width // 2, 2).any(axis=2)
+    with open(destination, 'wb') as handle:
+        handle.write(output)
 
 
 def _validate_base_manifest(path):
@@ -423,6 +535,8 @@ def _validate_base_manifest(path):
                 raise ValueError('base block lacks %s; rebake with gutters first' % key)
         if not os.path.isfile(os.path.join(directory, block['file'])):
             raise FileNotFoundError('base DDS block is missing: %s' % block['file'])
+        if 'sha256' in block and sha256(os.path.join(directory, block['file'])) != block['sha256']:
+            raise ValueError('base DDS checksum mismatch: %s' % block['file'])
     return manifest, directory
 
 
@@ -444,7 +558,7 @@ def write_preview(manifest, directory, path, width_px=1600):
                   round((block['x_px'] + block['width_px']) * width_px / wall_width),
                   round((block['y_px'] + block['height_px']) * height_px / wall_height))
         preview.paste(nominal.resize((target[2] - target[0], target[3] - target[1]),
-                                    Image.Resampling.LANCZOS), target[:2])
+                                     Image.Resampling.LANCZOS), target[:2])
     preview.save(path, optimize=True)
 
 
@@ -460,6 +574,8 @@ def main():
                         help='transparent crack and graffiti atlas')
     parser.add_argument('--jobs', type=int, default=4,
                         help='parallel DDS encoders for affected blocks')
+    parser.add_argument('--joint-profile', choices=('legacy', 'filled'), default='legacy',
+                        help='optional visual mortar/shoulder profile; collision remains flat')
     parser.add_argument('--preview', default='',
                         help='optional PNG path for a whole-wall preview')
     parser.add_argument('--preview-width-px', type=int, default=1600)
@@ -479,12 +595,20 @@ def main():
     scale = float(manifest['scale_m_per_px'])
     origin = [float(value) for value in manifest['region_origin_m']]
     region = [float(value) for value in manifest['region_m']]
-    features = feature_layout(origin, region, arguments.seed)
+    features = feature_layout(origin, region, arguments.seed, arguments.joint_profile)
     output_dir = os.path.abspath(arguments.output_dir)
     parent = os.path.dirname(output_dir)
     os.makedirs(parent, exist_ok=True)
     temporary = tempfile.mkdtemp(prefix='.diagnostic-wall-', dir=parent)
     try:
+        # A diagnostic derivative must remain independently traceable after
+        # moving it away from its base wall directory.
+        for trace in manifest.get('quilt', {}).get('trace_files', []):
+            name = trace['file']
+            if (os.path.basename(name) != name or
+                    sha256(os.path.join(base_dir, name)) != trace['sha256']):
+                raise ValueError('base quilt trace identity mismatch')
+            os.link(os.path.join(base_dir, name), os.path.join(temporary, name))
         blocks = manifest['maps']['albedo']['blocks']
         changed = [block for block in blocks
                    if _block_has_feature(block, features, origin, region, scale)]
@@ -521,10 +645,13 @@ def main():
         output['recorded_utc'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
         output['diagnostic_wall'] = {
             'profile': PROFILE_NAME,
-            'profile_version': PROFILE_VERSION,
+            'profile_version': 7 if arguments.joint_profile == 'filled' else PROFILE_VERSION,
+            'joint_profile': arguments.joint_profile,
             'seed': arguments.seed,
             'base_manifest': os.path.relpath(base_path, parent),
             'base_manifest_sha256': sha256(base_path),
+            'producer_sha256': sha256(__file__),
+            'unpainted_bc1_policy': 'preserve original blocks at every mip',
             'decal_atlas': os.path.relpath(decal_atlas_path, parent),
             'decal_atlas_sha256': sha256(decal_atlas_path),
             'crack_rendering': 'source hairline alpha recoloured charcoal',
@@ -535,13 +662,14 @@ def main():
             'feature_counts': {
                 kind: sum(feature['kind'] == kind for feature in features)
                 for kind in sorted({feature['kind'] for feature in features})},
-            'invariant': 'Sparse details are visual ground truth only; they do not alter wall collision, friction, or control parameters.',
+            'invariant': ('Sparse details are visual ground truth only; they do not alter '
+                          'wall collision, friction, or control parameters.'),
         }
         output_path = os.path.join(temporary, 'wall_texture.json')
         with open(output_path, 'w', encoding='utf-8') as handle:
             json.dump(output, handle, indent=2)
             handle.write('\n')
-        os.replace(temporary, output_dir)
+        publish_new_directory(temporary, output_dir)
         temporary = None
         if arguments.preview:
             preview_path = os.path.abspath(arguments.preview)

@@ -16,7 +16,6 @@
 
 import math
 from pathlib import Path
-from xml.etree import ElementTree
 
 import pytest
 import yaml

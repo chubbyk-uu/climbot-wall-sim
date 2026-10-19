@@ -233,6 +233,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_wall_slip_sampling test/test_wall_slip_sampling.py)
   ament_add_pytest_test(test_wall_texture test/test_wall_texture.py)
+  ament_add_pytest_test(test_wall_texture_randomization test/test_wall_texture_randomization.py)
   ament_add_pytest_test(test_mesa_runtime test/test_mesa_runtime.py)
   ament_add_pytest_test(test_results_are_machine_readable
     test/test_results_are_machine_readable.py)

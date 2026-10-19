@@ -15,3 +15,5 @@
 """Default flat-wall, rigid-wheel simulation with three-fan cavity suction."""
 
 from climbot_gazebo.launch_entry import generate_launch_description
+
+__all__ = ['generate_launch_description']

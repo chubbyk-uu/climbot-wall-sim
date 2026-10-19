@@ -15,3 +15,5 @@
 """Compatibility name for the default pressure simulation entry."""
 
 from climbot_gazebo.launch_entry import generate_launch_description
+
+__all__ = ['generate_launch_description']

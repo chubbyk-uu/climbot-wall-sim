@@ -15,10 +15,8 @@
 """Verify standalone URDF defaults match the shared robot description."""
 
 from pathlib import Path
-from xml.etree import ElementTree
 
 import pytest
-import yaml
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]

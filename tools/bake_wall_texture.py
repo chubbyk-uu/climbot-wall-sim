@@ -47,6 +47,7 @@ repository carries.
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor
+import ctypes
 import hashlib
 import json
 import math
@@ -54,6 +55,7 @@ from multiprocessing import get_context
 import os
 import subprocess
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -106,6 +108,19 @@ def git_commit():
         return None
 
 
+def publish_new_directory(source, destination):
+    """Atomically publish on Linux, refusing even a concurrently created empty directory."""
+    libc = ctypes.CDLL(None, use_errno=True)
+    rename = libc.renameat2
+    rename.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int,
+                       ctypes.c_char_p, ctypes.c_uint]
+    rename.restype = ctypes.c_int
+    # AT_FDCWD and RENAME_NOREPLACE: unlike rename(), never replace an empty target.
+    if rename(-100, os.fsencode(source), -100, os.fsencode(destination), 1):
+        error = ctypes.get_errno()
+        raise OSError(error, os.strerror(error), destination)
+
+
 def described_wall():
     """Read the wall the whole project agrees on, straight from the source."""
     # Not through ament: this runs before and independently of a built
@@ -151,6 +166,7 @@ def _encode_block(task):
         'sample_x_px': sample_x0, 'sample_y_px': sample_y0,
         'sample_width_px': sample_x1 - sample_x0,
         'sample_height_px': sample_y1 - sample_y0,
+        'sha256': sha256(os.path.join(directory, filename)),
         'bytes': stored}
 
 
@@ -425,6 +441,13 @@ def main():
     parser.add_argument('--candidates', type=int, default=96)
     parser.add_argument('--tolerance', type=float, default=0.10)
     parser.add_argument('--seed', type=int, default=20260820)
+    parser.add_argument('--randomize', action='store_true',
+                        help='opt into D4 transforms and orientation-independent local source exclusion')
+    parser.add_argument('--reuse-radius-m', type=float, default=2.1)
+    parser.add_argument('--max-source-overlap', type=float, default=0.25)
+    parser.add_argument('--attempt-multiplier', type=int, default=64)
+    parser.add_argument('--source-catalog', choices=('free', 'packed', 'scheduled', 'disjoint', 'local'),
+                        default='free')
     parser.add_argument('--jobs', type=int, default=4,
                         help='POSIX worker count for independent BC1 block '\
                         'encoding; use 1 on memory-constrained machines')
@@ -434,6 +457,9 @@ def main():
                         help='refuse to bake past this estimated peak RAM')
     parser.add_argument('--quiet', action='store_true')
     arguments = parser.parse_args()
+    output_dir = os.path.abspath(arguments.output_dir)
+    if os.path.lexists(output_dir):
+        parser.error('--output-dir must not already exist: %s' % output_dir)
 
     def log(message):
         if not arguments.quiet:
@@ -449,6 +475,14 @@ def main():
     if arguments.jobs < 1:
         parser.error('--jobs must be positive')
     scale = arguments.scale_mm_per_px / 1000.0
+    if (not math.isfinite(scale) or scale <= 0 or
+            not math.isfinite(arguments.source_size_m) or arguments.source_size_m <= 0 or
+            not all(math.isfinite(v) and v > 0 for v in arguments.region_m) or
+            not all(math.isfinite(v) for v in arguments.region_origin_m) or
+            arguments.patch_px <= 4 or arguments.candidates < 1 or
+            not 0 < arguments.overlap_fraction < 1 or
+            not math.isfinite(arguments.tolerance) or arguments.tolerance < 0):
+        parser.error('source, region, sampling and quilt parameters must be finite and valid')
     # Sized up to whole BC1 blocks rather than padded at write time, so every
     # stored texel still stands for the metre it was baked at. The region grows
     # by under 2 mm, which is why region_m below is derived and not echoed.
@@ -469,7 +503,10 @@ def main():
         parser.error('no _Color.jpg map in %s' % arguments.source_dir)
     source_path = os.path.join(arguments.source_dir, matches[0])
 
-    native = Image.open(source_path).size[0]
+    native_dimensions = Image.open(source_path).size
+    if native_dimensions[0] != native_dimensions[1]:
+        parser.error('this single-source baker requires a square source map')
+    native = native_dimensions[0]
     side = int(round(arguments.source_size_m * 1000.0 / arguments.scale_mm_per_px))
     if side < patch:
         parser.error('source is smaller than one patch at this scale')
@@ -502,80 +539,115 @@ def main():
     source = load_source(source_path, side)
     grey = source.astype(np.float32).mean(axis=2)
     log('laying out patches of %d px with %d px overlap' % (patch, overlap))
-    placements, canvas_shape, patch = quilt_layout(
-        grey, height, width, patch, overlap, arguments.seed,
-        arguments.candidates, arguments.tolerance,
-        arguments.seam_feather_px, log)
+    randomization = None
+    if arguments.randomize:
+        import wall_texture_randomization as randomizer
+        placements, canvas_shape, selection_stats = randomizer.layout(
+            grey, height, width, patch, overlap, arguments.seed,
+            arguments.candidates, arguments.tolerance, arguments.seam_feather_px,
+            scale, arguments.reuse_radius_m, arguments.max_source_overlap, log,
+            arguments.attempt_multiplier, arguments.source_catalog)
+        randomization = {
+            'algorithm': randomizer.ALGORITHM, 'orientations': list(range(8)),
+            'reuse_radius_m': arguments.reuse_radius_m,
+            'neighbourhood': 'minimum distance between wall patch rectangles',
+            'max_source_overlap_fraction': arguments.max_source_overlap,
+            'overlap_scope': 'all orientations, full candidate rectangles; conservative selection',
+            'attempt_multiplier': arguments.attempt_multiplier,
+            'candidate_exhaustion': 'error; no relaxation', **selection_stats,
+            'orientation_counts': [sum(p.orientation == k for p in placements) for k in range(8)],
+        }
+    else:
+        placements, canvas_shape, patch = quilt_layout(
+            grey, height, width, patch, overlap, arguments.seed,
+            arguments.candidates, arguments.tolerance,
+            arguments.seam_feather_px, log)
     del grey
 
-    os.makedirs(arguments.output_dir, exist_ok=True)
-    baked = apply_layout(
-        source, placements, canvas_shape, patch, overlap,
-        arguments.seam_feather_px, height, width)
-    del source
-    rows, columns, files = write_blocks(
-        baked, arguments.output_dir, 'albedo', arguments.block_px,
-        arguments.gutter_px, log, arguments.jobs)
-    del baked
-    log('wrote albedo: %d x %d blocks, %.0f MiB'
-        % (rows, columns, sum(entry['bytes'] for entry in files) / (1 << 20)))
+    os.makedirs(os.path.dirname(output_dir), exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.wall-bake-', dir=os.path.dirname(output_dir)) as temporary:
+        arguments.output_dir = temporary
+        replay = randomizer.replay if arguments.randomize else apply_layout
+        baked = replay(source, placements, canvas_shape, patch, overlap,
+                       arguments.seam_feather_px, height, width)
+        del source
+        rows, columns, files = write_blocks(
+            baked, arguments.output_dir, 'albedo', arguments.block_px,
+            arguments.gutter_px, log, arguments.jobs)
+        del baked
+        log('wrote albedo: %d x %d blocks, %.0f MiB'
+            % (rows, columns, sum(entry['bytes'] for entry in files) / (1 << 20)))
 
-    manifest = {
-        'recorded_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-        'git_commit': git_commit(),
-        'source_asset': 'ambientCG Concrete044D 8K-JPG (CC0)',
-        'source_file': os.path.basename(source_path),
-        'source_sha256': sha256(source_path),
-        # A declaration, not a property of the asset. The library records no
-        # size for Concrete044D, and every length in this manifest is derived
-        # from this one number, so it is written down as what it is.
-        'source_size_m': arguments.source_size_m,
-        'source_size_is_declared': True,
-        # Everything a wall coordinate needs to become a pixel. The bake is the
-        # reference a mosaic is scored against, so this mapping is the
-        # measurement's own datum and belongs next to the pixels, not in a
-        # launch file that may have moved on.
-        'scale_m_per_px': scale,
-        'region_m': list(region),
-        'region_requested_m': list(arguments.region_m),
-        # Where the baked pixels sit on the wall. A mosaic is scored by
-        # projecting it into this frame, so without the origin the bake is a
-        # picture of a wall rather than a measurement of one, and every pose
-        # label attached to a photograph would have nothing to be checked
-        # against.
-        'region_origin_m': list(arguments.region_origin_m),
-        # Written as the conversion itself rather than as a named convention.
-        # Pixel rows run down from the top and wall coordinates run up from the
-        # bottom, so any wording short of the formula leaves the reader to
-        # guess which of the two the origin belongs to, and a mosaic scored
-        # against a vertically mirrored reference fails in a way that looks
-        # like a control problem.
-        'wall_x_m_of_px': 'region_origin_m[0] + x_px * scale_m_per_px',
-        'wall_y_m_of_px':
-            'region_origin_m[1] + region_m[1] - y_px * scale_m_per_px',
-        'width_px': width, 'height_px': height,
-        'block_px': arguments.block_px,
-        'gutter_px': arguments.gutter_px,
-        'encoder_jobs': arguments.jobs,
-        'format': 'BC1 DDS with baked mip chain',
-        'estimated_video_memory_gb': round(video, 3),
-        'quilt': {
-            'patch_px': patch, 'overlap_px': overlap,
-            'candidates': arguments.candidates,
-            'tolerance': arguments.tolerance,
-            'seam_feather_px': arguments.seam_feather_px,
-            'seed': arguments.seed,
-            'placements': len(placements)},
-        'maps': {
-            'albedo': {
-                'block_rows': rows, 'block_columns': columns, 'blocks': files},
-        },
-    }
-    path = os.path.join(arguments.output_dir, 'wall_texture.json')
-    with open(path, 'w', encoding='utf-8') as handle:
-        json.dump(manifest, handle, indent=2)
-        handle.write('\n')
-    log('manifest %s' % path)
+        manifest = {
+            'recorded_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+            'git_commit': git_commit(),
+            'source_asset': 'ambientCG Concrete044D 8K-JPG (CC0)',
+            'source_file': os.path.basename(source_path),
+            'source_sha256': sha256(source_path),
+            'source_native_dimensions_px': list(native_dimensions),
+            'source_resampled_dimensions_px': [side, side],
+            'source_resampling': 'Pillow LANCZOS' if native != side else 'none',
+            'producer_files_sha256': {
+                os.path.basename(__file__): sha256(__file__),
+                'bc1.py': sha256(os.path.join(os.path.dirname(__file__), 'bc1.py')),
+                **({'wall_texture_randomization.py': sha256(randomizer.__file__)}
+                   if arguments.randomize else {}),
+            },
+            # A declaration, not a property of the asset. The library records no
+            # size for Concrete044D, and every length in this manifest is derived
+            # from this one number, so it is written down as what it is.
+            'source_size_m': arguments.source_size_m,
+            'source_size_is_declared': True,
+            # Everything a wall coordinate needs to become a pixel. The bake is the
+            # reference a mosaic is scored against, so this mapping is the
+            # measurement's own datum and belongs next to the pixels, not in a
+            # launch file that may have moved on.
+            'scale_m_per_px': scale,
+            'region_m': list(region),
+            'region_requested_m': list(arguments.region_m),
+            # Where the baked pixels sit on the wall. A mosaic is scored by
+            # projecting it into this frame, so without the origin the bake is a
+            # picture of a wall rather than a measurement of one, and every pose
+            # label attached to a photograph would have nothing to be checked
+            # against.
+            'region_origin_m': list(arguments.region_origin_m),
+            # Written as the conversion itself rather than as a named convention.
+            # Pixel rows run down from the top and wall coordinates run up from the
+            # bottom, so any wording short of the formula leaves the reader to
+            # guess which of the two the origin belongs to, and a mosaic scored
+            # against a vertically mirrored reference fails in a way that looks
+            # like a control problem.
+            'wall_x_m_of_px': 'region_origin_m[0] + x_px * scale_m_per_px',
+            'wall_y_m_of_px':
+                'region_origin_m[1] + region_m[1] - y_px * scale_m_per_px',
+            'width_px': width, 'height_px': height,
+            'block_px': arguments.block_px,
+            'gutter_px': arguments.gutter_px,
+            'encoder_jobs': arguments.jobs,
+            'format': 'BC1 DDS with baked mip chain',
+            'estimated_video_memory_gb': round(video, 3),
+            'quilt': {
+                'patch_px': patch, 'overlap_px': overlap,
+                'candidates': arguments.candidates,
+                'tolerance': arguments.tolerance,
+                'seam_feather_px': arguments.seam_feather_px,
+                'seed': arguments.seed,
+                'placements': len(placements)},
+            'maps': {
+                'albedo': {
+                    'block_rows': rows, 'block_columns': columns, 'blocks': files},
+            },
+        }
+        path = os.path.join(arguments.output_dir, 'wall_texture.json')
+        if randomization is not None:
+            manifest['randomization'] = randomization
+            manifest['quilt']['trace_files'] = randomizer.write_trace(
+                arguments.output_dir, placements, patch, native, side)
+        with open(path, 'w', encoding='utf-8') as handle:
+            json.dump(manifest, handle, indent=2, allow_nan=False)
+            handle.write('\n')
+        publish_new_directory(temporary, output_dir)
+    log('manifest %s' % os.path.join(output_dir, 'wall_texture.json'))
     return 0
 
 

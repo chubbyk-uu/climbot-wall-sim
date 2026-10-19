@@ -114,3 +114,41 @@ def test_all_public_entries_default_to_the_accepted_chassis():
             from climbot_description.robot_geometry import resolve_adhesion
             assert resolve_adhesion('vacuum_chassis',
                                     context.launch_configurations['adhesion_mode']) == 'vacuum'
+
+
+@pytest.mark.parametrize('custom_root', [None, '/tmp/climbot-custom-data'])
+def test_capture_defaults_to_new_texture_but_preview_remains_plain(monkeypatch, custom_root):
+    """Resolve real launch defaults without depending on workstation-only DDS files."""
+    if custom_root is None:
+        monkeypatch.delenv('CLIMBOT_DATA_ROOT', raising=False)
+        root = Path.home() / 'climbot_data'
+    else:
+        monkeypatch.setenv('CLIMBOT_DATA_ROOT', custom_root)
+        root = Path(custom_root)
+    expected = root / 'assets/wall_local_diagnostic_v6/wall_texture.json'
+    for package, filename in [
+        ('climbot_bringup', 'coverage_mission.launch.py'),
+        ('climbot_bringup', 'coverage_sim.launch.py'),
+        ('climbot_gazebo', 'climbot_wall.launch.py'),
+    ]:
+        context = LaunchContext()
+        for action in module(package, filename).generate_launch_description().entities:
+            if isinstance(action, DeclareLaunchArgument):
+                action.execute(context)
+        if filename == 'coverage_mission.launch.py':
+            assert context.launch_configurations['wall_texture'] == str(expected)
+            assert context.launch_configurations['wall_grid_spacing'] == '0'
+        else:
+            assert context.launch_configurations['wall_texture'] == ''
+
+
+@pytest.mark.parametrize('texture', ['', '/tmp/explicit-wall/wall_texture.json'])
+def test_capture_preserves_explicit_wall_selection(texture):
+    """Plain-wall diagnostics and explicit historic manifests override the new default."""
+    context = LaunchContext()
+    context.launch_configurations['wall_texture'] = texture
+    for action in module('climbot_bringup', 'coverage_mission.launch.py') \
+            .generate_launch_description().entities:
+        if isinstance(action, DeclareLaunchArgument):
+            action.execute(context)
+    assert context.launch_configurations['wall_texture'] == texture

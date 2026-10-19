@@ -1,0 +1,628 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-18",
+  "status": "failed_acceptance",
+  "branch": "feature/wall-texture-randomization",
+  "git_base_commit": "d1c37342bd31b8b122de38dfdf9fd2bb88ef0e3d",
+  "implementation_uncommitted": true,
+  "persistent_goal_started_or_resumed": false,
+  "source": {
+    "path": "/home/jerry/.cache/climbot/Concrete044D_8K-JPG/maps/Concrete044D_8K-JPG_Color.jpg",
+    "native_dimensions_px": [
+      8192,
+      8192
+    ],
+    "sha256": "8179451010485cdb9268356ee96de5dcdfc45845c98d1bea11ff267ae6e5649c",
+    "declared_size_m": 2.5,
+    "native_mm_per_px": 0.30517578125,
+    "resampled_side_px": 10000
+  },
+  "frozen_protocol_sha256": "8a0a212fc261dc3481af97b8ceb06c3f6c91514e29150090c51ed06278025538",
+  "frozen_geometry": {
+    "method": "Enclose all actual raw boundary rays in a circular cone. A tilted cone cuts the plane in an ellipse; use its major diameter as a conservative footprint bound.",
+    "boundary_pixels": 6000,
+    "maximum_normalized_ray_radius": 1.3757127210580224,
+    "maximum_distance_m": 0.285,
+    "maximum_total_tilt_deg": 2,
+    "footprint_diameter_upper_bound_m": 0.7869286766202194,
+    "position_margin_per_view_m": 0.21,
+    "two_intersecting_views_union_with_position_margin_m": 1.9938573532404387,
+    "frozen_reuse_radius_m": 2.1,
+    "margin_m": 0.10614264675956142,
+    "passed": true
+  },
+  "production_matcher_modified": false,
+  "default_assets_or_camera_or_speed_modified": false,
+  "algorithm": {
+    "version": "d4-source-rectangle-exclusion-v3",
+    "transforms": "rot90(k) then optional fliplr; same source across all D4",
+    "patch_px": 1200,
+    "overlap_px": 300,
+    "feather_px": 96,
+    "gutter_px": 128,
+    "candidates": 96,
+    "distinct_orientations_per_scheduled_crop_at_most": 8,
+    "reuse_radius_m": 2.1,
+    "max_source_rectangle_overlap_fraction": 0.25,
+    "source_catalog": "scheduled",
+    "catalogue_size": 120,
+    "schedule_period_columns": 12,
+    "schedule_period_rows": 10,
+    "schedule_row_period_column_shift": 6,
+    "region_m": [
+      4,
+      3
+    ],
+    "region_origin_m": [
+      2.5,
+      1.7
+    ],
+    "scale_mm_per_px": 0.25
+  },
+  "legacy_same_region_audit": {
+    "evaluation": "legacy_same_4x3_region_final_dds_audit",
+    "original_manifest_sha256": "58eb094266c08f04f64b49fd49d39958af74cb826189aebf91bac1f7436b663f",
+    "region_wall_m": [
+      2.5,
+      1.7,
+      4,
+      3
+    ],
+    "region_pixel_rect": [
+      10000,
+      13200,
+      16000,
+      12000
+    ],
+    "retained_weights": {
+      "method": "all final alpha contributions; source bins at recorded stride; approximate area",
+      "sample_spacing_mm": 4.0,
+      "weighted_repeated_area_m2": 11.500453300260395,
+      "weighted_repeated_fraction": 0.9583711083550329,
+      "repeat_distance_m": {
+        "count": 4765901,
+        "p50": 1.2968022208494248,
+        "p95": 2.0227070969371717
+      }
+    },
+    "limitation": "Derived audit viewport; original manifest and DDS unchanged. Source weights are sampled at 4 mm.",
+    "ncc": {
+      "queries": 300,
+      "window_px": 400,
+      "seed": 20261017,
+      "scope": "source-indexed candidates at query centres; D4 tolerance; final DDS windows",
+      "copied_windows_over_0_90": 110,
+      "copied_window_fraction": 0.36666666666666664,
+      "weak_texture_windows_std_below_2dn": 0
+    }
+  },
+  "trials": [
+    {
+      "role": "legacy",
+      "seed": 20260820,
+      "manifest": {
+        "local_path": "/home/jerry/robot_ws/climbot_sim/textures/wall_025/wall_texture.json",
+        "sha256": "58eb094266c08f04f64b49fd49d39958af74cb826189aebf91bac1f7436b663f"
+      },
+      "capture": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_baseline_40pairs/capture.json",
+        "sha256": "fcd1099637c616bd98e9b269b79ccc8e1b265b31e0e5975294faa30178adaf30"
+      },
+      "evaluation": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_baseline_40pairs_sift.json",
+        "sha256": "2cc5763f63f6628700ef7b1374e14bc8341f7c044302b592bf71cae49b5c43cb"
+      },
+      "summary": {
+        "positive_pairs": 40,
+        "positive_accepted": 40,
+        "positive_acceptance_rate": 1.0,
+        "accepted_inliers": 3296,
+        "wrong_inliers_over_1mm": 0,
+        "wrong_inlier_fraction": 0.0,
+        "pose_centre_error_p95_mm": 0.02032753729094278,
+        "pose_angle_error_p95_deg": 0.006938784450481922,
+        "weak_texture_pairs": 10,
+        "weak_texture_acceptance_rate": 1.0,
+        "local_negative_pairs": 128,
+        "local_false_accepted": 20,
+        "far_negative_pairs": 128,
+        "far_false_accepted": 56,
+        "far_false_acceptance_rate": 0.4375
+      },
+      "gates": {
+        "positive_count": true,
+        "positive_acceptance": true,
+        "weak_texture_acceptance": true,
+        "pose_centre": true,
+        "pose_angle": true,
+        "correspondences": true,
+        "local_negative_count": true,
+        "local_false_acceptance": false,
+        "far_negative_count": true,
+        "far_false_acceptance": false
+      },
+      "passed_optical_gates": false,
+      "views_sha256": "2948102224c904b084a0744d5bda74afccfcd6a293573b7e5dc2153cce0b7ac2",
+      "capture_cleanup_ok": false,
+      "capture_cleanup_exit_codes": [
+        -11,
+        -15
+      ],
+      "actual_renderer_gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66",
+      "flat_field_sha256": "e78234e7b9b7ee2ee0e16c2ec82e2fe03f2354ee40f69f88a0b69eedd5bd72fb",
+      "frames": 80,
+      "unique_stamps": 80,
+      "unique_raw_hashes": 80,
+      "unique_processed_hashes": 80,
+      "native_manifest_producer_hashes": null
+    },
+    {
+      "role": "tuning",
+      "seed": 20261018,
+      "manifest": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/tune_4x3_scheduled_seed20261018/wall_texture.json",
+        "sha256": "1f92c889585d10c56c683a5f62c47651c203a9153b9e19f4b9edd59d5b9b0215"
+      },
+      "capture": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_tune_40pairs/capture.json",
+        "sha256": "e7a988ca466bf20af1d3e008095db822b1d25b47ae823aa2202f097f494cfa57"
+      },
+      "evaluation": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_tune_40pairs_sift.json",
+        "sha256": "4eca6ba8b71f55b81623b30f6f1a6e5a60ce70e2d9303d546d615fff0d650463"
+      },
+      "summary": {
+        "positive_pairs": 40,
+        "positive_accepted": 40,
+        "positive_acceptance_rate": 1.0,
+        "accepted_inliers": 10718,
+        "wrong_inliers_over_1mm": 0,
+        "wrong_inlier_fraction": 0.0,
+        "pose_centre_error_p95_mm": 0.01025643632702408,
+        "pose_angle_error_p95_deg": 0.0032097788184911767,
+        "weak_texture_pairs": 10,
+        "weak_texture_acceptance_rate": 1.0,
+        "local_negative_pairs": 128,
+        "local_false_accepted": 0,
+        "far_negative_pairs": 128,
+        "far_false_accepted": 14,
+        "far_false_acceptance_rate": 0.109375
+      },
+      "gates": {
+        "positive_count": true,
+        "positive_acceptance": true,
+        "weak_texture_acceptance": true,
+        "pose_centre": true,
+        "pose_angle": true,
+        "correspondences": true,
+        "local_negative_count": true,
+        "local_false_acceptance": true,
+        "far_negative_count": true,
+        "far_false_acceptance": false,
+        "pose_centre_not_degraded": true,
+        "pose_angle_not_degraded": true
+      },
+      "passed_optical_gates": false,
+      "views_sha256": "2948102224c904b084a0744d5bda74afccfcd6a293573b7e5dc2153cce0b7ac2",
+      "capture_cleanup_ok": false,
+      "capture_cleanup_exit_codes": [
+        -11,
+        -15
+      ],
+      "actual_renderer_gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66",
+      "flat_field_sha256": "e78234e7b9b7ee2ee0e16c2ec82e2fe03f2354ee40f69f88a0b69eedd5bd72fb",
+      "frames": 80,
+      "unique_stamps": 80,
+      "unique_raw_hashes": 80,
+      "unique_processed_hashes": 80,
+      "native_manifest_producer_hashes": {
+        "bake_wall_texture.py": "a84ab0cf2b112a5cbf26b3dc308dabd2ae0516ebe2674a07220e94f02b316bd1",
+        "bc1.py": "2888eeacc41d012165ac9e47ae4821097d322468ce2859c8dd4bee9a5d7ea033",
+        "wall_texture_randomization.py": "7e713992f6c875836d42dcbdf0f6b3563cbe69df63f0eabdeef0bb54516946e2"
+      },
+      "asset_audit": {
+        "evidence": {
+          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/tune_4x3_scheduled_seed20261018_audit.json",
+          "sha256": "11f09bc5b38be4b81b70c162580789f236d540a1815c759c96d56d67cb93af95"
+        },
+        "pure_core_duplicate_pairs": 0,
+        "retained_weighted_repeat_fraction_approximate": 0.6737338590165503,
+        "sample_spacing_mm": 4.0,
+        "ncc_queries": 300,
+        "ncc_copied_windows_over_0_90": 0,
+        "ncc_scope": "source-indexed candidates at query centres; D4 tolerance; final DDS windows",
+        "gutter": {
+          "mip_levels": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "comparisons": 492,
+          "mismatched_shared_regions": 0
+        },
+        "seam_gradient_p95_ratio": 0.7913864294329237,
+        "passed_core_and_ncc": true,
+        "passed_gutter_and_seam": true
+      },
+      "false_correspondence_attribution": {
+        "evidence": {
+          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_tune_source_attribution.json",
+          "sha256": "f85e3681d16be9ab932df1425cc04acf7a1f415169f4a1d333192a5b29759fa7"
+        },
+        "false_correspondences": 657,
+        "source_confirmed_false_correspondences": 657,
+        "method": "final alpha >=0.25 in both locations; source-coordinate distance <=1mm"
+      }
+    },
+    {
+      "role": "validation_1",
+      "seed": 20261019,
+      "manifest": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261019/wall_texture.json",
+        "sha256": "9230ab4ab310b324fc9f3ef3d44705a80e706f98ce7918d1798688f58f6e271f"
+      },
+      "capture": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261019/capture.json",
+        "sha256": "f9218193cacee88a2e9a149c3c572491ba8bedda72eaf5d814f48dd7b87f3c4e"
+      },
+      "evaluation": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261019_sift.json",
+        "sha256": "e1c8c32db13b635e19b9c5a41427515d23189c3633171810a122b98b4fbd73e4"
+      },
+      "summary": {
+        "positive_pairs": 40,
+        "positive_accepted": 40,
+        "positive_acceptance_rate": 1.0,
+        "accepted_inliers": 10438,
+        "wrong_inliers_over_1mm": 1,
+        "wrong_inlier_fraction": 9.580379383023568e-05,
+        "pose_centre_error_p95_mm": 0.012390345818229037,
+        "pose_angle_error_p95_deg": 0.002496919522398447,
+        "weak_texture_pairs": 10,
+        "weak_texture_acceptance_rate": 1.0,
+        "local_negative_pairs": 128,
+        "local_false_accepted": 1,
+        "far_negative_pairs": 128,
+        "far_false_accepted": 16,
+        "far_false_acceptance_rate": 0.125
+      },
+      "gates": {
+        "positive_count": true,
+        "positive_acceptance": true,
+        "weak_texture_acceptance": true,
+        "pose_centre": true,
+        "pose_angle": true,
+        "correspondences": true,
+        "local_negative_count": true,
+        "local_false_acceptance": false,
+        "far_negative_count": true,
+        "far_false_acceptance": false,
+        "pose_centre_not_degraded": true,
+        "pose_angle_not_degraded": true
+      },
+      "passed_optical_gates": false,
+      "views_sha256": "2948102224c904b084a0744d5bda74afccfcd6a293573b7e5dc2153cce0b7ac2",
+      "capture_cleanup_ok": false,
+      "capture_cleanup_exit_codes": [
+        -11,
+        -15
+      ],
+      "actual_renderer_gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66",
+      "flat_field_sha256": "e78234e7b9b7ee2ee0e16c2ec82e2fe03f2354ee40f69f88a0b69eedd5bd72fb",
+      "frames": 80,
+      "unique_stamps": 80,
+      "unique_raw_hashes": 80,
+      "unique_processed_hashes": 80,
+      "native_manifest_producer_hashes": {
+        "bake_wall_texture.py": "78ba891b9f05acdb82dc396c51901fe53d859fca059dcbfb1ecddcf50247965b",
+        "bc1.py": "2888eeacc41d012165ac9e47ae4821097d322468ce2859c8dd4bee9a5d7ea033",
+        "wall_texture_randomization.py": "6eed0ef95881230344a43792016e2e013d622cd24c87975a22ad8e006af5dd63"
+      },
+      "asset_audit": {
+        "evidence": {
+          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261019_audit.json",
+          "sha256": "48367e9e2d3cda7ce09ca2c5457f4faae782b48509b3c45984584121448c28d2"
+        },
+        "pure_core_duplicate_pairs": 0,
+        "retained_weighted_repeat_fraction_approximate": 0.6786351141758168,
+        "sample_spacing_mm": 4.0,
+        "ncc_queries": 300,
+        "ncc_copied_windows_over_0_90": 1,
+        "ncc_scope": "source-indexed candidates at query centres; D4 tolerance; final DDS windows",
+        "gutter": {
+          "mip_levels": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "comparisons": 492,
+          "mismatched_shared_regions": 0
+        },
+        "seam_gradient_p95_ratio": 0.7827622865190667,
+        "passed_core_and_ncc": true,
+        "passed_gutter_and_seam": true
+      },
+      "false_correspondence_attribution": {
+        "evidence": {
+          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261019_source_attribution.json",
+          "sha256": "3652bed25a1001e1fdea02287d70aba4ea4e7ca93fee504adeea1b4f714bef19"
+        },
+        "false_correspondences": 476,
+        "source_confirmed_false_correspondences": 474,
+        "method": "final alpha >=0.25 in both locations; source-coordinate distance <=1mm"
+      }
+    },
+    {
+      "role": "validation_2",
+      "seed": 20261020,
+      "manifest": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261020/wall_texture.json",
+        "sha256": "56b94727741e5fdb36dee4cbebefc99e488397d9d15315043476d8f4cbd5117e"
+      },
+      "capture": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261020/capture.json",
+        "sha256": "7c184e7ad45ac361723524dcdc0f43e8f55ab519639edd8b323fe9acff360224"
+      },
+      "evaluation": {
+        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261020_sift.json",
+        "sha256": "6f1311b9d0b3db6ab46eb1bcbab0ba61686716dda0363376f1907f913627d52a"
+      },
+      "summary": {
+        "positive_pairs": 40,
+        "positive_accepted": 40,
+        "positive_acceptance_rate": 1.0,
+        "accepted_inliers": 10602,
+        "wrong_inliers_over_1mm": 2,
+        "wrong_inlier_fraction": 0.00018864365214110544,
+        "pose_centre_error_p95_mm": 0.011199156522682645,
+        "pose_angle_error_p95_deg": 0.0019445503001899029,
+        "weak_texture_pairs": 10,
+        "weak_texture_acceptance_rate": 1.0,
+        "local_negative_pairs": 128,
+        "local_false_accepted": 2,
+        "far_negative_pairs": 128,
+        "far_false_accepted": 16,
+        "far_false_acceptance_rate": 0.125
+      },
+      "gates": {
+        "positive_count": true,
+        "positive_acceptance": true,
+        "weak_texture_acceptance": true,
+        "pose_centre": true,
+        "pose_angle": true,
+        "correspondences": true,
+        "local_negative_count": true,
+        "local_false_acceptance": false,
+        "far_negative_count": true,
+        "far_false_acceptance": false,
+        "pose_centre_not_degraded": true,
+        "pose_angle_not_degraded": true
+      },
+      "passed_optical_gates": false,
+      "views_sha256": "2948102224c904b084a0744d5bda74afccfcd6a293573b7e5dc2153cce0b7ac2",
+      "capture_cleanup_ok": false,
+      "capture_cleanup_exit_codes": [
+        -11,
+        -15
+      ],
+      "actual_renderer_gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66",
+      "flat_field_sha256": "e78234e7b9b7ee2ee0e16c2ec82e2fe03f2354ee40f69f88a0b69eedd5bd72fb",
+      "frames": 80,
+      "unique_stamps": 80,
+      "unique_raw_hashes": 80,
+      "unique_processed_hashes": 80,
+      "native_manifest_producer_hashes": {
+        "bake_wall_texture.py": "78ba891b9f05acdb82dc396c51901fe53d859fca059dcbfb1ecddcf50247965b",
+        "bc1.py": "2888eeacc41d012165ac9e47ae4821097d322468ce2859c8dd4bee9a5d7ea033",
+        "wall_texture_randomization.py": "6eed0ef95881230344a43792016e2e013d622cd24c87975a22ad8e006af5dd63"
+      },
+      "asset_audit": {
+        "evidence": {
+          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261020_audit.json",
+          "sha256": "4f3cb60ae46bf329eb565aa4f7208f1ca0930413097b2d59683f0cd58794d60d"
+        },
+        "pure_core_duplicate_pairs": 0,
+        "retained_weighted_repeat_fraction_approximate": 0.6819509637183898,
+        "sample_spacing_mm": 4.0,
+        "ncc_queries": 300,
+        "ncc_copied_windows_over_0_90": 0,
+        "ncc_scope": "source-indexed candidates at query centres; D4 tolerance; final DDS windows",
+        "gutter": {
+          "mip_levels": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "comparisons": 492,
+          "mismatched_shared_regions": 0
+        },
+        "seam_gradient_p95_ratio": 0.7734516130001781,
+        "passed_core_and_ncc": true,
+        "passed_gutter_and_seam": true
+      },
+      "false_correspondence_attribution": {
+        "evidence": {
+          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261020_source_attribution.json",
+          "sha256": "159514c29e3947a06bca08109570e724a8afbb01146ec5b2d5d32961a18aeb1d"
+        },
+        "false_correspondences": 635,
+        "source_confirmed_false_correspondences": 635,
+        "method": "final alpha >=0.25 in both locations; source-coordinate distance <=1mm"
+      }
+    }
+  ],
+  "local_failure_root_cause": {
+    "evidence": {
+      "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/local_failure_detail.json",
+      "sha256": "7f342d4d34bc492179e56ca716b94f3a43977e0a06e01b9a78258835055169b9"
+    },
+    "validation_seeds": {
+      "20261019": {
+        "local_wrong_correspondences": 10,
+        "confirmed_by_shared_crop_overlap": 10,
+        "source_overlap_fractions": {
+          "0.234375": 10
+        }
+      },
+      "20261020": {
+        "local_wrong_correspondences": 19,
+        "confirmed_by_shared_crop_overlap": 19,
+        "source_overlap_fractions": {
+          "0.234375": 19
+        }
+      }
+    },
+    "finding": "All 29 wrong inliers in the three accepted local negative pairs are from retained shared source rectangles with overlap 0.234375, which the 0.25 selection guard permits."
+  },
+  "reproducibility": {
+    "compared_files": 50,
+    "dds_files": 48,
+    "trace_files": 2,
+    "mismatches": [],
+    "passed": true,
+    "excluded_manifest_fields": "timestamp, producer source hashes and optional metadata; pixel and layout bytes are compared"
+  },
+  "old_assets_integrity": {
+    "wall_025": {
+      "manifest_sha256": "58eb094266c08f04f64b49fd49d39958af74cb826189aebf91bac1f7436b663f",
+      "manifest_unchanged": true,
+      "dds_files": 320,
+      "ordered_inventory_match": true,
+      "ordered_inventory_format": [
+        "{name} {sha}\n"
+      ],
+      "manifest_hash_mismatches": [],
+      "current_file_hashes_sha256": "4cfe494a20138ac695b47492fd7e6b8d27058a7556ac3dc3dca2c4159f493c56"
+    },
+    "wall_diagnostic_025": {
+      "manifest_sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c",
+      "manifest_unchanged": true,
+      "dds_files": 320,
+      "ordered_inventory_match": true,
+      "ordered_inventory_format": [
+        "{name} {sha}\n"
+      ],
+      "manifest_hash_mismatches": [],
+      "current_file_hashes_sha256": "9164ab21ab6e7720fdb6f130f1afcc5c2f6e176ed180ad606a937e0b58462b05"
+    }
+  },
+  "diagnostic_prototype": {
+    "status": "not_accepted",
+    "manifest": {
+      "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/diagnostic_4x3_scheduled_seed20261018/wall_texture.json",
+      "sha256": "131fd7587801945a748c1f77b74fc9f8b1bb28b20e01abb9d9794ce1d5ef6084"
+    },
+    "feature_counts": {
+      "construction_seam": 3,
+      "crack_decal": 8,
+      "repair_patch": 6,
+      "graffiti_decal": 4
+    },
+    "features_may_be_clipped_by_region": true,
+    "joint_profile": "grey-filled-visual-v1",
+    "physical_depth_m": 0,
+    "seed": 20260827,
+    "audit": {
+      "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/diagnostic_4x3_scheduled_seed20261018_audit_scoped.json",
+      "sha256": "55f4f1f228a41cf5447e370464b6eaa2c15adcb5c194450d95dad5ef5a0f2b60"
+    },
+    "source_weight_scope": "concrete substrate before diagnostic overpaint; not final visible area"
+  },
+  "rotation_asset_probe": {
+    "evidence": {
+      "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/rotation_paired.json",
+      "sha256": "437d8cabd416836c7d06726226e6b4a64efe48d66b79541852aa8d01f104df40"
+    },
+    "all_cases_passed": true,
+    "scope": "asset-only; continuous rotation not enabled or rendered-accepted"
+  },
+  "tests": {
+    "targeted": {
+      "passed": 95,
+      "log": "/tmp/climbot_texture_targeted_final_20261018_221331.log"
+    },
+    "full_colcon": {
+      "executor": "parallel",
+      "parallel_workers": 8,
+      "tests": 1770,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 83,
+      "test_result_exit_code": 0,
+      "log": "/tmp/climbot_texture_full_j8_final_20261018_221500.log",
+      "summary_log": "/tmp/climbot_texture_test_result_final_20261018_221722.log"
+    },
+    "offline_probe_pose_envelope_checks": 4
+  },
+  "not_run": [
+    "full robot capture",
+    "Gazebo GUI and RViz simultaneous performance acceptance",
+    "formal CUDA wall mosaic",
+    "S6/S7 rerun",
+    "M2",
+    "0.30 m/s"
+  ],
+  "unresolved": [
+    "local false acceptance on both holdout seeds",
+    "far forced-candidate acceptance above frozen 5% limit on all new seeds",
+    "native Gazebo teardown SIGSEGV (-11) on all optical capture runs",
+    "final rendered diagnostic wall and natural appearance acceptance pending"
+  ],
+  "retention": "Failure evidence retained outside Git; post-acceptance cleanup condition not reached. No generated image, DDS, masks, per-frame inventory, video, raw telemetry or cache included in this report directory.",
+  "next_phase": {
+    "tuning_seed": 20261018,
+    "old_validation_seeds_now_regression_only": [
+      20261019,
+      20261020
+    ],
+    "reserve_new_validation_seeds": [
+      20261021,
+      20261022
+    ],
+    "steps": [
+      "Treat the three local error pairs as regression evidence; constrain actual retained source overlap across all D4 and seam contributions.",
+      "Compare against source reuse schedule without treating transforms as novel content; quantify finite single-source capacity instead of silently relaxing constraints.",
+      "Keep frozen gates and image precision; small-area and short optical verification first.",
+      "Verify cracks, filled panel seams, repairs and graffiti only after the plain concrete passes.",
+      "Resolve probe native teardown independently before formal robot/GUI/CUDA acceptance."
+    ]
+  },
+  "workspace_code_hashes_at_summary": {
+    "src/climbot_coverage/test/test_coverage_visual_refresh.py": "108a34cd325c44d76cf777607e4d339d09a26384d400f4b5a3d797aef8a7c0d4",
+    "src/climbot_description/test/test_inspection_camera_config.py": "e945cd4d822871a9ecc3b3111d08e4bdbafbfe98038b7566e1d74d31231bec30",
+    "src/climbot_description/test/test_robot_description_defaults.py": "a4d9d33053aafed58d6d093c9e16f9f547bcbd9536f028557104dfb15ed75f7b",
+    "src/climbot_description/test/test_robot_geometry.py": "a68fd1f4428f0d26f0ac47f2276f6e4bfd5bd4c61971f0e918219758b72e4d68",
+    "src/climbot_gazebo/CMakeLists.txt": "16e5a2282a446947105a91585a49e4c82a21b94028b2e3b29ccd0f66e807ec00",
+    "src/climbot_gazebo/climbot_gazebo/launch_entry.py": "68b75172f4d351db2a88e25d23c549e8b5971eb0c2c158333c20fc157957171c",
+    "src/climbot_gazebo/climbot_gazebo/simulation_stack.py": "3d4d869d16ddd39e3f8f38d4d717d74b681468efacb51ea9095c6956d39d6b50",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "92889086bd942a67fa88b862da579b34bf68528cafa666a4f15d7f6ce50298e3",
+    "src/climbot_gazebo/launch/climbot_vacuum_stack.launch.py": "7f1f809a315b42f22186f98506a8e830d76fee6904dceb43b79c7b2e2d93113f",
+    "src/climbot_gazebo/launch/climbot_wall.launch.py": "da68a198de6571e0157180de016cd04986db7dc77b9b6e5047339df205e35a09",
+    "src/climbot_gazebo/test/test_wall_texture.py": "9b06370e2f7683d2c5eaf94c8d00db423a46602337e8d49ff9dc91e07d76022f",
+    "src/climbot_gazebo/test/test_wall_texture_randomization.py": "42077d0b5dc7dd4773f97b2692bdd5268778943a5e8516478e27e350f5fe5f60",
+    "src/climbot_mosaic/CMakeLists.txt": "67bcd13c1bdaae996ceffaaacdf1a61aa6771856bfeaca078561f201cc93ce7c",
+    "src/climbot_mosaic/test/test_wall_texture_evaluation.py": "74b28d58877741ba9e241bdc1a57ef7451d53c09eed5c958a23bbeff5ef8315d",
+    "tools/attribute_wall_texture_matches.py": "1afcbe409bc12dd708450d8fa64314e74091b65dc32a26f42b5979bc4c50597b",
+    "tools/audit_wall_randomization.py": "0bb791fdab221aea6d7a3c2024b6314722ed0ebca5ff80f9ae8aa86ee82ccacd",
+    "tools/bake_wall_texture.py": "78ba891b9f05acdb82dc396c51901fe53d859fca059dcbfb1ecddcf50247965b",
+    "tools/capture_wall_texture_shared.py": "6c72f38613f6e86dff477002f0889243c2a3ca3abe735f7e777c5593410eb9d9",
+    "tools/create_diagnostic_wall.py": "dc0ba6f9888a9115773cc669fc775b3e08cd3c11970be4d640d5fefdaab98dde",
+    "tools/evaluate_wall_rotation.py": "97ec8b20d7a3656d77accaf85d200262446f59a4d8e122f15f07634b842bc6ae",
+    "tools/evaluate_wall_texture_sift.py": "7495a23579b4d1168edce1c4014c4fe26927ef53e2ec35fb5f40e230d7639dfb",
+    "tools/test_suction_analysis.py": "c066d6dc221b5e790df24fa8b916e63b565d755c0aea4520fdec66494f45b713",
+    "tools/testdata/legacy_contract/README.md": "8cdde6ac38eefc263aab4e8f0f2033db2a96883e8412e19b99ff3d2db043f94c",
+    "tools/testdata/legacy_contract/approved_edits.json": "0d2cc4c025f39ea444b27d54dbc160fb916eec58cb9aa6049cae8c14fd6b4308",
+    "tools/testdata/legacy_contract/climbot_wall.launch.py.txt": "a85aa961de7354404290fb6bf1069707eeb176074cbea6d4b9f71444e96ec3c0",
+    "tools/testdata/legacy_contract/climbot_wall.sdf.xacro.txt": "077d78dc55cdc51f060e6caf10de3612a4d1e6e9e21073988a6a2b98ea217b55",
+    "tools/wall_texture_randomization.py": "d7547681415b386c3974bd4a113970b9aeaf859b59798bbfe4daeb29f753592c"
+  }
+}

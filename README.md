@@ -161,24 +161,29 @@ glxinfo -B
 只提取颜色图；下载失败或摘要不符会中止。诊断裂缝／涂鸦图集
 `tools/assets/diagnostic_wall_decals_v2.png` 已随仓库分发，无需额外下载。
 
-在仓库根目录依次执行，先生成普通混凝土墙，再叠加诊断特征：
+在仓库根目录依次执行，先生成局部去重／D4 随机变换底纹，再叠加诊断特征。
+这是新采集任务的默认资产，输出到数据根，旧目录不会被覆盖：
 
 ```bash
 cd ~/robot_ws/climbot_sim
+export CLIMBOT_DATA_ROOT="${CLIMBOT_DATA_ROOT:-$HOME/climbot_data}"
 WALL_SOURCE="$HOME/.cache/climbot/Concrete044D_8K-JPG"
 bash tools/fetch_wall_texture.sh "$WALL_SOURCE"
 
 python3 tools/bake_wall_texture.py \
-  --source-dir "$WALL_SOURCE/maps" --output-dir textures/wall_025 \
+  --source-dir "$WALL_SOURCE/maps" \
+  --output-dir "$CLIMBOT_DATA_ROOT/assets/wall_local_v6" \
   --source-size-m 2.5 --region-m 10 8 --region-origin-m 0 0 \
   --scale-mm-per-px 0.25 --block-px 2048 --gutter-px 128 \
-  --patch-px 1536 --overlap-fraction 0.25 --seam-feather-px 96 \
-  --candidates 96 --tolerance 0.10 --seed 20260820 --jobs 4 \
+  --randomize --source-catalog local --patch-px 1000 --overlap-fraction 0.20 \
+  --seam-feather-px 64 --reuse-radius-m 1.0 --max-source-overlap 0 \
+  --candidates 96 --tolerance 0.10 --seed 20261018 --jobs 4 \
   --host-memory-budget-gb 12 --video-memory-budget-gb 3
 
 python3 tools/create_diagnostic_wall.py \
-  --base-manifest textures/wall_025/wall_texture.json \
-  --output-dir textures/wall_diagnostic_025 --seed 20260827 --jobs 4
+  --base-manifest "$CLIMBOT_DATA_ROOT/assets/wall_local_v6/wall_texture.json" \
+  --output-dir "$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6" \
+  --joint-profile filled --seed 20260827 --jobs 4
 ```
 
 `2.5 m` 是项目声明的源图物理尺度，素材本身没有标注实测尺度。生成墙面为
@@ -191,11 +196,23 @@ python3 tools/create_diagnostic_wall.py \
 颜色图 SHA-256 应为
 `8179451010485cdb9268356ee96de5dcdfc45845c98d1bea11ff267ae6e5649c`，生成清单记录
 源哈希、随机种子、尺度、分块和诊断特征。时间、提交号以及运行中的相机噪声会不同，
-不能要求新机器的整个清单或照片与历史验收逐字节一致。旋转／镜像与近邻去重的进一步增强
-仍按 [WALL_TEXTURE_PLAN](docs/WALL_TEXTURE_PLAN.md) 单独实施。
+不能要求新机器的整个清单或照片与历史验收逐字节一致。烘焙和诊断输出目录必须不存在；
+已有资产直接复用，重生成时换新目录，工具拒绝覆盖。
 
-`textures/`、下载缓存和采集数据不提交 Git。未指定 `wall_texture` 时默认是纯色墙，
-只适合查看模型；下面的采集主线会显式加载诊断墙。
+新版采用 250 mm 裁块、50 mm 重叠、16 mm 羽化、1 m 局部来源排除，以及四个直角旋转和
+镜像组合（D4 八方向）；变换在离线烘焙时确定，同一物理位置在不同照片中保持一致。
+参数和适用范围见[当前协议](docs/WALL_TEXTURE_PROTOCOL_CURRENT.md)，历史失败试验仍保留。
+已完成三种子匹配对照、整墙 gutter 检查、70＋680 张采集与 CUDA 拼接；双 GUI 平均 RTF
+分别为 0.991465／0.988472。边缘漏拍仍是覆盖规划的后续问题，不能据此宣称零漏拍验收，
+详见[采集报告](results/wall_texture_capture_2026-10-19/REPORT.md)。
+
+采集入口 `coverage_mission.launch.py` 默认加载
+`$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6/wall_texture.json`，并关闭 Gazebo 墙面网格；
+未设置数据根时使用 `$HOME/climbot_data`。缺少资产会报错，须先运行上述生成命令。
+显式 `wall_texture:=<清单路径>` 可选择其他资产；`wall_texture:=''` 可使用纯色墙。
+单独运行 `climbot_wall.launch.py` 或规划预览 `coverage_sim.launch.py` 仍默认纯色墙。
+旧 `textures/wall_025`／`wall_diagnostic_025` 仅用于历史数据复查，不用于新任务默认值。
+生成资产和下载缓存不提交 Git。
 
 ### 可选：安装 CUDA 拼接后端
 
@@ -353,9 +370,7 @@ ros2 run climbot_inspection calibrate_flat_field --ros-args \
 想让机器人执行路径并保存巡检照片，先设置数据保存位置，再启动完整任务：
 
 ```bash
-ros2 launch climbot_bringup coverage_mission.launch.py \
-  wall_texture:="$HOME/robot_ws/climbot_sim/textures/wall_diagnostic_025/wall_texture.json" \
-  wall_grid_spacing:=0
+ros2 launch climbot_bringup coverage_mission.launch.py
 ```
 
 在 RViz 的 **Coverage Task** 面板中完成点选后按 **Replan**，确认 `Capture` 页显示的是管理器从
@@ -374,12 +389,10 @@ launch 参数、`CLIMBOT_DATA_ROOT` 或 `$HOME/climbot_data` 解析出的保存�
 改成纵向扫描：
 
 ```bash
-ros2 launch climbot_bringup coverage_mission.launch.py sweep_direction:=vertical \
-  wall_texture:="$HOME/robot_ws/climbot_sim/textures/wall_diagnostic_025/wall_texture.json" \
-  wall_grid_spacing:=0
+ros2 launch climbot_bringup coverage_mission.launch.py sweep_direction:=vertical
 ```
 
-无 GUI 批处理、诊断墙贴图和 realistic 定位属于实验用法，见
+采集任务默认加载新版诊断墙；无 GUI 批处理和 realistic 定位等实验用法，见
 [OPERATION 的启动变体](docs/OPERATION.md#启动变体)。
 
 ### 5. 离线图像处理

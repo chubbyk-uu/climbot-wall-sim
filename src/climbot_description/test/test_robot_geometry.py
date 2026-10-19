@@ -57,7 +57,8 @@ def test_candidate_consumer_mass_and_com_match_actual_parts():
 
 @pytest.mark.parametrize('geometry,adhesion', [
     ('legacy', 'vacuum'), ('legacy', 'fixed_pressure'), ('unknown', 'auto'),
-    ('vacuum_chassis', 'legacy_constant'), ('vacuum_chassis', 'typo'), ('vacuum_chassis', 'fan_ode')])
+    ('vacuum_chassis', 'legacy_constant'), ('vacuum_chassis', 'typo'),
+    ('vacuum_chassis', 'fan_ode')])
 def test_invalid_combinations_never_fall_back(geometry, adhesion):
     """Reject incompatible geometry or public mode before starting processes."""
     with pytest.raises(ValueError):

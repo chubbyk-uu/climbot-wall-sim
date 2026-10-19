@@ -174,8 +174,9 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     mappings.update(wheel_radius=str(cfg['wheel']['radius_m']),
                     wheel_separation=str(cfg['wheel']['separation_m']))
     import xacro
-    old = ET.fromstring(xacro.process_file(
-        str(gazebo / 'models/climbot/components.sdf.xacro'), mappings=mappings).toxml()).find('model')
+    components = gazebo / 'models/climbot/components.sdf.xacro'
+    component_xml = xacro.process_file(str(components), mappings=mappings).toxml()
+    old = ET.fromstring(component_xml).find('model')
     sensor_frames = ET.fromstring(xacro.process_file(
         str(description / 'urdf/sensor_frames.urdf.xacro'), mappings=mappings).toxml())
     # The selected chassis still uses the shared IMU mount. Preserve its TF

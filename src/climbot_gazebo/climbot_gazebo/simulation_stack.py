@@ -23,8 +23,8 @@ from xml.dom import minidom
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from climbot_common.dds import local_dds_environment
-from climbot_description.wall_frame import reference_grid_spacing
 from climbot_description.robot_geometry import load_robot
+from climbot_description.wall_frame import reference_grid_spacing
 from climbot_gazebo.mesa_runtime import default_prefix, environment, KEYS, SNAPSHOT, validate
 from climbot_gazebo.total_station_model import resolve_component_enabled
 from climbot_gazebo.wall_texture import load_manifest, texture_visuals
@@ -153,7 +153,7 @@ def render_world(gazebo_share, description_share, grid_spacing,
         'height': repr(float(surface['height_m'])),
         'mu': repr(float(simulated_wall['mu'])),
         'grid_spacing': repr(float(grid_spacing)),
-                'spawn_gap': repr(float(spawn['surface_gap_m'])),
+        'spawn_gap': repr(float(spawn['surface_gap_m'])),
         'spawn_lateral': repr(float(spawn['lateral_m'])),
         'spawn_height': repr(float(spawn['height_m'])),
         'spawn_roll': repr(float(roll)),

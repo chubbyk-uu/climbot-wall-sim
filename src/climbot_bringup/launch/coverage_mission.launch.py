@@ -17,7 +17,6 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-from climbot_description.wall_frame import reference_grid_spacing
 from climbot_gazebo.geometry_launch import select_simulation
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
@@ -193,15 +192,17 @@ def generate_launch_description():
         # Wall Reference Grid display, which needs no restart.
         DeclareLaunchArgument(
             'wall_grid_spacing',
-            default_value=repr(reference_grid_spacing()),
+            default_value='0',
             description='Reference grid pitch on the Gazebo wall face in '
                         'metres; 0 paints none. Does not affect RViz.',
         ),
         DeclareLaunchArgument(
             'wall_texture',
-            default_value='',
-            description='Bake manifest from tools/bake_wall_texture.py; empty '
-                        'leaves the wall its flat colour.',
+            default_value=PathJoinSubstitution([
+                EnvironmentVariable('CLIMBOT_DATA_ROOT', default_value=default_archive_root),
+                'assets', 'wall_local_diagnostic_v6', 'wall_texture.json']),
+            description='Default: locally deduplicated D4 diagnostic wall under the data root; '
+                        'an explicit empty value uses the flat wall. Missing assets are errors.',
         ),
         DeclareLaunchArgument(
             'localization_profile', default_value='precision',

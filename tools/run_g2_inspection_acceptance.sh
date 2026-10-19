@@ -24,7 +24,7 @@
 #   tools/run_g2_inspection_acceptance.sh [horizontal] [vertical] [trapezoid]
 #   G2_CLOCK_PUBLISH_HZ=500 \
 #   INSPECTION_OUTPUT_ROOT="$CLIMBOT_DATA_ROOT" \
-#     WALL_TEXTURE=textures/wall_diagnostic_025/wall_texture.json \
+#     WALL_TEXTURE="$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6/wall_texture.json" \
 #     LOCALIZATION_PROFILE=realistic G2_MAX_CAMERA_POSITION_ERROR_M=1.0 \
 #     tools/run_g2_inspection_acceptance.sh p27b_horizontal p27b_vertical
 #

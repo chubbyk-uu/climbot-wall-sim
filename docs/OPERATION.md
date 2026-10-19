@@ -1,6 +1,6 @@
 # 实验与故障处置手册
 
-更新：2026-09-29。第一次跑通全链路请看 [README 的快速启动](../README.md#快速启动)——
+更新：2026-10-19。第一次跑通全链路请看 [README 的快速启动](../README.md#快速启动)——
 仿真、规划预览、点选任务、离线处理和墙面拼接的主线命令都在那里，本页不重复。
 
 本页只写主线之外的内容：批量回归、评价工具、参数变体和故障处置。接口字段见
@@ -32,9 +32,8 @@ ros2 launch climbot_bringup coverage_mission.launch.py \
   region_type:=rectangle sweep_direction:=horizontal \
   inspection_output_root:="$CLIMBOT_DATA_ROOT"
 
-# 诊断墙与 realistic 定位：P2 盲测数据用这一条
+# 新版诊断墙与 realistic 定位；默认诊断资产须先按 README 生成
 ros2 launch climbot_bringup coverage_mission.launch.py \
-  wall_texture:=textures/wall_diagnostic_025/wall_texture.json \
   wall_grid_spacing:=0 localization_profile:=realistic \
   inspection_output_root:="$CLIMBOT_DATA_ROOT"
 ```
@@ -69,7 +68,10 @@ C 从环境压启动，压力就绪后撤安装支撑；失败后不会自动转
 窗口、Mesa 映射和 TF。world reset 或 RViz Reset 后，可视化缓存约 1 s 内自动恢复，
 不触发重规划或重新发布执行任务；正在执行时不进行 world reset。
 
-### P2-06 近绿框诊断采集
+### 历史 P2-06 近绿框诊断采集
+
+本节是旧贴图 1340 张历史基线的复现命令，显式保留旧资产路径。新任务使用 README 的
+新版默认墙；旧基线的零漏拍结论不转移给新版资产。
 
 先从仓库根目录运行一次采集前预检；它按真实离散触发合同检查横、竖任务的**联合**覆盖，
 不启动 Gazebo，也不替代采集后的实际覆盖图：
@@ -246,19 +248,20 @@ ros2 run climbot_mosaic summarize_archive_content \
 只有诊断墙数据才能做这一步，且必须在 mosaic 渲染完成之后运行——评价器是独立的，不参与
 候选生成、匹配、优化或渲染决策。
 
-`MOSAIC_ROOT` 就是上一步 `build_wall_mosaic` 的 `--output-dir`：
+`MOSAIC_ROOT` 就是上一步 `build_wall_mosaic` 的 `--output-dir`。下面采用新任务的默认墙；
+复查旧数据时必须改为该采集归档记录的原始清单，不能用新墙评价旧照片：
 
 ```bash
 MOSAIC_ROOT="$CLIMBOT_DATA_ROOT/mosaic-<id>-hardcut"
 
 ros2 run climbot_mosaic evaluate_diagnostic_mosaic \
   --mosaic-dir "$MOSAIC_ROOT" \
-  --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
+  --wall-manifest "$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6/wall_texture.json" \
   --output-dir "$MOSAIC_ROOT-truth-<new-id>"
 
 ros2 run climbot_mosaic inspect_diagnostic_mosaic \
   --mosaic-dir "$MOSAIC_ROOT" \
-  --wall-manifest "$PWD/textures/wall_diagnostic_025/wall_texture.json" \
+  --wall-manifest "$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6/wall_texture.json" \
   --output-dir "$MOSAIC_ROOT-inspection-<new-id>" \
   --input-run "$CLIMBOT_DATA_ROOT/processed-<horizontal-id>" \
   --input-run "$CLIMBOT_DATA_ROOT/processed-<vertical-id>"

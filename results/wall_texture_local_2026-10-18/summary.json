@@ -1,0 +1,242 @@
+{
+  "trials": [
+    {
+      "seed": 20261018,
+      "match_passed": true,
+      "summary": {
+        "positive_pairs": 40,
+        "positive_accepted": 40,
+        "positive_acceptance_rate": 1.0,
+        "weak_texture_pairs": 10,
+        "weak_texture_acceptance_rate": 1.0,
+        "pose_centre_error_p95_mm": 0.012622621182393292,
+        "pose_angle_error_p95_deg": 0.002523208695483189,
+        "actual_candidate_pairs": 193,
+        "accepted_candidate_pairs": 111,
+        "accepted_inliers": 6685,
+        "wrong_inliers_over_1mm": 2,
+        "wrong_inlier_fraction": 0.0002991772625280479,
+        "accepted_truth_nonoverlapping_pairs": 0,
+        "accepted_pairs_over_0_5mm_or_0_05deg": 7,
+        "excluded_nonoverlap_pairs": 2967
+      },
+      "source_repeat_fraction_sampled": 0.0,
+      "ncc_windows_above_0_9": 0,
+      "gutter": {
+        "mip_levels": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "comparisons": 492,
+        "mismatched_shared_regions": 0
+      },
+      "seam_gradient_ratio": 0.8005100119683498
+    },
+    {
+      "seed": 20261021,
+      "match_passed": true,
+      "summary": {
+        "positive_pairs": 40,
+        "positive_accepted": 40,
+        "positive_acceptance_rate": 1.0,
+        "weak_texture_pairs": 10,
+        "weak_texture_acceptance_rate": 1.0,
+        "pose_centre_error_p95_mm": 0.014907325665100475,
+        "pose_angle_error_p95_deg": 0.0031411887889479287,
+        "actual_candidate_pairs": 193,
+        "accepted_candidate_pairs": 110,
+        "accepted_inliers": 7916,
+        "wrong_inliers_over_1mm": 0,
+        "wrong_inlier_fraction": 0.0,
+        "accepted_truth_nonoverlapping_pairs": 0,
+        "accepted_pairs_over_0_5mm_or_0_05deg": 2,
+        "excluded_nonoverlap_pairs": 2967
+      },
+      "source_repeat_fraction_sampled": 0.0,
+      "ncc_windows_above_0_9": 0,
+      "gutter": {
+        "mip_levels": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "comparisons": 492,
+        "mismatched_shared_regions": 0
+      },
+      "seam_gradient_ratio": 0.7960297938186068
+    },
+    {
+      "seed": 20261022,
+      "match_passed": true,
+      "summary": {
+        "positive_pairs": 40,
+        "positive_accepted": 40,
+        "positive_acceptance_rate": 1.0,
+        "weak_texture_pairs": 10,
+        "weak_texture_acceptance_rate": 1.0,
+        "pose_centre_error_p95_mm": 0.012756789564318966,
+        "pose_angle_error_p95_deg": 0.003681518119972081,
+        "actual_candidate_pairs": 193,
+        "accepted_candidate_pairs": 116,
+        "accepted_inliers": 8584,
+        "wrong_inliers_over_1mm": 1,
+        "wrong_inlier_fraction": 0.00011649580615097856,
+        "accepted_truth_nonoverlapping_pairs": 0,
+        "accepted_pairs_over_0_5mm_or_0_05deg": 1,
+        "excluded_nonoverlap_pairs": 2967
+      },
+      "source_repeat_fraction_sampled": 0.0,
+      "ncc_windows_above_0_9": 0,
+      "gutter": {
+        "mip_levels": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "comparisons": 492,
+        "mismatched_shared_regions": 0
+      },
+      "seam_gradient_ratio": 0.802224631377586
+    }
+  ],
+  "protocol_sha256": "41658f1622152404d2b958734a68195d192c03de68bad7cca1c23aab9839a4a5",
+  "source_pool": "single Concrete044D only; no extra source map used",
+  "status": "offline_texture_fixes_verified_capture_and_mosaic_deferred",
+  "full_wall_capture_mosaic": "deferred by user until next session",
+  "data_root": "/home/jerry/climbot_data/wall_texture_randomization_20261018",
+  "precision": {
+    "camera_px": [
+      1920,
+      1080
+    ],
+    "wall_mm_per_px": 0.25,
+    "mosaic_mm_per_px": 0.25
+  },
+  "short_task": {
+    "lane": "/tmp/climbot_g2_fqvHto/horizontal",
+    "passed": true,
+    "captures": 10,
+    "max_pose_error_m": 0.0018682046930575964,
+    "native_rtf": 0.9900315040690002,
+    "cleanup": {
+      "known_process_groups": [
+        116247,
+        116669,
+        116677,
+        116685,
+        116946,
+        116954,
+        116962
+      ],
+      "forced_kill_groups": [],
+      "remaining_groups": [],
+      "passed": true
+    },
+    "asset_scope": "pre-fix regional diagnostic asset; not acceptance of final full-wall asset"
+  },
+  "tests": {
+    "full_suite_before_final_gutter_fix": {
+      "tests": 1777,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 83,
+      "log": "/tmp/climbot_texture_v6_full_j8_20261018_2342.log"
+    },
+    "gutter_fix_targeted": {
+      "passed": 52,
+      "log": "/tmp/climbot_texture_gutter_final_regression_20261018.log",
+      "controlled_old_bc1_behavior_reproduced": true,
+      "controlled_old_polygon_behavior_reproduced": true,
+      "lint_passed": true
+    },
+    "full_suite_after_final_gutter_fix": {
+      "tests": 1779,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 83,
+      "log": "/tmp/climbot_texture_gutter_full_j8_20261018.log",
+      "result_log": "/tmp/climbot_texture_gutter_full_result_20261018.log"
+    }
+  },
+  "representative_capture_mosaic": "not started; deferred by latest user instruction",
+  "final_asset": {
+    "manifest": "/home/jerry/climbot_data/wall_texture_randomization_20261018/v6_wall_diagnostic_final_10x8_seed20261018/wall_texture.json",
+    "manifest_sha256": "d3467019d2de36b9eee1d14ce421ee894506c5c0f7868d0d651b38f0fdc86f78",
+    "producer_sha256": "10c5cb0c9039a809a448c22e47972856df15479a59c853e8ee685d8ac1d611f2",
+    "dds_blocks": 320,
+    "dimensions_px": [
+      40000,
+      32000
+    ],
+    "full_source_exclusion_passed": true,
+    "dds_hash_mismatches": [],
+    "gutter": {
+      "mip_levels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "comparisons": 3624,
+      "mismatched_shared_regions": 0
+    },
+    "audit_sha256": "f2a6b4a5a2ba4187a46d98bdb3fc9fec2416eb2fc8c4267e691963bb0a3a3983",
+    "audit_scope": "Full-wall source guard/hashes/gutters; decoded NCC/weights/seam only representative 4x3 m viewport. No claim of global uniqueness.",
+    "overlay_feature_counts": {
+      "construction_seam": 3,
+      "crack_decal": 8,
+      "graffiti_decal": 4,
+      "repair_patch": 6
+    }
+  },
+  "old_assets_integrity": {
+    "wall_025": {
+      "manifest_sha256": "58eb094266c08f04f64b49fd49d39958af74cb826189aebf91bac1f7436b663f",
+      "manifest_unchanged": true,
+      "dds_files": 320,
+      "ordered_inventory_match": true,
+      "ordered_inventory_format": [
+        "{name} {sha}\n"
+      ],
+      "manifest_hash_mismatches": [],
+      "current_file_hashes_sha256": "4cfe494a20138ac695b47492fd7e6b8d27058a7556ac3dc3dca2c4159f493c56"
+    },
+    "wall_diagnostic_025": {
+      "manifest_sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c",
+      "manifest_unchanged": true,
+      "dds_files": 320,
+      "ordered_inventory_match": true,
+      "ordered_inventory_format": [
+        "{name} {sha}\n"
+      ],
+      "manifest_hash_mismatches": [],
+      "current_file_hashes_sha256": "9164ab21ab6e7720fdb6f130f1afcc5c2f6e176ed180ad606a937e0b58462b05"
+    }
+  },
+  "next_session": {
+    "first": "3x2 m representative capture and CUDA mosaic, expected 70 images",
+    "region_m": [
+      6,
+      1.5,
+      9,
+      3.5
+    ],
+    "then": "one full-wall capture and CUDA mosaic after representative review",
+    "capture_rtf_min": 0.95,
+    "dual_gui_required": true,
+    "mosaic_backend": "cuda",
+    "fallback_allowed": false
+  }
+}

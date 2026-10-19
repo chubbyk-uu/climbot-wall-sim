@@ -1,0 +1,143 @@
+{
+  "date": "2026-10-19",
+  "reviewed_branch": "feature/wall-texture-randomization",
+  "base_commit": "d1c37342bd31b8b122de38dfdf9fd2bb88ef0e3d",
+  "workspace_uncommitted": true,
+  "blocking_findings": [],
+  "asset_audits": [
+    {
+      "asset": "v6_wall_10x8_seed20261018",
+      "manifest_sha256": "283bbc8fe5726ee31b9345e215817b0ada62b4ff4c3f5bf51b38409ae87c11a6",
+      "blocks_verified": 320,
+      "trace_files_verified": 2,
+      "placements": 2000,
+      "orientation_counts": [
+        259,
+        255,
+        278,
+        243,
+        229,
+        255,
+        231,
+        250
+      ],
+      "minimum_repeat_rectangle_distance_m": 1.0124228365658294,
+      "gutters": {
+        "mip_levels": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "comparisons": 3624,
+        "mismatched_shared_regions": 0
+      },
+      "diagnostic_counts": null,
+      "passed": true
+    },
+    {
+      "asset": "v6_wall_diagnostic_final_10x8_seed20261018",
+      "manifest_sha256": "d3467019d2de36b9eee1d14ce421ee894506c5c0f7868d0d651b38f0fdc86f78",
+      "blocks_verified": 320,
+      "trace_files_verified": 2,
+      "placements": 2000,
+      "orientation_counts": [
+        259,
+        255,
+        278,
+        243,
+        229,
+        255,
+        231,
+        250
+      ],
+      "minimum_repeat_rectangle_distance_m": 1.0124228365658294,
+      "gutters": {
+        "mip_levels": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "comparisons": 3624,
+        "mismatched_shared_regions": 0
+      },
+      "diagnostic_counts": {
+        "construction_seam": 3,
+        "crack_decal": 8,
+        "graffiti_decal": 4,
+        "repair_patch": 6
+      },
+      "passed": true
+    }
+  ],
+  "default_world": {
+    "default_manifest": "/home/jerry/climbot_data/assets/wall_local_diagnostic_v6/wall_texture.json",
+    "manifest_sha256": "d3467019d2de36b9eee1d14ce421ee894506c5c0f7868d0d651b38f0fdc86f78",
+    "grid_spacing": "0",
+    "additional_texture_visuals": 320,
+    "nonvisual_world_identical": true,
+    "missing_asset_fails_explicitly": true,
+    "passed": true
+  },
+  "default_scope": {
+    "capture": "coverage_mission.launch.py: data root assets/wall_local_diagnostic_v6/wall_texture.json, Gazebo wall grid disabled",
+    "model_and_planning_preview": "plain wall retained",
+    "missing_asset": "explicit error, no silent fallback",
+    "explicit_manifest_or_empty_override": "retained"
+  },
+  "previous_native_cuda_manifests": [
+    {
+      "scope": "70-frame representative",
+      "manifest_sha256": "7a002d47075abdcd8bcf073b8a67038cd2cf6e8768a07faf08e6ffc3e2369db2",
+      "effective": "cuda",
+      "fallback": false
+    },
+    {
+      "scope": "680-frame full-wall horizontal",
+      "manifest_sha256": "3c2a00a38278a3cc93e5c8380739e477b8df228b4bcbf12d35262b6009fc6847",
+      "effective": "cuda",
+      "fallback": false
+    }
+  ],
+  "known_limitations": [
+    "Texture randomization reduces local copied content, not every SIFT ambiguity. Accepted candidate pairs exceeding 0.5 mm or 0.05 degrees were 7/2/1 across new seeds versus 3 for the baseline; primary 40-pair overlap and weak-texture benchmarks passed.",
+    "Horizontal scan has 0.484% uncovered diagnostic-feature pixels inside its ROI; coverage planning remains a separate follow-up.",
+    "No fresh GUI capture or S6/S7 rerun in this review; existing 70/680-frame evidence and native manifests were inspected."
+  ],
+  "legacy_assets_deleted": false,
+  "legacy_retention_reason": "Historical 1340-frame inputs and P2/S6/S7 independent wall-truth evaluation still reference the old manifests.",
+  "checks": {
+    "texture_tests": {
+      "passed": 55,
+      "elapsed_s": 2.59,
+      "log": "/tmp/climbot_texture_review_tests_20261019.log"
+    },
+    "build": {
+      "packages": 3,
+      "exit_code": 0,
+      "log": "/tmp/climbot_texture_default_build_20261019.log"
+    },
+    "lint": {
+      "files": 2,
+      "exit_code": 0,
+      "log": "/tmp/climbot_texture_review_lint_20261019.log"
+    },
+    "full_suite": {
+      "exit_code": 0,
+      "tests": 1783,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 83,
+      "elapsed_s": 55.9,
+      "executor": "parallel",
+      "parallel_workers": 8,
+      "log": "/tmp/climbot_texture_review_full_20261019.log",
+      "result_log": "/tmp/climbot_texture_review_full_result_20261019.log"
+    }
+  }
+}

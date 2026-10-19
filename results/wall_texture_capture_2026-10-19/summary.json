@@ -1,0 +1,723 @@
+{
+  "status": "completed",
+  "source_asset_manifest_sha256": "d3467019d2de36b9eee1d14ce421ee894506c5c0f7868d0d651b38f0fdc86f78",
+  "representative": {
+    "capture": {
+      "passed": true,
+      "checks": {
+        "g2_evaluator": true,
+        "reset": true,
+        "startup": true,
+        "post_reset_readiness": true,
+        "all_70_originals_verified": true,
+        "completed_70_of_70": true,
+        "five_scan_lines": true,
+        "unique_exposure_stamps": true,
+        "all_tf": true,
+        "dual_gui_observed": true,
+        "private_mesa_both_renderers": true,
+        "native_clock_integrity": true,
+        "dual_gui_rtf_at_least_095": true,
+        "no_kill_or_remaining_process_groups": true,
+        "pressure_above_6100": true,
+        "no_pressure_failure_or_ideal_fallback": true,
+        "three_healthy_running_fans": true,
+        "pressure_force_identity": true
+      },
+      "source_revision": "d1c37342bd31b8b122de38dfdf9fd2bb88ef0e3d",
+      "capture_count": 70,
+      "native_rtf": 0.9914651456319087,
+      "minimum_native_10s_rtf": 0.9816324383261656,
+      "minimum_delta_pa": 8404.442610874015,
+      "plugin_cpu_mean_us": 29.0460644621719,
+      "plugin_cpu_p95_us": 35.31,
+      "maximum_camera_position_error_m": 0.0038767309764864244,
+      "p95_camera_position_error_m": 0.0032474038117476555,
+      "archive": "wall_texture_randomization_20261018/v6_robot_capture/wall-texture-v6-representative-20261018/r000001_20261019T005334Z_ff24ff9e9c884146a43141da610fa6e9/manifest.json",
+      "archive_manifest_sha256": "596f87855eee3965f578b59250d9c48f0799d4839becb41057d71a81290c4731",
+      "retained_pressure": {
+        "path": "wall_texture_randomization_20261018/v6_representative_retained/vacuum.jsonl.gz",
+        "sha256": "c2e254ad41cab0db469dcbc7eed0b1b5ad420406042433f94f814f2e9e54fd66",
+        "samples": 15544
+      },
+      "internal_gazebo_shutdown_segfault_logged": true,
+      "exit_scope": "Task complete, no KILL and no residual process groups. Internal Gazebo shutdown library/thread boundary tracked separately; parent exit zero is not proof of every internal exit."
+    },
+    "cuda": {
+      "requested": "cuda",
+      "effective": "cuda",
+      "fallback": false
+    },
+    "grid": {
+      "frame": "wall",
+      "height_px": 8694,
+      "max_x_m": 9.327959869384767,
+      "max_y_m": 3.6190090761184694,
+      "min_x_m": 5.673709869384766,
+      "min_y_m": 1.4455090761184692,
+      "resolution_m_per_pixel": 0.00025,
+      "tile_size_px": 512,
+      "width_px": 14617
+    },
+    "quality": {
+      "metric": "grayscale standard deviation across source images in >=2-image overlap",
+      "optimized": {
+        "gray_std_mean": 1.3576902334732739,
+        "gray_std_p95": 3.238095238095238,
+        "overlap_pixel_count": 72738131
+      },
+      "pose_only": {
+        "gray_std_mean": 2.687840116216519,
+        "gray_std_p95": 6.6007326007326,
+        "overlap_pixel_count": 72709515
+      }
+    },
+    "truth": {
+      "optimized": {
+        "accepted_anchor_count": 2,
+        "absolute_anchor_offset_m": {
+          "maximum": 0.0002657997741816164,
+          "median": 0.0001451000246214289,
+          "p95": 0.0002657997741816164
+        },
+        "similarity": {
+          "inlier_count": 2,
+          "local_residual_maximum": null,
+          "local_residual_median": null,
+          "local_residual_observable": false,
+          "local_residual_p95": null,
+          "scale": 0.9999017834269786,
+          "scale_error_ppm": -98.21657302144793,
+          "translation_m": [
+            0.00029481310952057034,
+            0.0014176915683221066
+          ],
+          "yaw_error_deg": -0.008273314216542853
+        },
+        "seam_ratio": 2.5
+      },
+      "pose_only": {
+        "accepted_anchor_count": 2,
+        "absolute_anchor_offset_m": {
+          "maximum": 0.002888390201673159,
+          "median": 0.0006831461378717146,
+          "p95": 0.002888390201673159
+        },
+        "similarity": {
+          "inlier_count": 2,
+          "local_residual_maximum": null,
+          "local_residual_median": null,
+          "local_residual_observable": false,
+          "local_residual_p95": null,
+          "scale": 1.000064882664238,
+          "scale_error_ppm": 64.88266423798628,
+          "translation_m": [
+            0.004020555916347283,
+            -0.011074224665885894
+          ],
+          "yaw_error_deg": 0.08812836591688894
+        },
+        "seam_ratio": 5.0
+      }
+    },
+    "coverage": {
+      "all_inspection_region_feature_pixels_covered": false,
+      "all_visible_feature_pixels_covered": false,
+      "feature_pixels_inside_inspection_region": 19580276,
+      "pixel_count": 22565000,
+      "uncovered_inside_inspection_region": 1071291,
+      "uncovered_outside_inspection_region": 1170217,
+      "uncovered_outside_region_inside_planned_scan_footprint": 334,
+      "uncovered_outside_region_inside_safe_pose_envelope": 1170217,
+      "uncovered_outside_region_outside_planned_scan_footprint": 1169883,
+      "uncovered_outside_region_outside_safe_pose_envelope": 0,
+      "uncovered_pixel_count": 2241508
+    },
+    "visual_review": {
+      "scope": "70-frame representative smoke: one native raw frame, overview, four 512-square pose-only vs optimized crops, live dual GUI. Bounded visual review; not full rectangular coverage acceptance.",
+      "passed_for_full_wall_visual_trial": true,
+      "observations": [
+        "Natural concrete, joint, graffiti and crack remain visible. Reviewed interior crops show no obvious doubled structures; modest optical softness remains.",
+        "Overview has edge staircase/notch gaps; 1071291 feature pixels inside requested region are uncovered. Repair crop at x8.8,y2.16 crosses one gap. Coverage is reported as incomplete, not passed.",
+        "Truth uses only two anchors: optimized absolute anchor P95 0.266mm; residual unobservable and scale estimate -98.2ppm not a formal full-wall gate.",
+        "Continue one horizontal full-wall visual trial to inspect texture and stitching at scale, retaining coverage metrics."
+      ],
+      "native_cuda": {
+        "effective": "cuda",
+        "fallback": false
+      },
+      "wall_mosaic_mm_per_px": 0.25
+    },
+    "local_matches": {
+      "accepted_count": 189,
+      "candidate_count": 209,
+      "config": {
+        "minimum_mutual_matches": 4,
+        "ransac_confidence": 0.999,
+        "ransac_max_iterations": 2000,
+        "ransac_threshold_m": 0.005,
+        "ratio_test": 0.75
+      },
+      "elapsed_s": 0.23273688499998002,
+      "rejected_count": 20,
+      "rejection_reasons": {
+        "insufficient_mutual_matches": 20
+      }
+    },
+    "pose_graph": {
+      "accepted_edge_count": 189,
+      "connected_component_sizes": [
+        70
+      ],
+      "edge_recheck_threshold_m": 0.005,
+      "final_edge_error_m": {
+        "max": 0.0002738967603576314,
+        "median": 5.323152970829586e-05,
+        "p95": 0.00016316506735231004
+      },
+      "final_solver": {
+        "cost": 12.729222717910048,
+        "evaluations": 2
+      },
+      "first_round_edge_error_m": {
+        "max": 0.0002738964799553731,
+        "median": 5.322669842362591e-05,
+        "p95": 0.0001631783639943185
+      },
+      "first_solver": {
+        "cost": 12.729222736538969,
+        "evaluations": 4
+      },
+      "frame_count": 70,
+      "initial_edge_error_m": {
+        "max": 0.005438751876150606,
+        "median": 0.0020094575507000846,
+        "p95": 0.004196831632804271
+      },
+      "linear_initializer": {
+        "cost": 14.931010880333506,
+        "evaluations": 4
+      },
+      "position_correction_m": {
+        "max": 0.004076831006742337,
+        "median": 0.0015486642735930522,
+        "p95": 0.0032189404469395765
+      },
+      "posterior_note": "diagonal standard-deviation approximation from final robust Jacobian",
+      "rejected_after_first_solve": 0,
+      "retained_edge_count": 189,
+      "solver_loss": "soft_l1",
+      "yaw_correction_deg": {
+        "max": 0.22172608589001988,
+        "median": 0.036855715550351616,
+        "p95": 0.11688200902247639
+      }
+    }
+  },
+  "full_wall": {
+    "data_root": "/home/jerry/climbot_data/wall_texture_capture_20261019_full",
+    "expected_images": 680,
+    "roi_m": [
+      0.56,
+      0.56,
+      9.44,
+      7.44
+    ],
+    "scope": "one completed horizontal sweep of the accessible inspection region; full rectangular feature coverage remains false",
+    "capture": {
+      "passed": true,
+      "checks": {
+        "g2_evaluator": true,
+        "reset": true,
+        "startup": true,
+        "post_reset_readiness": true,
+        "all_680_originals_verified": true,
+        "completed_680_of_680": true,
+        "seventeen_scan_lines": true,
+        "unique_exposure_stamps": true,
+        "all_tf": true,
+        "dual_gui_observed": true,
+        "private_mesa_both_renderers": true,
+        "native_clock_integrity": true,
+        "dual_gui_rtf_at_least_095": true,
+        "no_kill_or_remaining_process_groups": true,
+        "pressure_above_6100": true,
+        "no_pressure_failure_or_ideal_fallback": true,
+        "three_healthy_running_fans": true,
+        "pressure_force_identity": true
+      },
+      "source_revision": "d1c37342bd31b8b122de38dfdf9fd2bb88ef0e3d",
+      "capture_count": 680,
+      "native_rtf": 0.9884724525742348,
+      "minimum_native_10s_rtf": 0.9828131786758925,
+      "minimum_delta_pa": 8404.442607446777,
+      "plugin_cpu_mean_us": 28.79630318313431,
+      "plugin_cpu_p95_us": 35.928,
+      "maximum_camera_position_error_m": 0.004377428426012544,
+      "p95_camera_position_error_m": 0.002958980222725031,
+      "archive": "wall_texture_capture_20261019_full/v6_robot_capture/wall-texture-v6-full-horizontal-20261019/r000001_20261019T005910Z_b1d7c35209ba4ea1990cd2737c828ccc/manifest.json",
+      "archive_manifest_sha256": "1fd0eede4a0cd2d393915601b704882330f7ec7988d1bb1aa90a8ce502e78f14",
+      "retained_pressure": {
+        "path": "wall_texture_capture_20261019_full/v6_full_retained/vacuum.jsonl.gz",
+        "sha256": "7d9dfdeae5d4fa68e7d3141b7ef038331183efcd932722b92dae8382005eaed1",
+        "samples": 105682
+      },
+      "internal_gazebo_shutdown_segfault_logged": true,
+      "exit_scope": "Task complete, no KILL and no residual process groups. Internal Gazebo shutdown library/thread boundary tracked separately; parent exit zero is not proof of every internal exit."
+    },
+    "capture_photo_coverage": {
+      "ratio": 0.9551546459249948,
+      "missed_ratio": 0.04484535407500523,
+      "covered_cells": 583546,
+      "region_cells": 610944,
+      "resolution_m": 0.01,
+      "covered_area_m2": 58.354600000000005,
+      "region_area_m2": 61.09440000000001
+    },
+    "mosaic_manifest_sha256": "3c2a00a38278a3cc93e5c8380739e477b8df228b4bcbf12d35262b6009fc6847",
+    "cuda": {
+      "requested": "cuda",
+      "effective": "cuda",
+      "fallback": false
+    },
+    "grid": {
+      "frame": "wall",
+      "height_px": 27392,
+      "max_x_m": 9.763076980471611,
+      "max_y_m": 7.4607973198890685,
+      "min_x_m": 0.23957698047161102,
+      "min_y_m": 0.6127973198890686,
+      "resolution_m_per_pixel": 0.00025,
+      "tile_size_px": 512,
+      "width_px": 38094
+    },
+    "quality": {
+      "metric": "grayscale standard deviation across source images in >=2-image overlap",
+      "optimized": {
+        "gray_std_mean": 1.464675958097785,
+        "gray_std_p95": 3.4249084249084247,
+        "overlap_pixel_count": 728778819
+      },
+      "pose_only": {
+        "gray_std_mean": 2.736382087736051,
+        "gray_std_p95": 6.725274725274725,
+        "overlap_pixel_count": 728917872
+      }
+    },
+    "local_matches": {
+      "accepted_count": 2279,
+      "candidate_count": 2487,
+      "config": {
+        "minimum_mutual_matches": 4,
+        "ransac_confidence": 0.999,
+        "ransac_max_iterations": 2000,
+        "ransac_threshold_m": 0.005,
+        "ratio_test": 0.75
+      },
+      "elapsed_s": 2.581714452000142,
+      "rejected_count": 208,
+      "rejection_reasons": {
+        "insufficient_mutual_matches": 208
+      }
+    },
+    "pose_graph": {
+      "accepted_edge_count": 2279,
+      "connected_component_sizes": [
+        680
+      ],
+      "edge_recheck_threshold_m": 0.005,
+      "final_edge_error_m": {
+        "max": 0.0010137626307875208,
+        "median": 5.378175645760612e-05,
+        "p95": 0.00012345955033161063
+      },
+      "final_solver": {
+        "cost": 149.04898950619042,
+        "evaluations": 2
+      },
+      "first_round_edge_error_m": {
+        "max": 0.0010137688946985986,
+        "median": 5.378618591585875e-05,
+        "p95": 0.00012345937147090273
+      },
+      "first_solver": {
+        "cost": 149.04899058513016,
+        "evaluations": 4
+      },
+      "frame_count": 680,
+      "initial_edge_error_m": {
+        "max": 0.007202826688973257,
+        "median": 0.0019820664340768493,
+        "p95": 0.004113606074449595
+      },
+      "linear_initializer": {
+        "cost": 179.42246371459026,
+        "evaluations": 4
+      },
+      "position_correction_m": {
+        "max": 0.0043600616615028015,
+        "median": 0.001346211779259227,
+        "p95": 0.002961176679126515
+      },
+      "posterior_note": "diagonal standard-deviation approximation from final robust Jacobian",
+      "rejected_after_first_solve": 0,
+      "retained_edge_count": 2279,
+      "solver_loss": "soft_l1",
+      "yaw_correction_deg": {
+        "max": 0.25462405959130285,
+        "median": 0.04156793328670126,
+        "p95": 0.1379596114086216
+      }
+    },
+    "truth": {
+      "optimized": {
+        "accepted_anchor_count": 8,
+        "absolute_anchor_offset_m": {
+          "maximum": 0.0005705762240841749,
+          "median": 0.0003439510088685994,
+          "p95": 0.0005705762240841749
+        },
+        "similarity": {
+          "inlier_count": 8,
+          "local_residual_maximum": 0.0003705094981051383,
+          "local_residual_median": 0.00011490406595404211,
+          "local_residual_observable": true,
+          "local_residual_p95": 0.0003705094981051383,
+          "scale": 1.0000050747539324,
+          "scale_error_ppm": 5.074753932410303,
+          "translation_m": [
+            0.00033482252026650894,
+            -0.0005477794976768592
+          ],
+          "yaw_error_deg": 0.005213881782518772
+        },
+        "seam_ratio": 2.5
+      },
+      "pose_only": {
+        "accepted_anchor_count": 8,
+        "absolute_anchor_offset_m": {
+          "maximum": 0.002213876675110481,
+          "median": 0.0006844510373179009,
+          "p95": 0.002213876675110481
+        },
+        "similarity": {
+          "inlier_count": 8,
+          "local_residual_maximum": 0.0007277392886840679,
+          "local_residual_median": 0.000554223023270477,
+          "local_residual_observable": true,
+          "local_residual_p95": 0.0007277392886840679,
+          "scale": 0.999758743189173,
+          "scale_error_ppm": -241.25681082698412,
+          "translation_m": [
+            0.001164414895535655,
+            0.00015864924243017128
+          ],
+          "yaw_error_deg": 0.006681625294025268
+        },
+        "seam_ratio": 5.0
+      }
+    },
+    "coverage": {
+      "all_inspection_region_feature_pixels_covered": false,
+      "all_visible_feature_pixels_covered": false,
+      "feature_pixels_inside_inspection_region": 123474573,
+      "pixel_count": 127175951,
+      "uncovered_inside_inspection_region": 597497,
+      "uncovered_outside_inspection_region": 570048,
+      "uncovered_outside_region_inside_planned_scan_footprint": 15264,
+      "uncovered_outside_region_inside_safe_pose_envelope": 570048,
+      "uncovered_outside_region_outside_planned_scan_footprint": 554784,
+      "uncovered_outside_region_outside_safe_pose_envelope": 0,
+      "uncovered_pixel_count": 1167545
+    },
+    "feature_counts": {
+      "declared": 21,
+      "fully_visible": 17,
+      "intersecting_mosaic_domain": 21,
+      "outside_mosaic_domain": 0,
+      "partially_visible": 4
+    },
+    "checks": {
+      "raw_capture_audit": true,
+      "cuda_explicit_no_fallback": true,
+      "native_resolution_025mm": true,
+      "all_680_connected": true,
+      "anchor_p95_le_2_5mm": true,
+      "local_residual_p95_le_0_5mm": true,
+      "scale_abs_le_50ppm": true,
+      "yaw_abs_le_0_01deg": true,
+      "seam_ratio_le_5": true,
+      "optimized_anchor_not_worse": true
+    },
+    "visual_review": {
+      "reviewed": true,
+      "scope": "Native dual GUI screenshots; whole-wall overview; 12 separate 512x512 native pose-only/optimized window pairs at three joints, weak concrete, all four graffiti, two repairs and two cracks. Not every full-resolution pixel or every raw image.",
+      "observations": [
+        "Natural concrete macro appearance and weak texture remain; all four graffiti and panel layout visible in overview. No conspicuous regular repeated texture pattern in this overview, without claiming global uniqueness.",
+        "Optimized joint intersections, cracks and graffiti continuity visibly better than pose-only; no obvious doubled structures in reviewed optimized interior windows. Optical softness and small hard-cut brightness steps remain.",
+        "Scan edges retain staircase/notch gaps. Coverage check is not passed; texture/matching validation does not close complete rectangular coverage."
+      ],
+      "preview": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_mosaic/mosaic_preview.jpg",
+      "native_pairs": 12,
+      "output_grid": {
+        "frame": "wall",
+        "height_px": 27392,
+        "max_x_m": 9.763076980471611,
+        "max_y_m": 7.4607973198890685,
+        "min_x_m": 0.23957698047161102,
+        "min_y_m": 0.6127973198890686,
+        "resolution_m_per_pixel": 0.00025,
+        "tile_size_px": 512,
+        "width_px": 38094
+      }
+    },
+    "postprocess": {
+      "source_git_base": "d1c37342bd31b8b122de38dfdf9fd2bb88ef0e3d",
+      "workspace_uncommitted": true,
+      "producer_sha256": "5bb043692502f2617d8b82707ec4f1dc9b3aacdedf6ff6846db33342b01670d9",
+      "stages": {
+        "processing": {
+          "command": [
+            "ros2",
+            "run",
+            "climbot_image_processing",
+            "process_inspection_archive",
+            "--input-run",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_capture/wall-texture-v6-full-horizontal-20261019/r000001_20261019T005910Z_b1d7c35209ba4ea1990cd2737c828ccc",
+            "--output-dir",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+            "--flat-field-file",
+            "/home/jerry/climbot_data/calibration/flat_field_sim_pbr_exp065_20260901.npz",
+            "--denoise",
+            "none",
+            "--jobs",
+            "auto",
+            "--memory-budget-gb",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_s": 12.837458878000007,
+          "log": "/tmp/climbot_texture_v6_formal_processing_1792372623127830208.log"
+        },
+        "validate_inputs": {
+          "command": [
+            "ros2",
+            "run",
+            "climbot_mosaic",
+            "validate_mosaic_inputs",
+            "--input-run",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed"
+          ],
+          "exit_code": 0,
+          "elapsed_s": 8.12825074400007,
+          "log": "/tmp/climbot_texture_v6_formal_validate_inputs_1792372635965474908.log"
+        },
+        "matches": {
+          "command": [
+            "ros2",
+            "run",
+            "climbot_mosaic",
+            "build_local_matches",
+            "--input-run",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+            "--output-dir",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_matches",
+            "--work-dir",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_feature-work",
+            "--jobs",
+            "auto"
+          ],
+          "exit_code": 0,
+          "elapsed_s": 28.207278605999818,
+          "log": "/tmp/climbot_texture_v6_formal_matches_1792372644093994624.log"
+        },
+        "pose_graph": {
+          "command": [
+            "ros2",
+            "run",
+            "climbot_mosaic",
+            "build_pose_graph",
+            "--input-run",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+            "--local-matches",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_matches/local_matches.json",
+            "--output-dir",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_pose-graph"
+          ],
+          "exit_code": 0,
+          "elapsed_s": 9.329678478000005,
+          "log": "/tmp/climbot_texture_v6_formal_pose_graph_1792372672301481848.log"
+        },
+        "mosaic_cuda": {
+          "command": [
+            "ros2",
+            "run",
+            "climbot_mosaic",
+            "build_wall_mosaic",
+            "--input-run",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+            "--pose-graph-dir",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_pose-graph",
+            "--output-dir",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_mosaic",
+            "--work-dir",
+            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_cuda-work",
+            "--backend",
+            "cuda",
+            "--resolution-mm-per-pixel",
+            ".25",
+            "--jobs",
+            "auto",
+            "--memory-budget-gb",
+            "4",
+            "--preview-max-side-px",
+            "4096"
+          ],
+          "exit_code": 0,
+          "elapsed_s": 40.718588486999806,
+          "log": "/tmp/climbot_texture_v6_formal_mosaic_cuda_1792372681631361736.log"
+        }
+      },
+      "paths": {
+        "processed": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+        "matches": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_matches",
+        "feature-work": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_feature-work",
+        "pose-graph": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_pose-graph",
+        "mosaic": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_mosaic",
+        "cuda-work": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_cuda-work"
+      },
+      "raw_run": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_capture/wall-texture-v6-full-horizontal-20261019/r000001_20261019T005910Z_b1d7c35209ba4ea1990cd2737c828ccc",
+      "raw_manifest_sha256": "1fd0eede4a0cd2d393915601b704882330f7ec7988d1bb1aa90a8ce502e78f14",
+      "backend": {
+        "attempts": [
+          {
+            "backend": "cuda",
+            "elapsed_s": 31.846969516999934,
+            "outcome": "completed",
+            "started_utc": "2026-10-19T01:18:10Z"
+          }
+        ],
+        "cuda": {
+          "compute_capability": "12.0",
+          "cuda_driver_version": 13040,
+          "cuda_runtime_version": 12080,
+          "device_count": 1,
+          "device_index": 0,
+          "device_name": "NVIDIA GeForce RTX 5080",
+          "extension_sha256": "acbe2fc99623fe3408a0abb4fc60e7f273cc77ac4ab756a6f29ae3f3de7566d6",
+          "free_memory_bytes": 15679356928,
+          "implementation": "climbot_custom_hardcut_kernel",
+          "maximum_candidates_per_tile": 64,
+          "sampling": "opencv-compatible-1/32-pixel",
+          "total_memory_bytes": 17066033152
+        },
+        "effective": "cuda",
+        "fallback": false,
+        "opencv": {
+          "backend": "cpu_support",
+          "opencv_build_information_sha256": "9f5e29ccfaa37fc3a2a09635a9df50bf5cdf263b34207abc5b627956265c6edd",
+          "opencv_module_sha256": "067c1b2f8ce9b9f91a31e71a567ab900e52383c7eeecba519ced458c68f6b93b",
+          "opencv_version": "4.6.0"
+        },
+        "requested": "cuda"
+      },
+      "passed": true
+    },
+    "diagnostic_execution": {
+      "stages": {
+        "truth": {
+          "exit_code": 0,
+          "elapsed_s": 110.05208003999996,
+          "log": "/tmp/climbot_texture_v6_full_truth_1792372723215629763.log"
+        },
+        "inspection": {
+          "exit_code": 0,
+          "elapsed_s": 66.38163338200002,
+          "log": "/tmp/climbot_texture_v6_full_inspection_1792372833267876953.log"
+        }
+      },
+      "completed": true
+    }
+  },
+  "default_asset_changed": false,
+  "camera_px": [
+    1920,
+    1080
+  ],
+  "wall_mosaic_mm_per_px": 0.25,
+  "persistent_goal_started": false,
+  "source_reconstruction": {
+    "base_git_commit": "d1c37342bd31b8b122de38dfdf9fd2bb88ef0e3d",
+    "branch": "feature/wall-texture-randomization",
+    "workspace_uncommitted": true,
+    "raw_native_provenance_traceable": false,
+    "scope": "Supplemental source reconstruction bundle; does not rewrite native capture provenance or claim a committed producer. Base checkout + tracked patch + untracked archive reconstruct source paths.",
+    "recorded_unix": 1792371769.0860224,
+    "untracked_source_files": 12,
+    "files": {
+      "tracked_source.patch": {
+        "bytes": 41719,
+        "sha256": "66fd08eaabac3a86b11b482a92ba8f7baf9a23402aae9bbb1984643200044d85"
+      },
+      "untracked_source.tar.gz": {
+        "bytes": 48470,
+        "sha256": "f3a8633d72d21dad214c6e84140ab8f6b536c880ca3d61aa86e8e992a8e36feb"
+      }
+    }
+  },
+  "cleanup": {
+    "authorization": "User wall-texture task: clean temporary capture data after acceptance while retaining reproduction summaries.",
+    "scope": "Only exact new wall-texture feature/CUDA work paths and 8-view development smoke PNGs. Formal 70/680 raw archives, all three seed evaluations, calibration, source materials, all assets and mosaics retained.",
+    "file_count": 766,
+    "logical_bytes": 55680341,
+    "deleted_files_absent": true,
+    "work_directories_absent": true
+  },
+  "outstanding": [
+    "Representative and full-wall scan edges have missing coverage. Full-wall feature pixels uncovered inside ROI: 597497/123474573 (about 0.484%). No zero-missed-feature or complete-system acceptance claim.",
+    "Visual review is bounded; no all-pixel inspection or real-camera difficulty-equivalence claim."
+  ],
+  "tests": {
+    "last_code_suite_date": "2026-10-18",
+    "tests": 1779,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 83,
+    "today_scope": "No runtime code changes; actual capture, CUDA, truth, coverage and artifact audits performed."
+  },
+  "legacy_assets_integrity": {
+    "wall_025": {
+      "manifest_sha256": "58eb094266c08f04f64b49fd49d39958af74cb826189aebf91bac1f7436b663f",
+      "manifest_unchanged": true,
+      "dds_files": 320,
+      "ordered_inventory_match": true,
+      "ordered_inventory_format": [
+        "{name} {sha}\n"
+      ],
+      "manifest_hash_mismatches": [],
+      "current_file_hashes_sha256": "4cfe494a20138ac695b47492fd7e6b8d27058a7556ac3dc3dca2c4159f493c56"
+    },
+    "wall_diagnostic_025": {
+      "manifest_sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c",
+      "manifest_unchanged": true,
+      "dds_files": 320,
+      "ordered_inventory_match": true,
+      "ordered_inventory_format": [
+        "{name} {sha}\n"
+      ],
+      "manifest_hash_mismatches": [],
+      "current_file_hashes_sha256": "9164ab21ab6e7720fdb6f130f1afcc5c2f6e176ed180ad606a937e0b58462b05"
+    }
+  },
+  "completion_scope": "Wall texture local reuse reduction/randomization, overlays, capture/mosaic validation and cleanup complete. Scan-edge coverage is a separate follow-up, not zero-missed-feature system acceptance.",
+  "additional_cleanup": {
+    "authorization": "2026-10-19 user asks to clean remaining task data and close wall-texture task, in addition to original post-acceptance cleanup instruction",
+    "file_count": 2772,
+    "logical_bytes": 5627866421,
+    "all_deleted_paths_absent": true,
+    "observed_available_space_delta_bytes": 4728098816,
+    "protected_formal_raw_and_assets_present": true,
+    "receipt": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/final_cleanup_receipt.json",
+    "reconstruction": "Processed PNG/native inspection tiles need regeneration from retained 750 originals and metadata; deleted development originals and retired DDS are not directly readable. Source traces/configs/hashes retained."
+  }
+}

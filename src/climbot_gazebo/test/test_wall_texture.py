@@ -120,6 +120,9 @@ def test_bake_copies_real_neighbours_into_each_render_block(monkeypatch):
 
     def remember(path, rgb):
         encoded[os.path.basename(path)] = rgb.copy()
+        # The encoder contract now includes a digest of the bytes it wrote.
+        with open(path, 'wb') as handle:
+            handle.write(rgb.tobytes())
         return rgb.size
 
     monkeypatch.setattr(bake_wall_texture, 'write_dds_bc1', remember)

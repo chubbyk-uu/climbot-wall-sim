@@ -7,15 +7,34 @@ from xml.etree import ElementTree as ET
 import numpy as np
 import pytest
 
-from freeze_suction_baseline import INPUTS, ROOT, inertial_summary, portable_xml, rotation, verify_legacy_inputs
+from freeze_suction_baseline import INPUTS, digest, inertial_summary, portable_xml, rotation, verify_legacy_inputs
 from screen_suction_layouts import compare_static, feasible, loads, minimum_force, tangential
 
 
 def copy_frozen_contract(tmp_path):
+    # This tests a retired input allowlist, not whether today's default robot
+    # still equals the old one. Keep the historical GUI/UDP byte pairs exact.
+    fixtures = Path(__file__).parent/'testdata/legacy_contract'
+    approved = json.loads((fixtures/'approved_edits.json').read_text())
     for name in INPUTS:
-        for relative in [name,'results/suction_s0_2026-10-17/inputs/'+name]:
+        baseline = (b'# synthetic immutable identity fixture: '+name.encode()+b'\n')
+        if name in approved:
+            record = approved[name]
+            baseline = (fixtures/record['baseline_fixture']).read_bytes()
+            assert digest(baseline) == record['baseline_sha256']
+            lines = baseline.decode().splitlines(keepends=True)
+            for edit in reversed(record['edits']):
+                start, end = edit['line_start'], edit['line_end']
+                assert ''.join(lines[start:end]) == edit['old']
+                lines[start:end] = edit['new'].splitlines(keepends=True)
+            current = ''.join(lines).encode()
+            assert digest(current) == record['approved_sha256']
+        else:
+            current = baseline
+        for relative, data in [(name, current),
+                               ('results/suction_s0_2026-10-17/inputs/'+name, baseline)]:
             target=tmp_path/relative;target.parent.mkdir(parents=True,exist_ok=True)
-            target.write_bytes((ROOT/relative).read_bytes())
+            target.write_bytes(data)
 
 
 def test_legacy_contract_accepts_only_the_exact_approved_gui_revision(tmp_path):

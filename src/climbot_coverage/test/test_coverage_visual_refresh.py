@@ -24,8 +24,8 @@ from nav_msgs.msg import Path
 import pytest
 import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile
-from rosidl_runtime_py.convert import message_to_ordereddict
 from rosgraph_msgs.msg import Clock
+from rosidl_runtime_py.convert import message_to_ordereddict
 from visualization_msgs.msg import MarkerArray
 
 

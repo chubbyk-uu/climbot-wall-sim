@@ -48,7 +48,7 @@ def generate_launch_description():
         try:
             io_path = LaunchConfiguration('io_config').perform(context)
             io = yaml.safe_load(Path(io_path).read_text())['vacuum_io'] if io_path else None
-            resolved = build_assets(
+            build_assets(
                 root, mode='fan_ode' if mode == 'vacuum' else 'fixed_pressure',
                 runtime_overrides={'camera_enabled': True}, io_overrides=io)
             # Use the same actual scene options as the frozen launch. The generated

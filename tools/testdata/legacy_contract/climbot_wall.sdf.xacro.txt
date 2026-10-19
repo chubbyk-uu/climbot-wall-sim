@@ -1,0 +1,445 @@
+<?xml version="1.0"?>
+<!--
+  Rendered at launch time from climbot_description/config/wall.yaml and the
+  Gazebo-only config/simulation.yaml. Nothing here may restate a wall
+  dimension as a literal.
+-->
+<sdf version="1.10" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="centre_x" default="0.0"/>
+  <xacro:arg name="centre_y" default="0.0"/>
+  <xacro:arg name="centre_z" default="4.0"/>
+  <xacro:arg name="thickness" default="0.10"/>
+  <xacro:arg name="width" default="10.0"/>
+  <xacro:arg name="height" default="8.0"/>
+  <xacro:arg name="mu" default="1.1"/>
+  <xacro:arg name="grid_spacing" default="1.0"/>
+  <xacro:arg name="suction_force" default="400.0"/>
+  <xacro:arg name="spawn_gap" default="0.001"/>
+  <xacro:arg name="spawn_lateral" default="0.0"/>
+  <xacro:arg name="spawn_height" default="2.0"/>
+  <xacro:arg name="spawn_roll" default="1.5707963267948966"/>
+  <xacro:arg name="spawn_pitch" default="0.0"/>
+  <xacro:arg name="spawn_yaw" default="1.5707963267948966"/>
+  <xacro:arg name="inspection_target" default="false"/>
+  <!-- Set by the launch when a wall texture manifest will be applied. -->
+  <xacro:arg name="wall_textured" default="false"/>
+  <xacro:arg name="inspection_flat_field_target" default="false"/>
+  <xacro:arg name="flat_field_albedo_map" default=""/>
+  <xacro:arg name="target_lateral" default="0.34"/>
+  <xacro:arg name="target_height" default="2.0"/>
+  <xacro:arg name="target_length" default="0.28125"/>
+  <xacro:arg name="target_width" default="0.5"/>
+  <xacro:arg name="ambient_r" default="0.025"/>
+  <xacro:arg name="ambient_g" default="0.025"/>
+  <xacro:arg name="ambient_b" default="0.025"/>
+  <xacro:arg name="moonlight_intensity" default="0.30"/>
+  <xacro:arg name="moonlight_direction_x" default="-1.0"/>
+  <xacro:arg name="moonlight_direction_y" default="0.2"/>
+  <xacro:arg name="moonlight_direction_z" default="-0.4"/>
+  <xacro:arg name="moonlight_diffuse_r" default="0.85"/>
+  <xacro:arg name="moonlight_diffuse_g" default="0.88"/>
+  <xacro:arg name="moonlight_diffuse_b" default="0.95"/>
+  <xacro:arg name="moonlight_cast_shadows" default="true"/>
+
+  <xacro:property name="centre_x" value="$(arg centre_x)"/>
+  <xacro:property name="centre_y" value="$(arg centre_y)"/>
+  <xacro:property name="centre_z" value="$(arg centre_z)"/>
+  <xacro:property name="thickness" value="$(arg thickness)"/>
+  <xacro:property name="width" value="$(arg width)"/>
+  <xacro:property name="height" value="$(arg height)"/>
+  <xacro:property name="grid_spacing" value="$(arg grid_spacing)"/>
+  <xacro:property name="target_lateral" value="$(arg target_lateral)"/>
+  <xacro:property name="target_height" value="$(arg target_height)"/>
+  <xacro:property name="target_length" value="$(arg target_length)"/>
+  <xacro:property name="target_width" value="$(arg target_width)"/>
+  <!-- Wall face, the plane the wheels roll on, and the grid overlay just
+       in front of it so the decals never fight the collision surface. -->
+  <xacro:property name="face_x" value="${centre_x + thickness / 2.0}"/>
+  <xacro:property name="decal_x" value="${thickness / 2.0 + 0.003}"/>
+  <!-- How far wall_visual sits behind the collision face, and only when it
+       has to be: the recess exists to stop texture blocks z-fighting with a
+       coplanar wall face, so without those blocks it does nothing but move the
+       visible surface 1 mm off the plane the wheels ride on. That is the same
+       kind of error, in the opposite direction, as the one that scaled every
+       mosaic by +4566 ppm, so it is not left switched on by default.
+
+       A texture block or the coplanar flat-field target decides this. Tying it
+       to inspection_target once looked equivalent and was not: that flag is
+       the G1 geometry target, which is off for every inspection acquisition,
+       so a textured wall rendered coplanar and every frame came back striped
+       with z-fighting. -->
+  <xacro:property name="wall_visual_recess"
+                 value="${0.001 if ('$(arg wall_textured)' in ('true', 'True', '1') or '$(arg inspection_flat_field_target)' in ('true', 'True', '1')) else 0.0}"/>
+  <!-- Lines sit at whole multiples of the spacing measured from the work
+       frame's origin, the wall's lower-left corner, so a line is a work
+       coordinate an operator can read off the wall. Only the interior ones are
+       drawn: a line on an edge would hang half off the wall. RViz draws the
+       same lines from the same rule over /coverage/wall_grid, and both take
+       the spacing from climbot_description/config/wall.yaml.
+
+       A non-positive spacing removes the grid entirely. It is a periodic
+       high-contrast pattern standing 3 mm proud of the wall face, which puts
+       it in 67% of inspection photographs at the 0.50 m by 0.28 m footprint
+       those are taken at. Runs that photograph the wall switch it off, because
+       a repeating feature is what makes a stitch match the wrong place
+       confidently, and one that is not coplanar with the surface breaks the
+       homography the stitch assumes. Runs a human watches keep it. -->
+  <xacro:property name="show_grid" value="${grid_spacing > 0.0}"/>
+  <!-- The epsilon keeps a line off the far edge when the span divides exactly,
+       which is the ordinary case: 10 m at 1 m pitch is nine lines, not ten. -->
+  <xacro:property name="columns"
+                  value="${int((width - 1e-9) / grid_spacing) if show_grid else 0}"/>
+  <xacro:property name="rows"
+                  value="${int((height - 1e-9) / grid_spacing) if show_grid else 0}"/>
+
+  <!-- index counts lines from the work origin, so index * grid_spacing is the
+       line's work coordinate. The pose is relative to the link centre, hence
+       the half-span subtracted. The mid-span line is drawn heavier, which is
+       what makes the grid readable as two halves rather than as stripes. -->
+  <xacro:macro name="grid_line" params="axis index count">
+    <xacro:if value="${index &lt;= count}">
+      <visual name="grid_${axis}_${index}">
+        <xacro:if value="${axis == 'column'}">
+          <pose>${decal_x} ${index * grid_spacing - width / 2.0} 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.006 ${0.035 if fabs(index * grid_spacing - width / 2.0) &lt; 1e-9 else 0.025} ${height}</size>
+            </box>
+          </geometry>
+        </xacro:if>
+        <xacro:unless value="${axis == 'column'}">
+          <pose>${decal_x} 0 ${index * grid_spacing - height / 2.0} 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.006 ${width} ${0.035 if fabs(index * grid_spacing - height / 2.0) &lt; 1e-9 else 0.025}</size>
+            </box>
+          </geometry>
+        </xacro:unless>
+        <material>
+          <ambient>${'0.10 0.12 0.16' if fabs(index * grid_spacing - (width if axis == 'column' else height) / 2.0) &lt; 1e-9 else '0.18 0.20 0.24'} 1</ambient>
+          <diffuse>${'0.10 0.12 0.16' if fabs(index * grid_spacing - (width if axis == 'column' else height) / 2.0) &lt; 1e-9 else '0.18 0.20 0.24'} 1</diffuse>
+        </material>
+      </visual>
+      <xacro:grid_line axis="${axis}" index="${index + 1}" count="${count}"/>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:macro name="g1_target_line" params="axis index count">
+    <xacro:if value="${index &lt; count}">
+      <xacro:property name="fraction" value="${-0.4 + 0.8 * index / (count - 1)}"/>
+      <visual name="g1_target_grid_${axis}_${index}">
+        <xacro:if value="${axis == 'forward'}">
+          <pose>${decal_x + 0.0055} ${target_lateral + fraction * target_length} ${target_height - centre_z} 0 0 0</pose>
+          <geometry><box><size>0.003 ${0.010 * target_length} ${0.90 * target_width}</size></box></geometry>
+        </xacro:if>
+        <xacro:unless value="${axis == 'forward'}">
+          <pose>${decal_x + 0.0055} ${target_lateral} ${target_height - centre_z + fraction * target_width} 0 0 0</pose>
+          <geometry><box><size>0.003 ${0.90 * target_length} ${0.006 * target_width}</size></box></geometry>
+        </xacro:unless>
+        <material>
+          <ambient>1 1 0.01 1</ambient>
+          <diffuse>1 1 0.01 1</diffuse>
+          <emissive>1 1 0.01 1</emissive>
+          <specular>0 0 0 1</specular>
+        </material>
+      </visual>
+      <xacro:g1_target_line axis="${axis}" index="${index + 1}" count="${count}"/>
+    </xacro:if>
+  </xacro:macro>
+
+  <world name="climbot_wall">
+    <gravity>0 0 -9.81</gravity>
+    <scene>
+      <ambient>$(arg ambient_r) $(arg ambient_g) $(arg ambient_b) 1</ambient>
+      <background>0.005 0.005 0.008 1</background>
+    </scene>
+    <physics name="physics" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-imu-system"
+            name="gz::sim::systems::Imu"/>
+    <!-- Required for the wheel contact sensors that record wall normal loads. -->
+    <plugin filename="gz-sim-contact-system"
+            name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-apply-link-wrench-system"
+            name="gz::sim::systems::ApplyLinkWrench">
+      <persistent>
+        <entity_name>climbot</entity_name>
+        <entity_type>model</entity_type>
+        <!-- Along the inward wall normal, which is world -X for this wall. -->
+        <force>${-1.0 * float("$(arg suction_force)")} 0 0</force>
+        <torque>0 0 0</torque>
+      </persistent>
+    </plugin>
+
+    <!-- One physical moonlight, weaker than the robot LED but with real
+         directional shadows. It is a scene light, not a GUI-only override. -->
+    <light type="directional" name="moonlight">
+      <cast_shadows>$(arg moonlight_cast_shadows)</cast_shadows>
+      <pose>4 -2 8 0 0 0</pose>
+      <diffuse>$(arg moonlight_diffuse_r) $(arg moonlight_diffuse_g) $(arg moonlight_diffuse_b) 1</diffuse>
+      <specular>0.02 0.02 0.02 1</specular>
+      <intensity>$(arg moonlight_intensity)</intensity>
+      <direction>$(arg moonlight_direction_x) $(arg moonlight_direction_y) $(arg moonlight_direction_z)</direction>
+    </light>
+
+    <!-- A physical reference for the operator's perspective.  Its top sits
+         20 mm below work y = 0, so it cannot perturb wheel/wall contact at
+         the wall foot while still catching a falling robot. -->
+    <model name="ground">
+      <static>true</static>
+      <pose>0 0 -0.02 0 0 0</pose>
+      <link name="ground_link">
+        <collision name="ground_collision">
+          <geometry>
+            <plane><normal>0 0 1</normal><size>30 30</size></plane>
+          </geometry>
+          <surface>
+            <friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction>
+          </surface>
+        </collision>
+        <visual name="ground_visual">
+          <geometry>
+            <plane><normal>0 0 1</normal><size>30 30</size></plane>
+          </geometry>
+          <material>
+            <ambient>0.22 0.24 0.28 1</ambient>
+            <diffuse>0.38 0.42 0.48 1</diffuse>
+            <specular>0.02 0.02 0.02 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall">
+      <static>true</static>
+      <link name="wall_link">
+        <pose>${centre_x} ${centre_y} ${centre_z} 0 0 0</pose>
+        <collision name="wall_collision">
+          <geometry>
+            <box>
+              <size>${thickness} ${width} ${height}</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>$(arg mu)</mu>
+                <mu2>$(arg mu)</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <!-- Recessed behind the collision face. Texture blocks put their
+             outer face exactly on that face, because the camera must
+             photograph the plane the wheels ride on; a coplanar wall_visual
+             would then z-fight with every block. Nothing measures this
+             surface, so moving it back costs only a 1 mm step visible at the
+             texture border under grazing light. -->
+        <visual name="wall_visual">
+          <geometry>
+            <box>
+              <size>${thickness - 2.0 * wall_visual_recess} ${width} ${height}</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.62 0.64 0.68 1</ambient>
+            <diffuse>0.72 0.74 0.78 1</diffuse>
+            <specular>0.12 0.12 0.12 1</specular>
+          </material>
+        </visual>
+        <!-- High-contrast reference grid on the wall front face. -->
+        <xacro:if value="${show_grid}">
+          <xacro:grid_line axis="column" index="1" count="${columns}"/>
+          <xacro:grid_line axis="row" index="1" count="${rows}"/>
+        </xacro:if>
+        <!-- Optional G1 acceptance target. Work +X (robot-forward at spawn)
+             is world +Y and must appear at image top; work +Y is world +Z
+             and must appear at image left. Red marks +X, green marks +Y.
+             It is off by default and never belongs in inspection imagery. -->
+        <xacro:if value="$(arg inspection_target)">
+          <visual name="g1_target_background">
+            <pose>${decal_x + 0.004} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
+            <geometry><box><size>0.004 ${target_length} ${target_width}</size></box></geometry>
+            <material>
+              <ambient>0.95 0.95 0.95 1</ambient>
+              <diffuse>0.95 0.95 0.95 1</diffuse>
+              <emissive>0.95 0.95 0.95 1</emissive>
+              <specular>0 0 0 1</specular>
+            </material>
+          </visual>
+          <xacro:g1_target_line axis="forward" index="0" count="5"/>
+          <xacro:g1_target_line axis="cross" index="0" count="9"/>
+          <visual name="g1_target_forward_red">
+            <pose>${decal_x + 0.007} ${target_lateral + 0.35 * target_length} ${target_height - centre_z} 0 0 0</pose>
+            <geometry><box><size>0.004 ${0.18 * target_length} ${0.10 * target_width}</size></box></geometry>
+            <material><ambient>1 0.02 0.02 1</ambient><diffuse>1 0.02 0.02 1</diffuse><emissive>1 0.02 0.02 1</emissive></material>
+          </visual>
+          <visual name="g1_target_up_green">
+            <pose>${decal_x + 0.007} ${target_lateral} ${target_height - centre_z + 0.35 * target_width} 0 0 0</pose>
+            <geometry><box><size>0.004 ${0.10 * target_length} ${0.18 * target_width}</size></box></geometry>
+            <material><ambient>0.02 1 0.02 1</ambient><diffuse>0.02 1 0.02 1</diffuse><emissive>0.02 1 0.02 1</emissive></material>
+          </visual>
+          <visual name="g1_target_centre_blue">
+            <pose>${decal_x + 0.007} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
+            <geometry><box><size>0.004 ${0.08 * target_length} ${0.08 * target_width}</size></box></geometry>
+            <material><ambient>0.02 0.02 1 1</ambient><diffuse>0.02 0.02 1 1</diffuse><emissive>0.02 0.02 1 1</emissive></material>
+          </visual>
+        </xacro:if>
+        <!-- Uniform target used only to measure the LED/camera flat field. It
+             follows the exact PBR/albedo-map path used by the photographed
+             wall: the old classic grey material had a different angular
+             response and left a measured 9% bowl after correction. Its front
+             face is the collision/texture plane, not a decal in front of it.
+
+             Three things were measured while working out which of those
+             mattered, and two of them did not. Re-shooting the old grey board
+             reproduced the stored 2026-08-25 gain map to three decimals
+             (corner/centre 0.673 against 0.672), so that calibration was never
+             stale - the target was simply not the same kind of surface as the
+             wall. Moving the board from its old 0.059 m decal plane onto this
+             one moved corner/centre only from 0.673 to 0.668: with a source
+             next to the camera the footprint scales with distance, so the
+             angles that set the falloff barely change, and standoff is worth
+             half a point. What did matter is the albedo_map below. Switching
+             the material to the PBR path without one is worse than the classic
+             material it replaced - corner/centre 0.709, and a left/right
+             asymmetry of 0.737 against 0.839 that the PBR specular term
+             introduces. The map is the part that reproduces the wall; do not
+             drop it and keep the pbr block. -->
+        <xacro:if value="$(arg inspection_flat_field_target)">
+          <visual name="inspection_flat_field_target">
+            <pose>${thickness / 2.0 - 0.002} ${target_lateral} ${target_height - centre_z} 0 0 0</pose>
+            <geometry><box><size>0.004 0.42 0.68</size></box></geometry>
+            <material>
+              <ambient>1 1 1 1</ambient>
+              <diffuse>1 1 1 1</diffuse>
+              <specular>0.1 0.1 0.1 1</specular>
+              <pbr>
+                <metal>
+                  <albedo_map>$(arg flat_field_albedo_map)</albedo_map>
+                  <metalness>0.0</metalness>
+                </metal>
+              </pbr>
+            </material>
+          </visual>
+        </xacro:if>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://climbot</uri>
+      <!-- On the wall face, oriented so the robot's axes match the wall
+           work frame: local +X -> wall +X, +Y -> wall +Y, +Z -> wall normal. -->
+      <pose>${face_x + float("$(arg spawn_gap)")} $(arg spawn_lateral) $(arg spawn_height)
+            $(arg spawn_roll) $(arg spawn_pitch) $(arg spawn_yaw)</pose>
+    </include>
+
+    <gui fullscreen="false">
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>Climbot Wall Simulation</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>$(arg ambient_r) $(arg ambient_g) $(arg ambient_b)</ambient_light>
+        <background_color>0.005 0.005 0.008</background_color>
+        <!-- Front-on view centred on the robot's initial pose. -->
+        <camera_pose>${face_x + 2.75} $(arg spawn_lateral) $(arg spawn_height) 0 0 3.14159265359</camera_pose>
+      </plugin>
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="SelectEntities" name="Select Entities">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="TransformControl" name="Transform control">
+        <gz-gui>
+          <property key="x" type="double">0</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">250</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#777777</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+      </plugin>
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui>
+          <property type="string" key="state">docked</property>
+          <property type="double" key="width">260</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <gz-gui>
+          <property type="string" key="state">docked_collapsed</property>
+        </gz-gui>
+      </plugin>
+    </gui>
+  </world>
+</sdf>
