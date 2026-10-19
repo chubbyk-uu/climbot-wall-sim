@@ -61,7 +61,7 @@ def write_cross_joint_mesh(path, surface, size=.8):
             for side in [-1, 1]:
                 nodes = np.r_[nodes, center+side*(half-arc),
                               center+side*(half-shoulder+arc)]
-        cells = int(np.ceil(round(size/.01, 10)))
+        cells = round(size/.01)
         axes.append(np.unique(np.r_[np.linspace(0, size, cells+1), nodes]))
     u, v = np.meshgrid(*axes)
     points = list(map(tuple, np.column_stack([u.ravel(), v.ravel()])))
@@ -149,7 +149,7 @@ def write_feature_mesh(path, surface, size=.8, tolerance=.00002,
     """Resolve grooves locally, rejecting unresolved or over-budget exports."""
     if not 0 < tolerance <= .0001 or size <= 0 or max_vertices < 4 or max_rounds < 1:
         raise ValueError('invalid feature mesh limits')
-    axis = np.linspace(0, size, int(np.ceil(round(size/.01, 10))) + 1)
+    axis = np.linspace(0, size, round(size/.01) + 1)
     u, v = np.meshgrid(axis, axis)
     seeds = [np.column_stack([u.ravel(), v.ravel()])]
     for groove in surface.config['grooves']:

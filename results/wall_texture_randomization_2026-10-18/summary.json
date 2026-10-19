@@ -7,7 +7,7 @@
   "implementation_uncommitted": true,
   "persistent_goal_started_or_resumed": false,
   "source": {
-    "path": "/home/jerry/.cache/climbot/Concrete044D_8K-JPG/maps/Concrete044D_8K-JPG_Color.jpg",
+    "path": "$HOME/.cache/climbot/Concrete044D_8K-JPG/maps/Concrete044D_8K-JPG_Color.jpg",
     "native_dimensions_px": [
       8192,
       8192
@@ -101,15 +101,15 @@
       "role": "legacy",
       "seed": 20260820,
       "manifest": {
-        "local_path": "/home/jerry/robot_ws/climbot_sim/textures/wall_025/wall_texture.json",
+        "local_path": "textures/wall_025/wall_texture.json",
         "sha256": "58eb094266c08f04f64b49fd49d39958af74cb826189aebf91bac1f7436b663f"
       },
       "capture": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_baseline_40pairs/capture.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_baseline_40pairs/capture.json",
         "sha256": "fcd1099637c616bd98e9b269b79ccc8e1b265b31e0e5975294faa30178adaf30"
       },
       "evaluation": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_baseline_40pairs_sift.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_baseline_40pairs_sift.json",
         "sha256": "2cc5763f63f6628700ef7b1374e14bc8341f7c044302b592bf71cae49b5c43cb"
       },
       "summary": {
@@ -160,15 +160,15 @@
       "role": "tuning",
       "seed": 20261018,
       "manifest": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/tune_4x3_scheduled_seed20261018/wall_texture.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/tune_4x3_scheduled_seed20261018/wall_texture.json",
         "sha256": "1f92c889585d10c56c683a5f62c47651c203a9153b9e19f4b9edd59d5b9b0215"
       },
       "capture": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_tune_40pairs/capture.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_tune_40pairs/capture.json",
         "sha256": "e7a988ca466bf20af1d3e008095db822b1d25b47ae823aa2202f097f494cfa57"
       },
       "evaluation": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_tune_40pairs_sift.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_tune_40pairs_sift.json",
         "sha256": "4eca6ba8b71f55b81623b30f6f1a6e5a60ce70e2d9303d546d615fff0d650463"
       },
       "summary": {
@@ -222,7 +222,7 @@
       },
       "asset_audit": {
         "evidence": {
-          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/tune_4x3_scheduled_seed20261018_audit.json",
+          "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/tune_4x3_scheduled_seed20261018_audit.json",
           "sha256": "11f09bc5b38be4b81b70c162580789f236d540a1815c759c96d56d67cb93af95"
         },
         "pure_core_duplicate_pairs": 0,
@@ -249,7 +249,7 @@
       },
       "false_correspondence_attribution": {
         "evidence": {
-          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_tune_source_attribution.json",
+          "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_tune_source_attribution.json",
           "sha256": "f85e3681d16be9ab932df1425cc04acf7a1f415169f4a1d333192a5b29759fa7"
         },
         "false_correspondences": 657,
@@ -261,15 +261,15 @@
       "role": "validation_1",
       "seed": 20261019,
       "manifest": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261019/wall_texture.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261019/wall_texture.json",
         "sha256": "9230ab4ab310b324fc9f3ef3d44705a80e706f98ce7918d1798688f58f6e271f"
       },
       "capture": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261019/capture.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_validation_seed20261019/capture.json",
         "sha256": "f9218193cacee88a2e9a149c3c572491ba8bedda72eaf5d814f48dd7b87f3c4e"
       },
       "evaluation": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261019_sift.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_validation_seed20261019_sift.json",
         "sha256": "e1c8c32db13b635e19b9c5a41427515d23189c3633171810a122b98b4fbd73e4"
       },
       "summary": {
@@ -323,7 +323,7 @@
       },
       "asset_audit": {
         "evidence": {
-          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261019_audit.json",
+          "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261019_audit.json",
           "sha256": "48367e9e2d3cda7ce09ca2c5457f4faae782b48509b3c45984584121448c28d2"
         },
         "pure_core_duplicate_pairs": 0,
@@ -350,7 +350,7 @@
       },
       "false_correspondence_attribution": {
         "evidence": {
-          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261019_source_attribution.json",
+          "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_validation_seed20261019_source_attribution.json",
           "sha256": "3652bed25a1001e1fdea02287d70aba4ea4e7ca93fee504adeea1b4f714bef19"
         },
         "false_correspondences": 476,
@@ -362,15 +362,15 @@
       "role": "validation_2",
       "seed": 20261020,
       "manifest": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261020/wall_texture.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261020/wall_texture.json",
         "sha256": "56b94727741e5fdb36dee4cbebefc99e488397d9d15315043476d8f4cbd5117e"
       },
       "capture": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261020/capture.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_validation_seed20261020/capture.json",
         "sha256": "7c184e7ad45ac361723524dcdc0f43e8f55ab519639edd8b323fe9acff360224"
       },
       "evaluation": {
-        "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261020_sift.json",
+        "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_validation_seed20261020_sift.json",
         "sha256": "6f1311b9d0b3db6ab46eb1bcbab0ba61686716dda0363376f1907f913627d52a"
       },
       "summary": {
@@ -424,7 +424,7 @@
       },
       "asset_audit": {
         "evidence": {
-          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261020_audit.json",
+          "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/validation_4x3_scheduled_seed20261020_audit.json",
           "sha256": "4f3cb60ae46bf329eb565aa4f7208f1ca0930413097b2d59683f0cd58794d60d"
         },
         "pure_core_duplicate_pairs": 0,
@@ -451,7 +451,7 @@
       },
       "false_correspondence_attribution": {
         "evidence": {
-          "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/shared_validation_seed20261020_source_attribution.json",
+          "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/shared_validation_seed20261020_source_attribution.json",
           "sha256": "159514c29e3947a06bca08109570e724a8afbb01146ec5b2d5d32961a18aeb1d"
         },
         "false_correspondences": 635,
@@ -462,7 +462,7 @@
   ],
   "local_failure_root_cause": {
     "evidence": {
-      "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/local_failure_detail.json",
+      "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/local_failure_detail.json",
       "sha256": "7f342d4d34bc492179e56ca716b94f3a43977e0a06e01b9a78258835055169b9"
     },
     "validation_seeds": {
@@ -518,7 +518,7 @@
   "diagnostic_prototype": {
     "status": "not_accepted",
     "manifest": {
-      "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/diagnostic_4x3_scheduled_seed20261018/wall_texture.json",
+      "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/diagnostic_4x3_scheduled_seed20261018/wall_texture.json",
       "sha256": "131fd7587801945a748c1f77b74fc9f8b1bb28b20e01abb9d9794ce1d5ef6084"
     },
     "feature_counts": {
@@ -532,14 +532,14 @@
     "physical_depth_m": 0,
     "seed": 20260827,
     "audit": {
-      "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/diagnostic_4x3_scheduled_seed20261018_audit_scoped.json",
+      "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/diagnostic_4x3_scheduled_seed20261018_audit_scoped.json",
       "sha256": "55f4f1f228a41cf5447e370464b6eaa2c15adcb5c194450d95dad5ef5a0f2b60"
     },
     "source_weight_scope": "concrete substrate before diagnostic overpaint; not final visible area"
   },
   "rotation_asset_probe": {
     "evidence": {
-      "local_path": "/home/jerry/climbot_data/wall_texture_randomization_20261018/rotation_paired.json",
+      "local_path": "$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/rotation_paired.json",
       "sha256": "437d8cabd416836c7d06726226e6b4a64efe48d66b79541852aa8d01f104df40"
     },
     "all_cases_passed": true,
@@ -548,7 +548,7 @@
   "tests": {
     "targeted": {
       "passed": 95,
-      "log": "/tmp/climbot_texture_targeted_final_20261018_221331.log"
+      "log": "climbot_texture_targeted_final_20261018_221331.log"
     },
     "full_colcon": {
       "executor": "parallel",
@@ -558,8 +558,8 @@
       "failures": 0,
       "skipped": 83,
       "test_result_exit_code": 0,
-      "log": "/tmp/climbot_texture_full_j8_final_20261018_221500.log",
-      "summary_log": "/tmp/climbot_texture_test_result_final_20261018_221722.log"
+      "log": "climbot_texture_full_j8_final_20261018_221500.log",
+      "summary_log": "climbot_texture_test_result_final_20261018_221722.log"
     },
     "offline_probe_pose_envelope_checks": 4
   },

@@ -413,7 +413,7 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         from .surface_patch import apply as apply_surface_patch
         world_plugin = world.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
         patch = apply_surface_patch(world, world_plugin, out, surface_patch,
-                                    surface + wall['origin_rpy'])
+                                    surface + wall['origin_rpy'], cfg['wheel']['radius_m'])
         for key in ['wall_pose', 'wall_size']:
             sp.find(key).text = world_plugin.findtext(key)
         node(sp, 'wall_surface_yaml', world_plugin.findtext('wall_surface_yaml'))

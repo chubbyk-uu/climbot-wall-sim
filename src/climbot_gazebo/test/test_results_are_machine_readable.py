@@ -27,6 +27,8 @@
 
 import json
 from pathlib import Path
+import re
+import subprocess
 
 import pytest
 
@@ -82,3 +84,24 @@ def test_a_spacing_metric_that_does_not_apply_says_so():
             'never taken' % path.name)
         assert spacing.get('not_applicable_reason'), (
             '%s says the spacing metric does not apply but not why' % path.name)
+
+
+@pytest.mark.skipif(_repository_root() is None,
+                    reason='the results archive is not beside this checkout')
+def test_published_result_references_do_not_embed_user_home_paths():
+    """Check published text without reading ignored local acceptance artifacts."""
+    root = _repository_root()
+    if not (root / '.git').exists():
+        pytest.skip('tracked publication inventory requires a Git checkout')
+    paths = subprocess.check_output(
+        ['git', 'ls-files', 'results'], cwd=root, text=True).splitlines()
+    offending = []
+    for name in paths:
+        path = root / name
+        if path.suffix in ('.json', '.md'):
+            content = path.read_text()
+            if re.search(r'/(?:home|Users)/[^/\s]+', content):
+                offending.append(name)
+            if path.suffix == '.json':
+                json.loads(content, parse_constant=_reject_constants)
+    assert not offending, 'personal absolute paths in published results: ' + repr(offending)

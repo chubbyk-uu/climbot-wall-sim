@@ -60,12 +60,12 @@
     "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
   },
   "ode": {
-    "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install",
-    "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
+    "install": "$HOME/opt/climbot-ode-0.16.2-hashfix-ccd/install",
+    "library": "$HOME/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
     "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
     "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
   },
-  "log_path": "/tmp/climbot_m2_patch_native_1792396697085318403.log",
+  "log_path": "climbot_m2_patch_native_1792396697085318403.log",
   "raw_relative_root": "m2_robot_patch_20261019_drive_bridge",
   "patch": {
     "size_m": 1.2,
@@ -105,10 +105,10 @@
     "pep257_exit_code": 0,
     "native_run_exit_code": 0,
     "logs_sha256": {
-      "/tmp/climbot_m2_drive_bridge_tests_20261019.log": "5f9c0c1839840f90e7503193b30549b3db05fea5948d811aa483f1c113e2d2b2",
-      "/tmp/climbot_m2_drive_bridge_style_final_20261019.log": "c84160a25c1914ac3b40f9054364ab06efb8f683a9f419db46789632cdd06182",
-      "/tmp/climbot_m2_drive_bridge_docstyle_20261019.log": "0c74fa91a495139d33510105e83f1bee3fcc51e4c78e604fe4e8bd9714329b6f",
-      "/tmp/climbot_m2_drive_bridge_run_20261019.log": "2f818e812d092886b81af345aede93e4f3f7eef1825774654ebd9a6ea3c2083e"
+      "climbot_m2_drive_bridge_tests_20261019.log": "5f9c0c1839840f90e7503193b30549b3db05fea5948d811aa483f1c113e2d2b2",
+      "climbot_m2_drive_bridge_style_final_20261019.log": "c84160a25c1914ac3b40f9054364ab06efb8f683a9f419db46789632cdd06182",
+      "climbot_m2_drive_bridge_docstyle_20261019.log": "0c74fa91a495139d33510105e83f1bee3fcc51e4c78e604fe4e8bd9714329b6f",
+      "climbot_m2_drive_bridge_run_20261019.log": "2f818e812d092886b81af345aede93e4f3f7eef1825774654ebd9a6ea3c2083e"
     }
   }
 }

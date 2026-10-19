@@ -67,7 +67,7 @@
       }
     },
     "release_s": 0.699,
-    "log_path": "/tmp/climbot_m2_roll_real_1792392885698422063.log",
+    "log_path": "climbot_m2_roll_real_1792392885698422063.log",
     "ode_verified": true
   },
   "proxy": {
@@ -95,7 +95,7 @@
       }
     },
     "release_s": 0.699,
-    "log_path": "/tmp/climbot_m2_roll_proxy_1792392894564246601.log",
+    "log_path": "climbot_m2_roll_proxy_1792392894564246601.log",
     "ode_verified": true
   },
   "mesa": {
@@ -104,8 +104,8 @@
     "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
   },
   "ode": {
-    "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install",
-    "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
+    "install": "$HOME/opt/climbot-ode-0.16.2-hashfix-ccd/install",
+    "library": "$HOME/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
     "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
     "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
   },

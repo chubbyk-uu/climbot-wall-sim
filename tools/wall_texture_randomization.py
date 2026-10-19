@@ -493,7 +493,8 @@ def replay(source, placements, shape, patch, overlap, feather, height, width):
     return canvas[:height, :width]
 
 
-def write_trace(directory, placements, patch, source_native_size, source_resampled_side):
+def write_trace(directory, placements, patch, source_native_size, source_resampled_side,
+                *, algorithm=ALGORITHM):
     """Store exact cuts plus compact, hashed source and transform records."""
     directory = Path(directory)
     coordinates = np.array([(p.top, p.left, p.sy, p.sx, p.orientation)
@@ -520,7 +521,7 @@ def write_trace(directory, placements, patch, source_native_size, source_resampl
         })
     trace_path = directory / 'quilt_sources.json'
     trace_path.write_text(json.dumps({
-        'algorithm': ALGORITHM, 'transform_order': 'crop, rot90, fliplr',
+        'algorithm': algorithm, 'transform_order': 'crop, rot90, fliplr',
         'source_interpolation': 'Pillow LANCZOS once before lossless D4',
         'pixel_coordinates': 'pixel centres; source rows down; wall conversion in manifest',
         'alpha_replay': 'unpack mask, Pillow GaussianBlur, force non-overlap to one; '

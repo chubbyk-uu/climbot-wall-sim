@@ -215,7 +215,7 @@
     }
   },
   "full_wall": {
-    "data_root": "/home/jerry/climbot_data/wall_texture_capture_20261019_full",
+    "data_root": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full",
     "expected_images": 680,
     "roi_m": [
       0.56,
@@ -457,7 +457,7 @@
         "Optimized joint intersections, cracks and graffiti continuity visibly better than pose-only; no obvious doubled structures in reviewed optimized interior windows. Optical softness and small hard-cut brightness steps remain.",
         "Scan edges retain staircase/notch gaps. Coverage check is not passed; texture/matching validation does not close complete rectangular coverage."
       ],
-      "preview": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_mosaic/mosaic_preview.jpg",
+      "preview": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_mosaic/mosaic_preview.jpg",
       "native_pairs": 12,
       "output_grid": {
         "frame": "wall",
@@ -483,11 +483,11 @@
             "climbot_image_processing",
             "process_inspection_archive",
             "--input-run",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_capture/wall-texture-v6-full-horizontal-20261019/r000001_20261019T005910Z_b1d7c35209ba4ea1990cd2737c828ccc",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_capture/wall-texture-v6-full-horizontal-20261019/r000001_20261019T005910Z_b1d7c35209ba4ea1990cd2737c828ccc",
             "--output-dir",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_processed",
             "--flat-field-file",
-            "/home/jerry/climbot_data/calibration/flat_field_sim_pbr_exp065_20260901.npz",
+            "$CLIMBOT_DATA_ROOT/calibration/flat_field_sim_pbr_exp065_20260901.npz",
             "--denoise",
             "none",
             "--jobs",
@@ -497,7 +497,7 @@
           ],
           "exit_code": 0,
           "elapsed_s": 12.837458878000007,
-          "log": "/tmp/climbot_texture_v6_formal_processing_1792372623127830208.log"
+          "log": "climbot_texture_v6_formal_processing_1792372623127830208.log"
         },
         "validate_inputs": {
           "command": [
@@ -506,11 +506,11 @@
             "climbot_mosaic",
             "validate_mosaic_inputs",
             "--input-run",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed"
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_processed"
           ],
           "exit_code": 0,
           "elapsed_s": 8.12825074400007,
-          "log": "/tmp/climbot_texture_v6_formal_validate_inputs_1792372635965474908.log"
+          "log": "climbot_texture_v6_formal_validate_inputs_1792372635965474908.log"
         },
         "matches": {
           "command": [
@@ -519,17 +519,17 @@
             "climbot_mosaic",
             "build_local_matches",
             "--input-run",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_processed",
             "--output-dir",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_matches",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_matches",
             "--work-dir",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_feature-work",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_feature-work",
             "--jobs",
             "auto"
           ],
           "exit_code": 0,
           "elapsed_s": 28.207278605999818,
-          "log": "/tmp/climbot_texture_v6_formal_matches_1792372644093994624.log"
+          "log": "climbot_texture_v6_formal_matches_1792372644093994624.log"
         },
         "pose_graph": {
           "command": [
@@ -538,15 +538,15 @@
             "climbot_mosaic",
             "build_pose_graph",
             "--input-run",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_processed",
             "--local-matches",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_matches/local_matches.json",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_matches/local_matches.json",
             "--output-dir",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_pose-graph"
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_pose-graph"
           ],
           "exit_code": 0,
           "elapsed_s": 9.329678478000005,
-          "log": "/tmp/climbot_texture_v6_formal_pose_graph_1792372672301481848.log"
+          "log": "climbot_texture_v6_formal_pose_graph_1792372672301481848.log"
         },
         "mosaic_cuda": {
           "command": [
@@ -555,13 +555,13 @@
             "climbot_mosaic",
             "build_wall_mosaic",
             "--input-run",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_processed",
             "--pose-graph-dir",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_pose-graph",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_pose-graph",
             "--output-dir",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_mosaic",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_mosaic",
             "--work-dir",
-            "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_cuda-work",
+            "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_cuda-work",
             "--backend",
             "cuda",
             "--resolution-mm-per-pixel",
@@ -575,18 +575,18 @@
           ],
           "exit_code": 0,
           "elapsed_s": 40.718588486999806,
-          "log": "/tmp/climbot_texture_v6_formal_mosaic_cuda_1792372681631361736.log"
+          "log": "climbot_texture_v6_formal_mosaic_cuda_1792372681631361736.log"
         }
       },
       "paths": {
-        "processed": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_processed",
-        "matches": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_matches",
-        "feature-work": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_feature-work",
-        "pose-graph": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_pose-graph",
-        "mosaic": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_mosaic",
-        "cuda-work": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_cuda-work"
+        "processed": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_processed",
+        "matches": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_matches",
+        "feature-work": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_feature-work",
+        "pose-graph": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_pose-graph",
+        "mosaic": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_mosaic",
+        "cuda-work": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_cuda-work"
       },
-      "raw_run": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/v6_robot_capture/wall-texture-v6-full-horizontal-20261019/r000001_20261019T005910Z_b1d7c35209ba4ea1990cd2737c828ccc",
+      "raw_run": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/v6_robot_capture/wall-texture-v6-full-horizontal-20261019/r000001_20261019T005910Z_b1d7c35209ba4ea1990cd2737c828ccc",
       "raw_manifest_sha256": "1fd0eede4a0cd2d393915601b704882330f7ec7988d1bb1aa90a8ce502e78f14",
       "backend": {
         "attempts": [
@@ -628,12 +628,12 @@
         "truth": {
           "exit_code": 0,
           "elapsed_s": 110.05208003999996,
-          "log": "/tmp/climbot_texture_v6_full_truth_1792372723215629763.log"
+          "log": "climbot_texture_v6_full_truth_1792372723215629763.log"
         },
         "inspection": {
           "exit_code": 0,
           "elapsed_s": 66.38163338200002,
-          "log": "/tmp/climbot_texture_v6_full_inspection_1792372833267876953.log"
+          "log": "climbot_texture_v6_full_inspection_1792372833267876953.log"
         }
       },
       "completed": true
@@ -717,7 +717,7 @@
     "all_deleted_paths_absent": true,
     "observed_available_space_delta_bytes": 4728098816,
     "protected_formal_raw_and_assets_present": true,
-    "receipt": "/home/jerry/climbot_data/wall_texture_capture_20261019_full/final_cleanup_receipt.json",
+    "receipt": "$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full/final_cleanup_receipt.json",
     "reconstruction": "Processed PNG/native inspection tiles need regeneration from retained 750 originals and metadata; deleted development originals and retired DDS are not directly readable. Source traces/configs/hashes retained."
   }
 }

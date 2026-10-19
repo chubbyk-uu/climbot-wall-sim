@@ -42,6 +42,6 @@ CUDA 拼接显式 `--backend cuda`，原生清单 `effective=cuda`、`fallback=f
 - 原生采集 provenance 如实记录 `source_modified=true`、`traceable=false`。本地另存基线 `d1c37342bd31b8b122de38dfdf9fd2bb88ef0e3d`、源码 patch 和新增源码压缩包及哈希，用于重建此次未提交工作区；不改写原生字段或冒称已提交生产版本。
 - 运行时代码今日未改；最后一次完整八并发为 2026-10-18 的 1779 tests、零错误／失败、83 skipped。今日验证为实际采集、CUDA、独立诊断、覆盖与文件审计。
 
-数据及大图保存在 `/home/jerry/climbot_data/wall_texture_randomization_20261018`（代表组）和 `/home/jerry/climbot_data/wall_texture_capture_20261019_full`（全墙组）。全墙组的 `v6_robot_mosaic/mosaic_preview.jpg` 为查看入口，`mosaic_optimized.tif` 为原尺寸结果；`visual_review/` 保存抽查，`cleanup_receipt.json` 保存精确清理记录。逐帧清单、原始时序、截图、DDS、缓存和大图不进入 Git。精简数字及阶段日志路径见 [summary.json](summary.json)。
+数据及大图保存在 `$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018`（代表组）和 `$CLIMBOT_DATA_ROOT/wall_texture_capture_20261019_full`（全墙组）。全墙组的 `v6_robot_mosaic/mosaic_preview.jpg` 为查看入口，`mosaic_optimized.tif` 为原尺寸结果；`visual_review/` 保存抽查，`cleanup_receipt.json` 保存精确清理记录。逐帧清单、原始时序、截图、DDS、缓存和大图不进入 Git。精简数字及阶段日志路径见 [summary.json](summary.json)。
 
 旧两套清单及全部 640 个 DDS 的最终哈希复查未变，默认墙面不替换。没有恢复持续 Goal、启动 M2／弹性轮或 0.30 m/s 提速。当前成果可显式加载并供用户查看；如需零漏拍，应另行定位边缘覆盖问题，不能把它记成贴图已消除的缺陷。

@@ -52,7 +52,7 @@ C++ `SphereEnvelope` 计算。当前应用默认、球轮视觉、质量、安�
   独立 C++ 用例验证单槽／十字的两次半径外扩与原半径结果一致，及越界／非法网格拒绝。
 - 已补齐故障工况的 `maximum_skirt_stop_normal_n`；缺字段返回 null，故障不套用正常止挡零反力门槛。
   两项合成时序回归及法向锥用例通过。
-- 日志写入 `/tmp/climbot_caster_proxy_*.log`，完整仿真日志未流入上下文；只读摘要和失败片段。
+- 日志写入 `climbot_caster_proxy_*.log`，完整仿真日志未流入上下文；只读摘要和失败片段。
 - 原始世界、OBJ、请求、接触／轨迹 CSV、运行库映射及源码快照在本地数据根
   `m2_caster_proxy_20261019/`，不进入 Git。正式摘要见 [summary.json](summary.json)。
 - 本轮只运行受影响的 C++／表面／故障报告测试和样式检查，不重跑 S6 或全套 ROS 测试。

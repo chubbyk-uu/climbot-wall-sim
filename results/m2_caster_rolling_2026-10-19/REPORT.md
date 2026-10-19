@@ -36,8 +36,8 @@
 
 构建通过；生成器 26 项测试通过，含默认配置、SDF／URDF 质量／外观／惯量及碰撞分区契约；
 包内 flake8、38 项 uncrustify 通过，新增独立脚本的 ament_flake8 通过。
-日志：`/tmp/climbot_m2_rolling_build_20261019.log`、`/tmp/climbot_m2_rolling_targeted_20261019.log`、
-`/tmp/climbot_m2_rolling_runner_style_final_20261019.log`；两次原生进程日志路径见摘要。
+日志：`climbot_m2_rolling_build_20261019.log`、`climbot_m2_rolling_targeted_20261019.log`、
+`climbot_m2_rolling_runner_style_final_20261019.log`；两次原生进程日志路径见摘要。
 
 ```bash
 source install/setup.bash

@@ -57,7 +57,7 @@
       "passed": false,
       "stiffness_n_m": 150000.0,
       "damping_n_s_m": 621.7708574763543,
-      "log_path": "/tmp/climbot_m2_t1_trial_0_1792393605530265451.log"
+      "log_path": "climbot_m2_t1_trial_0_1792393605530265451.log"
     },
     {
       "windows": {
@@ -113,7 +113,7 @@
       "passed": false,
       "stiffness_n_m": 342942.7185253925,
       "damping_n_s_m": 940.146484214752,
-      "log_path": "/tmp/climbot_m2_t1_trial_1_1792393661944806654.log"
+      "log_path": "climbot_m2_t1_trial_1_1792393661944806654.log"
     },
     {
       "windows": {
@@ -169,7 +169,7 @@
       "passed": false,
       "stiffness_n_m": 721726.3001764476,
       "damping_n_s_m": 1363.8637892631841,
-      "log_path": "/tmp/climbot_m2_t1_trial_2_1792393664447514808.log"
+      "log_path": "climbot_m2_t1_trial_2_1792393664447514808.log"
     },
     {
       "windows": {
@@ -225,7 +225,7 @@
       "passed": true,
       "stiffness_n_m": 622067.9744964576,
       "damping_n_s_m": 1266.2039234893723,
-      "log_path": "/tmp/climbot_m2_t1_trial_3_1792393727421263025.log"
+      "log_path": "climbot_m2_t1_trial_3_1792393727421263025.log"
     }
   ],
   "mesa": {
@@ -234,8 +234,8 @@
     "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
   },
   "ode": {
-    "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install",
-    "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
+    "install": "$HOME/opt/climbot-ode-0.16.2-hashfix-ccd/install",
+    "library": "$HOME/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
     "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
     "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
   },
@@ -297,7 +297,7 @@
     ],
     "truth_samples": 840,
     "launch_exit_code": 0,
-    "log_path": "/tmp/climbot_m2_t1_state_bbf65e90314043c399cce56dde638ffa.log",
+    "log_path": "climbot_m2_t1_state_bbf65e90314043c399cce56dde638ffa.log",
     "passed": true
   },
   "first_generation_nominal_stiffness_n_m": 150000.0,

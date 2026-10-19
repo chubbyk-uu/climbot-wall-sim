@@ -241,7 +241,11 @@ def test_publication_does_not_replace_a_target_created_during_the_bake(tmp_path)
     assert not list(destination.iterdir())
 
 
-def test_cli_publishes_a_complete_new_traceable_asset(tmp_path):
+@pytest.mark.parametrize('catalog,algorithm', [
+    ('free', randomizer.ALGORITHM),
+    ('disjoint', randomizer.DISJOINT_ALGORITHM),
+    ('local', randomizer.LOCAL_ALGORITHM)])
+def test_cli_publishes_a_complete_new_traceable_asset(tmp_path, catalog, algorithm):
     source = tmp_path / 'source'
     source.mkdir()
     Image.fromarray(np.random.default_rng(1).integers(
@@ -252,11 +256,14 @@ def test_cli_publishes_a_complete_new_traceable_asset(tmp_path):
         '--source-dir', str(source), '--source-size-m', '.032',
         '--output-dir', str(output), '--randomize', '--region-m', '.016', '.016',
         '--patch-px', '16', '--seam-feather-px', '1', '--block-px', '32',
-        '--gutter-px', '4', '--reuse-radius-m', '.02', '--candidates', '8',
+        '--gutter-px', '4', '--reuse-radius-m', '.002', '--candidates', '8',
+        '--source-catalog', catalog, '--max-source-overlap', '0',
         '--jobs', '1', '--quiet'], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     manifest = json.loads((output / 'wall_texture.json').read_text())
-    assert manifest['randomization']['algorithm'] == randomizer.ALGORITHM
+    assert manifest['randomization']['algorithm'] == algorithm
+    trace = json.loads((output / 'quilt_sources.json').read_text())
+    assert trace['algorithm'] == manifest['randomization']['algorithm']
     assert manifest['source_native_dimensions_px'] == [128, 128]
     assert len(manifest['quilt']['trace_files']) == 2
     for entry in manifest['maps']['albedo']['blocks']:

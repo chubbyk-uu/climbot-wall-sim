@@ -29,8 +29,8 @@
 回归，全部通过；未放宽原有 0.2 mm／2°／0.2 mm 门槛。
 
 相关源场／试片单元测试 19 项通过；完整八并发回归 1823 项，零错误、零失败、84 项跳过。
-完整日志为 `/tmp/climbot_m2_boundary_full_20261019.log`，结果摘要为
-`/tmp/climbot_m2_boundary_full_result_20261019.log`。
+完整日志为 `climbot_m2_boundary_full_20261019.log`，结果摘要为
+`climbot_m2_boundary_full_result_20261019.log`。
 
 ## 复现与边界
 
@@ -39,7 +39,7 @@
 原始配置、世界和逐步数据在本地数据根 `m2_t0_20261019/boundary_final/`；准确测试源码副本
 保存在该目录的 `source_snapshot/`。未补偿对照和原有五组回归分别为 `boundary_uncompensated/`
 及 `extent_compensated_regression/`。[摘要](summary.json) 保存生产者摘要、源代码、世界和库的摘要。
-例行测试日志位于 `/tmp/climbot_m2_boundary_*_20261019.log`，原始数据不进入 Git。
+例行测试日志位于 `climbot_m2_boundary_*_20261019.log`，原始数据不进入 Git。
 
 本轮不增加整墙细分或每步查询成本；新增探针只用于诊断。实际整墙、视觉对齐和双 GUI 性能
 仍待验收，不能用无渲染短试片耗时替代实时率。正式板缝按横竖及交汇布置，斜向通过由车辆

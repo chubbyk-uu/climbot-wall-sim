@@ -62,5 +62,5 @@
 
 最后构建成功，完整八并发代码回归 **1841 项，零错误、零失败、84 项跳过**。
 首次完整运行只发现新增代码的格式问题，修正并重跑后通过；这不改变球轮物理检查失败的
-结论。日志：`/tmp/climbot_m2_joint_contact_final_20261019.log`，结果摘要：
-`/tmp/climbot_m2_joint_contact_final_result_20261019.log`。
+结论。日志：`climbot_m2_joint_contact_final_20261019.log`，结果摘要：
+`climbot_m2_joint_contact_final_result_20261019.log`。

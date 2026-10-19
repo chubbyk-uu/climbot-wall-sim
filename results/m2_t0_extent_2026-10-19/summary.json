@@ -5,7 +5,7 @@
   "source_modified": true,
   "runs": {
     "uncompensated": {
-      "raw_root": "/home/jerry/climbot_data/m2_t0_20261019/boundary_uncompensated",
+      "raw_root": "$CLIMBOT_DATA_ROOT/m2_t0_20261019/boundary_uncompensated",
       "producer_summary_sha256": "cf3996547285f8a89ff61878042d002a7737fd8638bfeb8538099883e0a95077",
       "git_commit": "0db120af6223b478ab3921b6efd421f0fd598a31",
       "source_sha256": {
@@ -15,8 +15,8 @@
       },
       "binary_sha256": "df371741d49416b7a94ea538288ae449a9bd0d51db62170599ff2d1a03aefaa5",
       "ode_runtime": {
-        "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install",
-        "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
+        "install": "$HOME/opt/climbot-ode-0.16.2-hashfix/install",
+        "library": "$HOME/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
         "library_sha256": "5944647b24fee8b8149aced9345deef32074544a8264d81dcad2387ece535654",
         "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
       },
@@ -116,7 +116,7 @@
       }
     },
     "compensated": {
-      "raw_root": "/home/jerry/climbot_data/m2_t0_20261019/boundary_final",
+      "raw_root": "$CLIMBOT_DATA_ROOT/m2_t0_20261019/boundary_final",
       "producer_summary_sha256": "8c13b04ccb6ea31490036185058210d89678a53c83524e44f4d868f380277115",
       "git_commit": "0db120af6223b478ab3921b6efd421f0fd598a31",
       "source_sha256": {
@@ -126,8 +126,8 @@
       },
       "binary_sha256": "df371741d49416b7a94ea538288ae449a9bd0d51db62170599ff2d1a03aefaa5",
       "ode_runtime": {
-        "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install",
-        "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
+        "install": "$HOME/opt/climbot-ode-0.16.2-hashfix/install",
+        "library": "$HOME/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
         "library_sha256": "5944647b24fee8b8149aced9345deef32074544a8264d81dcad2387ece535654",
         "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
       },
@@ -176,7 +176,7 @@
       }
     },
     "interior_and_joint_regression": {
-      "raw_root": "/home/jerry/climbot_data/m2_t0_20261019/extent_compensated_regression",
+      "raw_root": "$CLIMBOT_DATA_ROOT/m2_t0_20261019/extent_compensated_regression",
       "producer_summary_sha256": "d456f38d4f85ea48cdd6e15cc9cbf4673013d87719aca1adb61ef56aa9d17c18",
       "git_commit": "0db120af6223b478ab3921b6efd421f0fd598a31",
       "source_sha256": {
@@ -186,8 +186,8 @@
       },
       "binary_sha256": "df371741d49416b7a94ea538288ae449a9bd0d51db62170599ff2d1a03aefaa5",
       "ode_runtime": {
-        "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install",
-        "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
+        "install": "$HOME/opt/climbot-ode-0.16.2-hashfix/install",
+        "library": "$HOME/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
         "library_sha256": "5944647b24fee8b8149aced9345deef32074544a8264d81dcad2387ece535654",
         "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
       },
@@ -265,8 +265,8 @@
       "errors": 0,
       "failures": 0,
       "skipped": 84,
-      "log": "/tmp/climbot_m2_boundary_full_20261019.log",
-      "result_log": "/tmp/climbot_m2_boundary_full_result_20261019.log"
+      "log": "climbot_m2_boundary_full_20261019.log",
+      "result_log": "climbot_m2_boundary_full_result_20261019.log"
     }
   }
 }

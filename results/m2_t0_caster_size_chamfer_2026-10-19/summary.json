@@ -119,7 +119,7 @@
   },
   "completed": true,
   "all_physics_checks_passed": false,
-  "raw_root": "/home/jerry/climbot_data/m2_t0_20261019/caster_size_chamfer_final",
+  "raw_root": "$CLIMBOT_DATA_ROOT/m2_t0_20261019/caster_size_chamfer_final",
   "default_changed": false,
   "t0_complete": false,
   "source_modified": true,
@@ -206,7 +206,7 @@
     "failures": 0,
     "skipped": 84,
     "parallel_workers": 8,
-    "log": "/tmp/climbot_m2_caster_chamfer_final_20261019.log",
-    "result_log": "/tmp/climbot_m2_caster_chamfer_final_result_20261019.log"
+    "log": "climbot_m2_caster_chamfer_final_20261019.log",
+    "result_log": "climbot_m2_caster_chamfer_final_result_20261019.log"
   }
 }

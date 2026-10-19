@@ -26,6 +26,6 @@
 
 ## 本地复现证据
 
-最终覆盖物资产为 `/home/jerry/climbot_data/wall_texture_randomization_20261018/v6_wall_diagnostic_final_10x8_seed20261018/wall_texture.json`，须显式加载。旧两套清单及全部 640 个 DDS 的最终哈希复查未变。修复后的生成器原文也保存在数据根，与清单 producer SHA256 一致。
+最终覆盖物资产为 `$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018/v6_wall_diagnostic_final_10x8_seed20261018/wall_texture.json`，须显式加载。旧两套清单及全部 640 个 DDS 的最终哈希复查未变。修复后的生成器原文也保存在数据根，与清单 producer SHA256 一致。
 
-完整配置、来源/切缝 trace、哈希、采集、执行清单和图片在 `/home/jerry/climbot_data/wall_texture_randomization_20261018`，不进入 Git。精简机器摘要见 [summary.json](summary.json)。今天已停止工作，代表性采集、CUDA 拼接及整墙采集均尚未启动，按用户指示留到下一次；因此尚未声明专项最终验收完成。下一次先完成已准备的 3×2 m（区域 [6,1.5]～[9,3.5]）70 张代表任务，复核完整性、双 GUI RTF 与原生 CUDA 执行，再决定开展一次全墙任务，不直接重跑历史最大的两组。
+完整配置、来源/切缝 trace、哈希、采集、执行清单和图片在 `$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018`，不进入 Git。精简机器摘要见 [summary.json](summary.json)。今天已停止工作，代表性采集、CUDA 拼接及整墙采集均尚未启动，按用户指示留到下一次；因此尚未声明专项最终验收完成。下一次先完成已准备的 3×2 m（区域 [6,1.5]～[9,3.5]）70 张代表任务，复核完整性、双 GUI RTF 与原生 CUDA 执行，再决定开展一次全墙任务，不直接重跑历史最大的两组。

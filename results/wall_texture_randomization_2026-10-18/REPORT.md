@@ -162,14 +162,14 @@ overlap 300、feather 96、block 2048、gutter 128，234 次放置、48 个 DDS�
 
 ## 复现入口与本地证据
 
-本地大文件根：`/home/jerry/climbot_data/wall_texture_randomization_20261018`；
-旧墙审计：`/home/jerry/climbot_data/acceptance_evidence/wall_texture_audit_20261018`。
-原生清单、光学评价和归因结果的绝对路径及 SHA-256 见 [summary.json](summary.json)。
+本地大文件根：`$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018`；
+旧墙审计：`$CLIMBOT_DATA_ROOT/acceptance_evidence/wall_texture_audit_20261018`。
+原生清单、光学评价和归因结果的可迁移路径引用及 SHA-256 见 [summary.json](summary.json)。
 `frozen_views_40pairs.json` 为保留在外部的固定视图集；禁止替换为挑选出的视图。
 以下所有输出目录须使用新名称，长任务完整输出重定向到唯一 `/tmp` 日志：
 
 ```bash
-EXP_ROOT=/home/jerry/climbot_data/wall_texture_randomization_20261018
+EXP_ROOT="$CLIMBOT_DATA_ROOT/wall_texture_randomization_20261018"
 python3 tools/bake_wall_texture.py \
   --source-dir "$HOME/.cache/climbot/Concrete044D_8K-JPG/maps" --source-size-m 2.5 \
   --output-dir "$EXP_ROOT/reproduce_<new>" --region-m 4 3 --region-origin-m 2.5 1.7 \
@@ -193,7 +193,7 @@ python3 tools/evaluate_wall_texture_sift.py \
 ```
 
 失败的匹配门禁和退出清理均应保持非零返回，不以 `|| true` 掩盖。
-最终全套完整日志 `/tmp/climbot_texture_full_j8_final_20261018_221500.log`，
-结果摘要 `/tmp/climbot_texture_test_result_final_20261018_221722.log`；
-定向测试 `/tmp/climbot_texture_targeted_final_20261018_221331.log`。
+最终全套完整日志 `climbot_texture_full_j8_final_20261018_221500.log`，
+结果摘要 `climbot_texture_test_result_final_20261018_221722.log`；
+定向测试 `climbot_texture_targeted_final_20261018_221331.log`。
 旧墙同区审计、完整性复查及局部错误归因的复现驱动也已复制至外部证据根，未加入 Git。

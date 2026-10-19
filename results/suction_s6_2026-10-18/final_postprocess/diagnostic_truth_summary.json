@@ -13,10 +13,10 @@
     "repair_patch_06"
   ],
   "diagnostic_truth_format_version": 3,
-  "diagnostic_wall_manifest": "/home/jerry/robot_ws/climbot_sim/textures/wall_diagnostic_025/wall_texture.json",
+  "diagnostic_wall_manifest": "textures/wall_diagnostic_025/wall_texture.json",
   "diagnostic_wall_manifest_sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c",
   "minimum_phase_response": 0.1,
-  "mosaic_dir": "/home/jerry/climbot_data/mosaic-suction-s6-final-joint-20261018-cuda",
+  "mosaic_dir": "$CLIMBOT_DATA_ROOT/mosaic-suction-s6-final-joint-20261018-cuda",
   "mosaic_manifest_sha256": "1495c5401254256a3a3eb278951043904d576d6fa648f0ec9ddb9904a35d4a92",
   "optimized_minus_pose_only_p95_anchor_offset_m": -0.021555628637837745,
   "optimized_not_worse_p95_anchor_offset": true,

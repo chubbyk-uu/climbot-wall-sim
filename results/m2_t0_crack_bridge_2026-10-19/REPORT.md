@@ -63,5 +63,5 @@ T1/T2 追加少量实际越缝／轮载检查；板缝和未省略表面继续�
 
 完整八并发最终回归 **1832 项，零错误、零失败、84 项跳过**。首次完整运行仅发现新增
 模块的一处导入顺序 lint 错误，修正后完整重跑通过。完整日志为
-`/tmp/climbot_m2_crack_simplification_final_20261019.log`，结果摘要为
-`/tmp/climbot_m2_crack_simplification_final_result_20261019.log`。
+`climbot_m2_crack_simplification_final_20261019.log`，结果摘要为
+`climbot_m2_crack_simplification_final_result_20261019.log`。

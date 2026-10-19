@@ -5,7 +5,7 @@
     "detection_width_m": 0.5
   },
   "diagnostic_inspection_format_version": 4,
-  "diagnostic_wall_manifest": "/home/jerry/robot_ws/climbot_sim/textures/wall_diagnostic_025/wall_texture.json",
+  "diagnostic_wall_manifest": "textures/wall_diagnostic_025/wall_texture.json",
   "diagnostic_wall_manifest_sha256": "325e974952d3bf8f15e471b640feeaaceb7c5d2c6bf70c1afc91839c2680da4c",
   "feature_counts": {
     "declared": 21,
@@ -2410,7 +2410,7 @@
       7.440000057220459
     ]
   ],
-  "mosaic_dir": "/home/jerry/climbot_data/mosaic-suction-s6-final-joint-20261018-cuda",
+  "mosaic_dir": "$CLIMBOT_DATA_ROOT/mosaic-suction-s6-final-joint-20261018-cuda",
   "mosaic_manifest_sha256": "1495c5401254256a3a3eb278951043904d576d6fa648f0ec9ddb9904a35d4a92",
   "native_tile_contract": {
     "layout": "left-to-right: immutable_truth, pose_only, optimized",

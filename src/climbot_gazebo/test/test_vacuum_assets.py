@@ -209,11 +209,22 @@ def test_compliant_wheels_preserve_mass_inertia_and_publish_moving_tf_chain(tmp_
     assert rigid.find('.//joint[@name="left_tyre_joint"]') is None
 
 
-@pytest.mark.parametrize('representation,amplitude', [
-    ('mesh', 0), ('native_heightmap', 0), ('native_heightmap', .002)])
+@pytest.mark.parametrize('representation,amplitude,radius', [
+    ('mesh', 0, .0475), ('native_heightmap', 0, .05),
+    ('native_heightmap', .002, .0475)])
 def test_surface_patch_keeps_one_source_and_excludes_hidden_flat_support(
-        tmp_path, representation, amplitude):
+        tmp_path, monkeypatch, representation, amplitude, radius):
     """Serialize through SDF-safe flow text and partition the two contact meshes."""
+    from climbot_gazebo import vacuum_assets
+    original_read = vacuum_assets._read
+
+    def configured_radius(path, key):
+        result = original_read(path, key)
+        if key == 'vacuum_chassis':
+            result['wheel']['radius_m'] = radius
+        return result
+
+    monkeypatch.setattr(vacuum_assets, '_read', configured_radius)
     config = yaml.safe_load((Path(__file__).parents[1] /
                             'config/m2_surface_fixture.yaml').read_text())
     config['roughness']['amplitude_m'] = amplitude
@@ -246,6 +257,10 @@ def test_surface_patch_keeps_one_source_and_excludes_hidden_flat_support(
         assert real.findtext('.//visual/geometry/mesh/uri').endswith('/real.obj')
         assert proxy.findtext('.//collision/geometry/mesh/uri').endswith('/proxy.obj')
         patch = resolved['surface_patch']
+        assert patch['driver_radius_m'] == resolved['model']['config']['wheel']['radius_m']
+        assert patch['ideal_driver_omitted_sag_m'] == pytest.approx({
+            'single': radius - math.sqrt(radius**2 - .0025**2),
+            'cross_diagonal': radius - math.sqrt(radius**2 - 2*.0025**2)})
         assert patch['driver_surface_policy'] == 'roughness_only'
         if amplitude:
             grid = np.linspace(0, 1.2, 257)

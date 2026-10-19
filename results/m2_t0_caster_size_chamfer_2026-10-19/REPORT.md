@@ -50,9 +50,9 @@
 首轮半成品混入对照。[摘要](summary.json) 保存每组指标、失败项、世界和源代码摘要。
 本地完整时序、SDF／OBJ、合同、分组日志及准确源码快照保存在
 `m2_t0_20261019/caster_size_chamfer_final/`，大体积数据不进入 Git。
-未运行 GUI 或拍照，不报告正式实时率；普通诊断日志位于 `/tmp/climbot_m2_caster_*_20261019.log`。
+未运行 GUI 或拍照，不报告正式实时率；普通诊断日志位于 `climbot_m2_caster_*_20261019.log`。
 
 相关源场测试 38 项通过；完整八并发代码回归最终 **1846 项，零错误、零失败、84 项跳过**。
 首次完整运行发现条件续行缩进格式错误，仅修正一个空格后完整重跑通过，数值逻辑未变。
-最终日志为 `/tmp/climbot_m2_caster_chamfer_final_20261019.log`，结果摘要为
-`/tmp/climbot_m2_caster_chamfer_final_result_20261019.log`。代码回归通过不替代上述物理门槛。
+最终日志为 `climbot_m2_caster_chamfer_final_20261019.log`，结果摘要为
+`climbot_m2_caster_chamfer_final_result_20261019.log`。代码回归通过不替代上述物理门槛。

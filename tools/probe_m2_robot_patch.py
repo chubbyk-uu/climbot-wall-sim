@@ -146,7 +146,8 @@ def main():
               'mesa': mesa, 'ode': ode, 'log_path': str(log),
               'source_commit': subprocess.check_output(
                   ['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
-              'source_dirty': True,
+              'source_dirty': bool(subprocess.check_output(
+                  ['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip()),
               'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()}
     write(args.output / 'summary.json', result)
     print(json.dumps({'passed': result['passed'], 'metrics': metrics}))

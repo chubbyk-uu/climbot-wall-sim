@@ -76,7 +76,7 @@
     }
   ],
   "default_world": {
-    "default_manifest": "/home/jerry/climbot_data/assets/wall_local_diagnostic_v6/wall_texture.json",
+    "default_manifest": "$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6/wall_texture.json",
     "manifest_sha256": "d3467019d2de36b9eee1d14ce421ee894506c5c0f7868d0d651b38f0fdc86f78",
     "grid_spacing": "0",
     "additional_texture_visuals": 320,
@@ -115,17 +115,17 @@
     "texture_tests": {
       "passed": 55,
       "elapsed_s": 2.59,
-      "log": "/tmp/climbot_texture_review_tests_20261019.log"
+      "log": "climbot_texture_review_tests_20261019.log"
     },
     "build": {
       "packages": 3,
       "exit_code": 0,
-      "log": "/tmp/climbot_texture_default_build_20261019.log"
+      "log": "climbot_texture_default_build_20261019.log"
     },
     "lint": {
       "files": 2,
       "exit_code": 0,
-      "log": "/tmp/climbot_texture_review_lint_20261019.log"
+      "log": "climbot_texture_review_lint_20261019.log"
     },
     "full_suite": {
       "exit_code": 0,
@@ -136,8 +136,8 @@
       "elapsed_s": 55.9,
       "executor": "parallel",
       "parallel_workers": 8,
-      "log": "/tmp/climbot_texture_review_full_20261019.log",
-      "result_log": "/tmp/climbot_texture_review_full_result_20261019.log"
+      "log": "climbot_texture_review_full_20261019.log",
+      "result_log": "climbot_texture_review_full_result_20261019.log"
     }
   }
 }

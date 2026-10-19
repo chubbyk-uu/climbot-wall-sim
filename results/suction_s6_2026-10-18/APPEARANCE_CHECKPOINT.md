@@ -55,7 +55,7 @@
 PID 等待脚本来恢复。后续使用新输出目录及当前源码入口重新启动。
 
 270 份新增原始压力／接触／运动压缩数据，共 1,062,741,774 字节，已校验后完整归档至
-`${CLIMBOT_DATA_ROOT:-/home/jerry/climbot_data}/acceptance_evidence/suction_s6_20261018/`。
+`${CLIMBOT_DATA_ROOT:-$CLIMBOT_DATA_ROOT}/acceptance_evidence/suction_s6_20261018/`。
 data_artifact_index.json（本地附件：`results/suction_s6_2026-10-18/data_artifact_index.json`）记录路径、大小和 SHA-256，共 276 份索引；
 原冻结索引、历史 tracked 数据均未改写。工作输入仍保留，本次没有提前执行验收后清理。
 可用 `python3 results/suction_s6_2026-10-18/replay/restore_pressure_records.py` 校验归档，

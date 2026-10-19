@@ -642,7 +642,8 @@ def main():
         if randomization is not None:
             manifest['randomization'] = randomization
             manifest['quilt']['trace_files'] = randomizer.write_trace(
-                arguments.output_dir, placements, patch, native, side)
+                arguments.output_dir, placements, patch, native, side,
+                algorithm=randomization['algorithm'])
         with open(path, 'w', encoding='utf-8') as handle:
             json.dump(manifest, handle, indent=2, allow_nan=False)
             handle.write('\n')

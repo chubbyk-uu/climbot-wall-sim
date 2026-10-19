@@ -8,16 +8,16 @@
     "height": 1000,
     "pid": 284442,
     "mapped_gl_libraries": [
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
-      "/home/jerry/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0"
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libgallium-25.2.8.so",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0",
+      "$HOME/opt/agv-mesa-25.2.8/install/lib/libGLX_mesa.so.0.0.0"
     ]
   },
   "gui": {

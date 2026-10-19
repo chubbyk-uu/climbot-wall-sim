@@ -47,12 +47,15 @@ class Envelope:
         return n / np.linalg.norm(n, axis=-1, keepdims=True)
 
 
-def apply(world, plugin, out, config, surface_pose, size=1.2):
+def apply(world, plugin, out, config, surface_pose, wheel_radius, size=1.2):
     """Install a bounded patch near the robot, with no hidden flat collision plane."""
     if plugin.findtext('pressure_mode') != 'fixed_pressure':
         raise ValueError('surface patch is B-mode contact diagnostics, not fan/leak acceptance')
     if len(config['grooves']) not in (0, 2):
         raise ValueError('patch requires two orthogonal panel joints or a smooth control')
+    joint_width = max((g['width_m'] for g in config['grooves']), default=0.)
+    if not np.isfinite(wheel_radius) or wheel_radius <= joint_width / np.sqrt(2):
+        raise ValueError('invalid wheel radius for driver bridge bounds')
     start = time.monotonic()
     source = WallSurface(config)
     representation = config.get('contact_representation', 'mesh')
@@ -178,9 +181,10 @@ def apply(world, plugin, out, config, surface_pose, size=1.2):
             'bridge_scope': ('panel joints <=5 mm, no panel step; body/stops also bridged; '
                              'stop error is not bounded by wheel sag'
                              ) if native_heightmap else None,
+            'driver_radius_m': wheel_radius,
             'ideal_driver_omitted_sag_m': {
-                'single': .0475 - np.sqrt(.0475**2 - .0025**2),
-                'cross_diagonal': .0475 - np.sqrt(.0475**2 - 2*.0025**2)
+                'single': wheel_radius - np.sqrt(wheel_radius**2 - (joint_width/2)**2),
+                'cross_diagonal': wheel_radius - np.sqrt(wheel_radius**2 - joint_width**2/2)
             } if native_heightmap else None,
             'joint_count': len(config['grooves']),
             'proxy_centroid_error_m': interpolation_error,

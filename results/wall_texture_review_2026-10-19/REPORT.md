@@ -49,3 +49,12 @@ Gazebo 墙面网格默认 0；不改变 RViz 的墙面和参考网格。显式�
 55 项纹理／评价定向测试通过，3 个受影响包构建通过，2 个新增修改文件 lint 通过。
 完整八并发回归 1783 项，0 errors、0 failures、83 skipped，11 包共 55.9 s，
 详见 [summary.json](summary.json)；原始日志仅保存在 `/tmp`。
+
+
+## 溯源标签修正（2026-10-19）
+
+旧版写入器把 `quilt_sources.json.algorithm` 固定为 v3；已验收的默认 v6 资产主清单
+`wall_texture.json.randomization.algorithm` 为正确的 v6，历史 trace 的该标签有误。
+本次让写入器接收实际算法标签，之后生成的 v3／v5／v6 trace 与主清单一致，并以三种模式的小型
+CLI 烘焙检查。此项只修标签，不改变纹理选择或像素；既有验收资产不改写，原始哈希保留。
+历史资产算法归属以对应主清单及生产源码为准，不将旧 trace 的 v3 标签解释为实际采用 v3。

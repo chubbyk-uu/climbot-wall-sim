@@ -5,7 +5,7 @@
   "full_mesh_normals_passed": false,
   "branch": "feature/m2-wall-compliance",
   "source_modified": true,
-  "raw_data_root": "/home/jerry/climbot_data/m2_t0_20261019",
+  "raw_data_root": "$CLIMBOT_DATA_ROOT/m2_t0_20261019",
   "runs": {
     "features_native_isolated": {
       "producer_summary_sha256": "4b8aff0748e160f44869d6a6637d81918fdc1b6d42212b42a7c4612867c0ebd4",
@@ -17,8 +17,8 @@
       },
       "binary_sha256": "df371741d49416b7a94ea538288ae449a9bd0d51db62170599ff2d1a03aefaa5",
       "ode_runtime": {
-        "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install",
-        "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
+        "install": "$HOME/opt/climbot-ode-0.16.2-hashfix/install",
+        "library": "$HOME/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
         "library_sha256": "5944647b24fee8b8149aced9345deef32074544a8264d81dcad2387ece535654",
         "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
       },
@@ -73,8 +73,8 @@
       },
       "binary_sha256": "df371741d49416b7a94ea538288ae449a9bd0d51db62170599ff2d1a03aefaa5",
       "ode_runtime": {
-        "install": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install",
-        "library": "/home/jerry/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
+        "install": "$HOME/opt/climbot-ode-0.16.2-hashfix/install",
+        "library": "$HOME/opt/climbot-ode-0.16.2-hashfix/install/lib/libode.so.8.0.2",
         "library_sha256": "5944647b24fee8b8149aced9345deef32074544a8264d81dcad2387ece535654",
         "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
       },
@@ -216,7 +216,7 @@
     "errors": 0,
     "failures": 0,
     "skipped": 84,
-    "log": "/tmp/climbot_m2_crack_simplification_final_20261019.log",
-    "result_log": "/tmp/climbot_m2_crack_simplification_final_result_20261019.log"
+    "log": "climbot_m2_crack_simplification_final_20261019.log",
+    "result_log": "climbot_m2_crack_simplification_final_result_20261019.log"
   }
 }
