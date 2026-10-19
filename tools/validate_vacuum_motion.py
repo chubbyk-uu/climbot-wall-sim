@@ -226,6 +226,8 @@ def fault_metrics(c, resolved, spec):
             'last_valid_delta_pa': float(c['vac_delta_pa'][last_valid]),
             'invalid_tail_reason': ('model validity domain exited; pressure snapshot stale'
                                     if invalid_tail else None),
+            'maximum_skirt_stop_normal_n': (float(c[STOP_FIELD].max())
+                                              if STOP_FIELD in c else None),
             'minimum_free_normals_n': normals[valid].min(axis=0).tolist() if valid.any() else None,
             'released_s': float(np.max(c['vac_release_time_s'])),
             'constrained_bench_not_free_holding_evidence': spec['kind'] in ('bench', 'numeric')}

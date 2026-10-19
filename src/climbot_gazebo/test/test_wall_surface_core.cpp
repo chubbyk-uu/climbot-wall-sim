@@ -45,3 +45,38 @@ TEST(WallSurface, RuntimeRejectsInvalidResolvedGeometry)
   EXPECT_THROW(climbot_gazebo::WallSurface("roughness: {modes: []}\ngrooves: []"),
     std::invalid_argument);
 }
+
+TEST(SphereEnvelope, TwoOffsetsPreserveSingleAndCrossedGapSupport)
+{
+  using climbot_gazebo::SphereEnvelope;
+  const std::vector<double> source{-0.04, -0.02, -0.0025, -0.00125, 0,
+    0.00125, 0.0025, 0.02, 0.04};
+  const std::vector<double> proxy{-0.02, -0.0025, -0.00125, 0, 0.00125, 0.0025, 0.02};
+  for (bool cross : {false, true}) {
+    std::vector<double> heights;
+    for (double v : source) {
+      for (double u : source) {
+        heights.push_back(std::abs(v) < .0025 || (cross && std::abs(u) < .0025) ? -.004 : 0);
+      }
+    }
+    SphereEnvelope original(source, source, heights);
+    std::vector<double> intermediate;
+    for (double v : proxy) {
+      for (double u : proxy) {
+        intermediate.push_back(original.height(u, v, .00625));
+      }
+    }
+    SphereEnvelope reduced(proxy, proxy, intermediate);
+    double expected = std::sqrt(.0125 * .0125 - .0025 * .0025 * (cross ? 2 : 1));
+    EXPECT_NEAR(original.height(0, 0, .0125), expected, 1e-14);
+    EXPECT_NEAR(reduced.height(0, 0, .00625), expected, 1e-14);
+  }
+}
+TEST(SphereEnvelope, IncompleteFootprintsAndMalformedAxesFailExplicitly)
+{
+  using climbot_gazebo::SphereEnvelope;
+  EXPECT_THROW(SphereEnvelope({0, 0}, {0, 1}, {0, 0, 0, 0}), std::invalid_argument);
+  SphereEnvelope plane({-.02, 0, .02}, {-.02, 0, .02}, std::vector<double>(9, 0));
+  EXPECT_DOUBLE_EQ(plane.height(0, 0, .01), .01);
+  EXPECT_THROW(plane.height(.018, 0, .01), std::invalid_argument);
+}

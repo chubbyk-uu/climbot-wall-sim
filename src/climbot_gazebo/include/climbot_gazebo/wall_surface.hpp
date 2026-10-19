@@ -36,5 +36,17 @@ private:
   std::vector<Mode> modes_;
   std::vector<Groove> grooves_;
 };
+// Offline spherical dilation of sampled native source heights. The source grid
+// must include feature rims; callers independently bound discretization error.
+class SphereEnvelope
+{
+public:
+  SphereEnvelope(std::vector<double> u, std::vector<double> v, std::vector<double> height);
+  double height(double u, double v, double radius) const;
+
+private:
+  std::vector<double> u_, v_, heights_;
+  double maximum_;
+};
 }  // namespace climbot_gazebo
 #endif  // CLIMBOT_GAZEBO__WALL_SURFACE_HPP_

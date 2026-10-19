@@ -40,6 +40,7 @@ public:
   std::vector<gz::sim::Link> links;
   std::vector<gz::sim::Entity> collisions;
   std::vector<std::string> names;
+  std::vector<gz::math::Vector3d> before;
   std::vector<gz::sim::Entity> scanJoints;
   double scanSpeed = 0, settleSeconds = 0, normalForce = 0;
   void PreUpdate(const gz::sim::UpdateInfo & info, ECM & ecm) override
@@ -62,6 +63,10 @@ public:
           return true;
       });
     }
+    before.clear();
+    for (const auto & link : links) {
+      before.push_back(gz::sim::worldPose(link.Entity(), ecm).Pos());
+    }
     if (scanSpeed <= 0 || info.paused) {return;}
     const double time = std::chrono::duration<double>(info.simTime).count();
     for (std::size_t i = 0; i < links.size(); ++i) {
@@ -83,7 +88,8 @@ public:
       auto data = ecm.Component<gz::sim::components::ContactSensorData>(collisions[i]);
       if (!pose || !data) {throw std::runtime_error("missing native contact/pose");}
       frames << time << ',' << names[i] << ',' << pose->Pos().X() << ',' <<
-        pose->Pos().Y() << ',' << pose->Pos().Z() << ',' << data->Data().contact_size() << '\n';
+        pose->Pos().Y() << ',' << pose->Pos().Z() << ',' << data->Data().contact_size() << ',' <<
+        before[i].X() << ',' << before[i].Y() << ',' << before[i].Z() << '\n';
       for (const auto & contact : data->Data().contact()) {
         for (int j = 0; j < contact.position_size(); ++j) {
           if (j >= contact.normal_size() || j >= contact.depth_size()) {
@@ -122,12 +128,13 @@ int main(int argc, char ** argv)
       observer->scanSpeed = sweep["speed_mps"].as<double>();
       observer->settleSeconds = sweep["settle_s"].as<double>();
       observer->normalForce = sweep["extra_normal_force_n"].as<double>();
-      if (!(observer->scanSpeed > 0 && observer->scanSpeed <= .1) ||
+      if (!(observer->scanSpeed > 0 && observer->scanSpeed <= .3) ||
         !(observer->settleSeconds >= 0) || !(observer->normalForce >= 0 &&
-        observer->normalForce <= 300)) {throw std::runtime_error("invalid diagnostic sweep");}
+        observer->normalForce <= 600)) {throw std::runtime_error("invalid diagnostic sweep");}
     }
     observer->frames.open(out / "frames.csv");observer->contacts.open(out / "contacts.csv");
-    observer->frames << std::setprecision(17) << "time_s,name,x,y,z,contacts\n";
+    observer->frames << std::setprecision(17) <<
+      "time_s,name,x,y,z,contacts,before_x,before_y,before_z\n";
     observer->contacts << std::setprecision(17) <<
       "time_s,name,x,y,z,nx,ny,nz,depth_m,force_x_n,force_y_n,force_z_n,"
       "collision1_id,collision2_id,collision1_name,collision2_name\n";

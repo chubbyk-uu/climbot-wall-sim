@@ -33,4 +33,29 @@ PYBIND11_MODULE(_climbot_surface, module)
       }
       return out;
   });
+  py::class_<climbot_gazebo::SphereEnvelope>(module, "SphereEnvelope")
+  .def(py::init([](Array u, Array v, Array heights) {
+      if (u.ndim() != 1 || v.ndim() != 1 || heights.ndim() != 2 ||
+      heights.shape(0) != v.size() || heights.shape(1) != u.size())
+      {
+        throw py::value_error("envelope needs 1D axes and matching [v,u] source heights");
+      }
+      return climbot_gazebo::SphereEnvelope(
+        {u.data(), u.data() + u.size()}, {v.data(), v.data() + v.size()},
+        {heights.data(), heights.data() + heights.size()});
+  }))
+  .def("evaluate", [](const climbot_gazebo::SphereEnvelope & surface, Array u, Array v, double r) {
+      if (u.request().shape != v.request().shape) {
+        throw py::value_error("envelope coordinates must have matching shapes");
+      }
+      py::array_t<double> out(u.request().shape);auto dst = out.mutable_data();
+      auto x = u.data(), y = v.data();
+      {py::gil_scoped_release release;
+        for (py::ssize_t i = 0; i < u.size(); ++i) {
+          dst[i] = surface.height(x[i], y[i], r);
+        }
+      }
+      return out;
+  });
+
 }

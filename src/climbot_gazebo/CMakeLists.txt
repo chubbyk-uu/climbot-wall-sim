@@ -66,7 +66,7 @@ target_link_libraries(wall_surface_probe PRIVATE gz-sim8::gz-sim8 yaml-cpp::yaml
 install(TARGETS wall_surface_probe RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 # Single surface implementation for offline assets and future runtime queries.
-add_library(wall_surface_core src/wall_surface.cpp)
+add_library(wall_surface_core src/wall_surface.cpp src/sphere_envelope.cpp)
 target_compile_features(wall_surface_core PUBLIC cxx_std_17)
 target_include_directories(wall_surface_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -242,6 +242,8 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_normal_load_statistics test/test_normal_load_statistics.py)
   # Offline design tools live at repository level, outside the runtime package.
+  ament_add_pytest_test(test_caster_proxy_contract
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_caster_proxy_contract.py)
   ament_add_pytest_test(test_suction_analysis
     ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_suction_analysis.py)
   ament_add_pytest_test(test_vacuum_design
