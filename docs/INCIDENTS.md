@@ -727,3 +727,15 @@
 - **根因**：脚本无条件传 `resolved_assets_directory:="$G2_RESOLVED_ASSETS"`，空值成为
   `resolved_assets_directory:=`，ros2 launch 拒绝；`m2_load_trace` 同理。仅在 M2 运行时总被设置，未暴露。
 - **修复**：改为 `${VAR:+name:="$VAR"}`，与 `clock_publish_hz` 一致；平墙刚性轮对照已按默认参数通过。
+
+### 51. 起伏墙爬升航向摆动，看似控制增益或 WheelSlip 问题
+
+- **现象**：M2 竖向爬升航向峰峰约 3°、约 0.5 Hz，平墙刚性轮约 0.5°；横向掉头时有单步轮载尖峰。
+- **误导线索**：提高航向增益幅度下降但摆动变快；车体侧滑大，像 WheelSlip 蠕滑过大；关闭侧向
+  弹簧无变化。纵向力差、球轮侧向力与摆动相关都很弱。
+- **根因**：法向弹簧为沿车体法向的移动副，车轮不随局部坡度侧倾；47 mm 宽圆柱只剩单侧轮缘
+  接触，坡度变号时接触点在两缘间跳动（接触点 2→1，单步切向力约 2.5 倍）。
+- **修复**：柔顺轮的驱动碰撞改为同半径球面，视觉、弹簧与 WheelSlip 不变；峰峰降至约 0.6°，
+  横向 v2 由失败转为通过。`tyre_crown:=false` 可复现旧行为。
+- **回归**：`test_crowned_tyre_contact_keeps_rolling_radius_and_visual_cylinder`；
+  定量证据见 [T3 预检报告](../results/m2_t3_preflight_2026-10-19/REPORT.md)。
