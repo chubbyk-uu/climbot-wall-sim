@@ -14,7 +14,7 @@
 
 """An unresolved speed-hold release must leave an operator recovery path."""
 
-from threading import Thread
+from threading import Event, Thread
 import time
 import unittest
 
@@ -28,10 +28,10 @@ import launch_testing.asserts
 import pytest
 import rclpy
 from rclpy.action import ActionServer, GoalResponse
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from std_msgs.msg import Bool
-from std_srvs.srv import Trigger
+from std_srvs.srv import SetBool, Trigger
 
 
 @pytest.mark.launch_test
@@ -81,10 +81,18 @@ class TestCoverageManagerHoldRelease(unittest.TestCase):
                                       self.statuses.append, qos)
         self.hold_pub = self.node.create_publisher(Bool, '/control/hold_active', qos)
         self.hold_pub.publish(Bool(data=True))
-        # A recent hold status makes the manager wait for a release even before
-        # DDS can discover the service. Deliberately advertise no service: the
-        # high discovery grace models a controller whose hold endpoint vanished
-        # at exactly that point, without blocking this test's own executor.
+        # Make an unresolved release deterministic: the endpoint is discovered
+        # but never answers until teardown. Publishing hold state alone is not
+        # acknowledgement that the manager consumed it before Start arrives.
+        self.release_service = Event()
+
+        def unresolved(_request, response):
+            self.release_service.wait(timeout=20.0)
+            response.success = False
+            return response
+
+        self.hold_service = self.node.create_service(
+            SetBool, '/control/hold', unresolved, callback_group=MutuallyExclusiveCallbackGroup())
         self.executor_node = rclpy.create_node('unresolved_hold_executor')
         self.goal_count = 0
 
@@ -108,6 +116,7 @@ class TestCoverageManagerHoldRelease(unittest.TestCase):
             self.assertTrue(client.wait_for_service(timeout_sec=10.0))
 
     def tearDown(self):
+        self.release_service.set()
         self.executor.shutdown(timeout_sec=5.0)
         self.thread.join(timeout=10.0)
         self.server.destroy()
@@ -132,6 +141,10 @@ class TestCoverageManagerHoldRelease(unittest.TestCase):
         self.fail('Timed out; last state: {}'.format(self.statuses[-1] if self.statuses else None))
 
     def test_cancel_and_deadline_recover_from_an_unresolved_release(self):
+        deadline = time.monotonic() + 5.0
+        while self.node.count_clients('/control/hold') == 0 and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertGreater(self.node.count_clients('/control/hold'), 0)
         self.task_pub.publish(_task())
         self._wait(lambda status: status.state == CoverageStatus.READY)
         self.assertTrue(self._call(self.start).success)
