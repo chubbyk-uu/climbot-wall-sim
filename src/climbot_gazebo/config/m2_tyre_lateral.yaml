@@ -1,0 +1,11 @@
+# Provisional tyre lateral elasticity, not measured hardware. Opt in with the
+# normal tyre spring. WheelSlip compliance vanishes at zero wheel spin, so this
+# spring is what defines the parked lateral load split between the two wheels.
+m2_tyre_lateral:
+  schema_version: 1
+  stiffness_n_m: 100000.0
+  damping_n_s_m: 700.0  # about 0.4 of critical for the chassis on both springs
+  lower_m: -0.005
+  upper_m: 0.005
+  carrier_mass_kg: 0.02  # split from each wheel; total mass unchanged
+  carrier_radius_m: 0.01

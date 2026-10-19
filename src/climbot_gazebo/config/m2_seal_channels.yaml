@@ -1,0 +1,6 @@
+# Provisional equivalent seal model, not a measured fabric property.
+# Freeze before coupled runs; sensitivity includes drape=0 (no intrusion).
+m2_seal_channels:
+  drape_m: 0.001
+  transition_m: 0.0001
+  refinement: 1

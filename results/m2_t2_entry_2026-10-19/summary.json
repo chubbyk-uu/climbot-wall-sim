@@ -1,0 +1,135 @@
+{
+  "scope": "T2 entry: raw contact/impulse diagnosis; no new simulation",
+  "cases": {
+    "m2_robot_patch_20261019_drive_bridge": {
+      "frames_sha256": "c284c407e989012abcffcaa345017312719fe1319eb496e9b54d6b7564d291a7",
+      "scope": "Existing B contact data only; not a T2 load or fan/leak pass",
+      "step_s": 0.0010000000000000009,
+      "release_s": 0.957,
+      "scored_frames": 5001,
+      "supports": {
+        "left": {
+          "raw_normal_quantiles_n": [
+            0.0,
+            229.80763216628634,
+            245.65485538358962,
+            256.7365007552617,
+            263.14345180149064
+          ],
+          "zero_normal_frames": 4,
+          "maximum_zero_normal_run_steps": 1
+        },
+        "right": {
+          "raw_normal_quantiles_n": [
+            0.0,
+            230.34223940903402,
+            255.10189549958224,
+            257.2544703495739,
+            285.63377449876884
+          ],
+          "zero_normal_frames": 4,
+          "maximum_zero_normal_run_steps": 1
+        },
+        "ball": {
+          "raw_normal_quantiles_n": [
+            0.0,
+            497.75087176367583,
+            500.9118883557693,
+            535.6366702755744,
+            1028.599653154133
+          ],
+          "zero_normal_frames": 15,
+          "maximum_zero_normal_run_steps": 1
+        }
+      },
+      "ball_spike_threshold_n": 750,
+      "ball_frames_over_threshold": 16,
+      "ball_maximum_spike_run_steps": 1,
+      "peak": {
+        "time_s": 4.893,
+        "after_release_s": 3.936,
+        "source_v_m": 0.5979041721915082,
+        "normal_n": 1028.599653154133,
+        "previous_normal_n": 0.0,
+        "previous_normal_velocity_mps": -0.0709078142351603,
+        "peak_and_previous_normal_impulse_ns": 1.028599653154134,
+        "median_reference_two_step_impulse_ns": 0.9955017435273525,
+        "pair_impulse_relative_difference": 0.03324746525255273,
+        "maximum_one_step_outward_displacement_m": 7.144389610284907e-05,
+        "contact_points": 20
+      },
+      "maximum_simultaneously_zero_normals": 1,
+      "all_support_normals_simultaneously_zero_frames": 0,
+      "runtime_failed": false,
+      "maximum_stop_reaction_n": 0.0
+    },
+    "m2_robot_patch_20261019_heightmap_control": {
+      "frames_sha256": "5ecf65db7686b74647eaefccdea3dbc42ba9333a37e8ca7e26c0e6840cd101e5",
+      "scope": "Existing B contact data only; not a T2 load or fan/leak pass",
+      "step_s": 0.0010000000000000009,
+      "release_s": 0.677,
+      "scored_frames": 5001,
+      "supports": {
+        "left": {
+          "raw_normal_quantiles_n": [
+            0.0,
+            229.80912088537502,
+            241.81874967373838,
+            254.85261771315223,
+            267.7092844810226
+          ],
+          "zero_normal_frames": 5,
+          "maximum_zero_normal_run_steps": 1
+        },
+        "right": {
+          "raw_normal_quantiles_n": [
+            0.0,
+            230.86087499987013,
+            255.51462543832193,
+            258.372746058285,
+            284.5112920411526
+          ],
+          "zero_normal_frames": 3,
+          "maximum_zero_normal_run_steps": 1
+        },
+        "ball": {
+          "raw_normal_quantiles_n": [
+            0.0,
+            498.3646469841897,
+            501.93292357739125,
+            576.9852740530457,
+            1092.611961774571
+          ],
+          "zero_normal_frames": 31,
+          "maximum_zero_normal_run_steps": 1
+        }
+      },
+      "ball_spike_threshold_n": 750,
+      "ball_frames_over_threshold": 31,
+      "ball_maximum_spike_run_steps": 1,
+      "peak": {
+        "time_s": 4.587,
+        "after_release_s": 3.9099999999999997,
+        "source_v_m": 0.5893715934291117,
+        "normal_n": 1092.611961774571,
+        "previous_normal_n": 0.0,
+        "previous_normal_velocity_mps": -0.0695023461671986,
+        "peak_and_previous_normal_impulse_ns": 1.092611961774572,
+        "median_reference_two_step_impulse_ns": 0.9967292939683803,
+        "pair_impulse_relative_difference": 0.09619730089846579,
+        "maximum_one_step_outward_displacement_m": 7.196769648053214e-05,
+        "contact_points": 3
+      },
+      "maximum_simultaneously_zero_normals": 1,
+      "all_support_normals_simultaneously_zero_frames": 0,
+      "runtime_failed": false,
+      "maximum_stop_reaction_n": 0.0
+    }
+  },
+  "producer_sha256": "69434ddc3e526e02cc3d3d4c1b6a477aa4916595b3c8a120658e0c484665b856",
+  "data_root": "$CLIMBOT_DATA_ROOT/m2_t2_20261019",
+  "source_commit": "30ad9783478b01e94bf6b3ded736d720dcccc443",
+  "source_dirty": true,
+  "source_note": "New offline analyzer added after this commit; existing native input data retain their original provenance.",
+  "log": "climbot_m2_t2_contact_entry_20261019.log"
+}

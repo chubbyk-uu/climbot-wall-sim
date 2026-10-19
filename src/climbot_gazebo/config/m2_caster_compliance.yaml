@@ -1,0 +1,9 @@
+# Provisional lateral float of the ball-transfer housing, not measured hardware.
+# Preserve mass, ball radius/inertia, rolling resistance and normal support.
+# Experimental only: +/-0.5 mm and +/-2 mm T2 trials both failed; default disabled.
+m2_caster_compliance:
+  schema_version: 1
+  stiffness_n_m: 30000.0
+  damping_n_s_m: 150.0
+  lower_m: -0.002
+  upper_m: 0.002

@@ -15,6 +15,11 @@
 #include <vector>
 namespace climbot_gazebo
 {
+struct SealLeak
+{
+  double area_m2{}, channel_area_m2{};
+  std::size_t evaluations{};
+};
 // SI wall coordinates. Immutable, precomputed coefficients; queries allocate nothing.
 // Seed realization is an offline operation; serialized modes are shared with runtime.
 class WallSurface
@@ -25,6 +30,12 @@ public:
   double grooveDepth(double u, double v) const;
   double height(double u, double v) const {return roughness(u, v) - grooveDepth(u, v);}
   std::array<double, 3> normal(double u, double v, double epsilon = 1e-6) const;
+  // Feature-split perimeter integration, independent of mechanical quadrature.
+  // corners are attachment points in the wall frame, ordered around the seal.
+  SealLeak sealLeak(
+    const std::array<std::array<double, 3>, 4> & corners,
+    double band, double free_height, double drape, double transition,
+    const std::array<double, 2> & wall_size, int refinement = 1) const;
 
 private:
   struct Mode {double ku, kv, phase, weight;};

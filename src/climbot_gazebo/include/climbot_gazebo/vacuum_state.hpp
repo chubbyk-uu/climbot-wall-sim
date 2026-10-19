@@ -43,6 +43,7 @@ enum Field : std::size_t
   ForceInputVx, ForceInputVy, ForceInputVz, ForceInputWx, ForceInputWy, ForceInputWz,
   LeakMassFlow, PumpMassFlow, ReverseMassFlow, MaximumFanHead,
   LastValidTime, SkirtStopNormal,
+  SurfaceLeakArea, SurfaceChannelArea, SurfaceQueryNanoseconds,
   Count
 };
 inline constexpr std::array<const char *, Count> kNames{
@@ -63,7 +64,8 @@ inline constexpr std::array<const char *, Count> kNames{
   "force_input_vx_mps", "force_input_vy_mps", "force_input_vz_mps",
   "force_input_wx_rps", "force_input_wy_rps", "force_input_wz_rps",
   "leak_mass_flow_kg_s", "pump_mass_flow_kg_s", "reverse_mass_flow_kg_s", "maximum_fan_head_pa",
-  "last_valid_time_s", "skirt_stop_previous_normal_n"
+  "last_valid_time_s", "skirt_stop_previous_normal_n",
+  "surface_leak_area_m2", "surface_channel_area_m2", "surface_query_ns"
 };
 using State = gz::sim::components::Component<std::vector<double>, class VacuumStateTag,
     gz::sim::serializers::VectorDoubleSerializer>;

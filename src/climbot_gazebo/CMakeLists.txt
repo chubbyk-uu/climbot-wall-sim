@@ -66,7 +66,7 @@ target_link_libraries(wall_surface_probe PRIVATE gz-sim8::gz-sim8 yaml-cpp::yaml
 install(TARGETS wall_surface_probe RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 # Single surface implementation for offline assets and future runtime queries.
-add_library(wall_surface_core src/wall_surface.cpp src/sphere_envelope.cpp)
+add_library(wall_surface_core src/wall_surface.cpp src/sphere_envelope.cpp src/seal_channels.cpp)
 target_compile_features(wall_surface_core PUBLIC cxx_std_17)
 target_include_directories(wall_surface_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

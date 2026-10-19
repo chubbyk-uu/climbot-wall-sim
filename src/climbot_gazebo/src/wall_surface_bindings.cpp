@@ -32,6 +32,26 @@ PYBIND11_MODULE(_climbot_surface, module)
         }
       }
       return out;
+  })
+  .def("seal_leak", [](const Surface & surface, Array input, double band,
+    double freeHeight, double drape, double transition, double width, double height,
+    int refinement) {
+      if (input.ndim() != 2 || input.shape(0) != 4 || input.shape(1) != 3) {
+        throw py::value_error("seal corners must have shape [4,3]");
+      }
+      std::array<std::array<double, 3>, 4> corners;
+      for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 3; ++j) {
+          corners[i][j] = input.data()[3 * i + j];
+        }
+      }
+      climbot_gazebo::SealLeak result;
+      {py::gil_scoped_release release;
+        result = surface.sealLeak(corners, band, freeHeight, drape, transition,
+        {width, height}, refinement);}
+      py::dict out;out["area_m2"] = result.area_m2;
+      out["channel_area_m2"] = result.channel_area_m2;
+      out["evaluations"] = result.evaluations;return out;
   });
   py::class_<climbot_gazebo::SphereEnvelope>(module, "SphereEnvelope")
   .def(py::init([](Array u, Array v, Array heights) {

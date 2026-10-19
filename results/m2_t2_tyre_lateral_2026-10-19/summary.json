@@ -1,0 +1,228 @@
+{
+  "scope": "T2 parked lateral lock diagnosis and opt-in tyre lateral spring; T2 not accepted",
+  "tyre_lateral_config": {
+    "schema_version": 1,
+    "stiffness_n_m": 100000.0,
+    "damping_n_s_m": 700.0,
+    "lower_m": -0.005,
+    "upper_m": 0.005,
+    "carrier_mass_kg": 0.02,
+    "carrier_radius_m": 0.01
+  },
+  "raw_relative_root": "m2_t2_20261019",
+  "flat_pair": {
+    "case": "tyre_lateral_flat_pair",
+    "passed": true,
+    "maximum_position_difference_m": 0.001638254931733958,
+    "maximum_orientation_difference_deg": 0.08459770531978758
+  },
+  "coupling": {
+    "rough_soft_c": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false,
+        "no_stop_contact": true
+      },
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 819,
+          "longest_requirement_violation_steps": 800,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 813
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 819,
+          "longest_requirement_violation_steps": 800,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 808
+        }
+      },
+      "hold": {
+        "duration_s": 62.199,
+        "maximum_equilibrium_error_pa": 0.21558814388208702,
+        "minimum_normals_n": [
+          213.75004970198415,
+          211.2094981789312,
+          467.3792936115594
+        ],
+        "each_drive_meets_raw_demand": false,
+        "maximum_stop_reaction_n": 0.0
+      },
+      "pressure_range_pa": [
+        7053.017214779102,
+        7923.088370940823
+      ],
+      "plugin_cpu_us_mean_p95_p99": [
+        128.6583476,
+        140.55175000000003,
+        155.78950000000006
+      ]
+    },
+    "tyre_lateral_rough_soft_c": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false,
+        "no_stop_contact": true
+      },
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 5,
+          "longest_requirement_violation_steps": 2,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 2
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 13,
+          "longest_requirement_violation_steps": 4,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 5
+        }
+      },
+      "hold": {
+        "duration_s": 62.199,
+        "maximum_equilibrium_error_pa": 0.004375464673103124,
+        "minimum_normals_n": [
+          214.07313106546366,
+          213.84994614894424,
+          467.34394226120014
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      },
+      "pressure_range_pa": [
+        6992.134402239695,
+        7956.111228075984
+      ],
+      "plugin_cpu_us_mean_p95_p99": [
+        127.28891259999999,
+        139.8727,
+        160.68398000000002
+      ]
+    },
+    "holdout_soft_c_clearance": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false,
+        "no_stop_contact": true
+      },
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 433,
+          "longest_requirement_violation_steps": 365,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 423
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 15,
+          "longest_requirement_violation_steps": 2,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 6
+        }
+      },
+      "hold": {
+        "duration_s": 1.146,
+        "maximum_equilibrium_error_pa": 3.388595359865576e-08,
+        "minimum_normals_n": [
+          191.33921428937109,
+          238.13842695406717,
+          446.17766041548583
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      },
+      "pressure_range_pa": [
+        6673.94989876842,
+        7788.36764934368
+      ],
+      "plugin_cpu_us_mean_p95_p99": [
+        133.58603619276144,
+        144.864,
+        164.117
+      ]
+    },
+    "tyre_lateral_holdout_clearance": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false,
+        "no_stop_contact": true
+      },
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 52,
+          "longest_requirement_violation_steps": 13,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 46
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 8,
+          "longest_requirement_violation_steps": 1,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 1
+        }
+      },
+      "hold": {
+        "duration_s": 1.146,
+        "maximum_equilibrium_error_pa": 0.003155710225655639,
+        "minimum_normals_n": [
+          190.10546623593459,
+          238.59333949751482,
+          447.30351003583365
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      },
+      "pressure_range_pa": [
+        6699.088387673779,
+        7810.154947793417
+      ],
+      "plugin_cpu_us_mean_p95_p99": [
+        131.8798920215957,
+        147.841,
+        227.963
+      ]
+    }
+  },
+  "frames_sha256": {
+    "rough_soft_c": "38064391efbae12cdb846f009357da0a21ac80b925b27724ed1f2c96542d69ec",
+    "tyre_lateral_rough_soft_c": "90f983528dc2361ddaae2d0bfc200ccdaa4d742c21fa28ecc7882daca571d71b",
+    "holdout_soft_c_clearance": "e208bc8b8e4c225cd7d46b1c722aba16acdefdfc6bc1b906975748dcc6ef9219",
+    "tyre_lateral_holdout_clearance": "db9f0ee7515d1ac2a278a31eeecf4dab2f36bd2b177cac3d0d454d82dd0e2d72"
+  },
+  "source_sha256": {
+    "src/climbot_gazebo/climbot_gazebo/wheel_compliance.py": "7be9bd7fe039d5bd9e3148aadba005d39fd186be276bee4d885decf81257e240",
+    "src/climbot_gazebo/config/m2_tyre_lateral.yaml": "3c688d686684f244e8ffaa6e58c2171cb75ee4c762f297dd460346499eb24964",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "d3122f7f567f555ccbf6e272fe57e1e926fe828fd11678a78218c38abce8436c",
+    "tools/probe_m2_robot_patch.py": "a734a2d1e668cbe5da3f19de51b4dd463bf1ac1d983b0dbc3ac8db87f4542ed3",
+    "tools/validate_m2_coupling.py": "d97cde739dd3238a546114f734f68f1fa9098bd495b853d073affb176dd5cad5"
+  },
+  "source_commit": "30ad978",
+  "source_dirty": true
+}

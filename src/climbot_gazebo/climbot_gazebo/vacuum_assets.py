@@ -28,7 +28,9 @@ from climbot_description.vacuum_loads import minimum_pressure, states
 from climbot_description.vacuum_preview import export, node, numbers
 import yaml
 
+from .caster_compliance import apply as apply_caster_compliance
 from .wheel_compliance import apply as apply_wheel_compliance
+from .wheel_compliance import apply_lateral as apply_tyre_lateral
 
 
 def _read(path, key):
@@ -157,7 +159,8 @@ def _caster_proxy_flat_wall(world, normal, offset):
 def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                  realtime_factor=1.0, runtime_overrides=None, io_overrides=None,
                  physics_overrides=None, caster_proxy=False, wheel_compliance=False,
-                 surface_patch=None):
+                 surface_patch=None, caster_compliance=False,
+                 tyre_lateral=False):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
@@ -165,8 +168,14 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         raise ValueError('invalid heading or physical step')
     if type(caster_proxy) is not bool or type(wheel_compliance) is not bool:
         raise ValueError('caster_proxy and wheel_compliance must be boolean')
-    if surface_patch is not None and (mode != 'fixed_pressure' or not caster_proxy):
-        raise ValueError('surface patch requires fixed_pressure and the explicit caster proxy')
+    if type(caster_compliance) is not bool or type(tyre_lateral) is not bool:
+        raise ValueError('caster_compliance and tyre_lateral must be boolean')
+    if tyre_lateral and not wheel_compliance:
+        raise ValueError('tyre_lateral requires the calibrated normal wheel compliance')
+    if surface_patch is not None and (not caster_proxy or
+                                      (mode != 'fixed_pressure' and
+                                       'channel_model' not in surface_patch)):
+        raise ValueError('surface patch requires fixed_pressure or explicit channels, and proxy')
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     description = Path(get_package_share_directory('climbot_description'))
@@ -370,6 +379,9 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         node(element, 'attachment', numbers(
             [point[0], point[1], cfg['body']['bottom_z_m']]))
         node(element, 'length_m', weight * perimeter)
+    if surface_patch is not None and 'channel_model' in surface_patch:
+        for x, y in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]:
+            node(sp, 'seal_corner', numbers([x, y, cfg['body']['bottom_z_m']]))
     wall_q = quaternion_from_rpy(*wall['origin_rpy'])
     normal = rotate_vector(wall_q, [0, 0, 1])
     surface = [wall['origin_xyz'][i] + normal[i] * simulation['wall']['thickness_m'] / 2
@@ -383,6 +395,13 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         if step_s != compliance['calibration_step_s']:
             raise ValueError('wheel compliance requires its calibrated physical step')
         apply_wheel_compliance(new, urdf, compliance)
+    if tyre_lateral:
+        lateral = _read(gazebo / 'config/m2_tyre_lateral.yaml', 'm2_tyre_lateral')
+        apply_tyre_lateral(new, urdf, lateral)
+    if caster_compliance:
+        caster_spring = _read(gazebo / 'config/m2_caster_compliance.yaml',
+                              'm2_caster_compliance')
+        apply_caster_compliance(new, urdf, caster_spring)
     world_file = Path(stack.render_world(str(gazebo), str(description), '0'))
     try:
         world_root = ET.parse(world_file).getroot()
@@ -413,9 +432,13 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         from .surface_patch import apply as apply_surface_patch
         world_plugin = world.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
         patch = apply_surface_patch(world, world_plugin, out, surface_patch,
-                                    surface + wall['origin_rpy'], cfg['wheel']['radius_m'])
+                                    surface + wall['origin_rpy'], cfg['wheel']['radius_m'],
+                                    size=surface_patch.get('patch_size_m', 1.2))
         for key in ['wall_pose', 'wall_size']:
             sp.find(key).text = world_plugin.findtext(key)
+        for key in ['channel_drape_m', 'channel_transition_m', 'channel_refinement']:
+            if world_plugin.find(key) is not None:
+                node(sp, key, world_plugin.findtext(key))
         node(sp, 'wall_surface_yaml', world_plugin.findtext('wall_surface_yaml'))
     world.find('physics/max_step_size').text = str(step_s)
     world.find('physics/real_time_factor').text = str(realtime_factor)
@@ -438,6 +461,10 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                                     'inertia_scale': .25}
     if wheel_compliance:
         resolved['wheel_compliance'] = compliance
+    if caster_compliance:
+        resolved['caster_compliance'] = caster_spring
+    if tyre_lateral:
+        resolved['tyre_lateral'] = lateral
     if patch is not None:
         resolved['surface_patch'] = patch
         resolved['wall_surface_pose'] = patch['wall_surface_pose']

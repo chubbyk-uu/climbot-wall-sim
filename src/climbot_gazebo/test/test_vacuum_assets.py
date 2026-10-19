@@ -29,6 +29,37 @@ import pytest
 import yaml
 
 
+def test_caster_float_preserves_mass_pose_and_published_chain(tmp_path):
+    """A movable housing must carry the ball in both dynamics and the URDF TF tree."""
+    before, after = tmp_path / 'before', tmp_path / 'after'
+    build_assets(before, caster_proxy=True)
+    resolved = build_assets(after, caster_proxy=True, caster_compliance=True)
+    a = ET.parse(before / 'model.sdf').find('model')
+    b = ET.parse(after / 'model.sdf').find('model')
+    for name in ['caster_ball_link', 'caster_housing_link']:
+        assert ET.tostring(a.find(f'link[@name="{name}"]')) == ET.tostring(
+            b.find(f'link[@name="{name}"]'))
+    assert sum(float(x.text) for x in b.findall('link/inertial/mass')) == pytest.approx(
+        resolved['model']['mass_kg'], abs=1e-11)
+    spring = b.find('joint[@name="caster_housing_link_joint"]')
+    assert spring.get('type') == 'prismatic'
+    assert spring.findtext('axis/xyz') == '0 1 0'
+    assert spring.findtext('axis/dynamics/spring_stiffness') == '30000.0'
+    assert b.findtext('joint[@name="caster_ball_link_joint"]/parent') == 'caster_housing_link'
+    assert a.find('joint[@name="caster_housing_link_joint"]').get('type') == 'fixed'
+    names = [n.text for n in b.findall(
+        'plugin[@name="gz::sim::systems::JointStatePublisher"]/joint_name')]
+    assert 'caster_housing_link_joint' in names
+    urdf = ET.parse(after / 'robot.urdf')
+    housing = urdf.find('joint[@name="caster_housing_link_joint"]')
+    ball = urdf.find('joint[@name="caster_ball_link_joint"]')
+    assert housing.get('type') == 'prismatic'
+    assert ball.find('parent').get('link') == 'caster_housing_link'
+    xyz = np.array([float(v) for v in housing.find('origin').get('xyz').split()])
+    xyz += [float(v) for v in ball.find('origin').get('xyz').split()]
+    assert xyz == pytest.approx([-.3, 0, .0125], abs=1e-12)
+
+
 def test_b_c_only_change_the_pressure_source(tmp_path):
     """Hold geometry, skirt, starting state and actuator models identical."""
     roots = []
@@ -209,6 +240,35 @@ def test_compliant_wheels_preserve_mass_inertia_and_publish_moving_tf_chain(tmp_
     assert rigid.find('.//joint[@name="left_tyre_joint"]') is None
 
 
+def test_lateral_tyre_spring_extends_the_normal_spring_chain(tmp_path):
+    """Opt-in lateral carrier keeps the assembly mass and a published TF chain."""
+    with pytest.raises(ValueError, match='normal wheel compliance'):
+        build_assets(tmp_path / 'rigid', tyre_lateral=True)
+    build_assets(tmp_path / 'soft', wheel_compliance=True)
+    build_assets(tmp_path / 'lateral', wheel_compliance=True, tyre_lateral=True)
+    soft = ET.parse(tmp_path / 'soft/model.sdf')
+    model = ET.parse(tmp_path / 'lateral/model.sdf')
+    urdf = ET.parse(tmp_path / 'lateral/robot.urdf')
+    assert sum(float(n.text) for n in soft.findall('.//inertial/mass')) == pytest.approx(
+        sum(float(n.text) for n in model.findall('.//inertial/mass')), abs=1e-12)
+    published = {n.text for n in model.findall(
+        './/plugin[@name="gz::sim::systems::JointStatePublisher"]/joint_name')}
+    assert {'left_tyre_lateral_joint', 'right_tyre_lateral_joint'} <= published
+    for side in ['left', 'right']:
+        for tree, parent, child in [
+                (model, lambda j: j.findtext('parent'), lambda j: j.findtext('child')),
+                (urdf, lambda j: j.find('parent').get('link'),
+                 lambda j: j.find('child').get('link'))]:
+            spring = tree.find(f'.//joint[@name="{side}_tyre_lateral_joint"]')
+            rotation = tree.find(f'.//joint[@name="{side}_wheel_joint"]')
+            assert spring.get('type') == 'prismatic'
+            assert parent(spring) == f'{side}_wheel_axle_link'
+            assert child(spring) == parent(rotation) == f'{side}_wheel_lateral_link'
+        assert model.findtext(f'.//joint[@name="{side}_tyre_lateral_joint"]/axis/xyz') == '0 1 0'
+        assert model.find(f'.//link[@name="{side}_wheel_lateral_link"]').findtext('pose') == \
+            model.find(f'.//link[@name="{side}_wheel_link"]').findtext('pose')
+
+
 @pytest.mark.parametrize('representation,amplitude,radius', [
     ('mesh', 0, .0475), ('native_heightmap', 0, .05),
     ('native_heightmap', .002, .0475)])
@@ -289,3 +349,24 @@ def test_surface_patch_rejects_unvalidated_fan_coupling(tmp_path):
     """The contact prototype cannot silently pass as a fan/leak acceptance case."""
     with pytest.raises(ValueError, match='fixed_pressure'):
         build_assets(tmp_path, caster_proxy=True, surface_patch={})
+
+
+@pytest.mark.parametrize('mode', ['fixed_pressure', 'fan_ode'])
+def test_coupled_surface_patch_requires_explicit_channel_parameters(tmp_path, mode):
+    """B/C share the same force geometry and one explicit flow-channel policy."""
+    config = yaml.safe_load((Path(__file__).parents[1] /
+                            'config/m2_surface_fixture.yaml').read_text())
+    config['roughness']['amplitude_m'] = 0
+    config['grooves'] = []
+    config['contact_representation'] = 'native_heightmap'
+    config['channel_model'] = {'drape_m': .001, 'transition_m': .0001, 'refinement': 1}
+    resolved = build_assets(tmp_path, mode=mode, caster_proxy=True, surface_patch=config)
+    tree = ET.parse(tmp_path / 'world.sdf')
+    plugin = tree.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
+    assert len(plugin.findall('seal_corner')) == 4
+    assert plugin.findtext('channel_drape_m') == '0.001'
+    assert plugin.findtext('channel_refinement') == '1'
+    assert resolved['surface_patch']['channel_model'] == config['channel_model']
+    other = ET.parse(tmp_path / 'model.sdf').find(
+        './/plugin[@name="climbot_gazebo::VacuumSystem"]')
+    assert other.findtext('channel_drape_m') == plugin.findtext('channel_drape_m')

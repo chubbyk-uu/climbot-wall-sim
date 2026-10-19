@@ -49,6 +49,9 @@
 | M2 T0 板缝实际轮径 | [报告](m2_t0_joint_contact_2026-10-19/REPORT.md)、[摘要](m2_t0_joint_contact_2026-10-19/summary.json) | 共网格交汇与主动轮短扫描通过；球轮未通过，圆角／高度场／FCL 均未完全解决，球轮按用户要求挂起；非 T0 通过证据 |
 | M2 T0 球径／局部倒角 | [报告](m2_t0_caster_size_chamfer_2026-10-19/REPORT.md)、[摘要](m2_t0_caster_size_chamfer_2026-10-19/summary.json) | 25／40 mm 球径×原槽／短倒角四组完成；倒角改善断触和支撑，加大球径改善小，均未满足全部门槛；未改整车默认 |
 | M2 review 基础修正 | [报告](m2_review_2026-10-19/REPORT.md)、[干净需求](m2_review_2026-10-19/physical_model/summary.json) | 发行版 ODE 配置及三组 M1 对照、原生裙边止挡、C++ 唯一表面、漏气预算与旧模型整理；球轮跨缝挂起，M2 未验收 |
+| M2 / T2入口接触复核 | [报告](m2_t2_entry_2026-10-19/REPORT.md)、[摘要](m2_t2_entry_2026-10-19/summary.json) | 只离线复用已有时序；真实缝／无缝峰值均紧接单步失触，逐轮需求与漏气／风机耦合仍待验收 |
+| M2 / T2球座侧向柔顺试验 | [报告](m2_t2_caster_float_2026-10-19/REPORT.md)、[摘要](m2_t2_caster_float_2026-10-19/summary.json) | 平墙配对通过；±0.5 mm／±2 mm板缝试验均失败，默认关闭，1.5门槛不变，T2未验收 |
+| M2 / T2轮胎侧向弹性 | [报告](m2_t2_tyre_lateral_2026-10-19/REPORT.md)、[摘要](m2_t2_tyre_lateral_2026-10-19/summary.json) | 停车侧向锁死根因为WheelSlip停转即刚性；默认关闭的侧向弹簧使停车裕量恢复到约3、低于1.5帧数为0；运动窗口毫秒级瞬态仍未通过，T2未验收 |
 | M2 整车起伏接触定位 | [报告](m2_robot_patch_2026-10-19/REPORT.md)、[摘要](m2_robot_patch_2026-10-19/summary.json) | 三角网降速已定位；驱动轮仅起伏高度场＋真实缝球轮代理的9 s短试验通过，行程0.613485 m；漏气／载荷与整墙性能待T2/T3 |
 | M2 T1 名义柔顺轮与状态链 | [报告](m2_wheel_compliance_2026-10-19/REPORT.md)、[摘要](m2_wheel_compliance_2026-10-19/summary.json)、[协议](m2_wheel_compliance_2026-10-19/protocol.json) | 150 N／1 mm 实测标定及卸载回零通过；真实 ROS 直行／转向／reset／动态 TF 18 项通过，默认关闭；非 T2/T3 验收 |
 | M2 代理球整车平墙滚动 | [报告](m2_caster_rolling_2026-10-19/REPORT.md)、[摘要](m2_caster_rolling_2026-10-19/summary.json) | 原球／代理球直行＋转向两次短动作通过，惯量／滚阻等效；起伏墙、整墙性能及 T1～T3 待验收 |

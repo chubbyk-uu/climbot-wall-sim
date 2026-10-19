@@ -1,0 +1,602 @@
+{
+  "scope": "Experimental caster lateral compliance; both rough-wall candidates rejected",
+  "t2_accepted": false,
+  "default_enabled": false,
+  "friction_margin_gate": 1.5,
+  "source_commit": "30ad9783478b01e94bf6b3ded736d720dcccc443",
+  "source_dirty": true,
+  "source_snapshot": "$CLIMBOT_DATA_ROOT/m2_t2_20261019/caster_float_source_snapshot",
+  "source_sha256": {
+    "src/climbot_gazebo/CMakeLists.txt": "c24587b715e6dd8b8a0ad590f4b48c382a797cfd8aa3c536fe0ad90f79e7ce41",
+    "src/climbot_gazebo/climbot_gazebo/caster_compliance.py": "877fe2d154928e6092afa04ac4651176d10413e65be91a12476967e606432ccc",
+    "src/climbot_gazebo/climbot_gazebo/surface_patch.py": "452cd5f04a5634f9c4e75f65c5fd0d6235fe440767260a8fb9f9d7084994b999",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "79fabff805b80cfe078f461d8cd205de5e382c94d8d76415eeb9968a6a719c48",
+    "src/climbot_gazebo/config/m2_caster_compliance.yaml": "9d26f6af14b1c27cc877cbdbd0979c6ec98abcb958d8a62c60ab210e03797b28",
+    "src/climbot_gazebo/config/m2_seal_channels.yaml": "bfffcc9645e0a02a4988d50e98ee0aeb97a77f5a1a3dcb972ef673863e78d58e",
+    "src/climbot_gazebo/include/climbot_gazebo/vacuum_state.hpp": "1a847f4487841d5c0e48e7024b3e16eb7fdb1ada2cd9805800d3e44716ee0756",
+    "src/climbot_gazebo/include/climbot_gazebo/wall_surface.hpp": "030fa4f5db320047da4b5e51065fe47778d40e720ab17bbbc3415c4b2a6ae8e3",
+    "src/climbot_gazebo/src/seal_channels.cpp": "8a51a386e11397baa121f694936fb17f87bf3b383c1f609860eea069abe66d4e",
+    "src/climbot_gazebo/src/vacuum_system.cpp": "4ae1016b0243ed94169ac284136777adbea38bf0b8287e6fa204e8400e85428f",
+    "src/climbot_gazebo/src/wall_surface_bindings.cpp": "d9f20a46d0d3c6d680139cdca870efe5f0d171fe95cae28e0f62599d5edde7bd",
+    "src/climbot_gazebo/test/test_vacuum_assets.py": "65048f04eacfc59ca7d8d15dd1f99380b70c35d0d7adc8c5fabffb3be7a6aff8",
+    "src/climbot_gazebo/test/test_wall_surface_core.cpp": "8f3f27850b60848048c694dea3254de0cf3bf0ffffcfb090c65bb09ec01d173c",
+    "tools/analyze_m2_caster_float.py": "99008b9fe0b57622527a1677c85f9ead92517b081d2c6cd1aafc53d7519555ae",
+    "tools/analyze_m2_contact_transients.py": "69434ddc3e526e02cc3d3d4c1b6a477aa4916595b3c8a120658e0c484665b856",
+    "tools/probe_m2_robot_patch.py": "f1a98ea29c9bc049ed434ddf0efa729db62c8fd4c81bea3edabe9ff99a989ecc",
+    "tools/validate_m2_caster_rolling.py": "93837ad37b8150c533da6fc713ebe81a2c9f397bd5d61c8969d0e38d7ef133a2",
+    "tools/validate_m2_coupling.py": "d97cde739dd3238a546114f734f68f1fa9098bd495b853d073affb176dd5cad5"
+  },
+  "native_binary_sha256": "82a50e2da702ae42c8e1755c4d7cf2959b1564eaa5fc42a0c01e515dbd1108f8",
+  "case_inputs": {
+    "rough_soft_c": {
+      "data_directory": "$CLIMBOT_DATA_ROOT/m2_t2_20261019/rough_soft_c",
+      "caster_compliance": null,
+      "motion_diagnostic": {
+        "passed": true,
+        "checks": {
+          "released": true,
+          "complete_action": true,
+          "no_runtime_failure": true,
+          "no_startup_failure": true,
+          "all_wheels_crossed": true,
+          "bounded_travel": true,
+          "contact_gaps_at_most_two_steps": true,
+          "no_skirt_stop": true,
+          "finite": true
+        },
+        "release_s": 0.801,
+        "crossing_scope": "source seam position; caster uses full joint proxy; drivers bridge joints",
+        "travel_m": 0.6124083199775571,
+        "wheels_crossed": {
+          "left": true,
+          "right": true,
+          "ball": true
+        },
+        "max_contact_gap_steps": {
+          "left": 1,
+          "right": 1,
+          "ball": 1
+        },
+        "normal_load_range_n": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            243.23253006313197,
+            244.96305526684245,
+            909.851082518995
+          ]
+        ],
+        "ball_outward_height_range_m": [
+          0.01185072488097072,
+          0.012645713718322158
+        ],
+        "pressure_range_pa": [
+          7053.017214779102,
+          7923.088370940823
+        ],
+        "plugin_cpu_us_mean": 128.65834759999998
+      },
+      "files_sha256": {
+        "protocol.json": "9dc5b44342719f5cc07785437033c80c2794e5d0b92bcbe4890156d05d8e7b81",
+        "resolved.json": "20efa1bf5f9736e6dd31b4ecd112b5596d3b7ec32ff0c383ab332a6a6c9775d5",
+        "world.sdf": "0c6c570990f5c5513ace4c14d6b5584e6f05067cfc23682aca03f80f73bf3954",
+        "native/frames.csv": "38064391efbae12cdb846f009357da0a21ac80b925b27724ed1f2c96542d69ec",
+        "native/contacts.csv": "739a2675e7e1736c9884adce69896dfd106c0dde85d6a52d8978ac0104f9b0ef"
+      }
+    },
+    "rough_soft_c_caster_float": {
+      "data_directory": "$CLIMBOT_DATA_ROOT/m2_t2_20261019/rough_soft_c_caster_float",
+      "caster_compliance": {
+        "schema_version": 1,
+        "stiffness_n_m": 30000.0,
+        "damping_n_s_m": 150.0,
+        "lower_m": -0.0005,
+        "upper_m": 0.0005
+      },
+      "motion_diagnostic": {
+        "passed": true,
+        "checks": {
+          "released": true,
+          "complete_action": true,
+          "no_runtime_failure": true,
+          "no_startup_failure": true,
+          "all_wheels_crossed": true,
+          "bounded_travel": true,
+          "contact_gaps_at_most_two_steps": true,
+          "no_skirt_stop": true,
+          "finite": true
+        },
+        "release_s": 0.801,
+        "crossing_scope": "source seam position; caster uses full joint proxy; drivers bridge joints",
+        "travel_m": 0.6157882507769429,
+        "wheels_crossed": {
+          "left": true,
+          "right": true,
+          "ball": true
+        },
+        "crossed_axes": {
+          "left": [
+            "horizontal"
+          ],
+          "right": [
+            "horizontal"
+          ],
+          "ball": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "max_contact_gap_steps": {
+          "left": 1,
+          "right": 1,
+          "ball": 1
+        },
+        "normal_load_range_n": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            249.6652892298705,
+            245.5683177750872,
+            906.6050146429856
+          ]
+        ],
+        "ball_outward_height_range_m": [
+          0.011812041445440055,
+          0.012644570517896296
+        ],
+        "pressure_range_pa": [
+          7038.919421740255,
+          7957.300488747336
+        ],
+        "plugin_cpu_us_mean": 127.4114574
+      },
+      "files_sha256": {
+        "protocol.json": "6ce4559f95dd1079f0035d552a6f224570b804cce2db7523491e42ba339b7b89",
+        "resolved.json": "a727a22165d473ff1faa40953dcaccd6174cb6055d61d6d53bb379d7f41a784e",
+        "world.sdf": "c87b2198dc0cacc9507ebdf7ed9a2c3b879cf458d3687240450790d18b79fe80",
+        "native/frames.csv": "d4fa2d360e978a41f9fed166c936cc0cebd73fd203ce3fc446d97b22f31eab0f",
+        "native/contacts.csv": "5d615d4ef494c8433586e892d64849153622156797634da2b4a2fce9996afecf"
+      }
+    },
+    "rough_soft_c_caster_float_2mm": {
+      "data_directory": "$CLIMBOT_DATA_ROOT/m2_t2_20261019/rough_soft_c_caster_float_2mm",
+      "caster_compliance": {
+        "schema_version": 1,
+        "stiffness_n_m": 30000.0,
+        "damping_n_s_m": 150.0,
+        "lower_m": -0.002,
+        "upper_m": 0.002
+      },
+      "motion_diagnostic": {
+        "passed": false,
+        "checks": {
+          "released": true,
+          "complete_action": true,
+          "no_runtime_failure": true,
+          "no_startup_failure": true,
+          "all_wheels_crossed": true,
+          "bounded_travel": true,
+          "contact_gaps_at_most_two_steps": true,
+          "no_skirt_stop": false,
+          "finite": true
+        },
+        "release_s": 0.801,
+        "crossing_scope": "source seam position; caster uses full joint proxy; drivers bridge joints",
+        "travel_m": 0.6123155560458716,
+        "wheels_crossed": {
+          "left": true,
+          "right": true,
+          "ball": true
+        },
+        "crossed_axes": {
+          "left": [
+            "horizontal"
+          ],
+          "right": [
+            "horizontal"
+          ],
+          "ball": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "max_contact_gap_steps": {
+          "left": 1,
+          "right": 1,
+          "ball": 1
+        },
+        "normal_load_range_n": [
+          [
+            0.0,
+            0.0,
+            -10.062694573317145
+          ],
+          [
+            397.12848671573835,
+            243.3907272849731,
+            1611.8971184818886
+          ]
+        ],
+        "ball_outward_height_range_m": [
+          0.006709657133839117,
+          0.012644696433332055
+        ],
+        "pressure_range_pa": [
+          2733.064674149675,
+          7948.208517152234
+        ],
+        "plugin_cpu_us_mean": 129.386052
+      },
+      "files_sha256": {
+        "protocol.json": "6ce4559f95dd1079f0035d552a6f224570b804cce2db7523491e42ba339b7b89",
+        "resolved.json": "986ed1617978f933d3dccae767eab975a8d180f05fec71b873e47a53e04e8fd3",
+        "world.sdf": "5d0f7e09d55dcc35d9440db77ae517fa66dcf9815d20583dff710d0c3d46154c",
+        "native/frames.csv": "d38e22bc9bbbc48638966e14798d7b5bd89465fa5e3923b18f4662e5800e9839",
+        "native/contacts.csv": "47b4504bf4ea09db14792f4112ad97d1ed88a2405037cd49390390bb026b8503"
+      }
+    }
+  },
+  "fixed_housing": {
+    "release_s": 0.801,
+    "windows": {
+      "motion_and_braking": {
+        "duration_s": 4.199,
+        "minimum_drive_margin": [
+          0.0,
+          0.0
+        ],
+        "drive_margin_below_1_5_frames": [
+          19,
+          19
+        ],
+        "minimum_normals_n": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_absolute_ball_lateral_force_n": 162.87747138375843,
+        "ball_lateral_force_abs_p50_p95_n": [
+          14.969038079942404,
+          49.94224769313903
+        ],
+        "housing_lateral_range_mm": [
+          -0.00043539192962490866,
+          -1.0061396160665481e-13
+        ],
+        "pressure_range_pa": [
+          7053.017214779102,
+          7923.088370940823
+        ]
+      },
+      "parking_first_two_seconds": {
+        "duration_s": 1.9999999999999991,
+        "minimum_drive_margin": [
+          1.085983423463633,
+          1.0773267467319514
+        ],
+        "drive_margin_below_1_5_frames": [
+          840,
+          1788
+        ],
+        "minimum_normals_n": [
+          214.66973386085965,
+          194.94980155214998,
+          464.97704235394104
+        ],
+        "maximum_absolute_ball_lateral_force_n": 99.34669270512947,
+        "ball_lateral_force_abs_p50_p95_n": [
+          97.78839087041693,
+          99.00994879941472
+        ],
+        "housing_lateral_range_mm": [
+          -2.8431195795222686e-05,
+          0.0008426284178499055
+        ],
+        "pressure_range_pa": [
+          7846.386086197803,
+          7879.046536778333
+        ]
+      },
+      "hold_after_two_seconds": {
+        "duration_s": 61.999,
+        "minimum_drive_margin": [
+          3.0015486509771523,
+          1.3901229435437783
+        ],
+        "drive_margin_below_1_5_frames": [
+          0,
+          5080
+        ],
+        "minimum_normals_n": [
+          213.75004970198415,
+          211.2094981789312,
+          467.3792936115594
+        ],
+        "maximum_absolute_ball_lateral_force_n": 99.04151811296335,
+        "ball_lateral_force_abs_p50_p95_n": [
+          1.5323123232834366,
+          98.29687723703864
+        ],
+        "housing_lateral_range_mm": [
+          -2.723614174124367e-05,
+          0.0008358297381889923
+        ],
+        "pressure_range_pa": [
+          7856.735589767806,
+          7857.183984738134
+        ]
+      }
+    },
+    "no_runtime_failure": true,
+    "no_stop_contact": true,
+    "housing_stays_inside_limits": null,
+    "frames_sha256": "38064391efbae12cdb846f009357da0a21ac80b925b27724ed1f2c96542d69ec"
+  },
+  "float_0_5mm": {
+    "release_s": 0.801,
+    "windows": {
+      "motion_and_braking": {
+        "duration_s": 4.199,
+        "minimum_drive_margin": [
+          0.0,
+          0.0
+        ],
+        "drive_margin_below_1_5_frames": [
+          9,
+          16
+        ],
+        "minimum_normals_n": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_absolute_ball_lateral_force_n": 298.238056453477,
+        "ball_lateral_force_abs_p50_p95_n": [
+          4.085157226297902,
+          46.71414392314955
+        ],
+        "housing_lateral_range_mm": [
+          -0.6125471129078285,
+          0.6007600620350053
+        ],
+        "pressure_range_pa": [
+          7038.919421740255,
+          7957.300488747336
+        ]
+      },
+      "parking_first_two_seconds": {
+        "duration_s": 1.9999999999999991,
+        "minimum_drive_margin": [
+          1.075608785808976,
+          1.1630064087087926
+        ],
+        "drive_margin_below_1_5_frames": [
+          656,
+          1160
+        ],
+        "minimum_normals_n": [
+          214.86725298496705,
+          199.8356940654822,
+          467.42184234528804
+        ],
+        "maximum_absolute_ball_lateral_force_n": 104.776362489219,
+        "ball_lateral_force_abs_p50_p95_n": [
+          98.73684101640978,
+          100.00409861525114
+        ],
+        "housing_lateral_range_mm": [
+          0.49997528904730665,
+          0.5008503551670109
+        ],
+        "pressure_range_pa": [
+          7856.895447428076,
+          7879.55665854807
+        ]
+      },
+      "hold_after_two_seconds": {
+        "duration_s": 61.999,
+        "minimum_drive_margin": [
+          3.246859459350351,
+          1.4769766694193183
+        ],
+        "drive_margin_below_1_5_frames": [
+          0,
+          339
+        ],
+        "minimum_normals_n": [
+          213.98837634111294,
+          211.46815432612115,
+          467.3571847823341
+        ],
+        "maximum_absolute_ball_lateral_force_n": 99.09440957922075,
+        "ball_lateral_force_abs_p50_p95_n": [
+          7.680551650061313,
+          7.814682494615635
+        ],
+        "housing_lateral_range_mm": [
+          0.48370769990152895,
+          0.5008488965109124
+        ],
+        "pressure_range_pa": [
+          7856.591377732373,
+          7857.560106755569
+        ]
+      }
+    },
+    "no_runtime_failure": true,
+    "no_stop_contact": true,
+    "housing_stays_inside_limits": false,
+    "frames_sha256": "d4fa2d360e978a41f9fed166c936cc0cebd73fd203ce3fc446d97b22f31eab0f"
+  },
+  "float_2mm": {
+    "release_s": 0.801,
+    "windows": {
+      "motion_and_braking": {
+        "duration_s": 4.199,
+        "minimum_drive_margin": [
+          0.0,
+          0.0
+        ],
+        "drive_margin_below_1_5_frames": [
+          38,
+          214
+        ],
+        "minimum_normals_n": [
+          0.0,
+          0.0,
+          -10.062694573317145
+        ],
+        "maximum_absolute_ball_lateral_force_n": 776.2338891687797,
+        "ball_lateral_force_abs_p50_p95_n": [
+          4.371554162922855,
+          48.04354022484981
+        ],
+        "housing_lateral_range_mm": [
+          -2.005588143398132,
+          2.1722248930439862
+        ],
+        "pressure_range_pa": [
+          2733.064674149675,
+          7948.208517152234
+        ]
+      },
+      "parking_first_two_seconds": {
+        "duration_s": 1.9999999999999991,
+        "minimum_drive_margin": [
+          1.7402671245933459,
+          0.9226945868489663
+        ],
+        "drive_margin_below_1_5_frames": [
+          0,
+          669
+        ],
+        "minimum_normals_n": [
+          316.67608760467937,
+          147.1391589503882,
+          44.547438440142464
+        ],
+        "maximum_absolute_ball_lateral_force_n": 35.25207330539886,
+        "ball_lateral_force_abs_p50_p95_n": [
+          33.763256125416994,
+          35.161667628998686
+        ],
+        "housing_lateral_range_mm": [
+          1.8862267572278686,
+          1.9010960187200703
+        ],
+        "pressure_range_pa": [
+          7857.016287588951,
+          7905.50408628225
+        ]
+      },
+      "hold_after_two_seconds": {
+        "duration_s": 61.999,
+        "minimum_drive_margin": [
+          7.092832656689451,
+          1.6849680109019929
+        ],
+        "drive_margin_below_1_5_frames": [
+          0,
+          0
+        ],
+        "minimum_normals_n": [
+          330.80363649541243,
+          146.91336701713715,
+          44.39030662856105
+        ],
+        "maximum_absolute_ball_lateral_force_n": 35.15061435081414,
+        "ball_lateral_force_abs_p50_p95_n": [
+          33.22600724426913,
+          34.91662859885551
+        ],
+        "housing_lateral_range_mm": [
+          1.8318759380627492,
+          1.8995252317941647
+        ],
+        "pressure_range_pa": [
+          7854.635756135569,
+          7860.141329360777
+        ]
+      }
+    },
+    "no_runtime_failure": true,
+    "no_stop_contact": false,
+    "housing_stays_inside_limits": false,
+    "frames_sha256": "d38e22bc9bbbc48638966e14798d7b5bd89465fa5e3923b18f4662e5800e9839"
+  },
+  "flat_pair_0_5mm": {
+    "passed": true,
+    "gates": {
+      "position_difference_m": 0.005,
+      "orientation_difference_deg": 0.2,
+      "mean_load_difference_n": 5.0,
+      "rolling_force_relative_difference": 0.05,
+      "rolling_power_relative_difference": 0.05,
+      "speed_ratio_error": 0.05,
+      "contact_slip_mps": 0.005
+    },
+    "paired": {
+      "maximum_position_difference_m": 1.3796232817464454e-06,
+      "maximum_orientation_difference_deg": 0.0005693460472673643,
+      "phases": {
+        "straight": {
+          "load_difference_n": 5.81508174946066e-11,
+          "spin_ratio": 0.9999999962133708,
+          "force_relative_difference": 1.1657341758564144e-14,
+          "power_relative_difference": 3.786641000758095e-09
+        },
+        "turn": {
+          "load_difference_n": 0.0004383471356845803,
+          "spin_ratio": 0.9996887243364311,
+          "force_relative_difference": 9.224223351811389e-07,
+          "power_relative_difference": 0.00031227859694715754
+        }
+      },
+      "checks": {
+        "position": true,
+        "orientation": true,
+        "straight/load": true,
+        "straight/spin": true,
+        "straight/force": true,
+        "straight/power": true,
+        "straight/slip": true,
+        "turn/load": true,
+        "turn/spin": true,
+        "turn/force": true,
+        "turn/power": true,
+        "turn/slip": true
+      }
+    },
+    "config_scope": "0.5 mm travel, no acceptance claimed for 2 mm candidate"
+  },
+  "limits_check_note": "Computed ball centre in chassis body-y; signed gaps and short solver limit overshoot retained",
+  "next_action": "Discuss contact representation; no further compliance parameter search",
+  "logs": [
+    "climbot_m2_caster_float_build_20261019.log",
+    "climbot_m2_caster_float_tests_20261019.log",
+    "climbot_m2_caster_float_flat_pair_20261019.log",
+    "climbot_m2_caster_float_rough_c_20261019.log",
+    "climbot_m2_caster_float_2mm_20261019.log",
+    "climbot_m2_caster_float_style_final_20261019.log",
+    "climbot_m2_caster_float_final_contract_20261019.log"
+  ],
+  "verification": {
+    "build_exit_code": 0,
+    "generator_tests": {
+      "passed": 35,
+      "seconds": 14.9
+    },
+    "final_caster_contract": {
+      "passed": 1,
+      "deselected": 34
+    },
+    "python_style_files": 7,
+    "style_exit_code": 0
+  }
+}

@@ -109,8 +109,21 @@ public:
     require(mode == "fan_ode" || mode == "fixed_pressure", "invalid vacuum source mode");
     ideal_ = mode == "fixed_pressure";
     if (sdf->HasElement("wall_surface_yaml")) {
-      require(ideal_, "M2 contact patch requires fixed_pressure until channel validation");
       surface_ = std::make_unique<WallSurface>(sdf->Get<std::string>("wall_surface_yaml"));
+      channels_ = sdf->HasElement("channel_drape_m");
+      require(ideal_ || channels_, "M2 fan mode requires explicit residual channels");
+      if (channels_) {
+        channelDrape_ = read(sdf, "channel_drape_m");
+        channelTransition_ = read(sdf, "channel_transition_m");
+        channelRefinement_ = sdf->Get<int>("channel_refinement");
+        require(channelDrape_ >= 0 && channelDrape_ <= .01 && channelTransition_ > 0 &&
+          channelRefinement_ >= 1 && channelRefinement_ <= 8, "invalid channel parameters");
+        int index = 0;
+        for (auto c = sdf->GetElement("seal_corner"); c; c = c->GetNextElement("seal_corner")) {
+          require(index < 4, "too many seal corners");sealCorners_[index++] = c->Get<V3>();
+        }
+        require(index == 4, "channel integration requires four seal corners");
+      }
     }
     require(mass_ > 0 && track_ > 0 && caster_ < 0 && inner_ > 0 && volumeNominal_ > 0 &&
       substep_ > 0 && substep_ <= .0001 && preload_ >= 0 && readyMargin_ >= 1 &&
@@ -233,11 +246,30 @@ public:
         minGap = std::min(minGap, gap);maxGap = std::max(maxGap, gap);
         samples_.push_back({local.X(), local.Y(), lengths_[i], gap, gapRate, speed.X(), speed.Y(),
             gap * (1 - present), present < 1, present});
-        mean += lengths_[i] * gap;total += lengths_[i];
+        // Narrow groove voids are not expanded across the entire chamber area.
+        // Nominal volume tracks the broad roughness / actual attachment pose.
+        double volumeGap = channels_ ?
+          local.Z() - surface_->roughness(wallPoint.X(), wallPoint.Y()) : gap;
+        mean += lengths_[i] * volumeGap;total += lengths_[i];
       }
       mean /= total;double volume = volumeNominal_ + inner_ * (mean - gapNominal_);
       require(volume > 0, "nonpositive physical cavity volume");
       auto shape = v::skirt(parameters_, samples_, 0);
+      SealLeak leak;
+      double queryNs = 0;
+      if (channels_) {
+        auto begin = std::chrono::steady_clock::now();
+        std::array<std::array<double, 3>, 4> corners;
+        for (int i = 0; i < 4; ++i) {
+          auto p = wall_.Rot().RotateVectorReverse(
+            pose_.CoordPositionAdd(sealCorners_[i]) - wall_.Pos());
+          corners[i] = {p.X(), p.Y(), p.Z()};
+        }
+        leak = surface_->sealLeak(corners, parameters_.band_m, parameters_.free_height_m,
+          channelDrape_, channelTransition_, {size_.X(), size_.Y()}, channelRefinement_);
+        shape.leak_area_m2 = leak.area_m2;
+        queryNs = seconds(std::chrono::steady_clock::now() - begin) * 1e9;
+      }
       double area = baseLeak_ + shape.leak_area_m2 + io_->openingArea();
       int substeps = static_cast<int>(std::ceil(dt / substep_));
       double h = dt / substeps;
@@ -317,6 +349,9 @@ public:
       state_[v::EffectiveArea] = contact.effective_area_m2;state_[v::Volume] = volume;
       state_[v::LipArea] = contact.weighted_lip_area_m2;state_[v::SkirtNormal] = contact.normal_n;
       state_[v::SkirtMechanical] = contact.mechanical_n;state_[v::LeakArea] = area;
+      state_[v::SurfaceLeakArea] = leak.area_m2;
+      state_[v::SurfaceChannelArea] = leak.channel_area_m2;
+      state_[v::SurfaceQueryNanoseconds] = queryNs;
       state_[v::FlowResidual] = balance_.residual_kg_s;state_[v::FixtureActive] = fixture_;
       state_[v::LeakMassFlow] = balance_.leakage_kg_s;state_[v::PumpMassFlow] = balance_.pump_kg_s;
       state_[v::ReverseMassFlow] = balance_.reverse_kg_s;state_[v::MaximumFanHead] = 0;
@@ -507,6 +542,10 @@ private:
   std::vector<double> fanHeads_;
   std::unique_ptr<v::Chamber> core_;
   std::unique_ptr<WallSurface> surface_;
+  bool channels_{};
+  std::array<V3, 4> sealCorners_;
+  double channelDrape_{}, channelTransition_{};
+  int channelRefinement_{1};
   std::unique_ptr<v::VacuumIO> io_;
   v::SkirtParameters parameters_;
   v::Balance balance_;
