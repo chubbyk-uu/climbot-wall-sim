@@ -19,11 +19,12 @@ from ament_index_python.packages import get_package_prefix
 from climbot_gazebo.mesa_runtime import rendering_environment
 from climbot_gazebo.vacuum_assets import build_assets
 from design_vacuum_chassis import inputs, profiles
-from freeze_suction_baseline import legacy_input_path, verify_legacy_inputs
+from freeze_suction_baseline import INPUTS
 from vacuum_layout import build
 from vacuum_loads import evaluate, minimum_pressure, states
 
 ROOT = Path(__file__).resolve().parents[1]
+STOP_FIELD = 'vac_skirt_stop_previous_normal_n'
 
 
 def write(path, value):
@@ -144,6 +145,8 @@ def summarize(directory, resolved):
         'pressure_substeps_max': float(c['vac_substeps'].max()),
         'raw_contact_header_stamp_all_zero': all(np.all(c[s + '_stamp_s'] == 0)
                                                 for s in ['left', 'right', 'ball']),
+        'maximum_skirt_stop_normal_n': (float(c[STOP_FIELD][released].max())
+                                        if STOP_FIELD in c else None),
     }
     pressure_force = c['vac_delta_pa'][steady] * c['vac_area_m2'][steady]
     fixture = [c[f'vac_fixture_{kind}{axis}'][released] for kind in 'fm' for axis in 'xyz']
@@ -165,6 +168,8 @@ def summarize(directory, resolved):
         'pressure_above_static_requirement': bool(np.all(c['vac_delta_pa'][released] >=
                                                          result['minimum_pressure_pa'])),
         'body_clearance': result['minimum_body_gap_m'] >= .01,
+        # Static hold must be carried by wheels and seal, never by the collapsed-seal stop.
+        'skirt_stop_not_engaged': result['maximum_skirt_stop_normal_n'] == 0,
         'no_runtime_or_startup_failure': not bool(np.any(c['vac_runtime_failed']) or
                                                  np.any(c['vac_startup_failed'])),
     }
@@ -252,16 +257,15 @@ def main():
                'src/climbot_gazebo/launch/climbot_vacuum.launch.py',
                'tools/vacuum_layout.py', 'tools/vacuum_preview.py',
                'tools/design_vacuum_chassis.py', 'docs/SUCTION_S3_METHOD.md']
-    legacy_acceptance = verify_legacy_inputs(ROOT)
-    frozen = legacy_acceptance['byte_identical']
-    sources += list(frozen)
+    # The S0 legacy freeze ended at S7; former inputs are live sources, recorded by hash only.
+    sources += [p for p in INPUTS if (ROOT / p).exists()]
     write(out / 'source_manifest.json', {
         'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
         'dirty': bool(subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=ROOT)),
-        'sha256': {p: hashlib.sha256(legacy_input_path(ROOT, p).read_bytes()).hexdigest() for p in sources},
+        'sha256': {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest() for p in sources},
         'native_binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
-        'legacy_inputs_byte_identical': frozen,
-        'legacy_source_acceptance': legacy_acceptance,
+        'legacy_freeze': {'status': 'ended at S7; old chassis removed in merge ea7de8f',
+                          'historical_check': 'tools/freeze_suction_baseline.py'},
     })
     recalculate_design(out)
     for h in args.headings:

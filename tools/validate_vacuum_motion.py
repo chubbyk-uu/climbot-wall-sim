@@ -18,12 +18,13 @@ from climbot_description.geometry import quaternion_from_rpy, rotate_vector
 from climbot_description.vacuum_loads import minimum_pressure
 from climbot_gazebo.mesa_runtime import rendering_environment
 from climbot_gazebo.vacuum_assets import build_assets
-from freeze_suction_baseline import legacy_input_path, verify_legacy_inputs
+from freeze_suction_baseline import INPUTS
 import numpy as np
 from validate_vacuum_physics import reference_pressure, reference_rate, response_time
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+STOP_FIELD = 'vac_skirt_stop_previous_normal_n'
 
 
 def write(path, data):
@@ -150,6 +151,9 @@ def motion_metrics(c, resolved, directory, profile_name):
     skirt_power = np.sum(skirt_force * tangent_velocity, axis=1) + (
         skirt_moment @ wall_z) * (input_omega @ wall_z)
     checks['nonpositive_skirt_drag_power'] = bool(np.max(skirt_power) <= 1e-5)
+    # Normal motion must never bottom the seal; frames without the field cannot prove it.
+    stop = c.get(STOP_FIELD)
+    checks['skirt_stop_not_engaged'] = stop is not None and bool(np.all(stop[ids] == 0))
     with gzip.open(directory / 'inverse_dynamics.csv.gz', 'wt', newline='') as stream:
         writer = csv.writer(stream)
         writer.writerow(['time_s', 'heading_deg', 'v_mps', 'a_mps2', 'omega_rps', 'alpha_rps2',
@@ -166,6 +170,7 @@ def motion_metrics(c, resolved, directory, profile_name):
             'minimum_head_margin_pa': float(np.min(
                 c['vac_maximum_fan_head_pa'][ids] - actual_pressure)),
             'maximum_skirt_power_w': float(skirt_power.max()),
+            'maximum_skirt_stop_normal_n': None if stop is None else float(stop[ids].max()),
             'maximum_abs_actual_a_mps2': float(np.max(np.abs(a[ids]))),
             'maximum_abs_actual_alpha_rps2': float(np.max(np.abs(alpha[ids]))),
             'end_pose_m': [float(c['pose_' + axis][ids[-1]]) for axis in 'xyz'],
@@ -307,9 +312,8 @@ def main():
     env, identity = rendering_environment()
     env['GZ_SIM_SYSTEM_PLUGIN_PATH'] = os.pathsep.join(filter(None, [
         str(prefix / 'lib'), env.get('GZ_SIM_SYSTEM_PLUGIN_PATH')]))
-    legacy_acceptance = verify_legacy_inputs(ROOT)
-    frozen = legacy_acceptance['byte_identical']
-    source_paths = sorted(set(frozen) | {
+    # The S0 legacy freeze ended at S7; former inputs are live sources, recorded by hash only.
+    source_paths = sorted({p for p in INPUTS if (ROOT / p).exists()} | {
         'tools/validate_vacuum_motion.py', 'tools/validate_vacuum_physics.py',
         'tools/freeze_suction_baseline.py', 'tools/vacuum_layout.py', 'tools/vacuum_loads.py',
         'docs/SUCTION_S5_METHOD.md',
@@ -326,10 +330,10 @@ def main():
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     write(args.output / 'source_manifest.json', {
         'revision': revision,
-        'source_sha256': {name: hashlib.sha256(legacy_input_path(ROOT, name).read_bytes()).hexdigest()
+        'source_sha256': {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
                           for name in source_paths},
-        'legacy_inputs_byte_identical': frozen,
-        'legacy_source_acceptance': legacy_acceptance,
+        'legacy_freeze': {'status': 'ended at S7; old chassis removed in merge ea7de8f',
+                          'historical_check': 'tools/freeze_suction_baseline.py'},
         'tracked_dirty': bool(subprocess.check_output(
             ['git', 'status', '--porcelain', '--untracked-files=no'], cwd=ROOT)),
         'probe_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
