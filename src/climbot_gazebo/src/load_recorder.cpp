@@ -44,13 +44,14 @@ public:
     body_ = gz::sim::Link(model.LinkByName(ecm, "chassis_link"));
     std::ofstream meta(path.string() + ".json");
     meta <<
-      R"({"schema_version":1,"dtype":"<f8","columns":[
+      R"({"schema_version":2,"dtype":"<f8","columns":[
 "sim_time_s","paused","vac_fixture_active","vac_release_time_s","vac_generation",
 "vac_delta_pa","vac_runtime_failed","vac_startup_failed","vac_skirt_stop_previous_normal_n",
 "pose_x","pose_y","pose_z",
 "left_points","left_fx","left_fy","left_fz",
 "right_points","right_fx","right_fy","right_fz",
-"ball_points","ball_fx","ball_fy","ball_fz"]})";
+"ball_points","ball_fx","ball_fy","ball_fz",
+"pose_qw","pose_qx","pose_qy","pose_qz"]})";
   }
 
   void PostUpdate(
@@ -61,13 +62,16 @@ public:
     auto pose = body_.WorldPose(ecm);
     if (!state || !pose || state->Data().size() != vacuum::Count) {return;}
     const auto & s = state->Data();
-    std::array<double, 24> row{};
+    std::array<double, 28> row{};
     row[0] = std::chrono::duration<double>(info.simTime).count();row[1] = info.paused;
     row[2] = s[vacuum::FixtureActive];row[3] = s[vacuum::ReleaseTime];
     row[4] = s[vacuum::Generation];row[5] = s[vacuum::DeltaPressure];
     row[6] = s[vacuum::RuntimeFailed];row[7] = s[vacuum::StartupFailed];
     row[8] = s[vacuum::SkirtStopNormal];
     row[9] = pose->X();row[10] = pose->Y();row[11] = pose->Z();
+    // Chassis attitude, appended so schema 1 readers keyed by name still work.
+    row[24] = pose->Rot().W();row[25] = pose->Rot().X();
+    row[26] = pose->Rot().Y();row[27] = pose->Rot().Z();
     for (int i = 0; i < 3; ++i) {
       auto data = ecm.Component<gz::sim::components::ContactSensorData>(collisions_[i]);
       if (!data) {continue;}

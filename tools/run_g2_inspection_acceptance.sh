@@ -304,7 +304,8 @@ run_case() {
   start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo "$SIMULATION_LAUNCH" \
     adhesion_mode:="$ADHESION_MODE" \
     wall_surface:="$WALL_SURFACE" wheel_compliance:="$WHEEL_COMPLIANCE" \
-    m2_load_trace:="$M2_LOAD_TRACE" resolved_assets_directory:="$G2_RESOLVED_ASSETS" \
+    ${M2_LOAD_TRACE:+m2_load_trace:="$M2_LOAD_TRACE"} \
+    ${G2_RESOLVED_ASSETS:+resolved_assets_directory:="$G2_RESOLVED_ASSETS"} \
     use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:="$G2_GPU_BACKEND" wall_grid_spacing:=0 \
     ${G2_CLOCK_PUBLISH_HZ:+clock_publish_hz:="$G2_CLOCK_PUBLISH_HZ"} \
     gui_gpu_backend:="$G2_GUI_GPU_BACKEND" \

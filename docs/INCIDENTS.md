@@ -720,3 +720,10 @@
   离线合并为一个网格，三角形不变。双 GUI 竖向短任务整任务 RTF 0.968。
 - **回归**：`test_wall_tiles_share_one_static_link_per_role` 检查只有 3 个墙面 model、
   合并网格逐顶点等于原块加偏移。排查方法：`perf record -t <服务端主线程>`，按库统计。
+
+### 50. 采集脚本给 ros2 launch 传空参数，默认 G2 验收无法启动
+
+- **现象**：未设置 `G2_RESOLVED_ASSETS` 时报 simulator did not become ready。
+- **根因**：脚本无条件传 `resolved_assets_directory:="$G2_RESOLVED_ASSETS"`，空值成为
+  `resolved_assets_directory:=`，ros2 launch 拒绝；`m2_load_trace` 同理。仅在 M2 运行时总被设置，未暴露。
+- **修复**：改为 `${VAR:+name:="$VAR"}`，与 `clock_publish_hz` 一致；平墙刚性轮对照已按默认参数通过。
