@@ -29,6 +29,11 @@ simulation:
       # cutoff enters the image; falloff still leaves the corners darker.
       outer_angle_rad: 2.05
       falloff: 0.55
+      # Must stay true. Without a shadow map Ogre2 lights this ~117 deg spot
+      # through its clustered path, which clips it to a screen rectangle:
+      # photos dropped from grey ~74 to ~30 (2026-10-19, INCIDENTS #52).
+      # The shadow map's misplaced black patch beside the chassis in the GUI
+      # is the accepted cost; it never reached the camera footprint.
       cast_shadows: true
 
   wall:
