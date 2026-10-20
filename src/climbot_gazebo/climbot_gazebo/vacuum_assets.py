@@ -157,12 +157,19 @@ def _caster_proxy_flat_wall(world, normal, offset):
     link.append(item)
 
 
+def drop_contact_observer(world):
+    """Remove the Contact system; it only publishes the observer topics."""
+    for plugin in world.findall('plugin'):
+        if plugin.get('name') == 'gz::sim::systems::Contact':
+            world.remove(plugin)
+
+
 def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                  realtime_factor=1.0, runtime_overrides=None, io_overrides=None,
                  physics_overrides=None, caster_proxy=False, wheel_compliance=False,
                  surface_patch=None, caster_compliance=False,
                  tyre_lateral=False, wall_surface='flat', wall_texture=None,
-                 tyre_crown=False):
+                 tyre_crown=False, contact_topics=None):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
@@ -193,6 +200,10 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     robot = _read(description / 'config/robot.yaml', 'robot')
     wall = _read(description / 'config/wall.yaml', 'wall')
     simulation = _read(gazebo / 'config/simulation.yaml', 'simulation')
+    if contact_topics is None:
+        contact_topics = simulation['contact']['observer_topics']
+    if type(contact_topics) is not bool:
+        raise ValueError('contact_topics must be boolean')
     physics = _read(gazebo / 'config/vacuum_physics.yaml', 'vacuum_physics')
     if physics_overrides:
         if set(physics_overrides) - set(physics):
@@ -297,10 +308,11 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         mu = simulation['caster']['mu'] if side == 'caster' else simulation['drive_wheel']['mu']
         node(ode, 'mu', mu)
         node(ode, 'mu2', mu)
-        sensor = node(link, 'sensor', name=side + '_contact', type='contact')
-        node(sensor, 'always_on', 'true')
-        node(sensor, 'update_rate', 0)  # physics-step ECM data, no decimated observer
-        node(node(sensor, 'contact'), 'collision', side + '_collision')
+        if contact_topics:
+            sensor = node(link, 'sensor', name=side + '_contact', type='contact')
+            node(sensor, 'always_on', 'true')
+            node(sensor, 'update_rate', 0)  # physics-step ECM data, no decimated observer
+            node(node(sensor, 'contact'), 'collision', side + '_collision')
     for plugin in old.findall('plugin'):
         new.append(deepcopy(plugin))
     # Preserve the original compliances / nominal load ratio. S3 measures
@@ -418,6 +430,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     finally:
         world_file.unlink(missing_ok=True)
     world = world_root.find('world')
+    if not contact_topics:
+        drop_contact_observer(world)
     if caster_proxy:
         _caster_proxy_flat_wall(world, normal, cfg['caster']['radius_m'] / 2)
     # Only the candidate GUI animates rotors; physics and sensor rendering stay
@@ -491,6 +505,7 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         resolved['tyre_lateral'] = lateral
     if tyre_crown:
         resolved['tyre_contact'] = 'sphere'
+    resolved['contact_observer_topics'] = contact_topics
     if patch is not None:
         resolved['surface_patch'] = patch
         resolved['wall_surface_pose'] = patch['wall_surface_pose']

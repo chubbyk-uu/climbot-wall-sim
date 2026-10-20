@@ -29,6 +29,21 @@ import pytest
 import yaml
 
 
+def test_contact_observers_can_be_restored_for_the_load_baseline(tmp_path):
+    """measure_normal_loads.py still needs the /contact/* sensors on request."""
+    result = build_assets(tmp_path, contact_topics=True)
+    world = ET.parse(tmp_path / 'world.sdf')
+    assert sum(p.get('name') == 'gz::sim::systems::Contact'
+               for p in world.findall('.//plugin')) == 1
+    model = world.find('.//model[@name="climbot"]')
+    for name in ['left_wheel_link', 'right_wheel_link', 'caster_ball_link']:
+        link = model.find(f'link[@name="{name}"]')
+        assert link.findtext('sensor/contact/collision') == link.find('collision').get('name')
+    assert result['contact_observer_topics'] is True
+    with pytest.raises(ValueError):
+        build_assets(tmp_path / 'bad', contact_topics='yes')
+
+
 def test_joint_states_are_published_below_the_physics_step(tmp_path):
     """Per-step JointState publishing cost the server a serialization per 1 ms step."""
     build_assets(tmp_path / 'rigid')
@@ -103,7 +118,11 @@ def test_native_contacts_and_skirt_have_one_force_path(tmp_path):
     for name in ['left_wheel_link', 'right_wheel_link', 'caster_ball_link']:
         link = model.find(f'link[@name="{name}"]')
         assert len(link.findall('collision')) == 1
-        assert link.findtext('sensor/contact/collision') == link.find('collision').get('name')
+        # Contact observers are off by default; the ECM data path needs none.
+        assert link.find('sensor') is None
+    assert not any(p.get('name') == 'gz::sim::systems::Contact'
+                   for p in world.findall('.//plugin'))
+    assert result['contact_observer_topics'] is False
     mass = sum(float(x.text) for x in model.findall('link/inertial/mass'))
     assert mass == pytest.approx(result['model']['mass_kg'], abs=1e-11)
     assert result['model']['caster_x_m'] == pytest.approx(-.25, abs=1e-14)

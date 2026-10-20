@@ -54,6 +54,8 @@ CONTACT_TOPIC_RIGHT = (
     _CONTACT_PREFIX + '/right_wheel_link/sensor/right_wheel_contact/contact')
 CONTACT_TOPIC_CASTER = (
     _CONTACT_PREFIX + '/caster_ball_link/sensor/caster_contact/contact')
+# The pressure-chassis launch clears this when its contact observers are off.
+CONTACT_OBSERVER = True
 JOINT_STATE_TOPIC = '/model/climbot/joint_state'
 CAMERA_IDEAL_IMAGE_TOPIC = '/simulation/inspection_camera/ideal_image'
 CAMERA_IDEAL_INFO_TOPIC = '/simulation/inspection_camera/ideal_camera_info'
@@ -537,12 +539,10 @@ def launch_setup(context, *args, **kwargs):
                 common_share, 'config', 'fastdds_inspection_image.xml'),
         }
 
-    bridge_remappings = [
-        (CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
-        (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
-        (CONTACT_TOPIC_CASTER, '/contact/caster'),
-        (JOINT_STATE_TOPIC, '/joint_states'),
-    ]
+    contacts = [(CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
+                (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
+                (CONTACT_TOPIC_CASTER, '/contact/caster')] if CONTACT_OBSERVER else []
+    bridge_remappings = contacts + [(JOINT_STATE_TOPIC, '/joint_states')]
     if throttle_clock:
         bridge_remappings.append(('/clock', '/clock_raw'))
     actions.append(Node(
@@ -558,10 +558,9 @@ def launch_setup(context, *args, **kwargs):
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             JOINT_STATE_TOPIC + '@sensor_msgs/msg/JointState[gz.msgs.Model',
             # Contact sensors ignore their <topic> tag, so the fully qualified
-            # Gazebo names are bridged and remapped to short ROS topics below.
-            CONTACT_TOPIC_LEFT + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
-            CONTACT_TOPIC_RIGHT + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
-            CONTACT_TOPIC_CASTER + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            # Gazebo names are bridged and remapped to short ROS topics above.
+            *[topic + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts'
+              for topic, _ in contacts],
         ],
         remappings=bridge_remappings,
         parameters=[{

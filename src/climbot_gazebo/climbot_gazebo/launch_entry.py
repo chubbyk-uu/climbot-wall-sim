@@ -26,7 +26,8 @@ from climbot_common.dds import local_dds_environment
 from climbot_description.robot_geometry import resolve_adhesion
 from climbot_description.vacuum_preview import node
 from climbot_gazebo.calibration_target import prepare_emissive_g1_target
-from climbot_gazebo.vacuum_assets import _stack_module, add_fan_visuals_gui, build_assets
+from climbot_gazebo.vacuum_assets import (
+    _stack_module, add_fan_visuals_gui, build_assets, drop_contact_observer)
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, LogInfo, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -61,12 +62,16 @@ def generate_launch_description():
             crown = LaunchConfiguration('tyre_crown').perform(context)
             crown = soft if crown == 'auto' else crown == 'true'
             texture = LaunchConfiguration('wall_texture').perform(context) or None
-            build_assets(
+            # 'auto' follows simulation.yaml; observers are off by default.
+            contact = LaunchConfiguration('contact_topics').perform(context)
+            contact = None if contact == 'auto' else contact == 'true'
+            resolved = build_assets(
                 root, mode='fan_ode' if mode == 'vacuum' else 'fixed_pressure',
                 runtime_overrides={'camera_enabled': True}, io_overrides=io,
                 wheel_compliance=soft, tyre_lateral=lateral,
-                tyre_crown=crown,
+                tyre_crown=crown, contact_topics=contact,
                 caster_proxy=surface == 'undulating', wall_surface=surface, wall_texture=texture)
+            contact = resolved['contact_observer_topics']
             # Use the same actual scene options as the frozen launch. The generated
             # robot and its single force path are the only replacement here.
             world_path = Path(original_world(
@@ -85,6 +90,8 @@ def generate_launch_description():
             # reflection to its reference colors. No ordinary wall is changed.
             prepare_emissive_g1_target(world)
             parent = world.getroot().find('world')
+            if not contact:
+                drop_contact_observer(parent)
             includes = [p for p in parent.findall('include')
                         if p.findtext('uri') == 'model://climbot']
             forces = [p for p in parent.findall('plugin')
@@ -119,6 +126,7 @@ def generate_launch_description():
             prefix = '/world/climbot_wall/model/climbot/link/'
             stack.CONTACT_TOPIC_LEFT = prefix + 'left_wheel_link/sensor/left_contact/contact'
             stack.CONTACT_TOPIC_RIGHT = prefix + 'right_wheel_link/sensor/right_contact/contact'
+            stack.CONTACT_OBSERVER = contact
             actions = original_setup(context, *args, **kwargs)
             if surface == 'undulating':
                 from .mesa_runtime import rendering_environment
@@ -167,6 +175,8 @@ def generate_launch_description():
         DeclareLaunchArgument('wheel_compliance', default_value='false',
                               choices=['false', 'true']),
         DeclareLaunchArgument('m2_load_trace', default_value=''),
+        DeclareLaunchArgument('contact_topics', default_value='auto',
+                              choices=['auto', 'false', 'true']),
         DeclareLaunchArgument('ode_prefix', default_value=os.environ.get(
             'CLIMBOT_ODE_PREFIX', str(Path.home()/'opt/climbot-ode-0.16.2-hashfix-ccd/install'))),
     ]:

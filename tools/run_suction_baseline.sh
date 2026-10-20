@@ -86,7 +86,8 @@ PY
 }
 trap finish EXIT
 trap 'exit 130' INT TERM
-setsid ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true \
+# measure_normal_loads.py reads the /contact/* observer topics.
+setsid ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true contact_topics:=true \
   >"$RUN_DIR/simulator.log" 2>&1 &
 lane_remember "$TASK_LANE" "$!"
 echo "simulator created; logs=$RUN_DIR"

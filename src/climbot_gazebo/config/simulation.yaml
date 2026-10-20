@@ -123,5 +123,12 @@ simulation:
     visualize: false
 
   contact:
+    # Contact sensors, the Gazebo Contact system and their /contact/* bridge
+    # only feed observers (measure_normal_loads.py). The suction system and
+    # the M2 load recorder create and read the same per-step contact data in
+    # the ECM themselves; a 6000-step headless A/B was bit-identical without
+    # them, while gz-sim8 publishes every step whatever update_rate says.
+    # run_suction_baseline.sh enables them with contact_topics:=true.
+    observer_topics: false
     # Match the 1 ms physics step so millisecond caster lift-off is observable.
     update_rate_hz: 1000.0
