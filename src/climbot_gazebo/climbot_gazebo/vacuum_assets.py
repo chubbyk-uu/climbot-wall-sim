@@ -32,6 +32,7 @@ from .caster_compliance import apply as apply_caster_compliance
 from .wheel_compliance import apply as apply_wheel_compliance
 from .wheel_compliance import apply_crown as apply_tyre_crown
 from .wheel_compliance import apply_lateral as apply_tyre_lateral
+from .wheel_compliance import spring_reference as wheel_spring_reference
 
 
 def _read(path, key):
@@ -498,7 +499,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                                     'collision_radius_m': cfg['caster']['radius_m'] / 2,
                                     'inertia_scale': .25}
     if wheel_compliance:
-        resolved['wheel_compliance'] = compliance
+        resolved['wheel_compliance'] = dict(
+            compliance, spring_reference_m=wheel_spring_reference(compliance))
     if caster_compliance:
         resolved['caster_compliance'] = caster_spring
     if tyre_lateral:

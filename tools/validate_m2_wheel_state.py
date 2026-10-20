@@ -81,8 +81,9 @@ def run(output):
                                                           for s in ['left', 'right'])
             checks[label + '/tf_matches_compression'] = (
                 bool(differences) and max(differences) < 1e-7)
+            # Preloaded springs sit near zero at the working load, either side.
             checks[label + '/loaded_compression_nonzero'] = bool(compressions) and max(
-                compressions) > .0001
+                map(abs, compressions)) > .0001
             epochs.append({'name': label, 'matched_tf': matched,
                            'maximum_tf_error_m': max(differences) if differences else None,
                            'compression_range_m': [min(compressions), max(compressions)]

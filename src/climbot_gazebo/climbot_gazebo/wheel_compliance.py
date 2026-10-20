@@ -13,9 +13,17 @@
 from climbot_description.vacuum_preview import node
 
 
+def spring_reference(cfg):
+    """Free-length offset that puts the preload's realized compression at zero."""
+    return -(cfg['preload_contact_load_n'] * cfg['nominal_realized_compression_m'] /
+             cfg['nominal_contact_load_n'])
+
+
 def apply(model, urdf, cfg):
-    """Split existing wheel mass/inertia without moving its zero-load centre."""
+    """Split existing wheel mass/inertia; the preload load holds the design centre."""
     mass = cfg['axle_mass_kg']
+    reference = spring_reference(cfg)
+    lower, upper = cfg['lower_m'] + reference, cfg['upper_m'] + reference
     moment = .4 * mass * cfg['axle_radius_m']**2
     publisher = model.find('plugin[@name="gz::sim::systems::JointStatePublisher"]')
     for side in ['left', 'right']:
@@ -63,7 +71,7 @@ def apply(model, urdf, cfg):
                 node(spring, 'child', link=axle_name)
                 node(spring, 'origin', xyz=position, rpy='0 0 0')
                 node(spring, 'axis', xyz='0 0 1')
-                node(spring, 'limit', lower=str(cfg['lower_m']), upper=str(cfg['upper_m']),
+                node(spring, 'limit', lower=str(lower), upper=str(upper),
                      effort='1000', velocity='1')
                 node(spring, 'dynamics', damping=str(cfg['damping_n_s_m']))
             else:
@@ -73,10 +81,10 @@ def apply(model, urdf, cfg):
                 axis = node(spring, 'axis')
                 node(axis, 'xyz', '0 0 1')
                 limit = node(axis, 'limit')
-                node(limit, 'lower', cfg['lower_m'])
-                node(limit, 'upper', cfg['upper_m'])
+                node(limit, 'lower', lower)
+                node(limit, 'upper', upper)
                 dynamics = node(axis, 'dynamics')
-                node(dynamics, 'spring_reference', 0)
+                node(dynamics, 'spring_reference', reference)
                 node(dynamics, 'spring_stiffness', cfg['stiffness_n_m'])
                 node(dynamics, 'damping', cfg['damping_n_s_m'])
         node(publisher, 'joint_name', spring_name)

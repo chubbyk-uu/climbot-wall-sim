@@ -12,4 +12,12 @@ m2_wheel_compliance:
   calibration_step_s: 0.001
   nominal_contact_load_n: 150.0
   nominal_realized_compression_m: 0.001
+  # Spring zero sits outside the design axle position by the realized
+  # compression at this load, so a working wheel carries the axle - and the
+  # camera - at the design height. Without it the median 275 N of every M2
+  # task (horizontal, vertical, T3) pressed the axles 1.9-2.0 mm in, pitched
+  # the body 0.45 deg nose-in and brought the camera 4.7 mm closer: mosaics
+  # came out 1.7% oversized (2026-10-20). lower_m/upper_m stay travel from the
+  # free length; the rolling radius is untouched, so odometry is unaffected.
+  preload_contact_load_n: 275.0
   calibrated_contact_load_range_n: [50.0, 300.0]  # T2 checks any expanded envelope

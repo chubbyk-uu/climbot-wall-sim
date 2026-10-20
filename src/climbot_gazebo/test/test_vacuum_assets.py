@@ -265,7 +265,14 @@ def test_compliant_wheels_preserve_mass_inertia_and_publish_moving_tf_chain(tmp_
         assert spring.find('child').get('link') == rotation.find('parent').get('link')
         assert spring.find('axis').get('xyz') == '0 0 1'
         assert rotation.find('origin').get('xyz') == '0 0 0'
-        assert float(spring.find('limit').get('lower')) == 0
+        # 275 N realizes 1.8333 mm at 1 mm / 150 N; the free length sits that
+        # far outside the design axle and the 4 mm travel moves with it.
+        reference = -275 * .001 / 150
+        assert float(spring.find('limit').get('lower')) == pytest.approx(reference)
+        assert float(spring.find('limit').get('upper')) == pytest.approx(reference + .004)
+        dynamics = soft.find(f'.//joint[@name="{side}_tyre_joint"]/axis')
+        assert float(dynamics.findtext('dynamics/spring_reference')) == pytest.approx(reference)
+        assert float(dynamics.findtext('limit/lower')) == pytest.approx(reference)
     assert rigid.find('.//joint[@name="left_tyre_joint"]') is None
 
 
