@@ -315,7 +315,7 @@ run_case() {
     gui_gpu_backend:="$G2_GUI_GPU_BACKEND" \
     localization_profile:="$LOCALIZATION_PROFILE" \
     prism_extrinsic_error_robot_m:="$PRISM_EXTRINSIC_ERROR_ROBOT_M" \
-    wall_texture:="$WALL_TEXTURE" || return 1
+    ${WALL_TEXTURE:+wall_texture:="$WALL_TEXTURE"} || return 1
   if ! wait_for_topic /model/climbot/ground_truth; then
     echo "[$case_name] simulator did not become ready; see $case_dir/simulator.log" >&2
     return 1
