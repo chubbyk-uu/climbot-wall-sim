@@ -81,6 +81,10 @@ simulation:
   drive:
     joint_damping: 0.05
     odom_publish_frequency_hz: 50.0
+    # Wheel and tyre-spring joint states feed robot_state_publisher's TF and
+    # the readiness/observer checks, all well inside 100 Hz. Publishing every
+    # 1 ms step made the server serialize a JointState per step.
+    joint_state_publish_rate_hz: 100.0
 
   imu:
     # Preserve the S6 physical IMU mount when changing the chassis defaults.

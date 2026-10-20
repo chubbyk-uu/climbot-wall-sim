@@ -367,6 +367,8 @@ def robot_mappings(gazebo_share, description_share):
         'joint_damping': repr(float(simulated_drive['joint_damping'])),
         'odom_frequency': repr(
             float(simulated_drive['odom_publish_frequency_hz'])),
+        'joint_state_rate': repr(
+            float(simulated_drive['joint_state_publish_rate_hz'])),
         **{f'imu_mount_{axis}': repr(float(value))
            for axis, value in zip('xyz', imu['mount_xyz_m'])},
         'imu_rate': repr(float(imu['update_rate_hz'])),

@@ -29,6 +29,16 @@ import pytest
 import yaml
 
 
+def test_joint_states_are_published_below_the_physics_step(tmp_path):
+    """Per-step JointState publishing cost the server a serialization per 1 ms step."""
+    build_assets(tmp_path / 'rigid')
+    build_assets(tmp_path / 'soft', wheel_compliance=True, tyre_crown=True)
+    for name in ['rigid', 'soft']:
+        model = ET.parse(tmp_path / name / 'model.sdf').find('model')
+        publisher = model.find('plugin[@name="gz::sim::systems::JointStatePublisher"]')
+        assert publisher.findtext('update_rate') == '100.0'
+
+
 def test_caster_float_preserves_mass_pose_and_published_chain(tmp_path):
     """A movable housing must carry the ball in both dynamics and the URDF TF tree."""
     before, after = tmp_path / 'before', tmp_path / 'after'
