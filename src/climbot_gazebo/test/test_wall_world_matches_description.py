@@ -253,3 +253,28 @@ def test_the_work_frame_origin_is_the_lower_left_corner():
     # half a width to the world's -Y side.
     assert wall['origin_xyz'][1] == pytest.approx(
         -0.5 * float(wall['surface']['width_m']))
+
+
+@pytest.mark.parametrize('target', ['inspection_target', 'inspection_flat_field_target'])
+def test_calibration_targets_refuse_the_undulating_default(target):
+    """The targets hang on the flat wall model; the M2 wall would silently drop them."""
+    import importlib.util
+
+    from launch import LaunchContext
+    from launch.actions import DeclareLaunchArgument, OpaqueFunction
+
+    path = Path(get_package_share_directory('climbot_gazebo')) / 'launch/climbot_wall.launch.py'
+    spec = importlib.util.spec_from_file_location('target_guard_wall_launch', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    context = LaunchContext()
+    entities = module.generate_launch_description().entities
+    for entity in entities:
+        if isinstance(entity, DeclareLaunchArgument):
+            entity.execute(context)
+    assert context.launch_configurations['wall_surface'] == 'undulating'
+    context.launch_configurations[target] = 'true'
+    setup = [entity for entity in entities if isinstance(entity, OpaqueFunction)]
+    with pytest.raises(ValueError, match='wall_surface:=flat'):
+        for entity in setup:
+            entity.execute(context)

@@ -125,7 +125,7 @@ def test_capture_defaults_to_new_texture_but_preview_remains_plain(monkeypatch, 
     else:
         monkeypatch.setenv('CLIMBOT_DATA_ROOT', custom_root)
         root = Path(custom_root)
-    expected = root / 'assets/wall_local_diagnostic_v6/wall_texture.json'
+    expected = root / 'assets/wall_local_m2_v6/wall_texture.json'
     for package, filename in [
         ('climbot_bringup', 'coverage_mission.launch.py'),
         ('climbot_bringup', 'coverage_sim.launch.py'),

@@ -163,3 +163,17 @@ def test_m2_diagnostic_paint_matches_native_groove_openings_and_keeps_details():
     left = diagnostic.render_sample(base, grooves, [0, 0], [10, 8], scale, x, y)
     right = diagnostic.render_sample(base, grooves, [0, 0], [10, 8], scale, x+300, y)
     np.testing.assert_array_equal(np.asarray(left)[:, 300:], np.asarray(right)[:, :300])
+
+
+def test_native_surface_change_invalidates_the_cache(tmp_path, monkeypatch):
+    """The C++ surface computes the meshes and the skirt query; a C++ fix must rebuild."""
+    from types import SimpleNamespace
+
+    from climbot_gazebo import wall_assets
+    monkeypatch.setenv('CLIMBOT_DATA_ROOT', str(tmp_path/'data'))
+    before, _ = prepare(config(), [.08, .08])
+    rebuilt = tmp_path/'_climbot_surface.so'
+    rebuilt.write_bytes(b'a rebuilt native surface')
+    monkeypatch.setattr(wall_assets, '_climbot_surface', SimpleNamespace(__file__=str(rebuilt)))
+    after, _ = prepare(config(), [.08, .08])
+    assert after != before

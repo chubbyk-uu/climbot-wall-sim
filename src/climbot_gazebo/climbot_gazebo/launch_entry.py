@@ -52,6 +52,14 @@ def generate_launch_description():
             io_path = LaunchConfiguration('io_config').perform(context)
             io = yaml.safe_load(Path(io_path).read_text())['vacuum_io'] if io_path else None
             surface = LaunchConfiguration('wall_surface').perform(context)
+            targets = [name for name in ('inspection_target', 'inspection_flat_field_target')
+                       if LaunchConfiguration(name).perform(context).lower() in
+                       ('true', '1', 'yes')]
+            # The G1 and flat-field targets are visuals on the flat wall model,
+            # which the undulating wall replaces. Fail rather than drop them.
+            if surface == 'undulating' and targets:
+                raise ValueError(
+                    f'{", ".join(targets)} needs the flat wall: add wall_surface:=flat')
             soft = LaunchConfiguration('wheel_compliance').perform(context) == 'true'
             # The lateral tyre spring follows the normal one unless a diagnostic
             # run separates them; it cannot be enabled on its own.
@@ -78,10 +86,8 @@ def generate_launch_description():
                 str(gazebo), str(description),
                 LaunchConfiguration('wall_grid_spacing').perform(context),
                 LaunchConfiguration('wall_texture').perform(context) or None,
-                LaunchConfiguration('inspection_target').perform(context).lower() in
-                ('true', '1', 'yes'),
-                LaunchConfiguration('inspection_flat_field_target').perform(context).lower() in
-                ('true', '1', 'yes')))
+                'inspection_target' in targets,
+                'inspection_flat_field_target' in targets))
             try:
                 world = ET.parse(world_path)
             finally:

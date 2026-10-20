@@ -23,7 +23,13 @@ def environment(prefix, inherited):
     prefix = Path(prefix).expanduser().resolve()
     if ':' in str(prefix):
         raise ValueError('ODE prefix cannot contain colon')
-    manifest = json.loads((prefix.parent / 'build-result.json').read_text())
+    record = prefix.parent / 'build-result.json'
+    if not record.is_file():
+        # The undulating wall is the default, so a fresh machine meets this first.
+        raise FileNotFoundError(
+            f'private ODE not built at {prefix}: run tools/build_private_ode.py --prefix '
+            f'{prefix.parent} (see README), or launch with wall_surface:=flat')
+    manifest = json.loads(record.read_text())
     library = prefix / 'lib/libode.so.8'
     if (manifest.get('variant') != 'hashfix' or manifest.get('version') != '0.16.2'
             or manifest.get('soname') != 'libode.so.8'

@@ -256,7 +256,7 @@ MOSAIC_ROOT="$CLIMBOT_DATA_ROOT/mosaic-<id>-hardcut"
 
 ros2 run climbot_mosaic evaluate_diagnostic_mosaic \
   --mosaic-dir "$MOSAIC_ROOT" \
-  --wall-manifest "$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6/wall_texture.json" \
+  --wall-manifest "$CLIMBOT_DATA_ROOT/assets/wall_local_m2_v6/wall_texture.json" \
   --output-dir "$MOSAIC_ROOT-truth-<new-id>"
 
 ros2 run climbot_mosaic inspect_diagnostic_mosaic \
@@ -266,6 +266,9 @@ ros2 run climbot_mosaic inspect_diagnostic_mosaic \
   --input-run "$CLIMBOT_DATA_ROOT/processed-<horizontal-id>" \
   --input-run "$CLIMBOT_DATA_ROOT/processed-<vertical-id>"
 ```
+
+锚点真值评估支持默认 M2 墙。原尺寸特征检查目前只支持平墙诊断墙：对 M2 清单会报
+`unsupported diagnostic feature kind: 'surface_groove'`（2026-10-20 实测），M2 采集的原尺寸复核尚未实现。
 
 **巡检域不再由命令行给出。** `--input-run` 指出这幅拼接是由哪些 processed-run 建的，
 检查器沿
@@ -314,7 +317,8 @@ mosaic manifest → processing_manifest.json → 归档 manifest.json → 冻结
 
 ## M2 原生接触与局部 ODE 修复
 
-仅用于 [M2 T0](SUCTION_M2_PLAN.md) 分项核查，尚未改变当前采集默认或完成整车验收。
+默认起伏墙（2026-10-20 起）的必需依赖：启动时校验构建记录和库摘要，只给 Gazebo 子进程设置库路径；
+`wall_surface:=flat` 的 M1 平墙仍用系统库。下列 T0 探针同样使用它。
 从工作区根目录、已加载 ROS／install 环境执行。源包及补丁均有 SHA256 校验；需要 CMake、
 C++ 编译器和 `patch`（缺少时安装 `build-essential cmake patch libccd-dev`）。不替换系统库。
 
@@ -328,7 +332,7 @@ python3 tools/build_private_ode.py \
 构建配方使用固定的 ODE 0.16.2 源包、哈希回绕补丁、双精度及 Ubuntu 兼容 SONAME，
 链接系统 libccd，保留内部断言；按发行版关闭 libccd 的 box-cylinder 路径，其它 CCD 路径开启。
 上游 CMake 的目标名和头文件路径问题由配方显式修正，均记入构建清单。旧的 no-libccd
-构建仅保留历史诊断，当前加载守卫拒绝它；不要覆盖旧前缀。M1 默认仍使用系统库。
+构建仅保留历史诊断，当前加载守卫拒绝它；不要覆盖旧前缀。
 完整输出为前缀下 `build.log`。成功时 `build-result.json` 记录源包／补丁／库摘要，
 并要求 `hash_regression.json` 的原生两物体／多平移回归通过。
 `--variant upstream` 仅供同编译参数的未修复 A/B，必须使用另一新前缀；其回归失败会如实记录，

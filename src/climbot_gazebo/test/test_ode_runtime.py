@@ -61,6 +61,12 @@ def test_wrong_build_is_rejected(tmp_path, key, value):
         environment(prefix, {})
 
 
+def test_missing_build_names_the_fix(tmp_path):
+    """A fresh machine meets this on the default wall; say how to build it."""
+    with pytest.raises(FileNotFoundError, match='build_private_ode.py.*wall_surface:=flat'):
+        environment(tmp_path / 'install', {})
+
+
 def test_tampered_library_and_preload_conflict_are_rejected(tmp_path):
     """Detect replacement after validation and prevent a competing ODE preload."""
     prefix, _, _ = build(tmp_path)

@@ -200,9 +200,11 @@ def generate_launch_description():
             'wall_texture',
             default_value=PathJoinSubstitution([
                 EnvironmentVariable('CLIMBOT_DATA_ROOT', default_value=default_archive_root),
-                'assets', 'wall_local_diagnostic_v6', 'wall_texture.json']),
-            description='Default: locally deduplicated D4 diagnostic wall under the data root; '
-                        'an explicit empty value uses the flat wall. Missing assets are errors.',
+                'assets', 'wall_local_m2_v6', 'wall_texture.json']),
+            description='Default: the M2 diagnostic wall (open seams and cracks drawn from the '
+                        'physical surface) under the data root; '
+                        'an explicit empty value leaves the wall its plain colour. '
+                        'Missing assets are errors.',
         ),
         DeclareLaunchArgument(
             'localization_profile', default_value='precision',

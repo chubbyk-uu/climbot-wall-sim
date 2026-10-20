@@ -16,6 +16,7 @@ from pathlib import Path
 import tempfile
 import time
 
+import _climbot_surface
 from climbot_description.geometry import quaternion_from_rpy, rotate_vector
 from climbot_description.vacuum_preview import node, numbers
 import numpy as np
@@ -87,10 +88,13 @@ def prepare(config, size, texture_manifest=None):
             raise ValueError('M2 diagnostic source checksum mismatch')
     identity = {'source': source.resolved_yaml, 'size_m': list(size),
                 'texture_sha256': digest(texture_manifest) if texture_manifest else None,
+                # The surface is computed by the native module the skirt query
+                # also links; a C++-only fix must not reuse meshes from before it.
                 'implementation': {p.name: digest(p) for p in [
                         Path(__file__), Path(__file__).with_name('surface_mesh.py'),
                         Path(__file__).with_name('surface_patch.py'),
-                        Path(__file__).with_name('wall_surface.py')]}}
+                        Path(__file__).with_name('wall_surface.py'),
+                        Path(_climbot_surface.__file__)]}}
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
     data = Path(os.environ.get('CLIMBOT_DATA_ROOT', str(Path.home()/'climbot_data')))
     out = data/'assets/m2_wall'/key[:20]

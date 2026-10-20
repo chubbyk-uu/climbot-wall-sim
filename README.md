@@ -134,6 +134,18 @@ source install/setup.bash
 export CLIMBOT_DATA_ROOT="${CLIMBOT_DATA_ROOT:-$HOME/climbot_data}"
 ```
 
+默认的起伏墙使用打过哈希回绕补丁的局部 ODE（不替换系统库）。新机器首次构建一次；
+已有同路径且构建记录／库摘要匹配时直接复用：
+
+```bash
+sudo apt install -y cmake patch libccd-dev
+python3 tools/build_private_ode.py \
+  --prefix "$HOME/opt/climbot-ode-0.16.2-hashfix-ccd" --jobs 4
+```
+
+缺少该库时启动会报错并给出上述命令；`wall_surface:=flat` 的 M1 平墙仍用系统 ODE。
+配方、校验和其它前缀见 [OPERATION](docs/OPERATION.md#m2-原生接触与局部-ode-修复)。
+
 验证基础环境：
 
 ```bash
@@ -183,9 +195,21 @@ python3 tools/bake_wall_texture.py \
 
 python3 tools/create_diagnostic_wall.py \
   --base-manifest "$CLIMBOT_DATA_ROOT/assets/wall_local_v6/wall_texture.json" \
+  --surface-config src/climbot_gazebo/config/m2_wall_surface.yaml \
+  --output-dir "$CLIMBOT_DATA_ROOT/assets/wall_local_m2_v6"
+```
+
+最后一步按默认起伏墙的物理源（板缝、两处真实裂缝）绘制开口，并加上八幅仅为贴图的裂缝、涂鸦和修补；
+加载时核对绘制源与物理源的哈希。M1 平墙复查若需要原诊断墙（画线填缝），另行生成：
+
+```bash
+python3 tools/create_diagnostic_wall.py \
+  --base-manifest "$CLIMBOT_DATA_ROOT/assets/wall_local_v6/wall_texture.json" \
   --output-dir "$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6" \
   --joint-profile filled --seed 20260827 --jobs 4
 ```
+
+起伏墙拒绝这种填缝贴图。
 
 `2.5 m` 是项目声明的源图物理尺度，素材本身没有标注实测尺度。生成墙面为
 **10×8 m、40000×32000 像素、0.25 mm/px**，与现有拍照精度一致；每套 320 个 BC1 DDS
@@ -208,7 +232,7 @@ python3 tools/create_diagnostic_wall.py \
 详见[采集报告](results/wall_texture_capture_2026-10-19/REPORT.md)。
 
 采集入口 `coverage_mission.launch.py` 默认加载
-`$CLIMBOT_DATA_ROOT/assets/wall_local_diagnostic_v6/wall_texture.json`，并关闭 Gazebo 墙面网格；
+`$CLIMBOT_DATA_ROOT/assets/wall_local_m2_v6/wall_texture.json`，并关闭 Gazebo 墙面网格；
 未设置数据根时使用 `$HOME/climbot_data`。缺少资产会报错，须先运行上述生成命令。
 显式 `wall_texture:=<清单路径>` 可选择其他资产；`wall_texture:=''` 可使用纯色墙。
 单独运行 `climbot_wall.launch.py` 或规划预览 `coverage_sim.launch.py` 仍默认纯色墙。
@@ -305,8 +329,9 @@ source ~/robot_ws/climbot_sim/install/setup.bash
 
 ### 1. 只看仿真
 
-默认是新底盘、三风机单腔负压、平墙和刚性轮。风机从环境压启动，压力就绪后自动撤除安装支撑；
-无需传新旧模型开关。想先确认机器人、墙面和传感器是否正常，运行：
+默认是新底盘、三风机单腔负压、起伏墙（±2 mm、板缝和裂缝）和预压柔顺轮。风机从环境压启动，
+压力就绪后自动撤除安装支撑。`wall_surface:=flat wheel_compliance:=false` 回到 M1 平墙和刚性轮。
+首次启动起伏墙会生成整墙表面资产（约 2 分钟），之后读取校验过的缓存。想先确认机器人、墙面和传感器是否正常，运行：
 
 ```bash
 ros2 launch climbot_gazebo climbot_wall.launch.py
@@ -340,11 +365,12 @@ source ~/robot_ws/climbot_sim/install/setup.bash
 export CLIMBOT_DATA_ROOT="${CLIMBOT_DATA_ROOT:-$HOME/climbot_data}"
 ```
 
-终端 A 启动标定靶并保持运行（WSL 的 headless 仍需上述 Mesa 补丁）：
+终端 A 启动标定靶并保持运行（WSL 的 headless 仍需上述 Mesa 补丁）。标定靶装在平墙上，
+起伏墙会拒绝它；平场属于相机和灯光，平墙标定同样用于起伏墙采集：
 
 ```bash
 ros2 launch climbot_gazebo climbot_wall.launch.py \
-  headless:=true inspection_flat_field_target:=true wall_grid_spacing:=0
+  headless:=true inspection_flat_field_target:=true wall_grid_spacing:=0 wall_surface:=flat
 ```
 
 终端 B 启动单次采集服务并保持运行：

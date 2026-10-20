@@ -115,7 +115,7 @@ def test_controller_and_manager_receive_the_same_latency_default():
 
 
 def test_candidate_pressure_and_fan_bridge_receive_the_latency_default():
-    envs = _environments(GAZEBO / 'launch/climbot_vacuum_stack.launch.py')
+    envs = _environments(GAZEBO / 'launch/climbot_vacuum_stack.launch.py', FLAT_WALL)
     _assert_local_udp(envs['vacuum_observation_bridge'], 'vacuum_observation_bridge')
 
 
