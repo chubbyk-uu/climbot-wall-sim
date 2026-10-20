@@ -15,6 +15,8 @@
 """Check that the schedule is planned against a real pose, not the origin."""
 
 import math
+import os
+import sys
 from threading import Event, Thread
 import time
 import unittest
@@ -29,6 +31,7 @@ import launch_testing.markers
 from nav_msgs.msg import Odometry
 import pytest
 import rclpy
+from rclpy.parameter import Parameter
 from std_srvs.srv import Trigger
 
 # Offset sideways from the first waypoint so that planning from the origin and
@@ -44,9 +47,14 @@ FIRST_WAYPOINT_X = 2.0
 def generate_test_description():
     """Run the real executor and manager, driven by synthetic odometry."""
     return launch.LaunchDescription([
+        # ROS time follows the monotonic clock: system time can step backwards
+        # under WSL time sync and the tracker rightly drops the pose then.
+        launch.actions.ExecuteProcess(cmd=[sys.executable, os.path.join(
+            os.path.dirname(__file__), 'fixtures', 'steady_sim_clock.py')]),
         launch_ros.actions.Node(
             package='climbot_control', executable='line_tracker_node',
             parameters=[{
+                'use_sim_time': True,
                 'standalone_mode': False,
                 # Wide enough to leave a window in which the executor is
                 # holding a goal and has no pose yet, which is the situation
@@ -60,7 +68,8 @@ def generate_test_description():
             }]),
         launch_ros.actions.Node(
             package='climbot_control', executable='coverage_manager_node',
-            parameters=[{'feedback_publish_period_s': 0.0}]),
+            parameters=[{'use_sim_time': True,
+                         'feedback_publish_period_s': 0.0}]),
         launch_testing.actions.ReadyToTest(),
     ])
 
@@ -97,7 +106,9 @@ class TestCoverageSchedulePose(unittest.TestCase):
 
     def setUp(self):
         rclpy.init()
-        self.node = rclpy.create_node('coverage_schedule_pose_test')
+        self.node = rclpy.create_node(
+            'coverage_schedule_pose_test',
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
         self.statuses = []
         self.task_publisher = self.node.create_publisher(
             CoverageTask, '/coverage/task',
@@ -114,6 +125,11 @@ class TestCoverageSchedulePose(unittest.TestCase):
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
+        # Stamps read zero until fixtures/steady_sim_clock.py is received.
+        deadline = time.monotonic() + 10.0
+        while self.node.get_clock().now().nanoseconds == 0:
+            self.assertLess(time.monotonic(), deadline, 'no /clock from the fixture')
+            time.sleep(0.01)
 
     def tearDown(self):
         mark = len(self.statuses)

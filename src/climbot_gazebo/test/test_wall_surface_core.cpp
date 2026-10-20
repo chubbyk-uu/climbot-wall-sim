@@ -46,6 +46,106 @@ TEST(WallSurface, RuntimeRejectsInvalidResolvedGeometry)
     std::invalid_argument);
 }
 
+namespace
+{
+std::string channelSource()
+{
+  auto text = source();
+  auto begin = text.find("start_m: [0, 0], end_m: [1, 0]");
+  text.replace(begin, std::string("start_m: [0, 0], end_m: [1, 0]").size(),
+    "start_m: [0, 1], end_m: [1, 1]");return text;
+}
+using Corners = std::array<std::array<double, 3>, 4>;
+Corners ring(double angle = 0)
+{
+  Corners corners{{{.3, .9, .018}, {.7, .9, .018}, {.7, 1.1, .018}, {.3, 1.1, .018}}};
+  for (auto & p : corners) {
+    double x = p[0] - .5, y = p[1] - 1;
+    p[0] = .5 + x * std::cos(angle) - y * std::sin(angle);
+    p[1] = 1 + x * std::sin(angle) + y * std::cos(angle);
+  }
+  return corners;
+}
+}
+TEST(SealChannels, TrapezoidApertureMatchesIndependentIntegralAndRefinement)
+{
+  climbot_gazebo::WallSurface s(channelSource());
+  // Two crossings, each with 4 mm flat bottom plus two 0.5 mm shoulders.
+  double x = .004 - .001, width = .0001;
+  double primitive = x * x / 2 - width * x / 2 + width * width / 6;
+  double expected = 2 * (.004 * (x - width / 2) + 2 * .0005 / .004 * primitive);
+  auto coarse = s.sealLeak(ring(), .02, .022, .001, width, {2, 2});
+  auto fine = s.sealLeak(ring(), .02, .022, .001, width, {2, 2}, 4);
+  EXPECT_NEAR(coarse.area_m2, expected, expected * .01);
+  EXPECT_NEAR(coarse.area_m2, fine.area_m2, expected * .01);
+  EXPECT_DOUBLE_EQ(coarse.area_m2, coarse.channel_area_m2);
+  EXPECT_GT(coarse.evaluations, 0u);
+}
+TEST(SealChannels, FinalEndpointCannotRoundOutsideAndOmitAnEdgeTail)
+{
+  auto text = source();text = text.substr(0, text.find("grooves:")) + "grooves: []\n";
+  climbot_gazebo::WallSurface s(text);
+  Corners c{{{.8434144045362073, .38079047857754444, .024},
+    {1.1190031995429564, .6796075089745737, .024},
+    {.8823001722544711, .8979088374992943, .024},
+    {.606711377247722, .5990918071022653, .024}}};
+  double perimeter = 0;
+  for (int i = 0; i < 4; ++i) {
+    perimeter += std::hypot(c[i][0] - c[(i + 1) % 4][0], c[i][1] - c[(i + 1) % 4][1]);
+  }
+  double expected = perimeter * (.024 - .022 - .0001 / 2);
+  for (int refinement : {1, 2, 4, 8}) {
+    EXPECT_NEAR(s.sealLeak(c, .02, .022, 0, .0001, {1.6, 1.6}, refinement).area_m2,
+      expected, 1e-14);
+  }
+}
+TEST(SealChannels, ObliqueCrossingAndDuplicateSourcesDoNotInflateFlowArea)
+{
+  auto text = channelSource();climbot_gazebo::WallSurface s(text);
+  auto duplicateText = text + text.substr(text.find(" - {", text.find("grooves:")));
+  climbot_gazebo::WallSurface duplicate(duplicateText);
+  double normal = s.sealLeak(ring(), .02, .022, .001, .0001, {2, 2}).area_m2;
+  EXPECT_NEAR(s.sealLeak(ring(.4), .02, .022, .001, .0001, {2, 2}).area_m2,
+    normal, normal * .01);
+  EXPECT_NEAR(duplicate.sealLeak(ring(), .02, .022, .001, .0001, {2, 2}).area_m2,
+    normal, 1e-14);
+}
+TEST(SealChannels, FinitePitDoesNotAutomaticallyConnectThroughTheBand)
+{
+  auto text = channelSource();auto begin = text.find("start_m: [0, 1], end_m: [1, 1]");
+  text.replace(begin, std::string("start_m: [0, 1], end_m: [1, 1]").size(),
+    "start_m: [0.295, 1], end_m: [0.305, 1]");
+  climbot_gazebo::WallSurface s(text);
+  EXPECT_DOUBLE_EQ(s.sealLeak(ring(), .02, .022, .001, .0001, {2, 2}).area_m2, 0);
+}
+TEST(SealChannels, NoIntrusionIsConservativeAndLiftTransitionHasNoJump)
+{
+  climbot_gazebo::WallSurface s(channelSource());
+  double previous = 0;
+  for (int i = 0; i <= 800; ++i) {
+    auto c = ring();for (auto & p : c) {
+      p[2] = .018 + .00001 * i;
+    }
+    double area = s.sealLeak(c, .02, .022, .001, .0001, {2, 2}).area_m2;
+    double conservative = s.sealLeak(c, .02, .022, 0, .0001, {2, 2}).area_m2;
+    EXPECT_LE(area, conservative + 1e-14);
+    if (i) {EXPECT_LE(std::abs(area - previous), .000013);}
+    previous = area;
+  }
+}
+TEST(SealChannels, NarrowFeatureIsNotAliasedByCoarsePerimeterPhases)
+{
+  climbot_gazebo::WallSurface s(channelSource());
+  double expected = s.sealLeak(ring(), .02, .022, .001, .0001, {2, 2}).area_m2;
+  for (int i = 1; i <= 20; ++i) {
+    auto c = ring();for (auto & p : c) {
+      p[1] += .0004 * i;
+    }
+    EXPECT_NEAR(s.sealLeak(c, .02, .022, .001, .0001, {2, 2}).area_m2,
+      expected, expected * .01);
+  }
+}
+
 TEST(SphereEnvelope, TwoOffsetsPreserveSingleAndCrossedGapSupport)
 {
   using climbot_gazebo::SphereEnvelope;

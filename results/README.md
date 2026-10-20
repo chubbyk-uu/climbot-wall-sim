@@ -49,6 +49,14 @@
 | M2 T0 板缝实际轮径 | [报告](m2_t0_joint_contact_2026-10-19/REPORT.md)、[摘要](m2_t0_joint_contact_2026-10-19/summary.json) | 共网格交汇与主动轮短扫描通过；球轮未通过，圆角／高度场／FCL 均未完全解决，球轮按用户要求挂起；非 T0 通过证据 |
 | M2 T0 球径／局部倒角 | [报告](m2_t0_caster_size_chamfer_2026-10-19/REPORT.md)、[摘要](m2_t0_caster_size_chamfer_2026-10-19/summary.json) | 25／40 mm 球径×原槽／短倒角四组完成；倒角改善断触和支撑，加大球径改善小，均未满足全部门槛；未改整车默认 |
 | M2 review 基础修正 | [报告](m2_review_2026-10-19/REPORT.md)、[干净需求](m2_review_2026-10-19/physical_model/summary.json) | 发行版 ODE 配置及三组 M1 对照、原生裙边止挡、C++ 唯一表面、漏气预算与旧模型整理；球轮跨缝挂起，M2 未验收 |
+| M2 / T3短任务预检 | [报告](m2_t3_preflight_2026-10-19/REPORT.md)、[摘要](m2_t3_preflight_2026-10-19/summary.json) | 未验收；纹理／亮度与实时率修复后短任务RTF 0.961／0.968；竖向v2轮载通过、横向个位数帧瞬时≤1；爬升航向摆动三组对照；大面积采集未执行 |
+| M2 墙面显示修正 | [报告](m2_wall_visual_2026-10-19/REPORT.md)、[摘要](m2_wall_visual_2026-10-19/summary.json) | OBJ纹理纵坐标重复翻转修复、恢复非金属材质；板缝及2处物理裂缝按原生几何显色，8条裂缝贴花按用户要求恢复为纯贴图（无物理槽）；非T3验收 |
+| 驱动轮轴后移50 mm | [报告](m2_axle50_2026-10-20/REPORT.md)、[摘要](m2_axle50_2026-10-20/summary.json) | 静态驱动轮分担57～64%、所需压差6078→4739 Pa；M2竖／横短任务v2通过，50 ms最低2.67～2.88、瞬时最低1.38～1.45；M1平墙回归通过、转向补偿保持0.46 mm/°；GUI加载主因为贴图上传，网格简化未采用 |
+| M2 / T3运动链回归 | [报告](m2_t3_motion_2026-10-20/REPORT.md)、[摘要](m2_t3_motion_2026-10-20/summary.json) | M1／平墙柔顺／M2三组定位对照：柔顺轮有效轮径约小0.3%，侧滑与M1差≤5 mm，EKF≤3.2 mm；WheelSlip／里程计／EKF标定保持适用 |
+| M2 / T2代表区域收口 | [报告](m2_t2_closure_2026-10-19/REPORT.md)、[摘要](m2_t2_closure_2026-10-19/summary.json) | 积分终点漏段修复；6.5 kPa初筛、最终B/C／47°留出、62 s保持、采样与步长通过；1926项零失败／错误。T3整墙／双GUI大任务待验收，不切默认 |
+| M2 / T2入口接触复核 | [报告](m2_t2_entry_2026-10-19/REPORT.md)、[摘要](m2_t2_entry_2026-10-19/summary.json) | 历史入口诊断：真实缝／无缝峰值均紧接单步失触；最终代表区域结论见T2收口报告 |
+| M2 / T2球座侧向柔顺试验 | [报告](m2_t2_caster_float_2026-10-19/REPORT.md)、[摘要](m2_t2_caster_float_2026-10-19/summary.json) | 平墙配对通过；±0.5 mm／±2 mm板缝试验均失败，默认关闭，1.5门槛不变，T2未验收 |
+| M2 / T2轮胎侧向弹性 | [报告](m2_t2_tyre_lateral_2026-10-19/REPORT.md)、[摘要](m2_t2_tyre_lateral_2026-10-19/summary.json) | 停车锁死已消除；用户确认v2判据，事后回算与旧失败保留；最终代表区域证据见T2收口，大任务独立验证待T3，默认关闭 |
 | M2 整车起伏接触定位 | [报告](m2_robot_patch_2026-10-19/REPORT.md)、[摘要](m2_robot_patch_2026-10-19/summary.json) | 三角网降速已定位；驱动轮仅起伏高度场＋真实缝球轮代理的9 s短试验通过，行程0.613485 m；漏气／载荷与整墙性能待T2/T3 |
 | M2 T1 名义柔顺轮与状态链 | [报告](m2_wheel_compliance_2026-10-19/REPORT.md)、[摘要](m2_wheel_compliance_2026-10-19/summary.json)、[协议](m2_wheel_compliance_2026-10-19/protocol.json) | 150 N／1 mm 实测标定及卸载回零通过；真实 ROS 直行／转向／reset／动态 TF 18 项通过，默认关闭；非 T2/T3 验收 |
 | M2 代理球整车平墙滚动 | [报告](m2_caster_rolling_2026-10-19/REPORT.md)、[摘要](m2_caster_rolling_2026-10-19/summary.json) | 原球／代理球直行＋转向两次短动作通过，惯量／滚阻等效；起伏墙、整墙性能及 T1～T3 待验收 |

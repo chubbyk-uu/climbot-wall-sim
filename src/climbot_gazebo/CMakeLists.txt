@@ -53,6 +53,11 @@ target_link_libraries(climbot_vacuum_system PRIVATE vacuum_core
   wall_surface_core gz-sim8::gz-sim8 gz-plugin2::register gz-transport13::core)
 target_include_directories(climbot_vacuum_system PRIVATE include)
 install(TARGETS climbot_vacuum_system LIBRARY DESTINATION lib)
+add_library(climbot_load_recorder SHARED src/load_recorder.cpp)
+target_compile_features(climbot_load_recorder PUBLIC cxx_std_17)
+target_include_directories(climbot_load_recorder PRIVATE include)
+target_link_libraries(climbot_load_recorder PRIVATE gz-sim8::gz-sim8 gz-plugin2::register)
+install(TARGETS climbot_load_recorder LIBRARY DESTINATION lib)
 add_executable(vacuum_sim_probe src/vacuum_sim_probe.cpp)
 target_compile_features(vacuum_sim_probe PRIVATE cxx_std_17)
 target_include_directories(vacuum_sim_probe PRIVATE include)
@@ -66,7 +71,7 @@ target_link_libraries(wall_surface_probe PRIVATE gz-sim8::gz-sim8 yaml-cpp::yaml
 install(TARGETS wall_surface_probe RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 # Single surface implementation for offline assets and future runtime queries.
-add_library(wall_surface_core src/wall_surface.cpp src/sphere_envelope.cpp)
+add_library(wall_surface_core src/wall_surface.cpp src/sphere_envelope.cpp src/seal_channels.cpp)
 target_compile_features(wall_surface_core PUBLIC cxx_std_17)
 target_include_directories(wall_surface_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -123,12 +128,12 @@ target_compile_features(wall_wheel_odom_adapter_core PUBLIC cxx_std_17)
 target_include_directories(wall_wheel_odom_adapter_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(wall_wheel_odom_adapter_core nav_msgs)
+ament_target_dependencies(wall_wheel_odom_adapter_core geometry_msgs nav_msgs)
 
 add_executable(wall_wheel_odom_adapter_node src/wall_wheel_odom_adapter_node.cpp)
 target_compile_features(wall_wheel_odom_adapter_node PUBLIC cxx_std_17)
 target_link_libraries(wall_wheel_odom_adapter_node wall_wheel_odom_adapter_core)
-ament_target_dependencies(wall_wheel_odom_adapter_node nav_msgs rclcpp)
+ament_target_dependencies(wall_wheel_odom_adapter_node nav_msgs rclcpp sensor_msgs)
 
 add_library(wall_imu_adapter_core src/wall_imu_adapter.cpp)
 target_compile_features(wall_imu_adapter_core PUBLIC cxx_std_17)
@@ -244,6 +249,8 @@ if(BUILD_TESTING)
   # Offline design tools live at repository level, outside the runtime package.
   ament_add_pytest_test(test_caster_proxy_contract
     ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_caster_proxy_contract.py)
+  ament_add_pytest_test(test_m2_load_criterion
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_m2_load_criterion.py)
   ament_add_pytest_test(test_suction_analysis
     ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/test_suction_analysis.py)
   ament_add_pytest_test(test_vacuum_design
@@ -261,6 +268,7 @@ if(BUILD_TESTING)
     test_wall_slip_sampling test/test_wall_slip_sampling.py)
   ament_add_pytest_test(test_ode_runtime test/test_ode_runtime.py)
   ament_add_pytest_test(test_wall_surface test/test_wall_surface.py)
+  ament_add_pytest_test(test_m2_full_wall test/test_m2_full_wall.py)
   ament_add_pytest_test(test_wall_texture test/test_wall_texture.py)
   ament_add_pytest_test(test_wall_texture_randomization test/test_wall_texture_randomization.py)
   ament_add_pytest_test(test_mesa_runtime test/test_mesa_runtime.py)

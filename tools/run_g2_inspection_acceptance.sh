@@ -77,6 +77,16 @@ G2_GPU_BACKEND=${G2_GPU_BACKEND:-wsl_d3d12}
 G2_GUI_GPU_BACKEND=${G2_GUI_GPU_BACKEND:-auto}
 INSPECTION_OUTPUT_ROOT=${INSPECTION_OUTPUT_ROOT:-}
 WALL_TEXTURE=${WALL_TEXTURE:-}
+WALL_SURFACE=${WALL_SURFACE:-undulating}
+WHEEL_COMPLIANCE=${WHEEL_COMPLIANCE:-true}
+TYRE_LATERAL=${TYRE_LATERAL:-auto}
+TYRE_CROWN=${TYRE_CROWN:-auto}
+G2_CONTROL_CONFIG=${G2_CONTROL_CONFIG:-}
+G2_CONFIG_FILE=${G2_CONFIG_FILE:-}
+M2_LOAD_TRACE=${M2_LOAD_TRACE:-}
+G2_RESOLVED_ASSETS=${G2_RESOLVED_ASSETS:-}
+G2_TURN_CHECK=${G2_TURN_CHECK:-false}
+G2_RESET_CHECK=${G2_RESET_CHECK:-false}
 PGIDS=()
 ACTIVE_CASE=''
 
@@ -296,12 +306,16 @@ run_case() {
   echo "[$case_name] starting (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, GZ_PARTITION=$GZ_PARTITION)"
   start_group "$case_dir/simulator.log" ros2 launch climbot_gazebo "$SIMULATION_LAUNCH" \
     adhesion_mode:="$ADHESION_MODE" \
+    wall_surface:="$WALL_SURFACE" wheel_compliance:="$WHEEL_COMPLIANCE" tyre_lateral:="$TYRE_LATERAL" \
+    tyre_crown:="$TYRE_CROWN" \
+    ${M2_LOAD_TRACE:+m2_load_trace:="$M2_LOAD_TRACE"} \
+    ${G2_RESOLVED_ASSETS:+resolved_assets_directory:="$G2_RESOLVED_ASSETS"} \
     use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:="$G2_GPU_BACKEND" wall_grid_spacing:=0 \
     ${G2_CLOCK_PUBLISH_HZ:+clock_publish_hz:="$G2_CLOCK_PUBLISH_HZ"} \
     gui_gpu_backend:="$G2_GUI_GPU_BACKEND" \
     localization_profile:="$LOCALIZATION_PROFILE" \
     prism_extrinsic_error_robot_m:="$PRISM_EXTRINSIC_ERROR_ROBOT_M" \
-    wall_texture:="$WALL_TEXTURE" || return 1
+    ${WALL_TEXTURE:+wall_texture:="$WALL_TEXTURE"} || return 1
   if ! wait_for_topic /model/climbot/ground_truth; then
     echo "[$case_name] simulator did not become ready; see $case_dir/simulator.log" >&2
     return 1
@@ -313,13 +327,6 @@ run_case() {
     --planning-geometry "$PLANNER_ROBOT_GEOMETRY" --physical-geometry "$ROBOT_GEOMETRY" \
     --output "$case_dir/startup_readiness.json" >"$case_dir/startup.log" 2>&1 || return 1
 
-  start_group "$case_dir/observer.log" python3 "$WS/tools/observe_gui_acceptance.py" \
-    --output "$case_dir/observation" --geometry "$ROBOT_GEOMETRY" \
-    --gui "$([ "$G2_HEADLESS" = false ] && echo required || echo disabled)" \
-    --rviz "$([ "$G2_RVIZ" = true ] && echo required || echo disabled)" || return 1
-  start_group "$case_dir/native.log" python3 "$WS/tools/observe_native_stats.py" \
-    --output "$case_dir/native_observation" || return 1
-
   local -a planner_runtime_args=()
   if [ "$G2_HEADLESS" = false ] && [ "$G2_RVIZ" = true ]; then
     planner_runtime_args+=(--wait-for-gazebo-gui)
@@ -328,14 +335,39 @@ run_case() {
     --gpu-backend "$G2_GPU_BACKEND" "${planner_runtime_args[@]}" \
     ros2 launch climbot_coverage coverage_planner.launch.py \
     use_sim_time:=true rviz:="$G2_RVIZ" \
-    config_file:="$WS/src/climbot_coverage/config/${CONFIG[$case_name]}" \
+    config_file:="${G2_CONFIG_FILE:-$WS/src/climbot_coverage/config/${CONFIG[$case_name]}}" \
     input_mode:=parameters region_type:="${REGION[$case_name]}" \
     sweep_direction:="${SWEEP[$case_name]}" \
     inspection_geometry_profile:=calibrated || return 1
+  if [ "$G2_TURN_CHECK" = true ]; then
+    ros2 run climbot_gazebo measure_turn_slip.py --ros-args \
+      -p use_sim_time:=true -p angles_deg:='[90.0]' -p max_rates_rps:='[0.6]' \
+      -p angular_acceleration_rps2:=1.0 -p repetitions:=2 \
+      -p output_csv:="$case_dir/turn_slip.csv" >"$case_dir/turn_slip.log" 2>&1 || return 1
+  fi
+  if [ "$G2_TURN_CHECK" = true ] || [ "$G2_RESET_CHECK" = true ]; then
+    python3 "$WS/tools/reset_vacuum_world.py" --output "$case_dir/reset.json" \
+      >"$case_dir/reset.log" 2>&1 || return 1
+    python3 "$WS/tools/wait_gazebo_ready.py" \
+      --planning-geometry "$PLANNER_ROBOT_GEOMETRY" --physical-geometry "$ROBOT_GEOMETRY" \
+      --output "$case_dir/post_reset_readiness.json" \
+      >"$case_dir/post_reset_startup.log" 2>&1 || return 1
+  fi
+  python3 "$WS/tools/freeze_capture_plan.py" --output "$case_dir/capture_plan.json" \
+    >"$case_dir/capture_plan.log" 2>&1 || return 1
+  # Start task observers after planner/RViz startup and any diagnostic reset.
+  # Their fixed warmup must not race the separate GUI launch or span clock rollback.
+  start_group "$case_dir/observer.log" python3 "$WS/tools/observe_gui_acceptance.py" \
+    --output "$case_dir/observation" --geometry "$ROBOT_GEOMETRY" \
+    --gui "$([ "$G2_HEADLESS" = false ] && echo required || echo disabled)" \
+    --rviz "$([ "$G2_RVIZ" = true ] && echo required || echo disabled)" || return 1
+  start_group "$case_dir/native.log" python3 "$WS/tools/observe_native_stats.py" \
+    --output "$case_dir/native_observation" || return 1
   start_group "$case_dir/inspection.log" ros2 launch climbot_inspection inspection.launch.py \
     use_sim_time:=true inspection_output_root:="$archive" || return 1
   start_group "$case_dir/executor.log" ros2 launch climbot_control coverage_executor.launch.py \
     use_sim_time:=true inspection_default_enabled:=true \
+    ${G2_CONTROL_CONFIG:+control_config_file:="$G2_CONTROL_CONFIG"} \
     inspection_output_root:="$archive" || return 1
   if ! wait_for_service /coverage/start_configured climbot_interfaces/srv/StartCoverage; then
     echo "[$case_name] coverage manager did not become ready; see $case_dir/executor.log" >&2

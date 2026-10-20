@@ -49,8 +49,17 @@ class Envelope:
 
 def apply(world, plugin, out, config, surface_pose, wheel_radius, size=1.2):
     """Install a bounded patch near the robot, with no hidden flat collision plane."""
-    if plugin.findtext('pressure_mode') != 'fixed_pressure':
-        raise ValueError('surface patch is B-mode contact diagnostics, not fan/leak acceptance')
+    channels = config.get('channel_model')
+    if plugin.findtext('pressure_mode') != 'fixed_pressure' and channels is None:
+        raise ValueError('surface patch requires fixed_pressure or explicit residual channels')
+    if channels is not None:
+        if (set(channels) != {'drape_m', 'transition_m', 'refinement'} or
+                not np.isfinite([channels['drape_m'], channels['transition_m']]).all() or
+                not 0 <= channels['drape_m'] <= .01 or channels['transition_m'] <= 0 or
+                type(channels['refinement']) is not int or not 1 <= channels['refinement'] <= 8):
+            raise ValueError('invalid residual channel parameters')
+        for key, value in channels.items():
+            node(plugin, 'channel_' + key, value)
     if len(config['grooves']) not in (0, 2):
         raise ValueError('patch requires two orthogonal panel joints or a smooth control')
     joint_width = max((g['width_m'] for g in config['grooves']), default=0.)
@@ -71,7 +80,7 @@ def apply(world, plugin, out, config, surface_pose, wheel_radius, size=1.2):
     q = quaternion_from_rpy(*surface_pose[3:])
     normal = np.array(rotate_vector(q, [0, 0, 1]))
     projection = body - normal * np.dot(body - np.array(surface_pose[:3]), normal)
-    origin = projection - rotate_vector(q, [size / 2, .45, 0])
+    origin = projection - rotate_vector(q, [config.get('start_u_m', size / 2), .45, 0])
     patch_pose = [*map(float, origin), *surface_pose[3:]]
     center = origin + rotate_vector(q, [size / 2, size / 2, 0])
     out = (out / 'surface_patch').resolve()
@@ -171,7 +180,9 @@ def apply(world, plugin, out, config, surface_pose, wheel_radius, size=1.2):
     # sdformat normalizes whitespace in string parameters. JSON is a one-line
     # YAML flow document, preserving the same coefficients through that path.
     node(plugin, 'wall_surface_yaml', json.dumps(yaml.safe_load(source.resolved_yaml)))
-    return {'scope': 'B-mode contact patch; residual channels and fan margin not validated',
+    return {'scope': ('M2 coupled patch; pass requires independent T2 checks' if channels else
+                      'B-mode contact patch; residual channels and fan margin not validated'),
+            'channel_model': channels,
             'size_m': size,
             'source_sha256': hashlib.sha256(source.resolved_yaml.encode()).hexdigest(),
             'wall_surface_pose': patch_pose, 'real': real, 'proxy': proxy,

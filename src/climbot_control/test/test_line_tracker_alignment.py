@@ -15,6 +15,8 @@
 """Node-level verification of profiled in-place alignment."""
 
 import math
+import os
+import sys
 from threading import Event
 from threading import Lock
 from threading import Thread
@@ -29,6 +31,7 @@ import launch_testing.asserts
 from nav_msgs.msg import Odometry
 import pytest
 import rclpy
+from rclpy.parameter import Parameter
 
 
 @pytest.mark.launch_test
@@ -38,6 +41,7 @@ def generate_test_description():
         package='climbot_control',
         executable='line_tracker_node',
         parameters=[{
+            'use_sim_time': True,
             'start_x': 0.0,
             'start_y': 0.0,
             'end_x': 0.0,
@@ -50,6 +54,10 @@ def generate_test_description():
         }],
     )
     return launch.LaunchDescription([
+        # ROS time follows the monotonic clock: system time can step backwards
+        # under WSL time sync and the tracker rightly drops the pose then.
+        launch.actions.ExecuteProcess(cmd=[sys.executable, os.path.join(
+            os.path.dirname(__file__), 'fixtures', 'steady_sim_clock.py')]),
         tracker,
         launch_testing.actions.ReadyToTest(),
     ])
@@ -60,7 +68,9 @@ class TestLineTrackerAlignment(unittest.TestCase):
 
     def setUp(self):
         rclpy.init()
-        self.node = rclpy.create_node('line_tracker_alignment_test')
+        self.node = rclpy.create_node(
+            'line_tracker_alignment_test',
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
         self.command = Twist()
         self.lock = Lock()
         self.output_event = Event()
@@ -71,6 +81,11 @@ class TestLineTrackerAlignment(unittest.TestCase):
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
+        # Stamps read zero until fixtures/steady_sim_clock.py is received.
+        deadline = time.monotonic() + 10.0
+        while self.node.get_clock().now().nanoseconds == 0:
+            self.assertLess(time.monotonic(), deadline, 'no /clock from the fixture')
+            time.sleep(0.01)
 
     def tearDown(self):
         self.stop_spin.set()

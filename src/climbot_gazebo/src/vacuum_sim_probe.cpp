@@ -116,7 +116,7 @@ int main(int argc, char ** argv)
     auto server = std::make_shared<gz::sim::Server>(config);
     auto observer = std::make_shared<Observer>();
     gz::sim::Model model;gz::sim::Link chassis;
-    std::array<gz::sim::Entity, 3> sensors{}, collisions{};
+    std::array<gz::sim::Entity, 3> collisions{};
     std::vector<gz::sim::Link> links;
     std::vector<double> lastState;
     bool diagnosticPoseApplied = false;
@@ -161,10 +161,10 @@ int main(int argc, char ** argv)
           for (int i = 0; i < 3; ++i) {
             gz::sim::Link link(model.LinkByName(ecm, names[i]));
             std::string side = i == 0 ? "left" : i == 1 ? "right" : "caster";
-            sensors[i] = link.SensorByName(ecm, side + "_contact");
+            // Contact sensors are optional observers; the probe reads the
+            // per-step ECM contact data it attaches to the named collision.
             collisions[i] = link.CollisionByName(ecm, side + "_collision");
-            require(sensors[i] != gz::sim::kNullEntity && collisions[i] != gz::sim::kNullEntity,
-            "native contact sensor missing");
+            require(collisions[i] != gz::sim::kNullEntity, "native contact collision missing");
             if (!ecm.Component<gz::sim::components::ContactSensorData>(collisions[i])) {
               ecm.CreateComponent(collisions[i], gz::sim::components::ContactSensorData());
             }

@@ -52,6 +52,7 @@
   <xacro:arg name="max_linear_acceleration" default="0.40" />
   <xacro:arg name="max_angular_acceleration" default="1.50" />
   <xacro:arg name="odom_frequency" default="50.0" />
+  <xacro:arg name="joint_state_rate" default="100.0" />
   <xacro:arg name="imu_rate" default="100.0" />
   <xacro:arg name="imu_gyro_stddev" default="0.0002" />
   <xacro:arg name="imu_accel_stddev" default="0.017" />
@@ -193,6 +194,7 @@
     </plugin>
     <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
       <topic>/model/climbot/joint_state</topic>
+      <update_rate>$(arg joint_state_rate)</update_rate>
       <joint_name>left_wheel_joint</joint_name>
       <joint_name>right_wheel_joint</joint_name>
     </plugin>

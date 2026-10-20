@@ -1,0 +1,822 @@
+{
+  "scope": "T2 tyre lateral spring: legacy raw failures retained; v2 retrospective load subcheck; T2 not fully accepted",
+  "tyre_lateral_config": {
+    "schema_version": 1,
+    "stiffness_n_m": 100000.0,
+    "damping_n_s_m": 700.0,
+    "lower_m": -0.005,
+    "upper_m": 0.005,
+    "carrier_mass_kg": 0.02,
+    "carrier_radius_m": 0.01
+  },
+  "raw_relative_root": "m2_t2_20261019",
+  "flat_pair": {
+    "case": "tyre_lateral_flat_pair",
+    "passed": true,
+    "maximum_position_difference_m": 0.001638254931733958,
+    "maximum_orientation_difference_deg": 0.08459770531978758
+  },
+  "coupling": {
+    "rough_soft_c": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false,
+        "no_stop_contact": true
+      },
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 819,
+          "longest_requirement_violation_steps": 800,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 813
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 819,
+          "longest_requirement_violation_steps": 800,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 808
+        }
+      },
+      "hold": {
+        "duration_s": 62.199,
+        "maximum_equilibrium_error_pa": 0.21558814388208702,
+        "minimum_normals_n": [
+          213.75004970198415,
+          211.2094981789312,
+          467.3792936115594
+        ],
+        "each_drive_meets_raw_demand": false,
+        "maximum_stop_reaction_n": 0.0
+      },
+      "pressure_range_pa": [
+        7053.017214779102,
+        7923.088370940823
+      ],
+      "plugin_cpu_us_mean_p95_p99": [
+        128.6583476,
+        140.55175000000003,
+        155.78950000000006
+      ]
+    },
+    "tyre_lateral_rough_soft_c": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false,
+        "no_stop_contact": true
+      },
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 5,
+          "longest_requirement_violation_steps": 2,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 2
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 13,
+          "longest_requirement_violation_steps": 4,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 5
+        }
+      },
+      "hold": {
+        "duration_s": 62.199,
+        "maximum_equilibrium_error_pa": 0.004375464673103124,
+        "minimum_normals_n": [
+          214.07313106546366,
+          213.84994614894424,
+          467.34394226120014
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      },
+      "pressure_range_pa": [
+        6992.134402239695,
+        7956.111228075984
+      ],
+      "plugin_cpu_us_mean_p95_p99": [
+        127.28891259999999,
+        139.8727,
+        160.68398000000002
+      ]
+    },
+    "holdout_soft_c_clearance": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false,
+        "no_stop_contact": true
+      },
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 433,
+          "longest_requirement_violation_steps": 365,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 423
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 15,
+          "longest_requirement_violation_steps": 2,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 6
+        }
+      },
+      "hold": {
+        "duration_s": 1.146,
+        "maximum_equilibrium_error_pa": 3.388595359865576e-08,
+        "minimum_normals_n": [
+          191.33921428937109,
+          238.13842695406717,
+          446.17766041548583
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      },
+      "pressure_range_pa": [
+        6673.94989876842,
+        7788.36764934368
+      ],
+      "plugin_cpu_us_mean_p95_p99": [
+        133.58603619276144,
+        144.864,
+        164.117
+      ]
+    },
+    "tyre_lateral_holdout_clearance": {
+      "checks": {
+        "no_runtime_failure": true,
+        "no_startup_failure": true,
+        "pressure_meets_conservative_envelope": true,
+        "flow_reserve_at_required_pressure": true,
+        "independent_flow_equation": true,
+        "each_drive_raw_frame_meets_demand": false,
+        "ball_raw_floor": false,
+        "no_stop_contact": true
+      },
+      "native_loads": {
+        "left": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 52,
+          "longest_requirement_violation_steps": 13,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 46
+        },
+        "right": {
+          "raw_minimum_normal_n": 0.0,
+          "raw_minimum_margin": 0.0,
+          "raw_requirement_violation_frames": 8,
+          "longest_requirement_violation_steps": 1,
+          "violation_frames_outside_loss_and_two_neighbour_steps": 1
+        }
+      },
+      "hold": {
+        "duration_s": 1.146,
+        "maximum_equilibrium_error_pa": 0.003155710225655639,
+        "minimum_normals_n": [
+          190.10546623593459,
+          238.59333949751482,
+          447.30351003583365
+        ],
+        "each_drive_meets_raw_demand": true,
+        "maximum_stop_reaction_n": 0.0
+      },
+      "pressure_range_pa": [
+        6699.088387673779,
+        7810.154947793417
+      ],
+      "plugin_cpu_us_mean_p95_p99": [
+        131.8798920215957,
+        147.841,
+        227.963
+      ]
+    }
+  },
+  "frames_sha256": {
+    "rough_soft_c": "38064391efbae12cdb846f009357da0a21ac80b925b27724ed1f2c96542d69ec",
+    "tyre_lateral_rough_soft_c": "90f983528dc2361ddaae2d0bfc200ccdaa4d742c21fa28ecc7882daca571d71b",
+    "holdout_soft_c_clearance": "e208bc8b8e4c225cd7d46b1c722aba16acdefdfc6bc1b906975748dcc6ef9219",
+    "tyre_lateral_holdout_clearance": "db9f0ee7515d1ac2a278a31eeecf4dab2f36bd2b177cac3d0d454d82dd0e2d72"
+  },
+  "source_sha256": {
+    "src/climbot_gazebo/climbot_gazebo/wheel_compliance.py": "7be9bd7fe039d5bd9e3148aadba005d39fd186be276bee4d885decf81257e240",
+    "src/climbot_gazebo/config/m2_tyre_lateral.yaml": "3c688d686684f244e8ffaa6e58c2171cb75ee4c762f297dd460346499eb24964",
+    "src/climbot_gazebo/climbot_gazebo/vacuum_assets.py": "d3122f7f567f555ccbf6e272fe57e1e926fe828fd11678a78218c38abce8436c",
+    "tools/probe_m2_robot_patch.py": "a734a2d1e668cbe5da3f19de51b4dd463bf1ac1d983b0dbc3ac8db87f4542ed3",
+    "tools/validate_m2_coupling.py": "d97cde739dd3238a546114f734f68f1fa9098bd495b853d073affb176dd5cad5"
+  },
+  "source_commit": "30ad978",
+  "source_dirty": true,
+  "criterion_revision": {
+    "version": "m2_load_v2_20261019",
+    "approved_date": "2026-10-19",
+    "approval": "User approved the discussed revision and requested commit",
+    "selection": "50 ms selected after reviewing these five cases; retrospective reassessment",
+    "reason": "Separate sustained design margin from short contact disturbances while retaining instantaneous friction and contact-loss gates",
+    "all_raw_frames_retained": true,
+    "signed_force_cancellation_allowed": false,
+    "independent_validation_complete": false,
+    "frozen_for_next_planned_independent_task": true,
+    "t2_fully_accepted": false,
+    "simulation_rerun": false,
+    "analysis_source_parent_commit": "108a37051abc45cd0ad7ac1530b9ca1bf27f588c",
+    "evaluator_sha256": {
+      "tools/m2_load_criterion.py": "f4e18bcf234f66e78ef9d64ed67aa9d647cf1db264bb6ee47b36331a1fd5d0c4",
+      "tools/validate_m2_coupling.py": "21c16241b29934bf7b0f0e359be4d4228dccfa7724946a6e5788aa94a719291e",
+      "tools/test_m2_load_criterion.py": "c5aceaf98954c8e032ad58ec21febf2257ad33551903489df976a265ed85d0af"
+    },
+    "verification": {
+      "regression_tests_passed": 16,
+      "test_seconds": 0.06,
+      "python_style_exit_code": 0,
+      "full_cli_uses_v2_and_keeps_raw_failures": true,
+      "full_cli_matches_loads_only": true
+    },
+    "logs": [
+      "climbot_m2_load_v2_tests_final_20261019.log",
+      "climbot_m2_load_v2_style_final_20261019.log",
+      "climbot_m2_load_v2_reassessment_final_20261019.log",
+      "climbot_m2_load_v2_cli_check_20261019.log"
+    ]
+  },
+  "load_reassessment_v2": {
+    "rough_soft_c": {
+      "criterion": {
+        "version": "m2_load_v2_20261019",
+        "mu": 1.1,
+        "window_ms": 50,
+        "minimum_window_margin": 1.5,
+        "minimum_loaded_instant_margin_exclusive": 1.0,
+        "loaded_drive_threshold_n": 5.0,
+        "support_floors_n_left_right_ball": [
+          5.0,
+          5.0,
+          10.0
+        ],
+        "maximum_contact_or_low_load_run_steps": 2,
+        "start_after_release_s": 1.0,
+        "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+        "sensitivity_windows_ms": [
+          20,
+          50,
+          100
+        ]
+      },
+      "passed": false,
+      "checks": {
+        "sustained_50ms_margin_at_least_1_5": false,
+        "every_loaded_drive_frame_margin_above_1": true,
+        "contact_or_low_load_runs_at_most_two_steps": true
+      },
+      "step_s": 0.0009999999999994458,
+      "samples": 68199,
+      "scoring_time_range_s": [
+        1.802,
+        70.0
+      ],
+      "minimum_loaded_instant_margin_left_right": [
+        1.085983423463633,
+        1.0773267467319514
+      ],
+      "window_sensitivity_ms": {
+        "20": {
+          "samples": 20,
+          "minimum_margin_left_right": [
+            1.0866422352955605,
+            1.0854789476373794
+          ]
+        },
+        "50": {
+          "samples": 50,
+          "minimum_margin_left_right": [
+            1.0866465720190641,
+            1.0880188398259538
+          ]
+        },
+        "100": {
+          "samples": 100,
+          "minimum_margin_left_right": [
+            1.0866570102649482,
+            1.095416341835635
+          ]
+        }
+      },
+      "raw": {
+        "minimum_drive_margin_left_right": [
+          0.0,
+          0.0
+        ],
+        "drive_below_1_5_frames_left_right": [
+          859,
+          6886
+        ],
+        "loaded_drive_below_1_5_frames_left_right": [
+          854,
+          6877
+        ],
+        "loaded_drive_at_or_below_1_frames_left_right": [
+          0,
+          0
+        ],
+        "maximum_contact_loss_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "contact_loss_frames_left_right_ball": [
+          5,
+          9,
+          10
+        ],
+        "low_load_frames_left_right_ball": [
+          5,
+          9,
+          10
+        ],
+        "contact_or_low_load_frames_left_right_ball": [
+          5,
+          9,
+          10
+        ],
+        "maximum_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_contact_or_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_simultaneous_contact_losses": 1
+      },
+      "frames_sha256": "38064391efbae12cdb846f009357da0a21ac80b925b27724ed1f2c96542d69ec"
+    },
+    "holdout_soft_c_clearance": {
+      "criterion": {
+        "version": "m2_load_v2_20261019",
+        "mu": 1.1,
+        "window_ms": 50,
+        "minimum_window_margin": 1.5,
+        "minimum_loaded_instant_margin_exclusive": 1.0,
+        "loaded_drive_threshold_n": 5.0,
+        "support_floors_n_left_right_ball": [
+          5.0,
+          5.0,
+          10.0
+        ],
+        "maximum_contact_or_low_load_run_steps": 2,
+        "start_after_release_s": 1.0,
+        "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+        "sensitivity_windows_ms": [
+          20,
+          50,
+          100
+        ]
+      },
+      "passed": false,
+      "checks": {
+        "sustained_50ms_margin_at_least_1_5": false,
+        "every_loaded_drive_frame_margin_above_1": false,
+        "contact_or_low_load_runs_at_most_two_steps": true
+      },
+      "step_s": 0.0009999999999998899,
+      "samples": 7147,
+      "scoring_time_range_s": [
+        1.854,
+        9.0
+      ],
+      "minimum_loaded_instant_margin_left_right": [
+        0.9500558009357548,
+        1.0585913120162842
+      ],
+      "window_sensitivity_ms": {
+        "20": {
+          "samples": 20,
+          "minimum_margin_left_right": [
+            0.9856339684005663,
+            1.8234981203538947
+          ]
+        },
+        "50": {
+          "samples": 50,
+          "minimum_margin_left_right": [
+            1.0528838064492123,
+            2.04496802024146
+          ]
+        },
+        "100": {
+          "samples": 100,
+          "minimum_margin_left_right": [
+            1.0611480219956553,
+            2.148156140858121
+          ]
+        }
+      },
+      "raw": {
+        "minimum_drive_margin_left_right": [
+          0.0,
+          0.0
+        ],
+        "drive_below_1_5_frames_left_right": [
+          433,
+          15
+        ],
+        "loaded_drive_below_1_5_frames_left_right": [
+          424,
+          6
+        ],
+        "loaded_drive_at_or_below_1_frames_left_right": [
+          15,
+          0
+        ],
+        "maximum_contact_loss_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "contact_loss_frames_left_right_ball": [
+          9,
+          9,
+          42
+        ],
+        "low_load_frames_left_right_ball": [
+          9,
+          9,
+          42
+        ],
+        "contact_or_low_load_frames_left_right_ball": [
+          9,
+          9,
+          42
+        ],
+        "maximum_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_contact_or_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_simultaneous_contact_losses": 1
+      },
+      "frames_sha256": "e208bc8b8e4c225cd7d46b1c722aba16acdefdfc6bc1b906975748dcc6ef9219"
+    },
+    "tyre_lateral_rough_soft_c": {
+      "criterion": {
+        "version": "m2_load_v2_20261019",
+        "mu": 1.1,
+        "window_ms": 50,
+        "minimum_window_margin": 1.5,
+        "minimum_loaded_instant_margin_exclusive": 1.0,
+        "loaded_drive_threshold_n": 5.0,
+        "support_floors_n_left_right_ball": [
+          5.0,
+          5.0,
+          10.0
+        ],
+        "maximum_contact_or_low_load_run_steps": 2,
+        "start_after_release_s": 1.0,
+        "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+        "sensitivity_windows_ms": [
+          20,
+          50,
+          100
+        ]
+      },
+      "passed": true,
+      "checks": {
+        "sustained_50ms_margin_at_least_1_5": true,
+        "every_loaded_drive_frame_margin_above_1": true,
+        "contact_or_low_load_runs_at_most_two_steps": true
+      },
+      "step_s": 0.0009999999999994458,
+      "samples": 68199,
+      "scoring_time_range_s": [
+        1.802,
+        70.0
+      ],
+      "minimum_loaded_instant_margin_left_right": [
+        1.4159530112809167,
+        1.1475627487180677
+      ],
+      "window_sensitivity_ms": {
+        "20": {
+          "samples": 20,
+          "minimum_margin_left_right": [
+            1.7968037533146946,
+            1.7535432120008185
+          ]
+        },
+        "50": {
+          "samples": 50,
+          "minimum_margin_left_right": [
+            1.8138663760399223,
+            2.093940224158815
+          ]
+        },
+        "100": {
+          "samples": 100,
+          "minimum_margin_left_right": [
+            1.861473055689985,
+            2.214297773683889
+          ]
+        }
+      },
+      "raw": {
+        "minimum_drive_margin_left_right": [
+          0.0,
+          0.0
+        ],
+        "drive_below_1_5_frames_left_right": [
+          5,
+          13
+        ],
+        "loaded_drive_below_1_5_frames_left_right": [
+          2,
+          5
+        ],
+        "loaded_drive_at_or_below_1_frames_left_right": [
+          0,
+          0
+        ],
+        "maximum_contact_loss_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "contact_loss_frames_left_right_ball": [
+          3,
+          8,
+          12
+        ],
+        "low_load_frames_left_right_ball": [
+          3,
+          8,
+          12
+        ],
+        "contact_or_low_load_frames_left_right_ball": [
+          3,
+          8,
+          12
+        ],
+        "maximum_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_contact_or_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_simultaneous_contact_losses": 1
+      },
+      "frames_sha256": "90f983528dc2361ddaae2d0bfc200ccdaa4d742c21fa28ecc7882daca571d71b"
+    },
+    "tyre_lateral_holdout_clearance": {
+      "criterion": {
+        "version": "m2_load_v2_20261019",
+        "mu": 1.1,
+        "window_ms": 50,
+        "minimum_window_margin": 1.5,
+        "minimum_loaded_instant_margin_exclusive": 1.0,
+        "loaded_drive_threshold_n": 5.0,
+        "support_floors_n_left_right_ball": [
+          5.0,
+          5.0,
+          10.0
+        ],
+        "maximum_contact_or_low_load_run_steps": 2,
+        "start_after_release_s": 1.0,
+        "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+        "sensitivity_windows_ms": [
+          20,
+          50,
+          100
+        ]
+      },
+      "passed": true,
+      "checks": {
+        "sustained_50ms_margin_at_least_1_5": true,
+        "every_loaded_drive_frame_margin_above_1": true,
+        "contact_or_low_load_runs_at_most_two_steps": true
+      },
+      "step_s": 0.0009999999999998899,
+      "samples": 7147,
+      "scoring_time_range_s": [
+        1.854,
+        9.0
+      ],
+      "minimum_loaded_instant_margin_left_right": [
+        1.1848344371572548,
+        1.4263199413569543
+      ],
+      "window_sensitivity_ms": {
+        "20": {
+          "samples": 20,
+          "minimum_margin_left_right": [
+            1.3610248632647637,
+            1.9764570902946033
+          ]
+        },
+        "50": {
+          "samples": 50,
+          "minimum_margin_left_right": [
+            1.6493456413078131,
+            2.297984373481057
+          ]
+        },
+        "100": {
+          "samples": 100,
+          "minimum_margin_left_right": [
+            1.6687702321520372,
+            2.4558662220083742
+          ]
+        }
+      },
+      "raw": {
+        "minimum_drive_margin_left_right": [
+          0.0,
+          0.0
+        ],
+        "drive_below_1_5_frames_left_right": [
+          52,
+          8
+        ],
+        "loaded_drive_below_1_5_frames_left_right": [
+          46,
+          1
+        ],
+        "loaded_drive_at_or_below_1_frames_left_right": [
+          0,
+          0
+        ],
+        "maximum_contact_loss_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "contact_loss_frames_left_right_ball": [
+          6,
+          7,
+          36
+        ],
+        "low_load_frames_left_right_ball": [
+          6,
+          7,
+          36
+        ],
+        "contact_or_low_load_frames_left_right_ball": [
+          6,
+          7,
+          36
+        ],
+        "maximum_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_contact_or_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_simultaneous_contact_losses": 1
+      },
+      "frames_sha256": "db9f0ee7515d1ac2a278a31eeecf4dab2f36bd2b177cac3d0d454d82dd0e2d72"
+    },
+    "flat_soft_c": {
+      "criterion": {
+        "version": "m2_load_v2_20261019",
+        "mu": 1.1,
+        "window_ms": 50,
+        "minimum_window_margin": 1.5,
+        "minimum_loaded_instant_margin_exclusive": 1.0,
+        "loaded_drive_threshold_n": 5.0,
+        "support_floors_n_left_right_ball": [
+          5.0,
+          5.0,
+          10.0
+        ],
+        "maximum_contact_or_low_load_run_steps": 2,
+        "start_after_release_s": 1.0,
+        "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+        "sensitivity_windows_ms": [
+          20,
+          50,
+          100
+        ]
+      },
+      "passed": true,
+      "checks": {
+        "sustained_50ms_margin_at_least_1_5": true,
+        "every_loaded_drive_frame_margin_above_1": true,
+        "contact_or_low_load_runs_at_most_two_steps": true
+      },
+      "step_s": 0.0009999999999998899,
+      "samples": 7148,
+      "scoring_time_range_s": [
+        1.853,
+        9.0
+      ],
+      "minimum_loaded_instant_margin_left_right": [
+        2.1748766516248783,
+        2.398259987980422
+      ],
+      "window_sensitivity_ms": {
+        "20": {
+          "samples": 20,
+          "minimum_margin_left_right": [
+            2.643255318895483,
+            2.7559305146315456
+          ]
+        },
+        "50": {
+          "samples": 50,
+          "minimum_margin_left_right": [
+            2.7573641961566926,
+            2.770139031208634
+          ]
+        },
+        "100": {
+          "samples": 100,
+          "minimum_margin_left_right": [
+            2.763698269694145,
+            2.7708409411350656
+          ]
+        }
+      },
+      "raw": {
+        "minimum_drive_margin_left_right": [
+          2.1748766516248783,
+          2.398259987980422
+        ],
+        "drive_below_1_5_frames_left_right": [
+          0,
+          0
+        ],
+        "loaded_drive_below_1_5_frames_left_right": [
+          0,
+          0
+        ],
+        "loaded_drive_at_or_below_1_frames_left_right": [
+          0,
+          0
+        ],
+        "maximum_contact_loss_steps_left_right_ball": [
+          0,
+          0,
+          1
+        ],
+        "contact_loss_frames_left_right_ball": [
+          0,
+          0,
+          7
+        ],
+        "low_load_frames_left_right_ball": [
+          0,
+          0,
+          7
+        ],
+        "contact_or_low_load_frames_left_right_ball": [
+          0,
+          0,
+          7
+        ],
+        "maximum_low_load_steps_left_right_ball": [
+          0,
+          0,
+          1
+        ],
+        "maximum_contact_or_low_load_steps_left_right_ball": [
+          0,
+          0,
+          1
+        ],
+        "maximum_simultaneous_contact_losses": 1
+      },
+      "frames_sha256": "47965dcc113cf126dd02c6233e5b7e0d392b4b5bea664dd39f4c9451ee8a4ad1"
+    }
+  }
+}

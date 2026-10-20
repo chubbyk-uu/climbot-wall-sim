@@ -47,7 +47,7 @@ def test_candidate_consumer_mass_and_com_match_actual_parts():
     assert centre == pytest.approx(r['mass_properties']['centre_xyz_m'], abs=1e-10)
     assert wheel['radius_m'] == .0475
     assert wheel['separation_m'] == .435
-    assert r['caster']['centre_x_m'] == pytest.approx(-.3)
+    assert r['caster']['centre_x_m'] == pytest.approx(-.25)
     # The retained forward camera, not just the chassis, bounds the planner.
     assert r['footprint']['length_m'] == pytest.approx(.780)
     assert r['footprint']['width_m'] == pytest.approx(.482)

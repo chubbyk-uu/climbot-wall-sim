@@ -153,6 +153,7 @@ public:
       "start_approach_tolerance_m", 0.05);
     start_approach_exit_tolerance_ = declare_parameter(
       "start_approach_exit_tolerance_m", 0.06);
+    start_approach_retries_ = declare_parameter("start_approach_retries", 2);
     goal_heading_exit_tolerance_ = degreesToRadians(
       declare_parameter("goal_heading_exit_tolerance_deg", 3.0));
     stopped_linear_speed_ = declare_parameter("stopped_linear_speed_mps", 0.01);
@@ -590,6 +591,9 @@ private:
     requirePositive("goal_position_exit_tolerance_m", goal_position_exit_tolerance_);
     requirePositive("start_approach_tolerance_m", start_approach_tolerance_);
     requirePositive("start_approach_exit_tolerance_m", start_approach_exit_tolerance_);
+    if (start_approach_retries_ < 0) {
+      throw std::invalid_argument("start_approach_retries cannot be negative.");
+    }
     requirePositive("goal_heading_exit_tolerance_deg", goal_heading_exit_tolerance_);
     requirePositive("stopped_linear_speed_mps", stopped_linear_speed_);
     requirePositive("stopped_angular_speed_rps", stopped_angular_speed_);
@@ -729,6 +733,7 @@ private:
     current_segment_ = 0U;
     task_start_time_ = controlNow();
     approaching_start_ = true;
+    start_approach_restarts_ = 0;
     waiting_for_start_pose_ = !have_pose_;
     pause_requested_ = false;
     paused_ = false;
@@ -823,6 +828,7 @@ private:
     shift_if_set(segment_start_time_);
     shift_if_set(alignment_settle_start_);
     shift_if_set(arc_entry_start_time_);
+    shift_if_set(start_approach_stalled_since_);
 
     // A deadline can be shifted; a motion profile cannot. Both the travel and
     // the turn curves are time-parameterised from a standing start, so
@@ -1177,6 +1183,7 @@ private:
   {
     start_ = {pose_.x, pose_.y};
     start_approach_reanchored_ = false;
+    start_approach_stalled_since_ = zeroInstant();
     end_ = target;
     motion_state_ = MotionState::WAITING_FOR_ALIGNMENT;
     previous_command_ = {};
@@ -1975,6 +1982,13 @@ private:
         publishFeedback(desired);
         return;
       }
+      if (startApproachStalled(current_time, desired)) {
+        restartStartApproach();
+        if (active_goal_) {
+          publishFeedback(desired);
+        }
+        return;
+      }
     }
     const auto capture_gate_health = captureGateHealth();
     if (capture_gate_health == CaptureGateHealth::TIMED_OUT) {
@@ -2048,6 +2062,55 @@ private:
     }
     limitAndPublish(desired, dt, angular_acceleration_);
     publishFeedback(desired);
+  }
+
+  /// True once a start approach has come to rest at the end of its line but
+  /// outside the exit tolerance. Past the line end trackLine commands no
+  /// forward speed, so without a restart the robot holds there until the
+  /// segment timeout - M2 run r8 slid 80 mm across its diagonal approach and
+  /// waited out all 180 s.
+  bool startApproachStalled(
+    const rclcpp::Time & current_time, const climbot_control::Command & command)
+  {
+    const bool stalled = approaching_start_ &&
+      command.linear <= stopped_linear_speed_ &&
+      measured_linear_speed_ <= stopped_linear_speed_ &&
+      measured_angular_speed_ <= stopped_angular_speed_ &&
+      std::hypot(end_.x - pose_.x, end_.y - pose_.y) > start_approach_exit_tolerance_;
+    if (!stalled) {
+      start_approach_stalled_since_ = zeroInstant();
+      return false;
+    }
+    if (start_approach_stalled_since_.nanoseconds() == 0) {
+      start_approach_stalled_since_ = current_time;
+      return false;
+    }
+    return (current_time - start_approach_stalled_since_).seconds() >= goal_settle_duration_;
+  }
+
+  /// Plan the start approach again from where the robot stopped. That
+  /// recomputes the turn reserve for the new direction and rechecks the first
+  /// scan entry; a bounded count turns a robot that cannot get there into a
+  /// clear failure instead of a silent segment timeout.
+  void restartStartApproach()
+  {
+    const double error = std::hypot(end_.x - pose_.x, end_.y - pose_.y);
+    if (start_approach_restarts_ >= start_approach_retries_) {
+      std::ostringstream reason;
+      reason << "Start approach stopped " << error * 1000.0 <<
+        " mm from its target after " << start_approach_restarts_ <<
+        " re-approaches.";
+      finishGoal(ExecuteCoverage::Result::TRACKING_FAILED, reason.str());
+      return;
+    }
+    ++start_approach_restarts_;
+    RCLCPP_WARN(
+      get_logger(),
+      "Start approach stopped %.1f mm from its target, beyond the %.1f mm exit "
+      "tolerance; approaching again from here (%ld of %ld).",
+      error * 1000.0, start_approach_exit_tolerance_ * 1000.0,
+      static_cast<long>(start_approach_restarts_), static_cast<long>(start_approach_retries_));
+    configureStartApproach();
   }
 
   bool updateGoalCompletion(
@@ -2260,6 +2323,9 @@ private:
   double goal_position_exit_tolerance_{0.04};
   double start_approach_tolerance_{0.05};
   double start_approach_exit_tolerance_{0.06};
+  int64_t start_approach_retries_{2};
+  int64_t start_approach_restarts_{0};
+  rclcpp::Time start_approach_stalled_since_;
   double goal_heading_exit_tolerance_{0.052359878};
   double stopped_linear_speed_{0.01};
   double stopped_angular_speed_{0.02};

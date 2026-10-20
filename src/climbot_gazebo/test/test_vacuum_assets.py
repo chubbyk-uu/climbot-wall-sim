@@ -29,6 +29,62 @@ import pytest
 import yaml
 
 
+def test_contact_observers_can_be_restored_for_the_load_baseline(tmp_path):
+    """measure_normal_loads.py still needs the /contact/* sensors on request."""
+    result = build_assets(tmp_path, contact_topics=True)
+    world = ET.parse(tmp_path / 'world.sdf')
+    assert sum(p.get('name') == 'gz::sim::systems::Contact'
+               for p in world.findall('.//plugin')) == 1
+    model = world.find('.//model[@name="climbot"]')
+    for name in ['left_wheel_link', 'right_wheel_link', 'caster_ball_link']:
+        link = model.find(f'link[@name="{name}"]')
+        assert link.findtext('sensor/contact/collision') == link.find('collision').get('name')
+    assert result['contact_observer_topics'] is True
+    with pytest.raises(ValueError):
+        build_assets(tmp_path / 'bad', contact_topics='yes')
+
+
+def test_joint_states_are_published_below_the_physics_step(tmp_path):
+    """Per-step JointState publishing cost the server a serialization per 1 ms step."""
+    build_assets(tmp_path / 'rigid')
+    build_assets(tmp_path / 'soft', wheel_compliance=True, tyre_crown=True)
+    for name in ['rigid', 'soft']:
+        model = ET.parse(tmp_path / name / 'model.sdf').find('model')
+        publisher = model.find('plugin[@name="gz::sim::systems::JointStatePublisher"]')
+        assert publisher.findtext('update_rate') == '100.0'
+
+
+def test_caster_float_preserves_mass_pose_and_published_chain(tmp_path):
+    """A movable housing must carry the ball in both dynamics and the URDF TF tree."""
+    before, after = tmp_path / 'before', tmp_path / 'after'
+    build_assets(before, caster_proxy=True)
+    resolved = build_assets(after, caster_proxy=True, caster_compliance=True)
+    a = ET.parse(before / 'model.sdf').find('model')
+    b = ET.parse(after / 'model.sdf').find('model')
+    for name in ['caster_ball_link', 'caster_housing_link']:
+        assert ET.tostring(a.find(f'link[@name="{name}"]')) == ET.tostring(
+            b.find(f'link[@name="{name}"]'))
+    assert sum(float(x.text) for x in b.findall('link/inertial/mass')) == pytest.approx(
+        resolved['model']['mass_kg'], abs=1e-11)
+    spring = b.find('joint[@name="caster_housing_link_joint"]')
+    assert spring.get('type') == 'prismatic'
+    assert spring.findtext('axis/xyz') == '0 1 0'
+    assert spring.findtext('axis/dynamics/spring_stiffness') == '30000.0'
+    assert b.findtext('joint[@name="caster_ball_link_joint"]/parent') == 'caster_housing_link'
+    assert a.find('joint[@name="caster_housing_link_joint"]').get('type') == 'fixed'
+    names = [n.text for n in b.findall(
+        'plugin[@name="gz::sim::systems::JointStatePublisher"]/joint_name')]
+    assert 'caster_housing_link_joint' in names
+    urdf = ET.parse(after / 'robot.urdf')
+    housing = urdf.find('joint[@name="caster_housing_link_joint"]')
+    ball = urdf.find('joint[@name="caster_ball_link_joint"]')
+    assert housing.get('type') == 'prismatic'
+    assert ball.find('parent').get('link') == 'caster_housing_link'
+    xyz = np.array([float(v) for v in housing.find('origin').get('xyz').split()])
+    xyz += [float(v) for v in ball.find('origin').get('xyz').split()]
+    assert xyz == pytest.approx([-.25, 0, .0125], abs=1e-12)
+
+
 def test_b_c_only_change_the_pressure_source(tmp_path):
     """Hold geometry, skirt, starting state and actuator models identical."""
     roots = []
@@ -62,10 +118,14 @@ def test_native_contacts_and_skirt_have_one_force_path(tmp_path):
     for name in ['left_wheel_link', 'right_wheel_link', 'caster_ball_link']:
         link = model.find(f'link[@name="{name}"]')
         assert len(link.findall('collision')) == 1
-        assert link.findtext('sensor/contact/collision') == link.find('collision').get('name')
+        # Contact observers are off by default; the ECM data path needs none.
+        assert link.find('sensor') is None
+    assert not any(p.get('name') == 'gz::sim::systems::Contact'
+                   for p in world.findall('.//plugin'))
+    assert result['contact_observer_topics'] is False
     mass = sum(float(x.text) for x in model.findall('link/inertial/mass'))
     assert mass == pytest.approx(result['model']['mass_kg'], abs=1e-11)
-    assert result['model']['caster_x_m'] == pytest.approx(-.3, abs=1e-14)
+    assert result['model']['caster_x_m'] == pytest.approx(-.25, abs=1e-14)
     assert model.find('.//light[@name="inspection_led"]') is not None
 
 
@@ -205,8 +265,64 @@ def test_compliant_wheels_preserve_mass_inertia_and_publish_moving_tf_chain(tmp_
         assert spring.find('child').get('link') == rotation.find('parent').get('link')
         assert spring.find('axis').get('xyz') == '0 0 1'
         assert rotation.find('origin').get('xyz') == '0 0 0'
-        assert float(spring.find('limit').get('lower')) == 0
+        # 275 N realizes 1.8333 mm at 1 mm / 150 N; the free length sits that
+        # far outside the design axle and the 4 mm travel moves with it.
+        reference = -275 * .001 / 150
+        assert float(spring.find('limit').get('lower')) == pytest.approx(reference)
+        assert float(spring.find('limit').get('upper')) == pytest.approx(reference + .004)
+        dynamics = soft.find(f'.//joint[@name="{side}_tyre_joint"]/axis')
+        assert float(dynamics.findtext('dynamics/spring_reference')) == pytest.approx(reference)
+        assert float(dynamics.findtext('limit/lower')) == pytest.approx(reference)
     assert rigid.find('.//joint[@name="left_tyre_joint"]') is None
+
+
+def test_lateral_tyre_spring_extends_the_normal_spring_chain(tmp_path):
+    """Opt-in lateral carrier keeps the assembly mass and a published TF chain."""
+    with pytest.raises(ValueError, match='normal wheel compliance'):
+        build_assets(tmp_path / 'rigid', tyre_lateral=True)
+    build_assets(tmp_path / 'soft', wheel_compliance=True)
+    build_assets(tmp_path / 'lateral', wheel_compliance=True, tyre_lateral=True)
+    soft = ET.parse(tmp_path / 'soft/model.sdf')
+    model = ET.parse(tmp_path / 'lateral/model.sdf')
+    urdf = ET.parse(tmp_path / 'lateral/robot.urdf')
+    assert sum(float(n.text) for n in soft.findall('.//inertial/mass')) == pytest.approx(
+        sum(float(n.text) for n in model.findall('.//inertial/mass')), abs=1e-12)
+    published = {n.text for n in model.findall(
+        './/plugin[@name="gz::sim::systems::JointStatePublisher"]/joint_name')}
+    assert {'left_tyre_lateral_joint', 'right_tyre_lateral_joint'} <= published
+    for side in ['left', 'right']:
+        for tree, parent, child in [
+                (model, lambda j: j.findtext('parent'), lambda j: j.findtext('child')),
+                (urdf, lambda j: j.find('parent').get('link'),
+                 lambda j: j.find('child').get('link'))]:
+            spring = tree.find(f'.//joint[@name="{side}_tyre_lateral_joint"]')
+            rotation = tree.find(f'.//joint[@name="{side}_wheel_joint"]')
+            assert spring.get('type') == 'prismatic'
+            assert parent(spring) == f'{side}_wheel_axle_link'
+            assert child(spring) == parent(rotation) == f'{side}_wheel_lateral_link'
+        assert model.findtext(f'.//joint[@name="{side}_tyre_lateral_joint"]/axis/xyz') == '0 1 0'
+        assert model.find(f'.//link[@name="{side}_wheel_lateral_link"]').findtext('pose') == \
+            model.find(f'.//link[@name="{side}_wheel_link"]').findtext('pose')
+
+
+def test_crowned_tyre_contact_keeps_rolling_radius_and_visual_cylinder(tmp_path):
+    """Only the drive collision becomes a same-radius sphere; visuals stay cylinders."""
+    with pytest.raises(ValueError, match='requires wheel compliance'):
+        build_assets(tmp_path / 'rigid', tyre_crown=True)
+    build_assets(tmp_path / 'flat', wheel_compliance=True, tyre_lateral=True)
+    resolved = build_assets(tmp_path / 'crown', wheel_compliance=True, tyre_lateral=True,
+                            tyre_crown=True)
+    assert resolved['tyre_contact'] == 'sphere'
+    flat = ET.parse(tmp_path / 'flat/model.sdf')
+    crown = ET.parse(tmp_path / 'crown/model.sdf')
+    for side in ['left', 'right']:
+        path = f'.//link[@name="{side}_wheel_link"]'
+        before = flat.find(path + f'/collision[@name="{side}_collision"]/geometry')
+        after = crown.find(path + f'/collision[@name="{side}_collision"]/geometry')
+        assert after.find('cylinder') is None
+        assert after.findtext('sphere/radius') == before.findtext('cylinder/radius')
+        assert [ET.tostring(v) for v in flat.findall(path + '/visual')] == \
+            [ET.tostring(v) for v in crown.findall(path + '/visual')]
 
 
 @pytest.mark.parametrize('representation,amplitude,radius', [
@@ -289,3 +405,24 @@ def test_surface_patch_rejects_unvalidated_fan_coupling(tmp_path):
     """The contact prototype cannot silently pass as a fan/leak acceptance case."""
     with pytest.raises(ValueError, match='fixed_pressure'):
         build_assets(tmp_path, caster_proxy=True, surface_patch={})
+
+
+@pytest.mark.parametrize('mode', ['fixed_pressure', 'fan_ode'])
+def test_coupled_surface_patch_requires_explicit_channel_parameters(tmp_path, mode):
+    """B/C share the same force geometry and one explicit flow-channel policy."""
+    config = yaml.safe_load((Path(__file__).parents[1] /
+                            'config/m2_surface_fixture.yaml').read_text())
+    config['roughness']['amplitude_m'] = 0
+    config['grooves'] = []
+    config['contact_representation'] = 'native_heightmap'
+    config['channel_model'] = {'drape_m': .001, 'transition_m': .0001, 'refinement': 1}
+    resolved = build_assets(tmp_path, mode=mode, caster_proxy=True, surface_patch=config)
+    tree = ET.parse(tmp_path / 'world.sdf')
+    plugin = tree.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
+    assert len(plugin.findall('seal_corner')) == 4
+    assert plugin.findtext('channel_drape_m') == '0.001'
+    assert plugin.findtext('channel_refinement') == '1'
+    assert resolved['surface_patch']['channel_model'] == config['channel_model']
+    other = ET.parse(tmp_path / 'model.sdf').find(
+        './/plugin[@name="climbot_gazebo::VacuumSystem"]')
+    assert other.findtext('channel_drape_m') == plugin.findtext('channel_drape_m')

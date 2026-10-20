@@ -654,7 +654,7 @@ Gazebo GUI 须显示瞬时实时率，两种界面均保留截图与运行记录
 - [x] M1 / S7：旧底盘与恒力路径已删除，默认新底盘＋vacuum＋平墙＋刚性轮，保留 B；134 项契约、37 项相关回归、双 GUI 默认启动/reset、3×2 m 的 70 张采集及 CUDA 拼接通过；已合并 main，主要文档同步。见 [S7 报告](../results/suction_s7_2026-10-18/REPORT.md)。
 M2 待办统一见 [独立工作单](SUCTION_M2_PLAN.md#9-工作单)。
 
-- [ ] 后续独立提速专项：目标默认巡航 0.30 m/s，以 0.20 m/s 为基线，经 0.22／0.25 m/s 短路线筛查并核定限幅与制动安全域，再对 0.30 m/s 做完整双 GUI 拍照和质量验收；通过后再改默认值。S6 后另行启动，本轮不执行。
+- [x] （2026-10-20 已在 M2 T3 前执行，见 [M2 计划](SUCTION_M2_PLAN.md#提速与仿真吞吐2026-10-20)）后续独立提速专项：目标默认巡航 0.30 m/s，以 0.20 m/s 为基线，经 0.22／0.25 m/s 短路线筛查并核定限幅与制动安全域，再对 0.30 m/s 做完整双 GUI 拍照和质量验收；通过后再改默认值。S6 后另行启动，本轮不执行。
 
 实现时参考 [Gazebo System 生命周期](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1ISystemPreUpdate.html)、
 [Link 力与力矩接口](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1Link.html)、

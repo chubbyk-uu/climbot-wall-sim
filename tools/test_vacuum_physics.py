@@ -60,7 +60,7 @@ def test_cpp_skirt_reproduces_s1_load_path_and_dissipation(run):
     normal=expected['skirt_normal_n'][0]*weights
     drag=-s['sliding_mu']*normal[:,None]*velocity/np.sqrt(np.sum(velocity**2,axis=1)[:,None]+.001**2)
     torque=np.cross(pts,drag).sum(axis=0)
-    np.testing.assert_allclose(row['contact_moment_nm'],torque+np.cross([-.141,0,0],[0,0,row['normal_n']]),atol=1e-10)
+    np.testing.assert_allclose(row['contact_moment_nm'],torque+np.cross([b['centre_x_m'],0,0],[0,0,row['normal_n']]),atol=1e-10)
 
 
 def test_closed_zero_leak_explicitly_retains_mass_instead_of_restoring_ambient(run):

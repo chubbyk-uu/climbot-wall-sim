@@ -28,7 +28,11 @@ from climbot_description.vacuum_loads import minimum_pressure, states
 from climbot_description.vacuum_preview import export, node, numbers
 import yaml
 
+from .caster_compliance import apply as apply_caster_compliance
 from .wheel_compliance import apply as apply_wheel_compliance
+from .wheel_compliance import apply_crown as apply_tyre_crown
+from .wheel_compliance import apply_lateral as apply_tyre_lateral
+from .wheel_compliance import spring_reference as wheel_spring_reference
 
 
 def _read(path, key):
@@ -154,10 +158,19 @@ def _caster_proxy_flat_wall(world, normal, offset):
     link.append(item)
 
 
+def drop_contact_observer(world):
+    """Remove the Contact system; it only publishes the observer topics."""
+    for plugin in world.findall('plugin'):
+        if plugin.get('name') == 'gz::sim::systems::Contact':
+            world.remove(plugin)
+
+
 def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                  realtime_factor=1.0, runtime_overrides=None, io_overrides=None,
                  physics_overrides=None, caster_proxy=False, wheel_compliance=False,
-                 surface_patch=None):
+                 surface_patch=None, caster_compliance=False,
+                 tyre_lateral=False, wall_surface='flat', wall_texture=None,
+                 tyre_crown=False, contact_topics=None):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
@@ -165,8 +178,20 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         raise ValueError('invalid heading or physical step')
     if type(caster_proxy) is not bool or type(wheel_compliance) is not bool:
         raise ValueError('caster_proxy and wheel_compliance must be boolean')
-    if surface_patch is not None and (mode != 'fixed_pressure' or not caster_proxy):
-        raise ValueError('surface patch requires fixed_pressure and the explicit caster proxy')
+    if type(caster_compliance) is not bool or type(tyre_lateral) is not bool:
+        raise ValueError('caster_compliance and tyre_lateral must be boolean')
+    if tyre_lateral and not wheel_compliance:
+        raise ValueError('tyre_lateral requires the calibrated normal wheel compliance')
+    if type(tyre_crown) is not bool or (tyre_crown and not wheel_compliance):
+        raise ValueError('tyre_crown must be boolean and requires wheel compliance')
+    if wall_surface not in ('flat', 'undulating'):
+        raise ValueError('unknown full-wall surface')
+    if wall_surface == 'undulating' and (not caster_proxy or surface_patch is not None):
+        raise ValueError('full undulating wall requires caster proxy and excludes surface patch')
+    if surface_patch is not None and (not caster_proxy or
+                                      (mode != 'fixed_pressure' and
+                                       'channel_model' not in surface_patch)):
+        raise ValueError('surface patch requires fixed_pressure or explicit channels, and proxy')
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     description = Path(get_package_share_directory('climbot_description'))
@@ -176,6 +201,10 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     robot = _read(description / 'config/robot.yaml', 'robot')
     wall = _read(description / 'config/wall.yaml', 'wall')
     simulation = _read(gazebo / 'config/simulation.yaml', 'simulation')
+    if contact_topics is None:
+        contact_topics = simulation['contact']['observer_topics']
+    if type(contact_topics) is not bool:
+        raise ValueError('contact_topics must be boolean')
     physics = _read(gazebo / 'config/vacuum_physics.yaml', 'vacuum_physics')
     if physics_overrides:
         if set(physics_overrides) - set(physics):
@@ -280,10 +309,11 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         mu = simulation['caster']['mu'] if side == 'caster' else simulation['drive_wheel']['mu']
         node(ode, 'mu', mu)
         node(ode, 'mu2', mu)
-        sensor = node(link, 'sensor', name=side + '_contact', type='contact')
-        node(sensor, 'always_on', 'true')
-        node(sensor, 'update_rate', 0)  # physics-step ECM data, no decimated observer
-        node(node(sensor, 'contact'), 'collision', side + '_collision')
+        if contact_topics:
+            sensor = node(link, 'sensor', name=side + '_contact', type='contact')
+            node(sensor, 'always_on', 'true')
+            node(sensor, 'update_rate', 0)  # physics-step ECM data, no decimated observer
+            node(node(sensor, 'contact'), 'collision', side + '_collision')
     for plugin in old.findall('plugin'):
         new.append(deepcopy(plugin))
     # Preserve the original compliances / nominal load ratio. S3 measures
@@ -370,6 +400,9 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         node(element, 'attachment', numbers(
             [point[0], point[1], cfg['body']['bottom_z_m']]))
         node(element, 'length_m', weight * perimeter)
+    if surface_patch is not None and 'channel_model' in surface_patch:
+        for x, y in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]:
+            node(sp, 'seal_corner', numbers([x, y, cfg['body']['bottom_z_m']]))
     wall_q = quaternion_from_rpy(*wall['origin_rpy'])
     normal = rotate_vector(wall_q, [0, 0, 1])
     surface = [wall['origin_xyz'][i] + normal[i] * simulation['wall']['thickness_m'] / 2
@@ -383,12 +416,23 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         if step_s != compliance['calibration_step_s']:
             raise ValueError('wheel compliance requires its calibrated physical step')
         apply_wheel_compliance(new, urdf, compliance)
+    if tyre_lateral:
+        lateral = _read(gazebo / 'config/m2_tyre_lateral.yaml', 'm2_tyre_lateral')
+        apply_tyre_lateral(new, urdf, lateral)
+    if tyre_crown:
+        apply_tyre_crown(new)
+    if caster_compliance:
+        caster_spring = _read(gazebo / 'config/m2_caster_compliance.yaml',
+                              'm2_caster_compliance')
+        apply_caster_compliance(new, urdf, caster_spring)
     world_file = Path(stack.render_world(str(gazebo), str(description), '0'))
     try:
         world_root = ET.parse(world_file).getroot()
     finally:
         world_file.unlink(missing_ok=True)
     world = world_root.find('world')
+    if not contact_topics:
+        drop_contact_observer(world)
     if caster_proxy:
         _caster_proxy_flat_wall(world, normal, cfg['caster']['radius_m'] / 2)
     # Only the candidate GUI animates rotors; physics and sensor rendering stay
@@ -413,10 +457,28 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         from .surface_patch import apply as apply_surface_patch
         world_plugin = world.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
         patch = apply_surface_patch(world, world_plugin, out, surface_patch,
-                                    surface + wall['origin_rpy'], cfg['wheel']['radius_m'])
+                                    surface + wall['origin_rpy'], cfg['wheel']['radius_m'],
+                                    size=surface_patch.get('patch_size_m', 1.2))
         for key in ['wall_pose', 'wall_size']:
             sp.find(key).text = world_plugin.findtext(key)
+        for key in ['channel_drape_m', 'channel_transition_m', 'channel_refinement']:
+            if world_plugin.find(key) is not None:
+                node(sp, key, world_plugin.findtext(key))
         node(sp, 'wall_surface_yaml', world_plugin.findtext('wall_surface_yaml'))
+    wall_assets = None
+    if wall_surface == 'undulating':
+        from .wall_assets import apply as apply_full_wall, prepare
+        source = yaml.safe_load((gazebo/'config/m2_wall_surface.yaml').read_text())
+        size = [wall['surface']['width_m'], wall['surface']['height_m']]
+        asset_dir, asset_manifest = prepare(source, size, wall_texture)
+        world_plugin = world.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
+        wall_assets = apply_full_wall(world, world_plugin, asset_dir, asset_manifest,
+                                      surface+wall['origin_rpy'], size, source)
+        for key in ['wall_surface_yaml', 'channel_drape_m', 'channel_transition_m',
+                    'channel_refinement', 'seal_corner']:
+            for item in world_plugin.findall(key):
+                sp.append(deepcopy(item))
+        wall_assets['directory'] = str(asset_dir)
     world.find('physics/max_step_size').text = str(step_s)
     world.find('physics/real_time_factor').text = str(realtime_factor)
     if not runtime['camera_enabled']:
@@ -437,9 +499,20 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                                     'collision_radius_m': cfg['caster']['radius_m'] / 2,
                                     'inertia_scale': .25}
     if wheel_compliance:
-        resolved['wheel_compliance'] = compliance
+        resolved['wheel_compliance'] = dict(
+            compliance, spring_reference_m=wheel_spring_reference(compliance))
+    if caster_compliance:
+        resolved['caster_compliance'] = caster_spring
+    if tyre_lateral:
+        resolved['tyre_lateral'] = lateral
+    if tyre_crown:
+        resolved['tyre_contact'] = 'sphere'
+    resolved['contact_observer_topics'] = contact_topics
     if patch is not None:
         resolved['surface_patch'] = patch
         resolved['wall_surface_pose'] = patch['wall_surface_pose']
+    resolved['wall_surface'] = wall_surface
+    if wall_assets is not None:
+        resolved['wall_assets'] = wall_assets
     (out / 'resolved.json').write_text(json.dumps(resolved, indent=2, allow_nan=False) + '\n')
     return resolved

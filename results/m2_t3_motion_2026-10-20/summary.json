@@ -1,0 +1,82 @@
+{
+  "scope": "T3 motion regression after the crowned tyre and 50 mm axle move: wheel odometry scale, gravity sideslip and EKF against Gazebo truth (evaluate_localization.py, four 1.2 m legs, heading hold)",
+  "method_note": "leg displacement is projected on the commanded wall-frame axis; projecting on the wheel-odometry direction is invalid because odometry heading drifts after turns",
+  "cases": {
+    "m1": {
+      "description": "M1 default: flat wall, rigid wheels",
+      "evaluator_passed": true,
+      "maximum_ekf_position_error_m": 0.0019,
+      "maximum_wheel_dead_reckoning_error_m": 0.6286,
+      "source_commit": "16d40bad825a1509199fb0c387051052bb4511d9",
+      "legs": {
+        "right_plus_x": {
+          "wheel_over_truth_along": 1.0046,
+          "truth_vertical_drop_m": -0.1339
+        },
+        "up_plus_y": {
+          "wheel_over_truth_along": 1.1979,
+          "truth_vertical_drop_m": null
+        },
+        "left_minus_x": {
+          "wheel_over_truth_along": 1.0042,
+          "truth_vertical_drop_m": -0.1777
+        },
+        "down_minus_y": {
+          "wheel_over_truth_along": 0.8772,
+          "truth_vertical_drop_m": null
+        }
+      }
+    },
+    "m2flat": {
+      "description": "flat wall, compliant crowned tyres",
+      "evaluator_passed": true,
+      "maximum_ekf_position_error_m": 0.0032,
+      "maximum_wheel_dead_reckoning_error_m": 0.6542,
+      "source_commit": "16d40bad825a1509199fb0c387051052bb4511d9",
+      "legs": {
+        "right_plus_x": {
+          "wheel_over_truth_along": 1.007,
+          "truth_vertical_drop_m": -0.1359
+        },
+        "up_plus_y": {
+          "wheel_over_truth_along": 1.2068,
+          "truth_vertical_drop_m": null
+        },
+        "left_minus_x": {
+          "wheel_over_truth_along": 1.0074,
+          "truth_vertical_drop_m": -0.1785
+        },
+        "down_minus_y": {
+          "wheel_over_truth_along": 0.8861,
+          "truth_vertical_drop_m": null
+        }
+      }
+    },
+    "m2": {
+      "description": "M2: undulating wall, compliant crowned tyres",
+      "evaluator_passed": true,
+      "maximum_ekf_position_error_m": 0.0023,
+      "maximum_wheel_dead_reckoning_error_m": 0.6963,
+      "source_commit": "16d40bad825a1509199fb0c387051052bb4511d9",
+      "legs": {
+        "right_plus_x": {
+          "wheel_over_truth_along": 1.0076,
+          "truth_vertical_drop_m": -0.1375
+        },
+        "up_plus_y": {
+          "wheel_over_truth_along": 1.2178,
+          "truth_vertical_drop_m": null
+        },
+        "left_minus_x": {
+          "wheel_over_truth_along": 1.0079,
+          "truth_vertical_drop_m": -0.1834
+        },
+        "down_minus_y": {
+          "wheel_over_truth_along": 0.8841,
+          "truth_vertical_drop_m": null
+        }
+      }
+    }
+  },
+  "conclusion": "compliant tyres read about 0.3% long on horizontal legs (effective radius ~0.3% smaller) and climb creep is ~1.7% larger; sideslip within 5 mm of M1; EKF <=3.2 mm in all cases. WheelSlip, odometry and EKF calibrations remain applicable; no parameter change."
+}

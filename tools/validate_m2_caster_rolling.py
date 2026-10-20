@@ -32,8 +32,11 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2, allow_nan=False) + '\n')
 
 
-def run(out, proxy, binary, env):
-    resolved = build_assets(out, caster_proxy=proxy, heading_deg=90, realtime_factor=0)
+def run(out, proxy, binary, env, caster_compliance=False, wheel_compliance=False,
+        tyre_lateral=False):
+    resolved = build_assets(out, caster_proxy=proxy, heading_deg=90, realtime_factor=0,
+                            caster_compliance=caster_compliance,
+                            wheel_compliance=wheel_compliance, tyre_lateral=tyre_lateral)
     request = {'world': 'world.sdf', 'step_s': .001, 'duration_s': 11.,
                'track_m': resolved['model']['track_m'],
                'radius_m': resolved['model']['config']['wheel']['radius_m'],
@@ -82,7 +85,7 @@ def run(out, proxy, binary, env):
     return c, metrics
 
 
-def compare(a, b, ma, mb):
+def compare(a, b, ma, mb, expected_spin_ratio=2):
     # Compare matching times relative to each run's own physical fixture release.
     t = np.arange(1., 7.5, .001)
     ca = {k: np.interp(t + ma['release_s'], a['sim_time_s'], a[k])
@@ -111,7 +114,8 @@ def compare(a, b, ma, mb):
             p[label + '_relative_difference'] = abs(y[field] / x[field] - 1)
         phases[name] = p
         checks.update({name + '/load': p['load_difference_n'] <= GATES['mean_load_difference_n'],
-                       name + '/spin': abs(p['spin_ratio'] / 2 - 1) <= GATES['speed_ratio_error'],
+                       name + '/spin': abs(p['spin_ratio'] / expected_spin_ratio - 1) <=
+                       GATES['speed_ratio_error'],
                        name + '/force': p['force_relative_difference'] <=
                        GATES['rolling_force_relative_difference'],
                        name + '/power': p['power_relative_difference'] <=
@@ -126,23 +130,42 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--ode-prefix', required=True, type=Path)
+    parser.add_argument('--caster-compliance-pair', action='store_true',
+                        help='same proxy and soft tyres; compare fixed versus floating housing')
+    parser.add_argument('--tyre-lateral-pair', action='store_true',
+                        help='same proxy and soft tyres; compare without/with lateral tyre spring')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
-    write(args.output / 'protocol.json', {'gates': GATES, 'profile': PROFILE,
-                                        'step_s': .001, 'heading_deg': 90})
+    protocol = {'gates': GATES, 'profile': PROFILE, 'step_s': .001, 'heading_deg': 90,
+                'caster_compliance_pair': args.caster_compliance_pair,
+                'tyre_lateral_pair': args.tyre_lateral_pair}
+    write(args.output / 'protocol.json', protocol)
     prefix = Path(get_package_prefix('climbot_gazebo'))
     env, mesa = rendering_environment()
     env, ode = environment(args.ode_prefix, env)
     env['GZ_SIM_SYSTEM_PLUGIN_PATH'] = os.pathsep.join(filter(None, [
         str(prefix / 'lib'), env.get('GZ_SIM_SYSTEM_PLUGIN_PATH')]))
     binary = prefix / 'lib/climbot_gazebo/vacuum_sim_probe'
-    a, ma = run(args.output / 'real', False, binary, env)
-    b, mb = run(args.output / 'proxy', True, binary, env)
-    paired = compare(a, b, ma, mb)
+    same_ball = args.caster_compliance_pair or args.tyre_lateral_pair
+    if args.tyre_lateral_pair:
+        a, ma = run(args.output / 'fixed', True, binary, env, wheel_compliance=True)
+        b, mb = run(args.output / 'lateral', True, binary, env,
+                    wheel_compliance=True, tyre_lateral=True)
+    elif args.caster_compliance_pair:
+        a, ma = run(args.output / 'fixed', True, binary, env, wheel_compliance=True)
+        b, mb = run(args.output / 'floating', True, binary, env,
+                    caster_compliance=True, wheel_compliance=True)
+    else:
+        a, ma = run(args.output / 'real', False, binary, env)
+        b, mb = run(args.output / 'proxy', True, binary, env)
+    paired = compare(a, b, ma, mb, expected_spin_ratio=1 if same_ball else 2)
     result = {'scope': 'Full robot flat-wall straight/turn pair; no rough wall or GUI acceptance',
               'passed': all(paired['checks'].values()) and
               all(v for m in [ma, mb] for v in m['checks'].values()),
-              'gates': GATES, 'paired': paired, 'real': ma, 'proxy': mb,
+              'gates': GATES, 'paired': paired,
+              ('fixed' if same_ball else 'real'): ma,
+              ('lateral' if args.tyre_lateral_pair else
+               'floating' if args.caster_compliance_pair else 'proxy'): mb,
               'mesa': mesa, 'ode': ode,
               'source_commit': subprocess.check_output(
                   ['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
@@ -150,7 +173,13 @@ def main():
                                 hashlib.sha256(p.read_bytes()).hexdigest()
                                 for p in [Path(__file__).resolve(), ROOT / 'src/climbot_gazebo/'
                                           'climbot_gazebo/vacuum_assets.py', ROOT /
-                                          'src/climbot_gazebo/src/vacuum_sim_probe.cpp']},
+                                          'src/climbot_gazebo/src/vacuum_sim_probe.cpp',
+                                          ROOT / 'src/climbot_gazebo/climbot_gazebo/'
+                                          'caster_compliance.py', ROOT /
+                                          'src/climbot_gazebo/config/m2_caster_compliance.yaml',
+                                          ROOT / 'src/climbot_gazebo/climbot_gazebo/'
+                                          'wheel_compliance.py', ROOT /
+                                          'src/climbot_gazebo/config/m2_tyre_lateral.yaml']},
               'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()}
     write(args.output / 'summary.json', result)
     print(json.dumps({'passed': result['passed'], 'paired': paired, 'output': str(args.output)}))

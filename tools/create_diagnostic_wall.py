@@ -58,6 +58,48 @@ DEFAULT_DECAL_ATLAS = os.path.join(
 
 _ATLAS_CACHE = {}
 _SPRITE_CACHE = {}
+_SURFACE_CACHE = {}
+
+
+def surface_feature_layout(origin, region, seed, surface):
+    """
+    Replace flat-wall seam drawings with actual grooves; keep visual-only details.
+
+    The eight crack decals (about 2-3 mm apparent width) stay visual-only, as on
+    the M1 wall: wheels, caster and seal see no groove under them.
+    """
+    features = [feature for feature in feature_layout(origin, region, seed)
+                if feature['kind'] != 'construction_seam']
+    for groove in surface.config['grooves']:
+        features.append({'id': groove['id'], 'kind': 'surface_groove',
+                         'points_m': [groove['start_m'], groove['end_m']],
+                         'width_m': groove['width_m'], 'geometry': copy.deepcopy(groove)})
+    return features
+
+
+def _draw_surface_groove(overlay, feature, origin, region, scale, sample_x, sample_y):
+    """Colour only the native source's open channel, including shoulders and tapered tips."""
+    from climbot_gazebo.wall_surface import WallSurface
+    key = json.dumps(feature['geometry'], sort_keys=True)
+    if key not in _SURFACE_CACHE:
+        _SURFACE_CACHE[key] = WallSurface({
+            'roughness': {'amplitude_m': 0., 'scale_range_m': [.2, .8], 'seed': 0},
+            'grooves': [feature['geometry']]})
+    x0, y0, x1, y1 = _feature_bounds(feature)
+    left, top = _world_to_pixel((x0, y1), origin, region, scale)
+    right, bottom = _world_to_pixel((x1, y0), origin, region, scale)
+    left, top = max(0, math.floor(left-sample_x)-1), max(0, math.floor(top-sample_y)-1)
+    right = min(overlay.width, math.ceil(right-sample_x)+1)
+    bottom = min(overlay.height, math.ceil(bottom-sample_y)+1)
+    if left >= right or top >= bottom:
+        return
+    u = origin[0]+(sample_x+np.arange(left, right)+.5)*scale
+    v = origin[1]+region[1]-(sample_y+np.arange(top, bottom)+.5)*scale
+    depth = _SURFACE_CACHE[key].groove_depth(u[None, :], v[:, None])
+    rgba = np.empty(depth.shape+(4,), np.uint8)
+    rgba[:, :, :3] = [58, 54, 49]
+    rgba[:, :, 3] = np.rint(230*(1-np.exp(-depth/.0005))).astype(np.uint8)
+    overlay.alpha_composite(Image.fromarray(rgba), dest=(left, top))
 
 
 def sha256(path):
@@ -320,6 +362,9 @@ def _draw_feature(overlay, feature, origin, region, scale, sample_x, sample_y,
         return (round(x - sample_x), round(y - sample_y))
 
     kind = feature['kind']
+    if kind == 'surface_groove':
+        _draw_surface_groove(overlay, feature, origin, region, scale, sample_x, sample_y)
+        return
     if kind == 'construction_seam' and 'joint_profile' in feature:
         _draw_filled_joint(overlay, feature, origin, region, scale, sample_x, sample_y)
         return
@@ -576,6 +621,8 @@ def main():
                         help='parallel DDS encoders for affected blocks')
     parser.add_argument('--joint-profile', choices=('legacy', 'filled'), default='legacy',
                         help='optional visual mortar/shoulder profile; collision remains flat')
+    parser.add_argument('--surface-config', default='',
+                        help='M2 source YAML: replace visual seams with native open grooves')
     parser.add_argument('--preview', default='',
                         help='optional PNG path for a whole-wall preview')
     parser.add_argument('--preview-width-px', type=int, default=1600)
@@ -596,6 +643,15 @@ def main():
     origin = [float(value) for value in manifest['region_origin_m']]
     region = [float(value) for value in manifest['region_m']]
     features = feature_layout(origin, region, arguments.seed, arguments.joint_profile)
+    surface = None
+    if arguments.surface_config:
+        from climbot_gazebo.wall_surface import WallSurface
+        import yaml
+        if arguments.joint_profile != 'legacy':
+            parser.error('--surface-config cannot be combined with a filled joint profile')
+        with open(arguments.surface_config, encoding='utf-8') as handle:
+            surface = WallSurface(yaml.safe_load(handle))
+        features = surface_feature_layout(origin, region, arguments.seed, surface)
     output_dir = os.path.abspath(arguments.output_dir)
     parent = os.path.dirname(output_dir)
     os.makedirs(parent, exist_ok=True)
@@ -645,8 +701,9 @@ def main():
         output['recorded_utc'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
         output['diagnostic_wall'] = {
             'profile': PROFILE_NAME,
-            'profile_version': 7 if arguments.joint_profile == 'filled' else PROFILE_VERSION,
-            'joint_profile': arguments.joint_profile,
+            'profile_version': 8 if surface else (
+                7 if arguments.joint_profile == 'filled' else PROFILE_VERSION),
+            'joint_profile': 'm2_open_source' if surface else arguments.joint_profile,
             'seed': arguments.seed,
             'base_manifest': os.path.relpath(base_path, parent),
             'base_manifest_sha256': sha256(base_path),
@@ -665,6 +722,15 @@ def main():
             'invariant': ('Sparse details are visual ground truth only; they do not alter '
                           'wall collision, friction, or control parameters.'),
         }
+        if surface:
+            source_name = 'm2_source.yaml'
+            with open(os.path.join(temporary, source_name), 'w', encoding='utf-8') as handle:
+                handle.write(surface.resolved_yaml)
+            output['diagnostic_wall'].update(
+                surface_source=source_name,
+                surface_source_sha256=hashlib.sha256(surface.resolved_yaml.encode()).hexdigest(),
+                invariant=('Groove colour is sampled from the same native geometry as visual '
+                           'mesh and seal queries; graffiti/repairs are visual only.'))
         output_path = os.path.join(temporary, 'wall_texture.json')
         with open(output_path, 'w', encoding='utf-8') as handle:
             json.dump(output, handle, indent=2)

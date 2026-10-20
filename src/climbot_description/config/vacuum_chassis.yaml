@@ -5,7 +5,9 @@ vacuum_chassis:
   body:
     length_m: 0.4265                 # CAD dimension
     width_m: 0.342                   # CAD dimension
-    centre_x_m: -0.141               # CAD pixel measurement, +/- 0.005 m
+    # CAD pixel measurement -0.141 +/- 0.005 m, then the drive axle moved 50 mm
+    # rearward so the drive wheels carry most of the pressure load.
+    centre_x_m: -0.091
     bottom_z_m: 0.018                # CAD dimension
     top_z_m: 0.103                   # CAD dimension
     floor_thickness_m: 0.003
@@ -25,7 +27,7 @@ vacuum_chassis:
     joint_damping_nm_s: 0.05         # accepted actuator damping
   caster:
     # Rear-relative mount follows the same body CAD-offset uncertainty.
-    rear_offset_m: 0.05425            # revised candidate ball x=-0.300 m
+    rear_offset_m: 0.05425            # ball x=-0.250 m after the axle move
     mount_tolerance_m: 0.002
     radius_m: 0.0125
     ball_density_kg_m3: 7850.0
@@ -80,7 +82,7 @@ vacuum_chassis:
     maximum_search_pressure_pa: 30000.0
     # Geometric variants change the outline and all derived mass/areas together.
     front_extensions_m: [0.0, 0.020, 0.040]
-    caster_reference_x_m: [-0.240, -0.280, -0.290, -0.295, -0.300, -0.310]
+    caster_reference_x_m: [-0.190, -0.230, -0.240, -0.245, -0.250, -0.260]
     internal_mass_scan_kg: [6.0, 8.0, 10.0]
     drive_mu_scan: [0.8, 1.1, 1.3]
     body_offset_scan_m: [-0.005, 0.0, 0.005]

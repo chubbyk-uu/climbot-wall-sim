@@ -165,7 +165,8 @@
             name="gz::sim::systems::SceneBroadcaster"/>
     <plugin filename="gz-sim-imu-system"
             name="gz::sim::systems::Imu"/>
-    <!-- Required for the wheel contact sensors that record wall normal loads. -->
+    <!-- Publishes the wheel contact sensors; the pressure chassis drops it
+         unless contact_topics:=true (see simulation.yaml contact). -->
     <plugin filename="gz-sim-contact-system"
             name="gz::sim::systems::Contact"/>
     <plugin filename="gz-sim-sensors-system"

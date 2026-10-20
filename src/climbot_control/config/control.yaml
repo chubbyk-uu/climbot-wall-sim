@@ -1,6 +1,8 @@
 line_tracker:
   ros__parameters:
-    cruise_speed: 0.20
+    # Raised from 0.20 on 2026-10-20 with accelerations and braking unchanged;
+    # time-mode constants below were measured at 0.20 and are rechecked there.
+    cruise_speed: 0.30
     cross_gain: 1.0
     cross_integral_gain: 0.30
     cross_integral_limit_m_s: 0.10
@@ -19,7 +21,7 @@ line_tracker:
     # treated as a control fault rather than a pause. It bounds the
     # deceleration only: once the task is PAUSED nothing here is running, and
     # the hold may last as long as the operator wants. Generous against the
-    # ~0.8 s the rate limiter needs from cruise_speed, because a deadline that
+    # ~1.2 s the rate limiter needs from cruise_speed, because a deadline that
     # ends the run is the wrong thing to make tight.
     pause_stop_timeout_s: 5.0
     # Inspection-enabled SCANs must keep receiving a matching position-gate
@@ -45,7 +47,7 @@ line_tracker:
     visible_oscillation_amplitude_m: 0.03
     visible_oscillation_minimum_travel_m: 0.10
     visible_oscillation_reversals: 4
-    max_linear_speed: 0.25
+    max_linear_speed: 0.35
     max_angular_speed: 0.35
     max_heading_correction_deg: 12.0
     max_gravity_feedforward_deg: 8.0
@@ -82,6 +84,10 @@ line_tracker:
     # accuracy comes from the braking profile instead.
     start_approach_tolerance_m: 0.05
     start_approach_exit_tolerance_m: 0.06
+    # A start approach that comes to rest past its line end but outside the
+    # exit tolerance is planned again from where it stopped, this many times,
+    # before the task fails; past the line end nothing else moves it forward.
+    start_approach_retries: 2
     goal_heading_exit_tolerance_deg: 3.0
     stopped_linear_speed_mps: 0.01
     stopped_angular_speed_rps: 0.02
@@ -101,6 +107,8 @@ line_tracker:
     # braking_profile_deceleration above sits below max_linear_deceleration.
     time_profile_acceleration: 0.20
     time_profile_deceleration: 0.20
+    # Capped by the 0.45 m/s wheel budget: 0.35 + max_angular_speed * 0.2175 m
+    # = 0.426. At the 0.30 cruise this leaves 0.05 m/s of catch-up headroom.
     catch_up_max_linear_speed: 0.35
     catch_up_max_linear_acceleration: 0.35
     # How long the plant takes to actually have a speed it has been commanded,
@@ -108,7 +116,7 @@ line_tracker:
     # and consistent across them: 0.084-0.086 on horizontal scans, 0.076-0.077
     # on vertical ones, which fits horizontal travel working across gravity.
     # Commanding the curve's speed alone therefore falls short by lag times
-    # acceleration for the whole ramp - 16 mm a segment, the entire startup
+    # acceleration for the whole ramp - 16 mm a segment at 0.20 m/s, the startup
     # shortfall - so the curve's acceleration is fed forward as well.
     time_speed_lag_s: 0.08
     # Feedforward carries the motion; this only removes the residual lag, and
@@ -141,7 +149,7 @@ line_tracker:
     # On, and the first run is why. Without it the eight-case set landed 10.9
     # to 15.4 mm from its endpoints against 2.6 to 5.0 in distance mode, and
     # bigV's scan line spacing reached 17.6 mm against a 20 mm limit. The peak
-    # schedule lag was 0.08 s, which at the cruise speed is 16 mm: a controller
+    # schedule lag was 0.08 s, which at the 0.20 m/s cruise was 16 mm: a controller
     # that stops when the schedule says so turns the lag it still carries into
     # endpoint error, where a distance-to-stop curve does not stop until the
     # position is right. The schedule still governs the whole segment; only the
@@ -161,7 +169,7 @@ line_tracker:
     # Deliberately below max_linear_deceleration: the distance-to-stop profile
     # has to ask for less than the rate limiter can deliver, or the command
     # trails the profile all the way down and passes the endpoint. Braking
-    # starts at cruise_speed^2 / (2 * 0.12) = 0.167 m.
+    # starts at cruise_speed^2 / (2 * 0.12) = 0.375 m.
     braking_profile_deceleration: 0.12
     max_angular_acceleration: 0.80
     gravity_slip_ratio: 0.1042

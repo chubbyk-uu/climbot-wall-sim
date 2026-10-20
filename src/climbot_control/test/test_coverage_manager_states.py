@@ -15,6 +15,8 @@
 """Check what start and cancel do from every manager state."""
 
 import math
+import os
+import sys
 from threading import Event, Thread
 import time
 import unittest
@@ -29,6 +31,7 @@ import launch_testing.markers
 from nav_msgs.msg import Odometry
 import pytest
 import rclpy
+from rclpy.parameter import Parameter
 from std_srvs.srv import Trigger
 
 
@@ -37,9 +40,14 @@ from std_srvs.srv import Trigger
 def generate_test_description():
     """Run the real executor and manager, driven by synthetic odometry."""
     return launch.LaunchDescription([
+        # ROS time follows the monotonic clock: system time can step backwards
+        # under WSL time sync and the tracker rightly drops the pose then.
+        launch.actions.ExecuteProcess(cmd=[sys.executable, os.path.join(
+            os.path.dirname(__file__), 'fixtures', 'steady_sim_clock.py')]),
         launch_ros.actions.Node(
             package='climbot_control', executable='line_tracker_node',
             parameters=[{
+                'use_sim_time': True,
                 'standalone_mode': False,
                 'odometry_timeout_s': 2.0,
                 'segment_timeout_s': 60.0,
@@ -49,7 +57,8 @@ def generate_test_description():
                 'wheel_acceleration_limit': 0.40,
             }]),
         launch_ros.actions.Node(
-            package='climbot_control', executable='coverage_manager_node'),
+            package='climbot_control', executable='coverage_manager_node',
+            parameters=[{'use_sim_time': True}]),
         launch_testing.actions.ReadyToTest(),
     ])
 
@@ -97,7 +106,9 @@ class TestCoverageManagerStates(unittest.TestCase):
 
     def setUp(self):
         rclpy.init()
-        self.node = rclpy.create_node('coverage_manager_states_test')
+        self.node = rclpy.create_node(
+            'coverage_manager_states_test',
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
         self.statuses = []
         self.task_publisher = self.node.create_publisher(
             CoverageTask, '/coverage/task',
@@ -114,6 +125,11 @@ class TestCoverageManagerStates(unittest.TestCase):
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
+        # Stamps read zero until fixtures/steady_sim_clock.py is received.
+        deadline = time.monotonic() + 10.0
+        while self.node.get_clock().now().nanoseconds == 0:
+            self.assertLess(time.monotonic(), deadline, 'no /clock from the fixture')
+            time.sleep(0.01)
         self.assertTrue(self.start_client.wait_for_service(timeout_sec=10.0))
         self.assertTrue(self.cancel_client.wait_for_service(timeout_sec=10.0))
 

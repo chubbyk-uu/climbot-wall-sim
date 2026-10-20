@@ -54,6 +54,8 @@ CONTACT_TOPIC_RIGHT = (
     _CONTACT_PREFIX + '/right_wheel_link/sensor/right_wheel_contact/contact')
 CONTACT_TOPIC_CASTER = (
     _CONTACT_PREFIX + '/caster_ball_link/sensor/caster_contact/contact')
+# The pressure-chassis launch clears this when its contact observers are off.
+CONTACT_OBSERVER = True
 JOINT_STATE_TOPIC = '/model/climbot/joint_state'
 CAMERA_IDEAL_IMAGE_TOPIC = '/simulation/inspection_camera/ideal_image'
 CAMERA_IDEAL_INFO_TOPIC = '/simulation/inspection_camera/ideal_camera_info'
@@ -367,6 +369,8 @@ def robot_mappings(gazebo_share, description_share):
         'joint_damping': repr(float(simulated_drive['joint_damping'])),
         'odom_frequency': repr(
             float(simulated_drive['odom_publish_frequency_hz'])),
+        'joint_state_rate': repr(
+            float(simulated_drive['joint_state_publish_rate_hz'])),
         **{f'imu_mount_{axis}': repr(float(value))
            for axis, value in zip('xyz', imu['mount_xyz_m'])},
         'imu_rate': repr(float(imu['update_rate_hz'])),
@@ -535,12 +539,10 @@ def launch_setup(context, *args, **kwargs):
                 common_share, 'config', 'fastdds_inspection_image.xml'),
         }
 
-    bridge_remappings = [
-        (CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
-        (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
-        (CONTACT_TOPIC_CASTER, '/contact/caster'),
-        (JOINT_STATE_TOPIC, '/joint_states'),
-    ]
+    contacts = [(CONTACT_TOPIC_LEFT, '/contact/left_wheel'),
+                (CONTACT_TOPIC_RIGHT, '/contact/right_wheel'),
+                (CONTACT_TOPIC_CASTER, '/contact/caster')] if CONTACT_OBSERVER else []
+    bridge_remappings = contacts + [(JOINT_STATE_TOPIC, '/joint_states')]
     if throttle_clock:
         bridge_remappings.append(('/clock', '/clock_raw'))
     actions.append(Node(
@@ -556,10 +558,9 @@ def launch_setup(context, *args, **kwargs):
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             JOINT_STATE_TOPIC + '@sensor_msgs/msg/JointState[gz.msgs.Model',
             # Contact sensors ignore their <topic> tag, so the fully qualified
-            # Gazebo names are bridged and remapped to short ROS topics below.
-            CONTACT_TOPIC_LEFT + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
-            CONTACT_TOPIC_RIGHT + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
-            CONTACT_TOPIC_CASTER + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            # Gazebo names are bridged and remapped to short ROS topics above.
+            *[topic + '@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts'
+              for topic, _ in contacts],
         ],
         remappings=bridge_remappings,
         parameters=[{
@@ -739,6 +740,10 @@ def launch_setup(context, *args, **kwargs):
                 'wheel_forward_velocity_stddev_mps'),
             'yaw_rate_stddev_rps': LaunchConfiguration(
                 'wheel_yaw_rate_stddev_rps'),
+            'gravity_creep_uphill_ratio': LaunchConfiguration(
+                'wheel_gravity_creep_uphill_ratio'),
+            'gravity_creep_downhill_ratio': LaunchConfiguration(
+                'wheel_gravity_creep_downhill_ratio'),
         }],
         output='screen',
     ))
@@ -883,6 +888,20 @@ def generate_launch_description():
             'wheel_yaw_rate_stddev_rps',
             default_value='0.05',
             description='Wall-wheel yaw-rate one-sigma uncertainty.',
+        ),
+        # Wheel/true speed straight up and down the wall, from the 660-photo M2
+        # vertical task at 0.30 m/s (2026-10-20). Without it the 12 Hz total
+        # station could not hold the EKF against the creep: it sat 1.75 mm
+        # above the truth while moving and peaked past the 5 mm photo limit.
+        DeclareLaunchArgument(
+            'wheel_gravity_creep_uphill_ratio',
+            default_value='1.157',
+            description='Wheel odometry/true distance driving straight up the wall.',
+        ),
+        DeclareLaunchArgument(
+            'wheel_gravity_creep_downhill_ratio',
+            default_value='0.906',
+            description='Wheel odometry/true distance driving straight down the wall.',
         ),
         DeclareLaunchArgument(
             'imu_orientation_stddev_rad',

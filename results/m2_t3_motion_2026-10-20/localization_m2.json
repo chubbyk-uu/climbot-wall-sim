@@ -1,0 +1,314 @@
+{
+  "camera_geometry": {
+    "calibration": {
+      "distortion": [
+        -0.12,
+        0.025,
+        0.0005,
+        -0.0003,
+        -0.004
+      ],
+      "distortion_model": "plumb_bob",
+      "intrinsics": {
+        "cx_px": 959.5,
+        "cy_px": 539.5,
+        "fx_px": 960.0,
+        "fy_px": 960.0,
+        "skew": 0.0
+      }
+    },
+    "footprint": {
+      "effective_length_m": 0.28125,
+      "effective_width_m": 0.5
+    },
+    "image": {
+      "encoding": "mono8",
+      "height_px": 1080,
+      "width_px": 1920
+    },
+    "optical_mount": {
+      "center_xyz_m": [
+        0.34,
+        0.0,
+        0.275
+      ],
+      "rpy_rad": [
+        3.141592653589793,
+        0.0,
+        -1.5707963267948966
+      ]
+    }
+  },
+  "camera_projection_passed": true,
+  "ekf_camera_centre_limit_m": 0.005,
+  "final_ekf_position_error_m": 0.0017881992269063996,
+  "final_wheel_dead_reckoning_error_m": 0.696320163372791,
+  "legs": 4,
+  "maximum_ekf_camera_centre_error_m": 0.002329519359039503,
+  "maximum_ekf_position_error_m": 0.0023277310929511403,
+  "maximum_wheel_dead_reckoning_error_m": 0.696320163372791,
+  "passed": true,
+  "provenance": {
+    "control_parameters": {
+      "line_tracker": null
+    },
+    "git": {
+      "branch": "feature/m2-wall-compliance",
+      "checked_pathspecs": [
+        "src",
+        "tools"
+      ],
+      "commit": "16d40bad825a1509199fb0c387051052bb4511d9",
+      "source_modified": false,
+      "traceable": true
+    },
+    "noise_sources": {
+      "total_station_sim": {
+        "drop_probability": 0.0,
+        "fixed_delay_s": 0.01,
+        "localization_profile": "precision",
+        "measurement_timestamp_bias_s": 0.02,
+        "measurement_timestamp_error_enabled": false,
+        "measurement_timestamp_jitter_seed": 20260827,
+        "measurement_timestamp_jitter_stddev_s": 0.002,
+        "position_stddev_m": 0.001,
+        "prism_extrinsic_error_enabled": false,
+        "prism_extrinsic_error_robot_m": [
+          0.02,
+          -0.01,
+          0.0
+        ],
+        "publish_rate_hz": 12.0,
+        "random_seed": 42
+      },
+      "wall_imu_adapter": {
+        "orientation_stddev_rad": 0.00174532925,
+        "random_seed": 17
+      }
+    },
+    "recorded_utc": "2026-10-20T01:11:26.589807+00:00"
+  },
+  "records": [
+    {
+      "ekf_camera_centre_error_m": 0.0011693515927773295,
+      "ekf_camera_centre_wall_m": [
+        5.338939897012995,
+        1.998435384482166,
+        0.3235930383302543
+      ],
+      "ekf_position_error_m": 0.0011639320387963573,
+      "ekf_wall_m": [
+        4.998939898140134,
+        1.99840769957164,
+        0.04859303833025428
+      ],
+      "ekf_yaw_deg": 0.004665378032636316,
+      "label": "start",
+      "truth_camera_centre_wall_m": [
+        5.339973876181489,
+        1.9981946901261667,
+        0.3231027971104018
+      ],
+      "truth_displacement_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "truth_wall_m": [
+        4.999973876181544,
+        1.9981948833429923,
+        0.048102797110401774
+      ],
+      "truth_yaw_deg": -3.256031952603206e-05,
+      "wheel_dead_reckoning_error_m": 0.0,
+      "wheel_displacement_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "wheel_odom_m": [
+        -5.0204874421791874e-11,
+        -2.289110739783389e-20,
+        0.0
+      ],
+      "wheel_yaw_deg": 5.992863462836069e-08
+    },
+    {
+      "ekf_camera_centre_error_m": 0.00128341136525544,
+      "ekf_camera_centre_wall_m": [
+        6.519456602621956,
+        1.8611629162367662,
+        0.32243505560901353
+      ],
+      "ekf_position_error_m": 0.0011063038988431957,
+      "ekf_wall_m": [
+        6.179457517765664,
+        1.8603740582746813,
+        0.04743505560901348
+      ],
+      "ekf_yaw_deg": 0.13293609533717568,
+      "label": "right_plus_x",
+      "truth_camera_centre_wall_m": [
+        6.519006022935816,
+        1.8618839292479807,
+        0.3233964415442988
+      ],
+      "truth_displacement_m": [
+        1.1790342549094364,
+        -0.13750825984848047,
+        0.0002936444338970112
+      ],
+      "truth_wall_m": [
+        6.17900813109098,
+        1.8606866234945119,
+        0.048396441544298785
+      ],
+      "truth_yaw_deg": 0.2017667889581848,
+      "wheel_dead_reckoning_error_m": 0.12194704144259379,
+      "wheel_displacement_m": [
+        1.1878488770751803,
+        -0.015880561006385695,
+        0.0
+      ],
+      "wheel_odom_m": [
+        1.1878488770249753,
+        -0.015880561006385695,
+        0.0
+      ],
+      "wheel_yaw_deg": -1.6099146918899692
+    },
+    {
+      "ekf_camera_centre_error_m": 0.001424334287867423,
+      "ekf_camera_centre_wall_m": [
+        6.177209737538874,
+        3.187054891180499,
+        0.3243315882440332
+      ],
+      "ekf_position_error_m": 0.0013630212773933453,
+      "ekf_wall_m": [
+        6.178136190026748,
+        2.847056153409625,
+        0.04933158824403317
+      ],
+      "ekf_yaw_deg": 90.15612318577172,
+      "label": "up_plus_y",
+      "truth_camera_centre_wall_m": [
+        6.177643019379989,
+        3.1860316468844108,
+        0.32344054047860327
+      ],
+      "truth_displacement_m": [
+        1.1780412173003674,
+        0.8478369671284458,
+        0.00033774336820147077
+      ],
+      "truth_wall_m": [
+        6.178015093481911,
+        2.846031850471438,
+        0.048440540478603245
+      ],
+      "truth_yaw_deg": 90.06270082341562,
+      "wheel_dead_reckoning_error_m": 0.33998721874929555,
+      "wheel_displacement_m": [
+        1.2339376907136343,
+        1.1831976373064774,
+        0.0
+      ],
+      "wheel_odom_m": [
+        1.2339376906634294,
+        1.1831976373064774,
+        0.0
+      ],
+      "wheel_yaw_deg": 87.21029938965961
+    },
+    {
+      "ekf_camera_centre_error_m": 0.002329519359039503,
+      "ekf_camera_centre_wall_m": [
+        4.649591796764275,
+        2.663079340904285,
+        0.3220167425239664
+      ],
+      "ekf_position_error_m": 0.0023277310929511403,
+      "ekf_wall_m": [
+        4.989591771268446,
+        2.6629476702431583,
+        0.0470167425239664
+      ],
+      "ekf_yaw_deg": 179.9778112548329,
+      "label": "left_minus_x",
+      "truth_camera_centre_wall_m": [
+        4.64750213540076,
+        2.663447730170653,
+        0.322978129635591
+      ],
+      "truth_displacement_m": [
+        -0.012472805354480698,
+        0.6644020184194064,
+        -0.000124667474810769
+      ],
+      "truth_wall_m": [
+        4.987501070827063,
+        2.6625969017623987,
+        0.047978129635591005
+      ],
+      "truth_yaw_deg": 179.8566208006999,
+      "wheel_dead_reckoning_error_m": 0.5361682076788424,
+      "wheel_displacement_m": [
+        0.03411578920824418,
+        1.198542294227394,
+        0.0
+      ],
+      "wheel_odom_m": [
+        0.034115789158039304,
+        1.198542294227394,
+        0.0
+      ],
+      "wheel_yaw_deg": -179.74428641504628
+    },
+    {
+      "ekf_camera_centre_error_m": 0.0019506754298573225,
+      "ekf_camera_centre_wall_m": [
+        4.988831962611115,
+        0.9653576828151634,
+        0.32081302771109277
+      ],
+      "ekf_position_error_m": 0.0017881992269063996,
+      "ekf_wall_m": [
+        4.987864844784397,
+        1.3053563073463654,
+        0.04581302771109273
+      ],
+      "ekf_yaw_deg": -89.83702398680711,
+      "label": "down_minus_y",
+      "truth_camera_centre_wall_m": [
+        4.98804284182237,
+        0.9652801134393625,
+        0.32259527517016184
+      ],
+      "truth_displacement_m": [
+        -0.01198475625278217,
+        -0.692914774147809,
+        -0.0005075219402399522
+      ],
+      "truth_wall_m": [
+        4.987989119928762,
+        1.3052801091951833,
+        0.04759527517016182
+      ],
+      "truth_yaw_deg": -89.99094694769406,
+      "wheel_dead_reckoning_error_m": 0.696320163372791,
+      "wheel_displacement_m": [
+        0.06637380092766225,
+        -0.001017781194674707,
+        0.0
+      ],
+      "wheel_odom_m": [
+        0.06637380087745738,
+        -0.001017781194674707,
+        0.0
+      ],
+      "wheel_yaw_deg": -88.66713879169139
+    }
+  ],
+  "wheel_to_ekf_maximum_ratio": 299.14115315183744
+}

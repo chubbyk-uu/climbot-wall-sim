@@ -14,6 +14,8 @@
 
 """Node-level verification of spatial line-segment completion."""
 
+import os
+import sys
 from threading import Event
 from threading import Lock
 from threading import Thread
@@ -28,6 +30,7 @@ import launch_testing.asserts
 from nav_msgs.msg import Odometry
 import pytest
 import rclpy
+from rclpy.parameter import Parameter
 from rclpy.qos import DurabilityPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import ReliabilityPolicy
@@ -41,6 +44,7 @@ def generate_test_description():
         package='climbot_control',
         executable='line_tracker_node',
         parameters=[{
+            'use_sim_time': True,
             'start_x': 0.0,
             'start_y': 0.0,
             'end_x': 0.20,
@@ -56,6 +60,10 @@ def generate_test_description():
         }],
     )
     return launch.LaunchDescription([
+        # ROS time follows the monotonic clock: system time can step backwards
+        # under WSL time sync and the tracker rightly drops the pose then.
+        launch.actions.ExecuteProcess(cmd=[sys.executable, os.path.join(
+            os.path.dirname(__file__), 'fixtures', 'steady_sim_clock.py')]),
         tracker,
         launch_testing.actions.ReadyToTest(),
     ])
@@ -66,7 +74,9 @@ class TestLineTrackerCompletion(unittest.TestCase):
 
     def setUp(self):
         rclpy.init()
-        self.node = rclpy.create_node('line_tracker_completion_test')
+        self.node = rclpy.create_node(
+            'line_tracker_completion_test',
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
         self.command = Twist()
         self.complete = False
         self.lock = Lock()
@@ -83,6 +93,11 @@ class TestLineTrackerCompletion(unittest.TestCase):
         self.stop_spin = Event()
         self.spin_thread = Thread(target=self._spin)
         self.spin_thread.start()
+        # Stamps read zero until fixtures/steady_sim_clock.py is received.
+        deadline = time.monotonic() + 10.0
+        while self.node.get_clock().now().nanoseconds == 0:
+            self.assertLess(time.monotonic(), deadline, 'no /clock from the fixture')
+            time.sleep(0.01)
 
     def tearDown(self):
         self.stop_spin.set()

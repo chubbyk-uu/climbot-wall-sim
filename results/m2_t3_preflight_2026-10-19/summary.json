@@ -1,0 +1,452 @@
+{
+ "accepted": false,
+ "stage": "T3 short preflight; large capture deferred by user",
+ "source_commit": "91c41c17ceb0ac095c4914ec5fb71c3d5b93ffe3",
+ "source_dirty": true,
+ "capture": {
+  "passed": true,
+  "task_id": "m2-t3-preflight-r2-20261019",
+  "revision": 1,
+  "captures": 70,
+  "scan_segments": 5,
+  "captured_segments": [
+   0,
+   2,
+   4,
+   6,
+   8
+  ],
+  "scan_only": true,
+  "all_scan_segments_captured": true,
+  "numbering_complete": true,
+  "capture_counts_complete": true,
+  "exact_image_metadata_pairing": true,
+  "nominal_overlap_ratio": 0.2,
+  "minimum_actual_overlap_ratio": 0.15,
+  "maximum_target_gap_m": 0.2142857142857144,
+  "maximum_actual_gap_m": 0.21757713043810428,
+  "maximum_actual_gap_limit_m": 0.23906249999999998,
+  "maximum_lateral_spacing_m": 0.38989178505092426,
+  "maximum_lateral_spacing_limit_m": 0.425,
+  "photo_coverage": {
+   "ratio": 0.9422166666666667,
+   "missed_ratio": 0.0577833333333333,
+   "covered_cells": 56533,
+   "region_cells": 60000,
+   "resolution_m": 0.01,
+   "covered_area_m2": 5.653300000000001,
+   "region_area_m2": 6.0
+  },
+  "minimum_photo_coverage_ratio": 0.0,
+  "maximum_camera_position_error_m": 0.0038660714707391955,
+  "p95_camera_position_error_m": 0.0032358397909696373,
+  "maximum_camera_position_error_components_m": [
+   0.0034335181793254677,
+   0.0036737253627996402,
+   0.0
+  ],
+  "maximum_camera_position_error_limit_m": 0.005,
+  "maximum_heading_error_deg": 0.23384899608752496,
+  "maximum_heading_error_limit_deg": 1.0,
+  "groups": [
+   {
+    "task_id": "m2-t3-preflight-r2-20261019",
+    "revision": 1,
+    "segment_index": 0,
+    "captures": 14,
+    "expected_captures": 14,
+    "maximum_target_gap_m": 0.2142857142857144,
+    "maximum_actual_gap_m": 0.21707117787805075
+   },
+   {
+    "task_id": "m2-t3-preflight-r2-20261019",
+    "revision": 1,
+    "segment_index": 2,
+    "captures": 14,
+    "expected_captures": 14,
+    "maximum_target_gap_m": 0.2142857142857144,
+    "maximum_actual_gap_m": 0.21718109277945707
+   },
+   {
+    "task_id": "m2-t3-preflight-r2-20261019",
+    "revision": 1,
+    "segment_index": 4,
+    "captures": 14,
+    "expected_captures": 14,
+    "maximum_target_gap_m": 0.2142857142857144,
+    "maximum_actual_gap_m": 0.21747760038101394
+   },
+   {
+    "task_id": "m2-t3-preflight-r2-20261019",
+    "revision": 1,
+    "segment_index": 6,
+    "captures": 14,
+    "expected_captures": 14,
+    "maximum_target_gap_m": 0.2142857142857144,
+    "maximum_actual_gap_m": 0.21742654132673955
+   },
+   {
+    "task_id": "m2-t3-preflight-r2-20261019",
+    "revision": 1,
+    "segment_index": 8,
+    "captures": 14,
+    "expected_captures": 14,
+    "maximum_target_gap_m": 0.21419878990798757,
+    "maximum_actual_gap_m": 0.21757713043810428
+   }
+  ],
+  "provenance": {
+   "recorded_utc": "2026-10-19T12:19:31.474298+00:00",
+   "git": {
+    "commit": "91c41c17ceb0ac095c4914ec5fb71c3d5b93ffe3",
+    "branch": "feature/m2-wall-compliance",
+    "source_modified": true,
+    "checked_pathspecs": [
+     "src",
+     "tools"
+    ],
+    "traceable": false
+   },
+   "noise_sources": {
+    "total_station_sim": {
+     "random_seed": 42,
+     "position_stddev_m": 0.001,
+     "publish_rate_hz": 12.0,
+     "fixed_delay_s": 0.01,
+     "drop_probability": 0.0,
+     "localization_profile": "precision",
+     "prism_extrinsic_error_enabled": false,
+     "prism_extrinsic_error_robot_m": [
+      0.02,
+      -0.01,
+      0.0
+     ],
+     "measurement_timestamp_error_enabled": false,
+     "measurement_timestamp_bias_s": 0.02,
+     "measurement_timestamp_jitter_stddev_s": 0.002,
+     "measurement_timestamp_jitter_seed": 20260827
+    },
+    "wall_imu_adapter": {
+     "random_seed": 17,
+     "orientation_stddev_rad": 0.00174532925
+    }
+   },
+   "control_parameters": {
+    "line_tracker": {
+     "robot_geometry": "vacuum_chassis",
+     "wheel_separation": 0.435,
+     "wheel_speed_limit": 0.45,
+     "wheel_acceleration_limit": 0.7,
+     "tracking_mode": "time",
+     "cruise_speed": 0.2,
+     "turn_slip_per_degree_m": 0.00046,
+     "arc_entry_finish_offset_m": 0.012,
+     "parallel_scan_offset_m": 0.045,
+     "maximum_scan_offset_m": 0.12
+    }
+   }
+  }
+ },
+ "loads": {
+  "scope": "All final-generation physics steps from release+1 to recorder end",
+  "generation": 1,
+  "raw_rows": 185119,
+  "scored_rows": 167184,
+  "load_acceptance": {
+   "criterion": {
+    "version": "m2_load_v2_20261019",
+    "mu": 1.1,
+    "window_ms": 50,
+    "minimum_window_margin": 1.5,
+    "minimum_loaded_instant_margin_exclusive": 1.0,
+    "loaded_drive_threshold_n": 5.0,
+    "support_floors_n_left_right_ball": [
+     5.0,
+     5.0,
+     10.0
+    ],
+    "maximum_contact_or_low_load_run_steps": 2,
+    "start_after_release_s": 1.0,
+    "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+    "sensitivity_windows_ms": [
+     20,
+     50,
+     100
+    ]
+   },
+   "passed": false,
+   "checks": {
+    "sustained_50ms_margin_at_least_1_5": true,
+    "every_loaded_drive_frame_margin_above_1": false,
+    "contact_or_low_load_runs_at_most_two_steps": true
+   },
+   "step_s": 0.0010000000000047748,
+   "samples": 167184,
+   "scoring_time_range_s": [
+    1.821,
+    169.004
+   ],
+   "minimum_loaded_instant_margin_left_right": [
+    0.9555381496551012,
+    0.94203142006744
+   ],
+   "window_sensitivity_ms": {
+    "20": {
+     "samples": 20,
+     "minimum_margin_left_right": [
+      1.7199287352771104,
+      1.9168800238179171
+     ]
+    },
+    "50": {
+     "samples": 50,
+     "minimum_margin_left_right": [
+      1.8734946612994454,
+      1.9648252942072986
+     ]
+    },
+    "100": {
+     "samples": 100,
+     "minimum_margin_left_right": [
+      1.9331700816600657,
+      1.9895654574263835
+     ]
+    }
+   },
+   "raw": {
+    "minimum_drive_margin_left_right": [
+     0.0,
+     0.0
+    ],
+    "drive_below_1_5_frames_left_right": [
+     194,
+     183
+    ],
+    "loaded_drive_below_1_5_frames_left_right": [
+     42,
+     21
+    ],
+    "loaded_drive_at_or_below_1_frames_left_right": [
+     3,
+     2
+    ],
+    "maximum_contact_loss_steps_left_right_ball": [
+     1,
+     1,
+     1
+    ],
+    "contact_loss_frames_left_right_ball": [
+     152,
+     162,
+     1259
+    ],
+    "low_load_frames_left_right_ball": [
+     152,
+     162,
+     1259
+    ],
+    "contact_or_low_load_frames_left_right_ball": [
+     152,
+     162,
+     1259
+    ],
+    "maximum_low_load_steps_left_right_ball": [
+     1,
+     1,
+     1
+    ],
+    "maximum_contact_or_low_load_steps_left_right_ball": [
+     1,
+     1,
+     1
+    ],
+    "maximum_simultaneous_contact_losses": 2
+   }
+  },
+  "minimum_pressure_pa": 7318.126470421921,
+  "runtime_failed": false,
+  "startup_failed": false,
+  "maximum_stop_normal_n": 0.0,
+  "source_sha256": "3b730725315a4a4b9a7d95c9567865188bab5f2546e6424c5642b282a644659f",
+  "trace_sha256": "c096041fc150f87785719170a32d148b2ae69d7f91c4769056cd31496733f184",
+  "passed": false
+ },
+ "cleanup": {
+  "known_process_groups": [
+   143449,
+   143886,
+   143894,
+   143902,
+   144874,
+   144882,
+   144954
+  ],
+  "forced_kill_groups": [],
+  "remaining_groups": [],
+  "passed": true
+ },
+ "wrapper_exit_code": 2,
+ "wrapper_exit_reason": "Running shell source edited during execution; tail parsing failed after accepted archive. Current bash -n passes.",
+ "raw_data": "$CLIMBOT_DATA_ROOT/m2_t3_20261019/",
+ "texture_status": "Fixed and verified in GUI and photos (r4/r7): no block seams, cracks visible, mean photo grey 74.3 vs 73.5 on the M1 wall",
+ "performance_status": "Per-tile wall models fixed (one link per role, merged caster mesh). Dual-GUI full-task mean RTF: horizontal 0.961 (r7), vertical 0.968 (r5); short tasks only, not the large T3 capture",
+ "followup_runs": {
+  "common": "dual GUI + RViz, 0.20 m/s, frozen v2 load criterion, raw data under $CLIMBOT_DATA_ROOT/m2_t3_20261019/",
+  "r4_horizontal_per_tile_models": {
+   "captures": "70/70",
+   "mean_rtf": 0.92,
+   "photo_mean_grey": 74.3,
+   "load_v2_passed": false,
+   "minimum_loaded_instant_margin_left_right": [
+    1.05,
+    0.889
+   ],
+   "loaded_frames_at_or_below_1_left_right": [
+    0,
+    5
+   ],
+   "longest_contact_loss_steps_left_right_ball": [
+    1,
+    3,
+    1
+   ]
+  },
+  "r7_horizontal_merged": {
+   "captures": "70/70",
+   "mean_rtf": 0.961,
+   "photo_mean_grey": 74.3,
+   "load_v2_passed": false,
+   "minimum_50ms_margin_left_right": [
+    1.85,
+    1.831
+   ],
+   "minimum_loaded_instant_margin_left_right": [
+    0.983,
+    0.905
+   ],
+   "loaded_frames_at_or_below_1_left_right": [
+    2,
+    4
+   ],
+   "longest_contact_loss_steps_left_right_ball": [
+    1,
+    1,
+    1
+   ]
+  },
+  "r5_vertical_m2": {
+   "region_m": [
+    [
+     7.2,
+     1.5
+    ],
+    [
+     8.4,
+     4.6
+    ]
+   ],
+   "captures": "42/42",
+   "mean_rtf": 0.968,
+   "load_v2_passed": true,
+   "minimum_50ms_margin_left_right": [
+    1.873,
+    1.88
+   ],
+   "minimum_loaded_instant_margin_left_right": [
+    1.221,
+    1.228
+   ],
+   "climb_detrended_yaw_pkpk_deg": [
+    3.08,
+    2.93
+   ],
+   "descend_detrended_yaw_pkpk_deg": 1.53
+  },
+  "r9_vertical_undulating_rigid_wheels": {
+   "captures": "42/42",
+   "mean_rtf": 0.981,
+   "climb_detrended_yaw_pkpk_deg": [
+    1.56,
+    1.26
+   ],
+   "descend_detrended_yaw_pkpk_deg": 0.66
+  },
+  "r6_vertical_m1_flat_rigid": {
+   "captures": "42/42",
+   "mean_rtf": 0.989,
+   "climb_detrended_yaw_pkpk_deg": [
+    0.55,
+    0.45
+   ],
+   "descend_detrended_yaw_pkpk_deg": 0.39
+  },
+  "r8_vertical_flat_compliant": {
+   "passed": false,
+   "captures": "0/42",
+   "failure": "stopped about 8 cm below the first lane start after the approach; segment timed out after 180 s; loads and pressure normal; cause not yet investigated"
+  },
+  "yaw_wobble": "Detrended in-plane heading per climbing lane; 0.2-2 Hz, main peak about 0.5 Hz (about 0.4 m at 0.2 m/s). Capture heading error stays about 0.2 deg in all runs.",
+  "crowned_tyre_contact": {
+   "adopted": "drive collision sphere of wheel radius, default with wheel compliance; visual cylinder unchanged",
+   "r14_vertical": {
+    "captures": "42/42",
+    "mean_rtf": 0.952,
+    "load_v2_passed": true,
+    "minimum_50ms_margin_left_right": [
+     1.809,
+     2.301
+    ],
+    "minimum_loaded_instant_margin_left_right": [
+     1.03,
+     1.345
+    ],
+    "climb_detrended_yaw_pkpk_deg": [
+     0.573,
+     0.672
+    ]
+   },
+   "r15_horizontal": {
+    "captures": "70/70",
+    "mean_rtf": 0.955,
+    "load_v2_passed": true,
+    "minimum_50ms_margin_left_right": [
+     1.936,
+     1.913
+    ],
+    "minimum_loaded_instant_margin_left_right": [
+     1.253,
+     1.238
+    ]
+   },
+   "heading_gain_only": {
+    "gain_4_climb_yaw_pkpk_deg": [
+     2.2,
+     2.79
+    ],
+    "gain_8_climb_yaw_pkpk_deg": [
+     1.57,
+     1.77
+    ],
+    "adopted": false,
+    "reason": "1-3 Hz component unchanged; wobble became faster"
+   },
+   "r10_no_lateral_spring": {
+    "climb_detrended_yaw_pkpk_deg": [
+     3.24,
+     2.99
+    ],
+    "minimum_50ms_margin_left_right": [
+     1.047,
+     1.016
+    ]
+   },
+   "r11_m1_flat_horizontal": {
+    "load_v2_passed": true,
+    "minimum_loaded_instant_margin_left_right": [
+     1.147,
+     1.153
+    ]
+   }
+  }
+ }
+}
