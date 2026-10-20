@@ -740,6 +740,10 @@ def launch_setup(context, *args, **kwargs):
                 'wheel_forward_velocity_stddev_mps'),
             'yaw_rate_stddev_rps': LaunchConfiguration(
                 'wheel_yaw_rate_stddev_rps'),
+            'gravity_creep_uphill_ratio': LaunchConfiguration(
+                'wheel_gravity_creep_uphill_ratio'),
+            'gravity_creep_downhill_ratio': LaunchConfiguration(
+                'wheel_gravity_creep_downhill_ratio'),
         }],
         output='screen',
     ))
@@ -884,6 +888,20 @@ def generate_launch_description():
             'wheel_yaw_rate_stddev_rps',
             default_value='0.05',
             description='Wall-wheel yaw-rate one-sigma uncertainty.',
+        ),
+        # Wheel/true speed straight up and down the wall, from the 660-photo M2
+        # vertical task at 0.30 m/s (2026-10-20). Without it the 12 Hz total
+        # station could not hold the EKF against the creep: it sat 1.75 mm
+        # above the truth while moving and peaked past the 5 mm photo limit.
+        DeclareLaunchArgument(
+            'wheel_gravity_creep_uphill_ratio',
+            default_value='1.157',
+            description='Wheel odometry/true distance driving straight up the wall.',
+        ),
+        DeclareLaunchArgument(
+            'wheel_gravity_creep_downhill_ratio',
+            default_value='0.906',
+            description='Wheel odometry/true distance driving straight down the wall.',
         ),
         DeclareLaunchArgument(
             'imu_orientation_stddev_rad',

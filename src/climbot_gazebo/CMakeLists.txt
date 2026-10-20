@@ -128,12 +128,12 @@ target_compile_features(wall_wheel_odom_adapter_core PUBLIC cxx_std_17)
 target_include_directories(wall_wheel_odom_adapter_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(wall_wheel_odom_adapter_core nav_msgs)
+ament_target_dependencies(wall_wheel_odom_adapter_core geometry_msgs nav_msgs)
 
 add_executable(wall_wheel_odom_adapter_node src/wall_wheel_odom_adapter_node.cpp)
 target_compile_features(wall_wheel_odom_adapter_node PUBLIC cxx_std_17)
 target_link_libraries(wall_wheel_odom_adapter_node wall_wheel_odom_adapter_core)
-ament_target_dependencies(wall_wheel_odom_adapter_node nav_msgs rclcpp)
+ament_target_dependencies(wall_wheel_odom_adapter_node nav_msgs rclcpp sensor_msgs)
 
 add_library(wall_imu_adapter_core src/wall_imu_adapter.cpp)
 target_compile_features(wall_imu_adapter_core PUBLIC cxx_std_17)

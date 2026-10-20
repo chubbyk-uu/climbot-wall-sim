@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include <limits>
 
 #include "climbot_gazebo/wall_wheel_odom_adapter.hpp"
@@ -51,6 +52,47 @@ TEST(WallWheelOdomAdapter, PreservesMeasurementsAndPublishesTheEkfCovarianceCont
   }
 }
 
+TEST(WallWheelOdomAdapter, RemovesGravityCreepAlongTheDirectionOfTravel)
+{
+  climbot_gazebo::WheelOdomAdapterConfig config;
+  config.gravity_creep_uphill_ratio = 1.16;
+  config.gravity_creep_downhill_ratio = 0.9;
+  nav_msgs::msg::Odometry source;
+  source.twist.twist.linear.x = 0.348;
+  source.twist.twist.angular.z = 0.02;
+
+  // Across the wall gravity has no component along the wheels.
+  EXPECT_DOUBLE_EQ(
+    climbot_gazebo::adaptWallWheelOdometry(source, config, 0.0).twist.twist.linear.x, 0.348);
+  // Climbing over-reads, descending under-reads; diagonal travel scales linearly.
+  EXPECT_NEAR(
+    climbot_gazebo::adaptWallWheelOdometry(source, config, 1.0).twist.twist.linear.x, 0.3, 1e-12);
+  source.twist.twist.linear.x = 0.27;
+  EXPECT_NEAR(
+    climbot_gazebo::adaptWallWheelOdometry(source, config, -1.0).twist.twist.linear.x, 0.3, 1e-12);
+  EXPECT_NEAR(climbot_gazebo::gravityCreepRatio(0.5, config), 1.08, 1e-12);
+  // Reversing up the wall is uphill travel although the nose points down.
+  source.twist.twist.linear.x = -0.348;
+  EXPECT_NEAR(
+    climbot_gazebo::adaptWallWheelOdometry(source, config, -1.0).twist.twist.linear.x, -0.3,
+    1e-12);
+  // Only the forward velocity changes.
+  EXPECT_DOUBLE_EQ(
+    climbot_gazebo::adaptWallWheelOdometry(source, config, 1.0).twist.twist.angular.z, 0.02);
+}
+
+TEST(WallWheelOdomAdapter, ReadsTheUpComponentFromTheWallFrameAttitude)
+{
+  geometry_msgs::msg::Quaternion q;
+  EXPECT_NEAR(climbot_gazebo::forwardUpComponent(q), 0.0, 1e-12);
+  // Yaw +90 deg about the wall normal points the nose up the wall.
+  q.w = std::sqrt(0.5);
+  q.z = std::sqrt(0.5);
+  EXPECT_NEAR(climbot_gazebo::forwardUpComponent(q), 1.0, 1e-12);
+  q.z = -std::sqrt(0.5);
+  EXPECT_NEAR(climbot_gazebo::forwardUpComponent(q), -1.0, 1e-12);
+}
+
 TEST(WallWheelOdomAdapter, RejectsInvalidParameters)
 {
   EXPECT_THROW(
@@ -62,6 +104,13 @@ TEST(WallWheelOdomAdapter, RejectsInvalidParameters)
   EXPECT_THROW(
     climbot_gazebo::validateWheelOdomAdapterConfig(
       {std::numeric_limits<double>::quiet_NaN(), 0.05, 1e6}), std::invalid_argument);
+  EXPECT_THROW(
+    climbot_gazebo::validateWheelOdomAdapterConfig({0.03, 0.05, 1e6, 3.0, 0.9}),
+    std::invalid_argument);
+  EXPECT_THROW(
+    climbot_gazebo::validateWheelOdomAdapterConfig(
+      {0.03, 0.05, 1e6, 1.16, std::numeric_limits<double>::infinity()}),
+    std::invalid_argument);
 }
 
 }  // namespace
