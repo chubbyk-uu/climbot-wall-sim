@@ -1,0 +1,202 @@
+{
+  "scope": "Drive axle moved 50 mm rearward relative to the vacuum body (body.centre_x_m -0.141 -> -0.091); short-task evidence, not T3 acceptance",
+  "source_commit": "0fc7dd8362e4ba6ed66971ef4809762c4feb5e41",
+  "static_design_check_at_7300pa": {
+    "note": "tools/vacuum_layout.build + design_vacuum_chassis.scan; shares at headings 0/90/180 deg",
+    "offsets_mm": {
+      "0": {
+        "drive_share": [
+          0.53,
+          0.475,
+          0.53
+        ],
+        "required_pressure_pa": 6078,
+        "min_friction_margin": 1.92,
+        "min_ball_n": 342,
+        "camera_view_clearance_mm": 151
+      },
+      "30": {
+        "drive_share": [
+          0.589,
+          0.529,
+          0.589
+        ],
+        "required_pressure_pa": 5244,
+        "min_friction_margin": 2.28,
+        "min_ball_n": 288,
+        "camera_view_clearance_mm": 121
+      },
+      "50": {
+        "drive_share": [
+          0.636,
+          0.571,
+          0.636
+        ],
+        "required_pressure_pa": 4739,
+        "min_friction_margin": 2.58,
+        "min_ball_n": 244,
+        "camera_view_clearance_mm": 101
+      },
+      "70": {
+        "drive_share": [
+          0.691,
+          0.621,
+          0.691
+        ],
+        "required_pressure_pa": 4272,
+        "min_friction_margin": 2.92,
+        "min_ball_n": 193,
+        "camera_view_clearance_mm": 81
+      }
+    },
+    "chosen_mm": 50,
+    "all_geometry_valid": true
+  },
+  "m2_short_runs": {
+    "vertical_r14_old_axle": {
+      "v2_passed": true,
+      "generation": 0,
+      "window_50ms_min_margin_left_right": [
+        1.809,
+        2.301
+      ],
+      "min_loaded_instant_margin_left_right": [
+        1.03,
+        1.345
+      ],
+      "minimum_pressure_pa": 7298,
+      "maximum_stop_normal_n": 0.0,
+      "rtf": 0.952,
+      "climb_yaw_pkpk_deg": [
+        0.573,
+        0.672
+      ]
+    },
+    "vertical_r17_axle50": {
+      "v2_passed": true,
+      "generation": 0,
+      "window_50ms_min_margin_left_right": [
+        2.667,
+        2.875
+      ],
+      "min_loaded_instant_margin_left_right": [
+        1.376,
+        1.793
+      ],
+      "minimum_pressure_pa": 7476,
+      "maximum_stop_normal_n": 0.0,
+      "rtf": 0.904,
+      "captures": "42/42",
+      "climb_yaw_pkpk_deg": [
+        0.47,
+        0.645
+      ]
+    },
+    "horizontal_r15_old_axle": {
+      "v2_passed": true,
+      "generation": 0,
+      "window_50ms_min_margin_left_right": [
+        1.936,
+        1.913
+      ],
+      "min_loaded_instant_margin_left_right": [
+        1.253,
+        1.238
+      ],
+      "minimum_pressure_pa": 7352,
+      "maximum_stop_normal_n": 0.0,
+      "rtf": 0.955
+    },
+    "horizontal_r18_axle50": {
+      "v2_passed": true,
+      "generation": 0,
+      "window_50ms_min_margin_left_right": [
+        2.819,
+        2.834
+      ],
+      "min_loaded_instant_margin_left_right": [
+        1.446,
+        1.458
+      ],
+      "minimum_pressure_pa": 7219,
+      "maximum_stop_normal_n": 0.0,
+      "rtf": 0.906,
+      "captures": "70/70"
+    },
+    "vertical_r19_old_axle_rtf_control": {
+      "rtf": 0.914,
+      "note": "old geometry rerun in the same session as r17/r18"
+    },
+    "horizontal_r20_axle50_after_wsl_restart": {
+      "v2_passed": true,
+      "generation": 1,
+      "window_50ms_min_margin_left_right": [
+        2.568,
+        2.618
+      ],
+      "min_loaded_instant_margin_left_right": [
+        1.435,
+        1.403
+      ],
+      "minimum_pressure_pa": 7262,
+      "maximum_stop_normal_n": 0.0,
+      "rtf": 0.964,
+      "captures": "70/70",
+      "turn_slip": {
+        "mm_per_deg_each": [
+          0.447,
+          0.509
+        ],
+        "mean_mm_per_deg": 0.478
+      }
+    },
+    "rtf_note": "r14/r15/r17/r18/r19 RTF transcribed from session output (their /tmp case directories were cleared by a WSL restart); r20 computed from its retained case directory",
+    "photo_check": "r17/r18 mean brightness and border means match r14/r15 within 0.4 grey levels; body not in view"
+  },
+  "m1_flat_regression": {
+    "vertical": {
+      "passed": true,
+      "captures": 12,
+      "pose_p95_mm": 3.17,
+      "rtf": 0.991
+    },
+    "horizontal": {
+      "passed": true,
+      "captures": 10,
+      "pose_p95_mm": 3.26,
+      "rtf": 0.991,
+      "turn_slip": {
+        "mm_per_deg_each": [
+          0.434,
+          0.474
+        ],
+        "mean_mm_per_deg": 0.454
+      },
+      "reset_passed": true
+    },
+    "turn_slip_per_degree_m_configured": 0.00046,
+    "turn_slip_decision": "keep 0.00046 (inside the 2026-08-30 calibration circle 0.4309-0.5018 mm/deg)"
+  },
+  "tests": {
+    "colcon": "1941 tests, 0 failures, 91 skipped",
+    "tools_pytest": "125 passed"
+  },
+  "gui_load_investigation": {
+    "metric": "server camera first frame after scene load, fixed static robot, A/B world",
+    "old_mesh_with_textures_s": 51.6,
+    "coarse_mesh_with_textures_s": 43.9,
+    "old_mesh_no_textures_s": 11.5,
+    "coarse_mesh_no_textures_s": 3.6,
+    "old_mesh_8_digit_obj_no_textures_s": [
+      9.3,
+      9.12
+    ],
+    "old_mesh_17_digit_no_textures_s": [
+      11.07,
+      10.87
+    ],
+    "texture_upload_profile": "94% of CPU in a libc copy called from Mesa d3d12 gallium during OGRE texture upload (~25 MB/s for 1 GB DXT1); cause inferred, not symbol-confirmed",
+    "coarse_mesh_photo_diff": "MAD 0.67-0.86 grey levels but structured 32 mm banding (3-5 levels) and joint-edge differences up to 68; rejected",
+    "decision": "user dropped mesh simplification and digit reduction; GUI-only low-resolution textures deferred"
+  }
+}
