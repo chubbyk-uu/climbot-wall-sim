@@ -123,8 +123,8 @@ def test_proxy_total_mass_and_centre_of_mass_are_reproducible():
         sum(mass * xyz[axis] for mass, xyz in components) / total_mass
         for axis in range(3)
     ]
-    assert total_mass == pytest.approx(15.518481452106704)
-    assert centre == pytest.approx([-0.0768360112, 0.0, 0.0895359583])
+    assert total_mass == pytest.approx(15.472790702106703)
+    assert centre == pytest.approx([-0.0369151164, 0.0, 0.0887225201])
 
 
 def test_optical_mount_remains_at_the_calibrated_position():

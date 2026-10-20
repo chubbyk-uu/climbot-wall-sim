@@ -28,5 +28,5 @@ def test_default_geometry_uses_the_accepted_parts():
     from climbot_description.robot_geometry import load_robot
     robot = load_robot(description_share=PACKAGE_ROOT)
     assert robot['drive_wheel']['radius_m'] == pytest.approx(.0475)
-    assert robot['caster']['centre_x_m'] == pytest.approx(-.30)
-    assert robot['mass_properties']['mass_kg'] == pytest.approx(15.518481452106704)
+    assert robot['caster']['centre_x_m'] == pytest.approx(-.25)
+    assert robot['mass_properties']['mass_kg'] == pytest.approx(15.472790702106703)

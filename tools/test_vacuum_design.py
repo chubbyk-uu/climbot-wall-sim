@@ -117,7 +117,7 @@ def test_plate_overlapping_holes_removed_as_union():
 
 def test_cad_geometry_clearances_and_single_cavity(model):
     assert model['geometry_valid']
-    assert model['caster_x_m']==pytest.approx(-.300)
+    assert model['caster_x_m']==pytest.approx(-.250)
     assert model['effective_area_m2']==pytest.approx(.131293)
     assert model['clearances_m']['wheel_to_body']==pytest.approx(.023)
     assert model['clearances_m']['cutout_to_seal_after_mount_tolerance']==pytest.approx(.01125)
@@ -128,17 +128,18 @@ def test_cad_geometry_clearances_and_single_cavity(model):
     assert len([p for p in model['parts'] if p['name'].startswith('fan_') and p['name'].endswith('_link')])==3
 
 
-@pytest.mark.parametrize('x,valid',[(-.240,False),(-.280,True),(-.290,True),(-.295,True),(-.300,True),(-.310,False)])
+# Ball positions relative to the body centre: the seal and inlets move with it.
+@pytest.mark.parametrize('x,valid',[(-.099,False),(-.139,True),(-.149,True),(-.154,True),(-.159,True),(-.169,False)])
 def test_layout_rejects_seal_and_inlet_obstructions(data,x,valid):
     c,r,cam,*_=data
-    assert build(c,cam,r,caster_x=x)['geometry_valid']==valid
+    assert build(c,cam,r,caster_x=c['body']['centre_x_m']+x)['geometry_valid']==valid
 
 
 def test_wider_band_and_mounting_tolerance_limit_rearward_ball(data):
-    c,r,cam,*_=data;c['skirt']['contact_band_m']=.025
-    assert build(c,cam,r,caster_x=-.290)['geometry_valid']
-    assert build(c,cam,r,caster_x=-.295)['geometry_valid']
-    assert not build(c,cam,r,caster_x=-.300)['geometry_valid']
+    c,r,cam,*_=data;c['skirt']['contact_band_m']=.025;x=c['body']['centre_x_m']
+    assert build(c,cam,r,caster_x=x-.149)['geometry_valid']
+    assert build(c,cam,r,caster_x=x-.154)['geometry_valid']
+    assert not build(c,cam,r,caster_x=x-.159)['geometry_valid']
 
 
 def test_cup_fit_and_flange_overlap_include_mounting_tolerance(data):
@@ -165,7 +166,7 @@ def test_mass_inertia_and_midline_quadrature(model):
     inertia=np.array(model['inertia_kg_m2']);eig=np.linalg.eigvalsh(inertia)
     assert min(eig)>0 and max(eig)<sum(eig)-max(eig)
     points,weights=skirt_points(model)
-    np.testing.assert_allclose(weights@points,[-.141,0,0],atol=1e-14)
+    np.testing.assert_allclose(weights@points,[model['config']['body']['centre_x_m'],0,0],atol=1e-14)
     assert sum(weights)==pytest.approx(1)
     # Independent parallel-axis aggregation at a common origin, then shift back.
     originI=np.zeros((3,3));mass=0;first=np.zeros(3)
@@ -184,7 +185,8 @@ def test_static_reactions_and_yaw_match_independent_closed_form(model,heading):
     # Lip pressure and reaction cancel in the wheel budget. Mechanical skirt
     # preload remains at the same x as pressure; no lip gets counted twice.
     net=p*model['inner_area_m2']-model['skirt_mechanical_n']
-    expected=loads(net,m*9.81,cg[2],model['track_m'],model['caster_x_m'],-.141,heading)
+    expected=loads(net,m*9.81,cg[2],model['track_m'],model['caster_x_m'],
+                   model['config']['body']['centre_x_m'],heading)
     np.testing.assert_allclose(e['normals_n'][0],expected,atol=1e-11)
     tangent=tangential(m*9.81,cg[0],cg[1],model['track_m'],heading)
     np.testing.assert_allclose(e['drive_longitudinal_n'][0],tangent[:2],atol=1e-11)

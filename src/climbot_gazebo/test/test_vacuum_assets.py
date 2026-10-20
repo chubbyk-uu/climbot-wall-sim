@@ -57,7 +57,7 @@ def test_caster_float_preserves_mass_pose_and_published_chain(tmp_path):
     assert ball.find('parent').get('link') == 'caster_housing_link'
     xyz = np.array([float(v) for v in housing.find('origin').get('xyz').split()])
     xyz += [float(v) for v in ball.find('origin').get('xyz').split()]
-    assert xyz == pytest.approx([-.3, 0, .0125], abs=1e-12)
+    assert xyz == pytest.approx([-.25, 0, .0125], abs=1e-12)
 
 
 def test_b_c_only_change_the_pressure_source(tmp_path):
@@ -96,7 +96,7 @@ def test_native_contacts_and_skirt_have_one_force_path(tmp_path):
         assert link.findtext('sensor/contact/collision') == link.find('collision').get('name')
     mass = sum(float(x.text) for x in model.findall('link/inertial/mass'))
     assert mass == pytest.approx(result['model']['mass_kg'], abs=1e-11)
-    assert result['model']['caster_x_m'] == pytest.approx(-.3, abs=1e-14)
+    assert result['model']['caster_x_m'] == pytest.approx(-.25, abs=1e-14)
     assert model.find('.//light[@name="inspection_led"]') is not None
 
 
