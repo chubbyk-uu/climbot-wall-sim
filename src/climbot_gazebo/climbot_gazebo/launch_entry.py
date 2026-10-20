@@ -166,13 +166,16 @@ def generate_launch_description():
         DeclareLaunchArgument('adhesion_mode', default_value='vacuum'),
         DeclareLaunchArgument('io_config', default_value=''),
         DeclareLaunchArgument('resolved_assets_directory', default_value=''),
-        DeclareLaunchArgument('wall_surface', default_value='flat',
+        # M2 defaults (2026-10-20): the undulating wall with panel seams and the
+        # preloaded, crowned compliant tyres. 'flat' and 'false' keep the M1
+        # flat wall and rigid wheels for baselines.
+        DeclareLaunchArgument('wall_surface', default_value='undulating',
                               choices=['flat', 'undulating']),
         DeclareLaunchArgument('tyre_crown', default_value='auto',
                               choices=['auto', 'false', 'true']),
         DeclareLaunchArgument('tyre_lateral', default_value='auto',
                               choices=['auto', 'false', 'true']),
-        DeclareLaunchArgument('wheel_compliance', default_value='false',
+        DeclareLaunchArgument('wheel_compliance', default_value='true',
                               choices=['false', 'true']),
         DeclareLaunchArgument('m2_load_trace', default_value=''),
         DeclareLaunchArgument('contact_topics', default_value='auto',

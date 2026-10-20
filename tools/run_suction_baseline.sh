@@ -86,8 +86,10 @@ PY
 }
 trap finish EXIT
 trap 'exit 130' INT TERM
-# measure_normal_loads.py reads the /contact/* observer topics.
+# measure_normal_loads.py reads the /contact/* observer topics. The M1 baseline
+# keeps its flat wall and rigid wheels now that the launch defaults are M2's.
 setsid ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true contact_topics:=true \
+  wall_surface:=flat wheel_compliance:=false \
   >"$RUN_DIR/simulator.log" 2>&1 &
 lane_remember "$TASK_LANE" "$!"
 echo "simulator created; logs=$RUN_DIR"

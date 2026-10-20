@@ -1,0 +1,163 @@
+{
+  "scope": "M2 T3 large-area acceptance: undulating wall, compliant tyres, 0.30 m/s, dual GUI",
+  "source_commits": {
+    "horizontal_large": "3ad4995",
+    "vertical_large_before_fix": "3ad4995+preload (uncommitted, = 6026180)",
+    "final_vertical": "c7dbf99"
+  },
+  "runs": {
+    "horizontal_large": {
+      "passed": true,
+      "captures": 680,
+      "scan_segments": 17,
+      "maximum_actual_gap_m": 0.22806352939947772,
+      "maximum_lateral_spacing_m": 0.39119812096394035,
+      "p95_camera_position_error_m": 0.0026808254805037735,
+      "maximum_camera_position_error_m": 0.0047601702242826985,
+      "maximum_camera_position_error_limit_m": 0.005,
+      "maximum_heading_error_deg": 0.22264256455070516,
+      "load_v2_passed": true,
+      "load_50ms_min_margin_left_right": [
+        2.602850695079289,
+        2.1604567203686886
+      ],
+      "load_min_instant_margin_left_right": [
+        1.3070915142659187,
+        1.2711552629269458
+      ],
+      "minimum_pressure_pa": 6864.169090290554,
+      "cleanup_passed": true,
+      "forced_kill_groups": 0,
+      "rtf_whole": 0.975,
+      "rtf_per_minute_range": [
+        0.972,
+        0.98
+      ],
+      "rtf_10s_min": 0.953,
+      "wall_s": 826,
+      "mosaic": {
+        "execution_effective": "cuda",
+        "execution_fallback": false,
+        "frames": 680,
+        "connected_components": [
+          679,
+          1
+        ],
+        "position_correction_median_m": 0.05080342255072817,
+        "position_correction_max_m": 0.09370084742851785,
+        "final_edge_error_p95_m": 0.0034594003555300673,
+        "gray_std_optimized_mean_p95": [
+          2.4465213033397593,
+          5.978021978021978
+        ],
+        "pose_graph_scale_minus_one_xy": [
+          0.01667,
+          0.01666
+        ]
+      }
+    },
+    "vertical_large_before_creep_fix": {
+      "passed": false,
+      "captures": 660,
+      "scan_segments": 22,
+      "maximum_actual_gap_m": 0.23018279897802119,
+      "maximum_lateral_spacing_m": 0.4029469967655066,
+      "p95_camera_position_error_m": 0.004631827383008372,
+      "maximum_camera_position_error_m": 0.006438211834165688,
+      "maximum_camera_position_error_limit_m": 0.005,
+      "maximum_heading_error_deg": 0.2843293427203652,
+      "load_v2_passed": true,
+      "load_50ms_min_margin_left_right": [
+        2.572326219057127,
+        2.941970322727678
+      ],
+      "load_min_instant_margin_left_right": [
+        1.4199224382408302,
+        1.454060438628474
+      ],
+      "minimum_pressure_pa": 7111.9257055854105,
+      "cleanup_passed": true,
+      "forced_kill_groups": 0,
+      "rtf_whole": 0.978,
+      "wall_s": 886
+    },
+    "final_vertical_large": {
+      "passed": true,
+      "captures": 660,
+      "scan_segments": 22,
+      "maximum_actual_gap_m": 0.23090270785752942,
+      "maximum_lateral_spacing_m": 0.403569333072326,
+      "p95_camera_position_error_m": 0.0030824823823865618,
+      "maximum_camera_position_error_m": 0.004425198538765195,
+      "maximum_camera_position_error_limit_m": 0.005,
+      "maximum_heading_error_deg": 0.26238655459529536,
+      "load_v2_passed": true,
+      "load_50ms_min_margin_left_right": [
+        2.676569056614212,
+        2.913509950956243
+      ],
+      "load_min_instant_margin_left_right": [
+        1.4095051487093313,
+        1.5153275525383467
+      ],
+      "minimum_pressure_pa": 7120.0735562651535,
+      "cleanup_passed": true,
+      "forced_kill_groups": 0,
+      "rtf_whole": 0.979,
+      "rtf_per_minute_range": [
+        0.971,
+        0.983
+      ],
+      "rtf_10s_min": 0.947,
+      "wall_s": 905,
+      "mosaic": {
+        "execution_effective": "cuda",
+        "execution_fallback": false,
+        "frames": 660,
+        "connected_components": [
+          660
+        ],
+        "position_correction_median_m": 0.00575540054572118,
+        "position_correction_max_m": 0.014282963837551814,
+        "final_edge_error_p95_m": 0.002355401925963023,
+        "gray_std_optimized_mean_p95": [
+          2.263139707553608,
+          5.417582417582418
+        ],
+        "pose_graph_scale_minus_one_xy": [
+          0.002,
+          0.0018
+        ]
+      }
+    }
+  },
+  "camera_standoff_mm": {
+    "nominal": 275.0,
+    "horizontal_large_before_preload": 270.3,
+    "final_vertical": 274.36
+  },
+  "body_pitch_deg": {
+    "horizontal_large_before_preload": -0.455,
+    "final_vertical": -0.061
+  },
+  "ekf_replay_vertical_moving_y_mm": {
+    "creep_off": {
+      "mean": 1.75,
+      "sd": 1.45,
+      "p99": 5.37,
+      "max": 7.21
+    },
+    "creep_on": {
+      "mean": 0.0,
+      "sd": 1.02,
+      "p99": 3.18,
+      "max": 4.61
+    }
+  },
+  "wheel_odometry_over_true": {
+    "vertical_up": 1.157,
+    "vertical_down": 0.906,
+    "horizontal_nose_up_6.9deg_raw": 1.0126,
+    "horizontal_compensated": 0.9939
+  }
+}

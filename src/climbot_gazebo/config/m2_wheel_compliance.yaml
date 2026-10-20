@@ -1,4 +1,4 @@
-# Provisional tyre proxy; opt in during M2. Does not change default rigid wheels.
+# Provisional tyre proxy, on by default since M2 (wheel_compliance:=false for rigid wheels).
 # Actual displacement calibrated at 1 ms, not inferred from N/k.
 # Evidence: results/m2_wheel_compliance_2026-10-19/REPORT.md
 m2_wheel_compliance:

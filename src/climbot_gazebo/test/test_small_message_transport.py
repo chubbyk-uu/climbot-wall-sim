@@ -45,7 +45,13 @@ def _text(value, context):
     return ''.join(item.perform(context) for item in value)
 
 
-def _environments(path):
+# Transport settings do not depend on the wall. The default undulating wall
+# builds its whole-wall surface assets on every expansion (3.5 s -> 100 s),
+# which pushed this test past its CTest timeout under -j8.
+FLAT_WALL = {'wall_surface': 'flat', 'wheel_compliance': 'false'}
+
+
+def _environments(path, overrides=None):
     spec = importlib.util.spec_from_file_location('transport_' + path.stem, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -55,6 +61,7 @@ def _environments(path):
         if isinstance(entity, DeclareLaunchArgument):
             context.launch_configurations[entity.name] = _text(
                 entity.default_value, context) if entity.default_value else ''
+    context.launch_configurations.update(overrides or {})
     if hasattr(module, 'launch_setup'):
         actions = module.launch_setup(context)
     else:
@@ -90,7 +97,7 @@ def _assert_local_udp(environment, name):
 
 
 def test_clock_localization_and_actuator_nodes_do_not_open_shared_memory_ports():
-    envs = _environments(GAZEBO / 'launch/climbot_wall.launch.py')
+    envs = _environments(GAZEBO / 'launch/climbot_wall.launch.py', FLAT_WALL)
     assert CRITICAL <= set(envs)
     for name in CRITICAL:
         _assert_local_udp(envs[name], name)
@@ -118,7 +125,7 @@ def test_candidate_pressure_and_fan_bridge_receive_the_latency_default():
 ])
 def test_operator_transport_choices_are_inherited(monkeypatch, key, value):
     monkeypatch.setenv(key, value)
-    envs = _environments(GAZEBO / 'launch/climbot_wall.launch.py')
+    envs = _environments(GAZEBO / 'launch/climbot_wall.launch.py', FLAT_WALL)
     envs.update(_environments(CONTROL / 'launch/line_tracker.launch.py'))
     for name in CRITICAL | {'line_tracker'}:
         assert PROFILE not in envs[name], name
