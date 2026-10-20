@@ -15,6 +15,8 @@
 """Manager-level G4 checks for archive preflight before motion is dispatched."""
 
 import math
+import os
+import sys
 from threading import Event, Thread
 import time
 import unittest
@@ -39,6 +41,7 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
+from rclpy.parameter import Parameter
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_srvs.srv import Trigger
 
@@ -46,9 +49,14 @@ from std_srvs.srv import Trigger
 @pytest.mark.launch_test
 def generate_test_description():
     return launch.LaunchDescription([
+        # ROS time follows the monotonic clock: system time can step backwards
+        # under WSL time sync and the tracker rightly drops the pose then.
+        launch.actions.ExecuteProcess(cmd=[sys.executable, os.path.join(
+            os.path.dirname(__file__), 'fixtures', 'steady_sim_clock.py')]),
         launch_ros.actions.Node(
             package='climbot_control', executable='line_tracker_node',
             parameters=[{
+                'use_sim_time': True,
                 'standalone_mode': False,
                 'odometry_timeout_s': 2.0,
                 'segment_timeout_s': 30.0,
@@ -60,6 +68,7 @@ def generate_test_description():
         launch_ros.actions.Node(
             package='climbot_control', executable='coverage_manager_node',
             parameters=[{
+                'use_sim_time': True,
                 'archive_finalize_timeout_s': 0.30,
                 # Make every accepted archive topic update observable. With
                 # the production feedback throttle, a bad late update can
@@ -158,7 +167,9 @@ class TestCoverageManagerArchive(unittest.TestCase):
 
     def setUp(self):
         rclpy.init()
-        self.node = rclpy.create_node('coverage_manager_archive_test')
+        self.node = rclpy.create_node(
+            'coverage_manager_archive_test',
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
         reliable = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
         self.status_qos = QoSProfile(
             depth=1, reliability=ReliabilityPolicy.RELIABLE,
@@ -197,6 +208,11 @@ class TestCoverageManagerArchive(unittest.TestCase):
         self.executor.add_node(self.node)
         self.thread = Thread(target=self._spin)
         self.thread.start()
+        # Stamps read zero until fixtures/steady_sim_clock.py is received.
+        deadline = time.monotonic() + 10.0
+        while self.node.get_clock().now().nanoseconds == 0:
+            self.assertLess(time.monotonic(), deadline, 'no /clock from the fixture')
+            time.sleep(0.01)
         # Every test builds a new node, so every test has to rediscover these.
         # A call_async() on a client that has not matched yet is simply never
         # delivered, and the test then fails waiting for a status the manager
