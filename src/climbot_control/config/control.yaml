@@ -82,6 +82,10 @@ line_tracker:
     # accuracy comes from the braking profile instead.
     start_approach_tolerance_m: 0.05
     start_approach_exit_tolerance_m: 0.06
+    # A start approach that comes to rest past its line end but outside the
+    # exit tolerance is planned again from where it stopped, this many times,
+    # before the task fails; past the line end nothing else moves it forward.
+    start_approach_retries: 2
     goal_heading_exit_tolerance_deg: 3.0
     stopped_linear_speed_mps: 0.01
     stopped_angular_speed_rps: 0.02
