@@ -15,8 +15,14 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--generation', type=int, default=0,
                         help='frozen expected generation; reject unexpected resets')
+    parser.add_argument('--mu', type=float,
+                        help='scoring coefficient; does not change recorded physics')
     args = parser.parse_args()
     meta = json.loads(Path(str(args.input)+'.json').read_text())
+    recorded_mu = meta.get('recorded_physics_mu')
+    if args.mu is None and recorded_mu is None:
+        raise ValueError('historical trace has no friction metadata; specify --mu explicitly')
+    mu = recorded_mu if args.mu is None else args.mu
     count = len(meta['columns'])
     if args.input.stat().st_size % (count*8):
         raise ValueError('truncated binary load record')
@@ -34,7 +40,11 @@ def main():
     result = {'scope': 'All final-generation physics steps from release+1 to recorder end',
               'generation': int(generation), 'raw_rows': len(raw),
               'scored_rows': int(selected.sum()),
-              'load_acceptance': evaluate(c, release),
+              'recorded_physics_mu': recorded_mu,
+              'scoring_mu': mu,
+              'coefficient_source': 'explicit_argument' if args.mu is not None else 'trace_metadata',
+              'counterfactual': None if recorded_mu is None else mu != recorded_mu,
+              'load_acceptance': evaluate(c, release, mu=mu),
               'minimum_pressure_pa': float(c['vac_delta_pa'].min()),
               'runtime_failed': bool(np.any(c['vac_runtime_failed'])),
               'startup_failed': bool(np.any(c['vac_startup_failed'])),

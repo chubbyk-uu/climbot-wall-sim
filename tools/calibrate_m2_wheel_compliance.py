@@ -45,8 +45,12 @@ def mechanical_inputs():
         'inspection_camera']
     robot = yaml.safe_load((share / 'config/robot.yaml').read_text())['robot']
     model = build(cfg, camera, robot)
+    gazebo = Path(get_package_share_directory('climbot_gazebo'))
+    simulation = yaml.safe_load((gazebo/'config/simulation.yaml').read_text())['simulation']
     wheel = deepcopy(next(p for p in model['parts'] if p['name'] == 'left_wheel_link'))
     return {'wheel': wheel, 'whole_mass_kg': model['mass_kg'],
+            'wall_mu': simulation['wall']['mu'],
+            'drive_wheel_mu': simulation['drive_wheel']['mu'],
             'sprung_mass_kg': (model['mass_kg'] - 2 * wheel['mass_kg']) / 2,
             'actuator_damping_nm_s': cfg['wheel']['joint_damping_nm_s']}
 
@@ -68,6 +72,9 @@ def fixture(inputs, stiffness, damping):
     node(wall, 'pose', '-.025 0 1 0 0 0')
     c = node(node(wall, 'link', name='wall'), 'collision', name='wall_collision')
     node(node(node(c, 'geometry'), 'box'), 'size', '.05 1 1')
+    friction = node(node(node(c, 'surface'), 'friction'), 'ode')
+    node(friction, 'mu', inputs['wall_mu'])
+    node(friction, 'mu2', inputs['wall_mu'])
     model = node(w, 'model', name='probe_00')
     wheel = inputs['wheel']
     shape = wheel['shapes'][0]
@@ -91,8 +98,8 @@ def fixture(inputs, stiffness, damping):
             node(cylinder, 'radius', shape['radius'])
             node(cylinder, 'length', shape['length'])
             friction = node(node(node(c, 'surface'), 'friction'), 'ode')
-            node(friction, 'mu', 1.1)
-            node(friction, 'mu2', 1.1)
+            node(friction, 'mu', inputs['drive_wheel_mu'])
+            node(friction, 'mu2', inputs['drive_wheel_mu'])
     for name, parent, child, kind, direction, lower, upper in [
             ('normal_guide', 'world', 'sprung', 'prismatic', '1 0 0', -.05, .05),
             ('tyre_compression', 'sprung', 'axle', 'prismatic', '1 0 0', 0, TRAVEL),

@@ -10,6 +10,7 @@ import subprocess
 
 from climbot_gazebo.wall_surface import WallSurface
 from design_vacuum_chassis import inputs, profiles, scan
+from m2_load_criterion import resolved_mu
 import numpy as np
 from scipy.spatial.transform import Rotation
 from vacuum_layout import skirt_points
@@ -226,7 +227,7 @@ def threshold_audit(model, physics):
                         for a, b in zip(results[:-1], results[1:]))}}
 
 
-def capability(model, preload, physics):
+def capability(model, preload, physics, *, mu=1.1):
     # Re-scan the entire old capability envelope (all headings, all 149 profiles),
     # retaining the actuator limit combinations rather than substituting .2m/s.
     _, robot, _, control, _, gravity = inputs()
@@ -245,7 +246,7 @@ def capability(model, preload, physics):
         # support-to-CG height by at most 8mm. Use that whole bound upward;
         # do not reduce the design demand by the actual tyre compression.
         variant['centre_xyz_m'][2] += .008
-        result, _ = scan(variant, cases, gravity)
+        result, _ = scan(variant, cases, gravity, mu=mu)
         results.append({'preload_index': i, 'mechanical_n': float(preload[i].sum()),
                         'mechanical_first_moment_nm': moments[i].tolist(),
                         'required_pressure_pa': result['worst']['minimum_pressure_pa'],
@@ -288,7 +289,6 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
-    write(args.output/'protocol.json', PROTOCOL)
     source = {'commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
               'dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], text=True)),
               'tool_sha256': sha(Path(__file__)),
@@ -299,19 +299,23 @@ def main():
                       'src/climbot_gazebo/config/m2_wheel_compliance.yaml',
                       'src/climbot_gazebo/config/m2_tyre_lateral.yaml',
                       'tools/probe_m2_robot_patch.py', 'tools/m2_load_criterion.py']}}
-    saved, preloads = {}, []
+    saved, preloads, coefficients = {}, [], set()
     for name in args.case or CASES:
         saved[name], resolved, preload = saved_pose_audit(args.data_root, name)
         preloads.append(preload)
+        coefficients.add(resolved_mu(resolved))
         write(args.output/(name+'.json'), saved[name])
+    if len(coefficients) != 1:
+        raise ValueError('capability inputs have mixed friction coefficients')
+    write(args.output/'protocol.json', dict(PROTOCOL, drive_mu=resolved_mu(resolved)))
     physics = read_physics()
     threshold = threshold_audit(resolved['model'], physics)
     write(args.output/'quadrature.json', {'saved_poses': saved, 'threshold': threshold})
-    design = capability(resolved['model'], np.vstack(preloads), physics)
+    design = capability(resolved['model'], np.vstack(preloads), physics, mu=resolved_mu(resolved))
     areas = [a for case in saved.values() for a in case['whole_scored_leak_range_m2']]
     areas += [.00018, .00027]
     faults = fault_budget(design['required_pressure_pa'], areas, physics)
-    result = {'protocol': PROTOCOL, 'source': source, 'saved_poses': saved, 'threshold': threshold,
+    result = {'protocol': dict(PROTOCOL, drive_mu=resolved_mu(resolved)), 'source': source, 'saved_poses': saved, 'threshold': threshold,
               'capability_screen': design, 'fault_budget': faults,
               'pending': ['Independent v2 load validation in T3',
                           'Same final configuration B/C and coupled step comparison',

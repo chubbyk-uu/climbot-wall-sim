@@ -1,15 +1,15 @@
 # ROS 2 与离线数据接口合同
 
-更新：2026-10-18。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
+更新：2026-10-22。本文只描述当前公共接口、关键语义和配置归属；完整历史参数推导见
 [接口归档](archive/interfaces/INTERFACES_2026-08-27.md)。主线操作步骤见
-[根 README](../README.md#快速启动)，实验变体与故障处置见 [OPERATION](OPERATION.md)，
+[快速启动](QUICKSTART.md#快速启动)，实验变体与故障处置见 [OPERATION](OPERATION.md)，
 架构职责见 [ARCHITECTURE](ARCHITECTURE.md)。
 
 ## 启动入口
 
 | 入口 | 合同 |
 | --- | --- |
-| `climbot_wall.launch.py` | 默认新负压底盘、Gazebo、桥接、TF、传感器适配、EKF、速度看门狗 |
+| `climbot_wall.launch.py` | 默认负压底盘、起伏墙、柔顺轮、Gazebo、桥接、TF、传感器适配、EKF、速度看门狗 |
 | `climbot_vacuum_stack.launch.py` | 与 climbot_wall 共用实现的兼容入口 |
 | `coverage_planner.launch.py` | 独立规划与可选 RViz，仅预览 |
 | `coverage_sim.launch.py` | 仿真与规划联合预览，不启动执行器 |
@@ -20,6 +20,10 @@
 
 带归档的 launch 从 `CLIMBOT_DATA_ROOT` 取得 `inspection_output_root`；调用方也可传入绝对路径。
 未配置时使用记录器主机当前用户的 `$HOME/climbot_data`，绝不把具体用户目录写入仓库。
+
+当前模型选项：`wall_surface=undulating`、`wheel_compliance=true`；`traction_mu` 留空时读取
+`simulation.yaml`，有效驱动摩擦取墙面与轮胎较小值，当前 0.8。历史 M1 几何对照不会自动恢复
+旧摩擦。当前参数来源与接触近似见[M2 模型](m2/MODEL.md)。
 
 ### `/clock` 发布率
 

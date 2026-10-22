@@ -9,6 +9,7 @@ from pathlib import Path
 
 from climbot_description.vacuum_loads import minimum_pressure
 from m2_load_criterion import evaluate as evaluate_loads
+from m2_load_criterion import resolved_mu
 import numpy as np
 from probe_m2_robot_patch import gap_steps
 from validate_vacuum_motion import frame_data
@@ -18,13 +19,14 @@ from validate_vacuum_physics import reference_pressure, reference_rate
 def case_metrics(root):
     resolved = json.loads((root / 'resolved.json').read_text())
     c = frame_data(root / 'native/frames.csv')
+    mu = resolved_mu(resolved)
     t = c['sim_time_s']
     release = float(c['vac_release_time_s'][c['vac_fixture_active'] == 0][0])
     ids = np.flatnonzero((t >= release + 1) & (t <= release + 6))
     normals = np.column_stack([c[s + '_fx'] for s in ['left', 'right', 'ball']])
     tangent = np.column_stack([np.hypot(c[s + '_fy'], c[s + '_fz'])
                                for s in ['left', 'right']])
-    required = np.maximum(5, 1.5 * tangent / 1.1)
+    required = np.maximum(5, 1.5 * tangent / mu)
     deficient = normals[:, :2] < required
     native = {}
     for i, s in enumerate(['left', 'right']):
@@ -34,7 +36,7 @@ def case_metrics(root):
             transient |= np.roll(lost, offset)
         native[s] = {
             'raw_minimum_normal_n': float(normals[ids, i].min()),
-            'raw_minimum_margin': float((1.1 * normals[ids, i] /
+            'raw_minimum_margin': float((mu * normals[ids, i] /
                                         np.maximum(tangent[ids, i], 1e-12)).min()),
             'raw_requirement_violation_frames': int(deficient[ids, i].sum()),
             'longest_requirement_violation_steps': gap_steps(~deficient[ids, i]),
@@ -52,7 +54,7 @@ def case_metrics(root):
     for height_shift in [-.002, 0, .002]:
         model['centre_xyz_m'][2] = resolved['model']['centre_xyz_m'][2] + height_shift
         pressure_bounds.append(float(minimum_pressure(
-            model, state[None, :], lateral='conservative')[0]))
+            model, state[None, :], mu=mu, lateral='conservative')[0]))
     minimum = max(pressure_bounds)
     pressure = c['vac_delta_pa'][ids]
     sample = ids[::50]
@@ -81,7 +83,7 @@ def case_metrics(root):
         }
     channels = c['vac_surface_channel_area_m2'][ids]
     leak = c['vac_leak_area_m2'][ids]
-    load_acceptance = evaluate_loads(c, release)
+    load_acceptance = evaluate_loads(c, release, mu=mu)
     raw_checks = {
         'each_drive_raw_frame_meets_demand': bool(np.all(~deficient[ids])),
         'ball_raw_floor': bool(np.all(normals[ids, 2] >= 10)),
@@ -132,7 +134,8 @@ def main():
             if not released.any():
                 raise ValueError(f'{name}: fixture never released')
             release = float(c['vac_release_time_s'][released][0])
-            cases[name] = evaluate_loads(c, release)
+            cases[name] = evaluate_loads(c, release, mu=resolved_mu(
+                json.loads((args.data_root/name/'resolved.json').read_text())))
             cases[name]['frames_sha256'] = hashlib.sha256(path.read_bytes()).hexdigest()
         result = {'scope': 'M2 load subcheck only; original samples retained', 'cases': cases}
     else:

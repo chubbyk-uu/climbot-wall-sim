@@ -256,8 +256,18 @@ def _load_run(path: Path) -> ProcessedRun:
         raise MosaicInputError(f'processed input run is not a directory: {root}.')
     manifest_path = root / 'processing_manifest.json'
     manifest = _read_json(manifest_path, 'processing_manifest.json')
-    if manifest.get('processing_format_version') != 1:
+    processing_version = manifest.get('processing_format_version')
+    if processing_version not in (1, 2):
         raise MosaicInputError('unsupported or missing processing_format_version.')
+    if processing_version == 2:
+        geometry = manifest.get('projection_geometry')
+        if not isinstance(geometry, dict) or geometry.get('model') != 'recorded_ekf_se3':
+            raise MosaicInputError(
+                'version 2 processing requires recorded EKF projection geometry.')
+        _, geometry_path = _safe_relative(
+            root, geometry.get('pose_samples_file'), 'projection', '.npz', 'projection samples')
+        if _sha256_file(geometry_path) != geometry.get('pose_samples_sha256'):
+            raise MosaicInputError('projection pose samples SHA-256 differs from manifest.')
     image_count = _nonnegative_integer(manifest.get('image_count'), 'processing image_count')
     if image_count == 0:
         raise MosaicInputError('processed run contains no frames.')
@@ -304,8 +314,38 @@ def _load_run(path: Path) -> ProcessedRun:
         label_name = f'metadata/{label_path.name}'
         record = records_by_label[label_name]
         label = _read_json(label_path, f'processed label {label_path.name}')
-        if label.get('processing_schema_version') != 1:
+        if label.get('processing_schema_version') != processing_version:
             raise MosaicInputError(f'processed label {label_path.name} has an unsupported schema.')
+        projection_pose = label.get('projection_camera_pose')
+        if processing_version == 2:
+            if not isinstance(projection_pose, dict):
+                raise MosaicInputError('version 2 label lacks projection_camera_pose.')
+            _finite_fields(projection_pose.get('position'), ('x', 'y', 'z'), 'projection position')
+            quaternion = _finite_fields(projection_pose.get('orientation'),
+                                        ('x', 'y', 'z', 'w'), 'projection orientation')
+            if abs(math.sqrt(sum(value * value for value in quaternion)) - 1) > 1e-3:
+                raise MosaicInputError('projection orientation is not a unit quaternion.')
+            digest = hashlib.sha256(json.dumps(
+                projection_pose, sort_keys=True, separators=(',', ':'), allow_nan=False
+            ).encode()).hexdigest()
+            if digest != record.get('projection_pose_sha256'):
+                raise MosaicInputError('projection pose SHA-256 differs from manifest.')
+        elif projection_pose is not None:
+            raise MosaicInputError('projection camera geometry requires processing version 2.')
+        derivation = manifest.get('localization_derivation')
+        if derivation is not None:
+            if (not isinstance(derivation, dict) or
+                    derivation.get('model') != 'replayed_ekf_planar'):
+                raise MosaicInputError('unsupported localization derivative model.')
+            if derivation.get('pose_binding_version') not in (None, 1):
+                raise MosaicInputError('unsupported localization pose binding version.')
+        if derivation is not None and derivation.get('pose_binding_version') == 1:
+            digest = hashlib.sha256(json.dumps(
+                {'camera_pose': label.get('camera_pose'),
+                 'wall_heading_rad': label.get('wall_heading_rad')},
+                sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+            if digest != record.get('localization_pose_sha256'):
+                raise MosaicInputError('derived localization pose SHA-256 differs from manifest.')
         processing = label.get('processing')
         if not isinstance(processing, dict) or processing.get('undistorted') is not True:
             raise MosaicInputError(f'processed label {label_path.name} is not marked undistorted.')

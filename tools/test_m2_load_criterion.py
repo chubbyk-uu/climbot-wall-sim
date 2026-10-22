@@ -106,3 +106,32 @@ def test_invalid_sampling_or_force_is_rejected(invalid):
         c['left_fx'][100] = np.nan
     with pytest.raises(ValueError):
         evaluate(c, 0)
+
+
+def test_explicit_mu_preserves_historical_default_and_all_thresholds():
+    old = evaluate(trace(), 0)
+    low = evaluate(trace(), 0, mu=.7)
+    assert old['passed']
+    assert not low['passed']
+    assert low['window_sensitivity_ms']['50']['minimum_margin_left_right'] == \
+        pytest.approx([1.4, 1.4])
+    assert old['criterion']['mu'] == 1.1
+    assert low['criterion']['mu'] == .7
+    assert low['criterion']['version'] != old['criterion']['version']
+    assert {k: v for k, v in old['criterion'].items() if k not in ('mu', 'version')} == \
+        {k: v for k, v in low['criterion'].items() if k not in ('mu', 'version')}
+    assert evaluate(trace(), 0)['criterion']['mu'] == 1.1
+
+
+@pytest.mark.parametrize('mu', [0, -1, float('nan'), float('inf')])
+def test_invalid_mu_is_rejected(mu):
+    with pytest.raises(ValueError):
+        evaluate(trace(), 0, mu=mu)
+
+
+def test_resolved_friction_uses_actual_input_and_preserves_old_recordings():
+    from m2_load_criterion import resolved_mu
+    assert resolved_mu({}) == 1.1
+    assert resolved_mu({'friction': {'effective_drive_mu': .8}}) == .8
+    with pytest.raises(ValueError):
+        resolved_mu({'friction': {'effective_drive_mu': 0}})

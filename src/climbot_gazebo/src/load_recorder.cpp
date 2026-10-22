@@ -15,6 +15,8 @@
 #include <gz/sim/System.hh>
 #include <gz/sim/components/ContactSensorData.hh>
 #include <array>
+#include <cmath>
+#include <iomanip>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
@@ -42,9 +44,12 @@ public:
       collisions_[count_++] = link.Collisions(ecm).at(0);
     }
     body_ = gz::sim::Link(model.LinkByName(ecm, "chassis_link"));
+    const double mu = sdf->Get<double>("drive_mu");
+    if (!std::isfinite(mu) || mu <= 0) {throw std::runtime_error("invalid recorded drive_mu");}
     std::ofstream meta(path.string() + ".json");
+    meta << std::setprecision(17) << "{\"schema_version\":3,\"recorded_physics_mu\":" << mu << ",";
     meta <<
-      R"({"schema_version":2,"dtype":"<f8","columns":[
+      R"("dtype":"<f8","columns":[
 "sim_time_s","paused","vac_fixture_active","vac_release_time_s","vac_generation",
 "vac_delta_pa","vac_runtime_failed","vac_startup_failed","vac_skirt_stop_previous_normal_n",
 "pose_x","pose_y","pose_z",

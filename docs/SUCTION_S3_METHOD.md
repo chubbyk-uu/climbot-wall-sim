@@ -1,5 +1,7 @@
 # S3 原生 Gazebo 集成与独立观测
 
+> 冻结合同／方法，按文中试验时点与配置解释。保留原路径供工具溯源；当前默认与后续证据见[M2 入口](SUCTION_M2_PLAN.md)和[验收矩阵](ACCEPTANCE.md)。
+
 本阶段为平墙、刚性轮、球轮 x=-0.300 m、20 mm 裙边的候选底盘。S1 的同源生成器输出
 SDF／URDF；S2 的纯 C++ 核心由 `VacuumSystem` 调用。旧默认入口及 S0 的 12 个运行输入
 保持冻结。新入口为 `ros2 launch climbot_gazebo climbot_vacuum.launch.py`，默认无 GUI、

@@ -48,7 +48,7 @@ T1/T2 追加少量实际越缝／轮载检查；板缝和未省略表面继续�
 
 ## 复现与保留
 
-命令见 [M2 操作入口](../../docs/OPERATION.md#m2-原生接触与局部-ode-修复)：
+命令见 [M2 操作入口](../../docs/operations/M2_PHYSICS.md#m2-原生接触与局部-ode-修复)：
 `--features-only` 是仍失败的网格诊断，`--bridged-cracks-only` 是显式近似检查；
 `tools/check_m2_crack_bridge.py --output <新JSON路径>` 执行静态支撑核算。
 最小 ODE 诊断源为 [ode_triangle_contact_probe.cpp](../../tools/ode_triangle_contact_probe.cpp)，

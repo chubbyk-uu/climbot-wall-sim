@@ -19,6 +19,14 @@ CRITERION = {
 }
 
 
+def resolved_mu(resolved):
+    """Old frozen resolved inputs predate friction metadata and used mu=1.1."""
+    value = resolved.get('friction', {}).get('effective_drive_mu', 1.1)
+    if not np.isfinite(value) or value <= 0:
+        raise ValueError('invalid resolved friction coefficient')
+    return float(value)
+
+
 def longest_run(flags):
     """Return the longest consecutive true run, including either array boundary."""
     changes = np.diff(np.r_[False, flags, False].astype(int))
@@ -32,8 +40,13 @@ def rolling_sum(values, count):
     return integral[count:] - integral[:-count]
 
 
-def evaluate(columns, release_s):
+def evaluate(columns, release_s, *, mu=1.1):
     """Score the existing release+1 s boundary through the entire remaining trace."""
+    if not np.isfinite(mu) or mu <= 0:
+        raise ValueError('friction coefficient must be finite and positive')
+    criterion = dict(CRITERION, mu=float(mu))
+    if mu != CRITERION['mu']:
+        criterion['version'] = 'm2_load_v3_explicit_mu_20261022'
     names = ['left', 'right', 'ball']
     times = columns['sim_time_s']
     if not np.isfinite(times).all() or not np.isfinite(release_s):
@@ -58,7 +71,7 @@ def evaluate(columns, release_s):
     low = normal <= floors
     unsupported = absent | low
     gap = [longest_run(unsupported[:, i]) for i in range(3)]
-    margin = CRITERION['mu'] * normal[:, :2] / np.maximum(tangent, 1e-12)
+    margin = mu * normal[:, :2] / np.maximum(tangent, 1e-12)
     loaded = normal[:, :2] > CRITERION['loaded_drive_threshold_n']
     loaded_min = [float(margin[:, i][loaded[:, i]].min())
                   if loaded[:, i].any() else None for i in range(2)]
@@ -71,7 +84,7 @@ def evaluate(columns, release_s):
             sensitivity[str(ms)] = None
             continue
         # Uniform dt was checked above, so it cancels between the two impulses.
-        ratio = CRITERION['mu'] * rolling_sum(normal[:, :2], count) / np.maximum(
+        ratio = mu * rolling_sum(normal[:, :2], count) / np.maximum(
             rolling_sum(tangent, count), 1e-12)
         sensitivity[str(ms)] = {'samples': count,
                                 'minimum_margin_left_right': ratio.min(axis=0).tolist()}
@@ -84,7 +97,7 @@ def evaluate(columns, release_s):
         'contact_or_low_load_runs_at_most_two_steps': max(gap) <= 2,
     }
     return {
-        'criterion': CRITERION, 'passed': all(checks.values()), 'checks': checks,
+        'criterion': criterion, 'passed': all(checks.values()), 'checks': checks,
         'step_s': step, 'samples': len(t),
         'scoring_time_range_s': [float(t[0]), float(t[-1])],
         'minimum_loaded_instant_margin_left_right': loaded_min,

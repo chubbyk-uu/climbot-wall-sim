@@ -82,7 +82,8 @@ def _quaternion_rotation(orientation: dict[str, Any]) -> np.ndarray:
 
 def _camera_center(label: dict[str, Any]) -> np.ndarray:
     try:
-        position = label['camera_pose']['pose']['position']
+        pose = label.get('projection_camera_pose', label['camera_pose']['pose'])
+        position = pose['position']
         return np.array([
             _finite(position['x'], 'camera position.x'),
             _finite(position['y'], 'camera position.y'),
@@ -94,7 +95,8 @@ def _camera_center(label: dict[str, Any]) -> np.ndarray:
 
 def _camera_rotation(label: dict[str, Any]) -> np.ndarray:
     try:
-        return _quaternion_rotation(label['camera_pose']['pose']['orientation'])
+        pose = label.get('projection_camera_pose', label['camera_pose']['pose'])
+        return _quaternion_rotation(pose['orientation'])
     except (KeyError, TypeError) as error:
         raise ProjectionError('camera pose is incomplete.') from error
 

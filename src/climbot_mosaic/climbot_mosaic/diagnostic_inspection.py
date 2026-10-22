@@ -146,6 +146,33 @@ def _feature_mask(feature: dict[str, Any], grid: MosaicGrid, bounds: Bounds) -> 
     y_values = bounds[3] - (np.arange(height, dtype=np.float32) + 0.5) * \
         grid.resolution_m_per_pixel
     kind = feature.get('kind')
+    if kind == 'surface_groove':
+        geometry = feature.get('geometry')
+        if not isinstance(geometry, dict):
+            raise DiagnosticInspectionError('surface groove geometry is malformed.')
+        start = np.asarray(geometry.get('start_m'), float)
+        end = np.asarray(geometry.get('end_m'), float)
+        width_m = _finite(geometry.get('width_m'), 'groove width_m')
+        taper = _finite(geometry.get('end_taper_m', 0), 'groove end_taper_m')
+        if (start.shape != (2,) or end.shape != (2,) or
+                not np.isfinite([*start, *end]).all() or width_m <= 0 or taper < 0):
+            raise DiagnosticInspectionError('surface groove geometry is malformed.')
+        length = float(np.linalg.norm(end - start))
+        if length <= 0:
+            raise DiagnosticInspectionError('surface groove must have positive length.')
+        direction = (end - start) / length
+        dx, dy = x_values[None, :] - start[0], y_values[:, None] - start[1]
+        along = dx * direction[0] + dy * direction[1]
+        across = np.abs(dx * direction[1] - dy * direction[0])
+        if taper > 0:
+            def smooth(value):
+                value = np.clip(value, 0, 1)
+                return value * value * (3 - 2 * value)
+            envelope = smooth(along / taper) * smooth((length - along) / taper)
+        else:
+            envelope = ((along >= 0) & (along <= length)).astype(float)
+        # The native source narrows tapered tips as well as reducing depth.
+        return (envelope > 0) & (across < width_m * envelope / 2)
     if kind in ('crack_decal', 'graffiti_decal'):
         center = feature.get('center_m')
         size = feature.get('size_m')

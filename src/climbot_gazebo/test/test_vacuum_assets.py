@@ -426,3 +426,23 @@ def test_coupled_surface_patch_requires_explicit_channel_parameters(tmp_path, mo
     other = ET.parse(tmp_path / 'model.sdf').find(
         './/plugin[@name="climbot_gazebo::VacuumSystem"]')
     assert other.findtext('channel_drape_m') == plugin.findtext('channel_drape_m')
+
+
+@pytest.mark.parametrize('mu', [.7, .8, 1.1])
+def test_friction_trial_uses_same_mu_in_physics_and_startup_sizing(tmp_path, mu):
+    from climbot_description.vacuum_loads import minimum_pressure, states
+    resolved = build_assets(tmp_path, traction_mu=mu, caster_proxy=True)
+    tree = ET.parse(tmp_path / 'world.sdf')
+    for name in ['wall', 'caster_proxy_wall']:
+        for tag in ['mu', 'mu2']:
+            path = f'.//model[@name="{name}"]/link/collision/surface/friction/ode/{tag}'
+            assert float(tree.findtext(path)) == mu
+    robot = tree.find('.//model[@name="climbot"]')
+    for side in ['left', 'right']:
+        path = f'link[@name="{side}_wheel_link"]/collision/surface/friction/ode/mu'
+        assert float(robot.findtext(path)) == mu
+    path = 'link[@name="caster_ball_link"]/collision/surface/friction/ode/mu'
+    assert float(robot.findtext(path)) == .35
+    assert resolved['friction']['effective_drive_mu'] == mu
+    assert resolved['nominal_startup_minimum_pa'] == pytest.approx(
+        minimum_pressure(resolved['model'], states([0]), mu=mu, lateral='conservative')[0])

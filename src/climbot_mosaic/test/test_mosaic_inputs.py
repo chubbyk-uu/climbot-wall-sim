@@ -139,6 +139,58 @@ def test_multiple_compatible_runs_are_validated_in_stable_order(tmp_path):
     assert summary['source_run_ids'] == ['a-run', 'b-run']
 
 
+def test_projection_derivative_requires_bound_samples_and_poses(tmp_path):
+    run = make_processed_run(tmp_path, 'derived', 'derived-run', frame_count=1)
+    manifest_path = run / 'processing_manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    label_path = run / 'metadata/000000.json'
+    label = json.loads(label_path.read_text())
+    label['projection_camera_pose'] = label['camera_pose']['pose']
+    write_json(label_path, label)
+    with pytest.raises(MosaicInputError, match='version 2'):
+        validate_processed_runs([run])
+    (run / 'projection').mkdir()
+    samples = run / 'projection/filtered_poses.npz'
+    np.savez_compressed(samples, rows=np.zeros((2, 8)))
+    manifest['processing_format_version'] = 2
+    manifest['projection_geometry'] = {
+        'model': 'recorded_ekf_se3', 'pose_samples_file': 'projection/filtered_poses.npz',
+        'pose_samples_sha256': sha256(samples)}
+    manifest['frames'][0]['projection_pose_sha256'] = hashlib.sha256(json.dumps(
+        label['projection_camera_pose'], sort_keys=True, separators=(',', ':'),
+        allow_nan=False).encode()).hexdigest()
+    label['processing_schema_version'] = 2
+    write_json(label_path, label)
+    write_json(manifest_path, manifest)
+    assert len(validate_processed_runs([run]).frames) == 1
+    label['projection_camera_pose']['position']['z'] += 0.001
+    write_json(label_path, label)
+    with pytest.raises(MosaicInputError, match='projection pose SHA-256'):
+        validate_processed_runs([run])
+    samples.write_bytes(b'changed')
+    with pytest.raises(MosaicInputError, match='samples SHA-256'):
+        validate_processed_runs([run])
+
+
+def test_replay_derivative_binds_pose_and_covariance(tmp_path):
+    run = make_processed_run(tmp_path, 'replayed', 'replayed-run', frame_count=1)
+    path = run / 'processing_manifest.json'
+    manifest = json.loads(path.read_text())
+    label_path = run / 'metadata/000000.json'
+    label = json.loads(label_path.read_text())
+    manifest['localization_derivation'] = {
+        'model': 'replayed_ekf_planar', 'pose_binding_version': 1}
+    manifest['frames'][0]['localization_pose_sha256'] = hashlib.sha256(json.dumps(
+        {'camera_pose': label['camera_pose'], 'wall_heading_rad': label['wall_heading_rad']},
+        sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+    write_json(path, manifest)
+    assert len(validate_processed_runs([run]).frames) == 1
+    label['camera_pose']['covariance'][0] *= 0.01
+    write_json(label_path, label)
+    with pytest.raises(MosaicInputError, match='localization pose SHA-256'):
+        validate_processed_runs([run])
+
+
 def test_processed_image_hash_tampering_is_rejected(tmp_path):
     root = make_processed_run(tmp_path, 'tampered', 'tampered-run')
     (root / 'images' / '000000.png').write_bytes(b'not a valid PNG')

@@ -81,12 +81,18 @@ def runtime_source_state(path=None, modules=None, entrypoint=None):
         try:
             payload = actual.read_bytes()
             digest = hashlib.sha256(payload).hexdigest()
-            expected = (subprocess.check_output(
-                ['git', 'show', f'HEAD:{source}'], cwd=root, timeout=5)
-                if source else None)
-            matches = expected == payload if expected is not None else None
-        except (OSError, subprocess.SubprocessError):
+        except OSError:
             digest, matches = None, False
+        else:
+            try:
+                expected = (subprocess.check_output(
+                    ['git', 'show', f'HEAD:{source}'], cwd=root, timeout=5,
+                    stderr=subprocess.DEVNULL) if source else None)
+                matches = expected == payload if expected is not None else None
+            except (OSError, subprocess.SubprocessError):
+                # A new, uncommitted module still has reproducible runtime bytes.
+                # Retain their digest while correctly refusing commit identity.
+                matches = False
         files.append({'source': source, 'runtime_file': actual.name,
                       'sha256': digest, 'matches_commit': matches})
     return {'source_matches_commit': bool(files) and all(

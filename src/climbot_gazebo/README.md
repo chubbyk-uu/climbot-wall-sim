@@ -1,22 +1,16 @@
 # climbot_gazebo
 
 垂直墙面 Gazebo 仿真、三风机单腔负压物理、ROS/Gazebo 桥接、定位链路和实验评估工具。
-默认新底盘＋vacuum＋平墙＋刚性轮，三机固定档位抽气，压力就绪后自动撤支撑。
+默认新底盘＋vacuum＋起伏墙＋预压柔顺轮，有效摩擦 0.8；三机固定档位抽气，压力就绪后自动撤支撑。
 
 `adhesion_mode:=fixed_pressure` 保留同插件 B 诊断；旧几何及恒力入口已删除，历史对照从冻结 Git 版本复现。
 风扇 GUI 动画跟随实际归一化转速，显示转速为便于观察的慢速代理。
 
-## 启动
+## 启动与配置
 
-```bash
-ros2 launch climbot_gazebo climbot_wall.launch.py
-```
-
-自动化测试使用：
-
-```bash
-ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
-```
+首次启动和 headless 主线见[快速启动](../../docs/QUICKSTART.md#1-只看仿真)，
+批处理／固定压差及故障诊断见[操作入口](../../docs/OPERATION.md)，
+起伏几何、柔顺与摩擦选择见[M2 模型](../../docs/m2/MODEL.md)。
 
 原生 Linux 默认自动选择 `native`，使用主机图形驱动。WSL2 默认自动选择 Mesa D3D12，
 需要共享修复库；本仓库包含构建脚本和补丁，见 [Mesa 安装与验证](../../docs/MESA_SETUP.md)。
@@ -53,7 +47,11 @@ ros2 launch climbot_gazebo climbot_wall.launch.py headless:=true
 - `scripts/measure_turn_slip.py`：多角度原地转向下滑；
 - `scripts/evaluate_coverage_execution.py`：执行内置紧凑任务，或用 `case:=planned_task` 执行规划器发布的完整任务，按动态直线参考统计 Gazebo 真值横轨、终点、转向结束航向、水平高度漂移、路径长度和补偿量，并计算实际二维检测足迹覆盖率；
 - `scripts/evaluate_localization.py`：四方向定位误差评价。
-- `climbot_gazebo/wall_texture.py`：把烘焙好的贴图块作为纯视觉 visual 挂到墙面上；碰撞盒与摩擦参数不动。贴图块的**外表面必须落在碰撞面上**，因为轮子压的和相机拍的必须是同一个平面：`0.275 m` 物距上哪怕 `1 mm` 的偏差，都会让离线拼接整幅带上 `+3600 ppm` 量级的尺度误差。为此 `wall_visual` 在 `climbot_wall.sdf.xacro` 里内缩让开 z-fighting，见 `SURFACE_OFFSET_M` 的注释。烘焙工具在 `tools/`，产物不进仓库，用法见 [OPERATION.md](../../docs/OPERATION.md) 的“墙面贴图”。
+- `climbot_gazebo/wall_texture.py`：平墙路径把烘焙贴图块作为纯视觉 visual 挂到墙面上；碰撞盒与摩擦参数不动。贴图块的**外表面必须落在碰撞面上**，因为轮子压的和相机拍的必须是同一个平面：`0.275 m` 物距上哪怕 `1 mm` 的偏差，都会让离线拼接整幅带上 `+3600 ppm` 量级的尺度误差。为此 `wall_visual` 在 `climbot_wall.sdf.xacro` 里内缩让开 z-fighting，见 `SURFACE_OFFSET_M` 的注释。烘焙工具在 `tools/`，产物不进仓库，用法见 [OPERATION.md](../../docs/OPERATION.md) 的“墙面贴图”。
+
+起伏墙由 `wall_assets.py`／`surface_mesh.py` 生成同源光学网格、驱动高度场与球轮代理；
+`m2_{wall_surface,wheel_compliance}.yaml` 定义表面与法向柔顺。EKF Q 和延迟历史已经按带噪声数据标定，
+传感器 R 与噪声保留，见[定位报告](../../results/m2_localization_calibration_2026-10-22/REPORT.md)。
 
 ## 侧滑标定
 

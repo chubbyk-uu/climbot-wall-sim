@@ -137,7 +137,7 @@
 提交 `c09e6be` 修复测试夹具的时钟代次、真实订阅匹配和异常清理，统一整数纳秒拆分。
 新增两个确定性节点回归：实际销毁／重建客户端验证时钟延续；故意抛出巡航断言并验证 Goal
 已取消。取消终态由真实 Action 服务器返回，没有伪造 result。控制器与运动阈值均未改。
-对应确认案例见 [INCIDENTS #17](../../docs/INCIDENTS.md#17-复用节点却重置测试时钟失败断言还会留下活跃任务)。
+对应确认案例见 [INCIDENTS #17](../../docs/incidents/TESTING.md#17-复用节点却重置测试时钟失败断言还会留下活跃任务)。
 
 回退时钟继承的负对照确定失败（`0.0 != 0.02`）；把异常取消恢复为顺序执行的负对照也失败，
 修复后的真实节点用例通过。负对照的非零退出是预期结果，不计作产品套件失败。
@@ -146,7 +146,7 @@
 Action 客户端的 discovery 不能由测试自己的 `wait_for_server()` 代替。提交 `3429e17`
 先验证服务器不存在时的拒绝，再仅对“尚未发送 Goal”的 discovery 拒绝作有期限等待；
 其他拒绝不重试，原有 SIGKILL／强制恢复验证保留。确认案例见
-[INCIDENTS #18](../../docs/INCIDENTS.md#18-测试客户端发现-action-server不代表管理器内部也已发现)。
+[INCIDENTS #18](../../docs/incidents/TESTING.md#18-测试客户端发现-action-server不代表管理器内部也已发现)。
 
 最终在 `3429e17` 的干净 `src/`／`tools/` 上，保持 `--executor parallel --parallel-workers 8`，
 **连续 8 轮均为 1436 tests、0 errors、0 failures、67 skipped**。完整 stdout/stderr 分轮留在

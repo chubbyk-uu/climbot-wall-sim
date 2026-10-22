@@ -4,26 +4,16 @@
 
 ## 启动
 
-仿真、规划器和 RViz，只预览不执行：
-
-```bash
-ros2 launch climbot_bringup coverage_sim.launch.py
-```
-
-再加跟踪器和任务管理器的完整任务入口，默认在 RViz 中点选区域：
-
-```bash
-ros2 launch climbot_bringup coverage_mission.launch.py
-```
-
-两个入口均默认新底盘、三风机单腔 vacuum、平墙和刚性轮，仿真／规划／控制使用同一几何；
-`adhesion_mode:=fixed_pressure` 可做同插件诊断。巡航仍为 0.20 m/s。
+主线启动命令只在[快速启动](../../docs/QUICKSTART.md)维护：
+`coverage_sim` 只预览，`coverage_mission` 启动执行器与管理器。
+两个入口均使用新负压底盘，默认起伏墙、柔顺轮、0.30 m/s；有效摩擦 0.8。
+`wall_surface:=flat wheel_compliance:=false` 保留 M1 几何对照，摩擦另行显式选择。
 
 两个 launch 都接受 `config_file`（`coverage_sim`）或 `planner_config_file` 与
 `control_config_file`（`coverage_mission`）、`region_type` 和 `sweep_direction`。
 `coverage_mission` 另有 `tracking_mode`（`distance` 或 `time`），透传给执行器选择
 直线段控制律；运行中也可以从面板的 Algorithm 下拉框改。
-主线启动命令见 [根 README 的快速启动](../../README.md#快速启动)，批处理与实验变体见
+主线启动命令见 [快速启动](../../docs/QUICKSTART.md#快速启动)，批处理与实验变体见
 [docs/OPERATION.md](../../docs/OPERATION.md)。
 
 ## 为什么单独成包

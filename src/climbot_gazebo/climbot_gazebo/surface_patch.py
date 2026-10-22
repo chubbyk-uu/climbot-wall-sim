@@ -47,7 +47,7 @@ class Envelope:
         return n / np.linalg.norm(n, axis=-1, keepdims=True)
 
 
-def apply(world, plugin, out, config, surface_pose, wheel_radius, size=1.2):
+def apply(world, plugin, out, config, surface_pose, wheel_radius, size=1.2, *, wall_mu):
     """Install a bounded patch near the robot, with no hidden flat collision plane."""
     channels = config.get('channel_model')
     if plugin.findtext('pressure_mode') != 'fixed_pressure' and channels is None:
@@ -166,8 +166,8 @@ def apply(world, plugin, out, config, surface_pose, wheel_radius, size=1.2):
         surface = node(collision, 'surface')
         node(node(surface, 'contact'), 'collide_bitmask', bits)
         friction = node(node(surface, 'friction'), 'ode')
-        node(friction, 'mu', 1.1)
-        node(friction, 'mu2', 1.1)
+        node(friction, 'mu', wall_mu)
+        node(friction, 'mu2', wall_mu)
         if bits == 1:
             visual = node(link, 'visual', name='surface_visual')
             node(visual, 'pose', numbers([0, 0, -low, 0, 0, 0]))

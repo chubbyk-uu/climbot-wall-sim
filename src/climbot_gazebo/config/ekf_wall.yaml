@@ -2,6 +2,20 @@ ekf_filter_node:
   ros__parameters:
     frequency: 50.0
     sensor_timeout: 0.25
+    # M2 sensor-data calibration: native EKF innovations with measured
+    # lateral/normal model-error floors; sensor R remains in each message.
+    # Units follow robot_localization: Q is multiplied by prediction dt.
+    # State order: xyz, rpy, body velocity, body angular velocity, acceleration.
+    # Source/limits: results/m2_localization_calibration_2026-10-22/REPORT.md
+    process_noise_covariance: [
+      4.0829127571728279e-08, 4.0829127571728279e-08, 2.0350441907708794e-08,
+      1.2864549750483253e-06, 1.2864549750483253e-06, 1.1953263431653035e-06,
+      1.2333579449037395e-06, 0.0030000000000000001, 0.0070000000000000001,
+      0.1059603120651377, 0.1059603120651377, 0.0045638925278347489,
+      0.012214850562496705, 9.9999999999999974e-06, 9.9999999999999974e-06]
+    # Reprocess delayed total-station fixes at their measurement stamps.
+    smooth_lagged_data: true
+    history_length: 0.5
     two_d_mode: false
     print_diagnostics: true
     publish_tf: true

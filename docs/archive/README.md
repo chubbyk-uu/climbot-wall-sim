@@ -27,3 +27,15 @@
 
 `reviews/REVIEW_*.md` 由 `.gitignore` 忽略，是尚未纳入 Git 的本地 review 工作稿。它们不属于
 当前文档体系；如需正式保留，应先逐份确认内容与提交必要性，再解除忽略。
+
+## 新增主题分册（2026-10-22）
+
+- [M1 历史设计](suction/README.md)、[M2 阶段记录](m2/README.md)：原长计划按设计、阶段与后续试验拆分。
+- [CUDA 原合同](gpu/DESIGN_2026-09-01.md)、[否决路线与结果](gpu/RESULTS_2026-09-01.md)。
+- [墙面原计划](plans/WALL_TEXTURE_PLAN_2026-10-19.md)、[旧协议 v1](protocols/WALL_TEXTURE_PROTOCOL_V1_2026-10-18.md)、[旧协议 v2](protocols/WALL_TEXTURE_PROTOCOL_V2_2026-10-18.md)。
+- [10-22 状态快照](status-history/STATUS_2026-10-22.md)：整理前混合记录，当前状态以现行入口为准。
+- [历次数据保留与清理](data-retention/README.md)：保留授权、执行结果与回执路径。
+
+旧的超长归档文件名保留为分册目录页；从目录页进入对应章节，不丢弃历史内容。
+
+- [本地参考原件](references/README.md)：早期需求 DOCX 与参考专利 PDF，原件不随 Git 分发。

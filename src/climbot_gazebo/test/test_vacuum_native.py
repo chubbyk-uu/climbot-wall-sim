@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 import subprocess
 import uuid
+from xml.etree import ElementTree as ET
 
 from ament_index_python.packages import get_package_prefix
 from climbot_gazebo.mesa_runtime import rendering_environment
@@ -94,7 +95,14 @@ def test_all_fans_off_failure_remains_observable_and_reset_recovers(tmp_path):
 @pytest.mark.parametrize('mode', ['fixed_pressure', 'fan_ode'])
 def test_native_observer_and_vacuum_survive_reset(tmp_path, mode):
     """Use an actual Gazebo process; a regenerated formula cannot pass this."""
-    build_assets(tmp_path, mode=mode, realtime_factor=0)
+    resolved = build_assets(tmp_path, mode=mode, realtime_factor=0, traction_mu=.8)
+    world = ET.parse(tmp_path / 'world.sdf')
+    robot = world.find('.//model[@name="climbot"]')
+    recorder = ET.SubElement(robot, 'plugin', filename='libclimbot_load_recorder.so',
+                             name='climbot_gazebo::LoadRecorder')
+    ET.SubElement(recorder, 'path').text = str(tmp_path / 'loads.bin')
+    ET.SubElement(recorder, 'drive_mu').text = str(resolved['friction']['effective_drive_mu'])
+    world.write(tmp_path / 'world.sdf')
     request = tmp_path / 'request.yaml'
     request.write_text(yaml.safe_dump({
         'world': 'world.sdf', 'step_s': .001, 'duration_s': 4,
@@ -112,6 +120,10 @@ def test_native_observer_and_vacuum_survive_reset(tmp_path, mode):
             str(prefix / 'lib/climbot_gazebo/vacuum_sim_probe'), str(request), str(output)],
             env=env, stdout=stream, stderr=subprocess.STDOUT, timeout=60)
     assert result.returncode == 0, f'Native lifecycle failed; inspect {log}'
+    metadata = json.loads((tmp_path / 'loads.bin.json').read_text())
+    assert metadata['schema_version'] == 3
+    assert metadata['recorded_physics_mu'] == .8
+    assert (tmp_path / 'loads.bin').stat().st_size > 0
     events = json.loads((output / 'run.json').read_text())
     assert events['native_frames'] == 4000
     assert events['pause_state_equal'] and events['pause_pose_equal']

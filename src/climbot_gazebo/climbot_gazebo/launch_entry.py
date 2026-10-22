@@ -73,11 +73,13 @@ def generate_launch_description():
             # 'auto' follows simulation.yaml; observers are off by default.
             contact = LaunchConfiguration('contact_topics').perform(context)
             contact = None if contact == 'auto' else contact == 'true'
+            traction = LaunchConfiguration('traction_mu').perform(context)
+            traction = float(traction) if traction else None
             resolved = build_assets(
                 root, mode='fan_ode' if mode == 'vacuum' else 'fixed_pressure',
                 runtime_overrides={'camera_enabled': True}, io_overrides=io,
                 wheel_compliance=soft, tyre_lateral=lateral,
-                tyre_crown=crown, contact_topics=contact,
+                tyre_crown=crown, contact_topics=contact, traction_mu=traction,
                 caster_proxy=surface == 'undulating', wall_surface=surface, wall_texture=texture)
             contact = resolved['contact_observer_topics']
             # Use the same actual scene options as the frozen launch. The generated
@@ -104,6 +106,10 @@ def generate_launch_description():
                       if 'apply-link-wrench' in p.get('filename', '')]
             if len(includes) != 1 or forces:
                 raise ValueError('scene must contain one robot include and no constant wrench')
+            if surface == 'flat':
+                for tag in ('mu', 'mu2'):
+                    path = 'model[@name="wall"]/link/collision/surface/friction/ode/' + tag
+                    parent.find(path).text = str(resolved['friction']['wall_mu'])
             parent.remove(includes[0])
             if surface == 'undulating':
                 generated = ET.parse(root/'world.sdf').getroot().find('world')
@@ -120,6 +126,7 @@ def generate_launch_description():
                 recorder = node(candidate, 'plugin', filename='libclimbot_load_recorder.so',
                                 name='climbot_gazebo::LoadRecorder')
                 node(recorder, 'path', str(Path(trace).expanduser().resolve()))
+                node(recorder, 'drive_mu', resolved['friction']['effective_drive_mu'])
             parent.append(deepcopy(candidate))
             add_fan_visuals_gui(parent)
             ET.indent(world.getroot())
@@ -184,6 +191,8 @@ def generate_launch_description():
         DeclareLaunchArgument('wheel_compliance', default_value='true',
                               choices=['false', 'true']),
         DeclareLaunchArgument('m2_load_trace', default_value=''),
+        DeclareLaunchArgument('traction_mu', default_value='',
+                              description='Wheel/wall friction trial; empty uses configuration.'),
         DeclareLaunchArgument('contact_topics', default_value='auto',
                               choices=['auto', 'false', 'true']),
         DeclareLaunchArgument('ode_prefix', default_value=os.environ.get(

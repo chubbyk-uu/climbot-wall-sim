@@ -20,4 +20,6 @@ m2_wheel_compliance:
   # came out 1.7% oversized (2026-10-20). lower_m/upper_m stay travel from the
   # free length; the rolling radius is untouched, so odometry is unaffected.
   preload_contact_load_n: 275.0
-  calibrated_contact_load_range_n: [50.0, 300.0]  # T2 checks any expanded envelope
+  # Fixed k/c, crowned contact, 1 ms: 450 N realized 3.00 mm without a stop.
+  # Additional evidence: results/m2_friction_2026-10-22/REPORT.md.
+  calibrated_contact_load_range_n: [50.0, 450.0]

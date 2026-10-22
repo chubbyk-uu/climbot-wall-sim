@@ -40,6 +40,7 @@ RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/climbot_g2_XXXXXX")
 TERM_GRACE_S=${G2_TERM_GRACE_S:-20}
 INT_GRACE_S=${G2_INT_GRACE_S:-8}
 LOCALIZATION_PROFILE=${LOCALIZATION_PROFILE:-precision}
+G2_RECORD_LOCALIZATION=${G2_RECORD_LOCALIZATION:-true}
 PRISM_EXTRINSIC_ERROR_ROBOT_M=${PRISM_EXTRINSIC_ERROR_ROBOT_M:-'[0.020, -0.010, 0.0]'}
 G2_MAX_CAMERA_POSITION_ERROR_M=${G2_MAX_CAMERA_POSITION_ERROR_M:-0.005}
 # P2-06's 17 long scan lines require more than ten minutes under normal
@@ -82,8 +83,12 @@ WHEEL_COMPLIANCE=${WHEEL_COMPLIANCE:-true}
 TYRE_LATERAL=${TYRE_LATERAL:-auto}
 TYRE_CROWN=${TYRE_CROWN:-auto}
 G2_CONTROL_CONFIG=${G2_CONTROL_CONFIG:-}
+G2_EKF_CONFIG_FILE=${G2_EKF_CONFIG_FILE:-}
+G2_TOTAL_STATION_SEED=${G2_TOTAL_STATION_SEED:-}
+G2_IMU_SEED=${G2_IMU_SEED:-}
 G2_CONFIG_FILE=${G2_CONFIG_FILE:-}
 M2_LOAD_TRACE=${M2_LOAD_TRACE:-}
+TRACTION_MU=${TRACTION_MU:-}
 G2_RESOLVED_ASSETS=${G2_RESOLVED_ASSETS:-}
 G2_TURN_CHECK=${G2_TURN_CHECK:-false}
 G2_RESET_CHECK=${G2_RESET_CHECK:-false}
@@ -309,11 +314,15 @@ run_case() {
     wall_surface:="$WALL_SURFACE" wheel_compliance:="$WHEEL_COMPLIANCE" tyre_lateral:="$TYRE_LATERAL" \
     tyre_crown:="$TYRE_CROWN" \
     ${M2_LOAD_TRACE:+m2_load_trace:="$M2_LOAD_TRACE"} \
+    ${TRACTION_MU:+traction_mu:="$TRACTION_MU"} \
+    ${G2_TOTAL_STATION_SEED:+total_station_seed:="$G2_TOTAL_STATION_SEED"} \
+    ${G2_IMU_SEED:+imu_seed:="$G2_IMU_SEED"} \
     ${G2_RESOLVED_ASSETS:+resolved_assets_directory:="$G2_RESOLVED_ASSETS"} \
     use_sim_time:=true headless:="$G2_HEADLESS" gpu_backend:="$G2_GPU_BACKEND" wall_grid_spacing:=0 \
     ${G2_CLOCK_PUBLISH_HZ:+clock_publish_hz:="$G2_CLOCK_PUBLISH_HZ"} \
     gui_gpu_backend:="$G2_GUI_GPU_BACKEND" \
     localization_profile:="$LOCALIZATION_PROFILE" \
+    ${G2_EKF_CONFIG_FILE:+ekf_config_file:="$G2_EKF_CONFIG_FILE"} \
     prism_extrinsic_error_robot_m:="$PRISM_EXTRINSIC_ERROR_ROBOT_M" \
     ${WALL_TEXTURE:+wall_texture:="$WALL_TEXTURE"} || return 1
   if ! wait_for_topic /model/climbot/ground_truth; then
@@ -374,11 +383,18 @@ run_case() {
     return 1
   fi
 
+  if [ "$G2_RECORD_LOCALIZATION" = true ]; then
+    start_group "$case_dir/localization_recorder.log" ros2 bag record \
+      --use-sim-time -o "$case_dir/localization_bag" /clock /wheel_odom /total_station/pose \
+      /imu_wall /odometry/filtered /model/climbot/ground_truth /cmd_vel || return 1
+  fi
+
   setsid timeout "$G2_EXTERNAL_TIMEOUT_S" ros2 run climbot_gazebo evaluate_g2_inspection.py --ros-args \
     -p use_sim_time:=true -p summary_path:="$summary" \
     -p timeout_s:="$G2_EVALUATOR_TIMEOUT_S" \
     -p nominal_overlap_ratio:=0.20 -p minimum_actual_overlap_ratio:=0.15 \
     -p maximum_camera_position_error_m:="$G2_MAX_CAMERA_POSITION_ERROR_M" \
+    -p wall_surface:="$WALL_SURFACE" \
     >"$case_dir/evaluator.log" 2>&1 &
   evaluator_pid=$!
   remember_group "$evaluator_pid" || return 1

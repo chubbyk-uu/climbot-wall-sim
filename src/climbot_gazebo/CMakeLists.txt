@@ -235,6 +235,8 @@ if(BUILD_TESTING)
     test_camera_distortion test/test_camera_distortion.py)
   ament_add_pytest_test(
     test_camera_projection test/test_camera_projection.py)
+  ament_add_pytest_test(
+    test_localization_replay_metrics test/test_localization_replay_metrics.py)
   ament_add_pytest_test(test_coverage_metrics test/test_coverage_metrics.py)
   ament_add_pytest_test(test_ekf_startup test/test_ekf_startup.py)
   ament_add_pytest_test(test_execution_metrics test/test_execution_metrics.py)

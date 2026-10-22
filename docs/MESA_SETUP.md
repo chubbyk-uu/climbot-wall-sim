@@ -2,7 +2,7 @@
 
 本页只适用于 **Ubuntu 24.04 x86_64 / WSL2 + WSLg / D3D12**。原生 Linux 使用正常的
 主机图形驱动，不需要这份补丁；只做离线图像处理或 CUDA 拼接也不需要它。共同安装步骤见
-[README](../README.md#安装与部署)。
+[README](INSTALLATION.md#安装与部署)。
 
 ## 为什么需要补丁
 

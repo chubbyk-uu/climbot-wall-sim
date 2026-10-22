@@ -161,10 +161,10 @@ def encode_uncertainty(values_m: np.ndarray) -> np.ndarray:
 
 
 def _correction_matrix(delta: tuple[float, float, float],
-                       center: tuple[float, float]) -> np.ndarray:
+                       center: tuple[float, float], scale: float = 1.0) -> np.ndarray:
     dx, dy, yaw = delta
     cosine, sine = math.cos(yaw), math.sin(yaw)
-    rotation = np.array(((cosine, -sine), (sine, cosine)), np.float64)
+    rotation = scale * np.array(((cosine, -sine), (sine, cosine)), np.float64)
     centre = np.asarray(center, np.float64)
     translation = centre + (dx, dy) - rotation @ centre
     return np.array(((rotation[0, 0], rotation[0, 1], translation[0]),
@@ -189,7 +189,8 @@ def read_pose_graph(path: Path, inputs: MosaicInputs,
         optimized_doc = json.loads((path / 'optimized_poses.json').read_text(encoding='utf-8'))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise FusionError(f'pose graph directory is incomplete or invalid: {error}') from error
-    if graph.get('pose_graph_format_version') != 1:
+    graph_version = graph.get('pose_graph_format_version')
+    if graph_version not in (1, 2):
         raise FusionError('unsupported pose graph format.')
     if graph.get('input_summary') != input_summary(inputs):
         raise FusionError('pose graph input summary does not match processed inputs.')
@@ -220,6 +221,9 @@ def read_pose_graph(path: Path, inputs: MosaicInputs,
         posterior = optimized.get('posterior_std')
         if not isinstance(correction, dict) or not isinstance(posterior, dict):
             raise FusionError('optimized pose lacks correction or posterior uncertainty.')
+        if graph_version == 2 and ('projection_scale' not in optimized or
+                                   'log_scale' not in posterior):
+            raise FusionError('scaled pose graph lacks scale or its uncertainty.')
         delta = tuple(_finite(correction.get(name), f'correction {name}')
                       for name in ('dx_m', 'dy_m', 'dyaw_rad'))
         std = tuple(_finite(posterior.get(name), f'posterior {name}')
@@ -228,7 +232,16 @@ def read_pose_graph(path: Path, inputs: MosaicInputs,
             raise FusionError('posterior standard deviations must be non-negative.')
         initial_h = np.asarray(projection.homography_image_to_wall, np.float64).reshape(3, 3)
         center = (float(pose['x']), float(pose['y']))
-        optimized_h = _correction_matrix(delta, center) @ initial_h
+        scale = _finite(optimized.get('projection_scale', 1.0), 'projection scale')
+        if scale <= 0:
+            raise FusionError('projection scale must be positive.')
+        scale_std = _finite(posterior.get('log_scale', 0.0), 'posterior log scale')
+        if scale_std < 0:
+            raise FusionError('posterior log scale must be non-negative.')
+        # Rotation and log-scale each produce radial variance r^2*sigma^2.
+        # Fold their diagonal terms into the existing CPU/CUDA map contract.
+        std = (std[0], std[1], math.hypot(std[2], scale_std))
+        optimized_h = _correction_matrix(delta, center, scale) @ initial_h
         variants = ((initial_h, (0.0, 0.0, 0.0)), (optimized_h, std))
         targets = (initial_frames, optimized_frames)
         for (homography, uncertainty), target in zip(variants, targets):

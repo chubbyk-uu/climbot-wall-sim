@@ -1,0 +1,1460 @@
+{
+  "data_root": "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022",
+  "decision": "mu_0_7_rejected_mu_0_8_adopted_after_short_horizontal_vertical_validation",
+  "design_input_not_measured_material_property": true,
+  "unchanged_parameters": [
+    "EKF Q/R/history",
+    "TS/IMU injected noise",
+    "fan curves and speed commands",
+    "skirt/leak model",
+    "WheelSlip",
+    "normal/lateral tyre stiffness/damping/preload",
+    "turn compensation",
+    "gravity-creep compensation",
+    "cruise speed and acceleration limits"
+  ],
+  "cases": {
+    "mu11_vertical": {
+      "path": "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal",
+      "friction": {
+        "wall_mu": 1.1,
+        "drive_wheel_mu": 1.1,
+        "effective_drive_mu": 1.1,
+        "caster_mu": 0.35
+      },
+      "capture": {
+        "passed": true,
+        "captures": 12,
+        "scan_segments": 2,
+        "maximum_camera_position_error_m": 0.0021506768652149078,
+        "camera_position_over_limit_count": 0,
+        "maximum_heading_error_deg": 0.038998821007805856
+      },
+      "noise": {
+        "total_station_sim": {
+          "random_seed": 424242,
+          "position_stddev_m": 0.001,
+          "publish_rate_hz": 12.0,
+          "fixed_delay_s": 0.01,
+          "drop_probability": 0.0,
+          "localization_profile": "precision",
+          "prism_extrinsic_error_enabled": false,
+          "prism_extrinsic_error_robot_m": [
+            0.02,
+            -0.01,
+            0.0
+          ],
+          "measurement_timestamp_error_enabled": false,
+          "measurement_timestamp_bias_s": 0.02,
+          "measurement_timestamp_jitter_stddev_s": 0.002,
+          "measurement_timestamp_jitter_seed": 20260827
+        },
+        "wall_imu_adapter": {
+          "random_seed": 171717,
+          "orientation_stddev_rad": 0.00174532925
+        }
+      },
+      "loads": {
+        "scope": "All final-generation physics steps from release+1 to recorder end",
+        "generation": 0,
+        "raw_rows": 57000,
+        "scored_rows": 55116,
+        "load_acceptance": {
+          "criterion": {
+            "version": "m2_load_v2_20261019",
+            "mu": 1.1,
+            "window_ms": 50,
+            "minimum_window_margin": 1.5,
+            "minimum_loaded_instant_margin_exclusive": 1.0,
+            "loaded_drive_threshold_n": 5.0,
+            "support_floors_n_left_right_ball": [
+              5.0,
+              5.0,
+              10.0
+            ],
+            "maximum_contact_or_low_load_run_steps": 2,
+            "start_after_release_s": 1.0,
+            "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+            "sensitivity_windows_ms": [
+              20,
+              50,
+              100
+            ]
+          },
+          "passed": true,
+          "checks": {
+            "sustained_50ms_margin_at_least_1_5": true,
+            "every_loaded_drive_frame_margin_above_1": true,
+            "contact_or_low_load_runs_at_most_two_steps": true
+          },
+          "step_s": 0.0009999999999994458,
+          "samples": 55116,
+          "scoring_time_range_s": [
+            1.885,
+            57.0
+          ],
+          "minimum_loaded_instant_margin_left_right": [
+            1.6208701391574456,
+            1.5238967995682193
+          ],
+          "window_sensitivity_ms": {
+            "20": {
+              "samples": 20,
+              "minimum_margin_left_right": [
+                2.9056221342171265,
+                3.2612593835720105
+              ]
+            },
+            "50": {
+              "samples": 50,
+              "minimum_margin_left_right": [
+                3.036721157521053,
+                3.4048558439973076
+              ]
+            },
+            "100": {
+              "samples": 100,
+              "minimum_margin_left_right": [
+                3.300905447379929,
+                3.456037085806954
+              ]
+            }
+          },
+          "raw": {
+            "minimum_drive_margin_left_right": [
+              0.0,
+              0.0
+            ],
+            "drive_below_1_5_frames_left_right": [
+              41,
+              41
+            ],
+            "loaded_drive_below_1_5_frames_left_right": [
+              0,
+              0
+            ],
+            "loaded_drive_at_or_below_1_frames_left_right": [
+              0,
+              0
+            ],
+            "maximum_contact_loss_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "contact_loss_frames_left_right_ball": [
+              41,
+              41,
+              322
+            ],
+            "low_load_frames_left_right_ball": [
+              41,
+              41,
+              322
+            ],
+            "contact_or_low_load_frames_left_right_ball": [
+              41,
+              41,
+              322
+            ],
+            "maximum_low_load_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "maximum_contact_or_low_load_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "maximum_simultaneous_contact_losses": 2
+          }
+        },
+        "minimum_pressure_pa": 7935.6687665010395,
+        "runtime_failed": false,
+        "startup_failed": false,
+        "maximum_stop_normal_n": 0.0,
+        "source_sha256": "5ccdaf5f9c802af766f459c308ab01fdca26cad4a94bd343f80f83c9cf31a2d3",
+        "trace_sha256": "a6eadd6937437e206777499c1ab0b0bb71fc39376e147a65923fc496bee7a326",
+        "passed": true
+      },
+      "camera_1ms": {
+        "frame_count": 12,
+        "hard_limit_m": 0.005,
+        "truth_definition": "optical axis intersected with native M2 surface at exposure",
+        "surface_offset_m": 0.05,
+        "optical_footprint": {
+          "count": 12,
+          "bias_xy_m": [
+            0.00011541307001183831,
+            -0.0002650171689278502
+          ],
+          "p95_m": 0.002064119731808166,
+          "max_m": 0.0021479332480643532,
+          "p95_nearest_rank_m": 0.0021479332480643532,
+          "over_5mm_count": 0
+        },
+        "camera_center": {
+          "count": 12,
+          "bias_xy_m": [
+            0.00018301804502337168,
+            2.858231861888975e-05
+          ],
+          "p95_m": 0.0022006261557125793,
+          "max_m": 0.002651551251992622,
+          "p95_nearest_rank_m": 0.002651551251992622,
+          "over_5mm_count": 0
+        },
+        "legacy_planar": {
+          "count": 12,
+          "bias_xy_m": [
+            0.0001155079863746818,
+            -0.00026504407234663924
+          ],
+          "p95_m": 0.0020649268866072814,
+          "max_m": 0.002147924521377665,
+          "p95_nearest_rank_m": 0.002147924521377665,
+          "over_5mm_count": 0
+        },
+        "surface_vs_plane_footprint": {
+          "count": 12,
+          "bias_xy_m": [
+            -4.399257373203606e-08,
+            1.3386579293210113e-07
+          ],
+          "p95_m": 1.2039274368134045e-06,
+          "max_m": 1.3083384894929639e-06,
+          "p95_nearest_rank_m": 1.3083384894929639e-06,
+          "over_5mm_count": 0
+        },
+        "max_truth_bracket_s": 0.0010000000000047748,
+        "mean_reported_position_sigma_m": [
+          0.0015611109258001135,
+          0.0010247639474142655
+        ],
+        "up": {
+          "count": 6,
+          "bias_xy_m": [
+            -0.00024314970268794292,
+            0.0003983219311429753
+          ],
+          "p95_m": 0.001947626684120706,
+          "max_m": 0.0021479332480643532,
+          "p95_nearest_rank_m": 0.0021479332480643532,
+          "over_5mm_count": 0
+        },
+        "down": {
+          "count": 6,
+          "bias_xy_m": [
+            0.0004739758427116196,
+            -0.0009283562689986757
+          ],
+          "p95_m": 0.001974531407646443,
+          "max_m": 0.0019955450366894675,
+          "p95_nearest_rank_m": 0.0019955450366894675,
+          "over_5mm_count": 0
+        }
+      },
+      "covariance": {
+        "p95_mm": 2.7344958963614805,
+        "max_mm": 4.777732979954005,
+        "median_sigma_xy_mm": [
+          1.2664827089261725,
+          1.115978920727164
+        ],
+        "nees_xy_mean": 1.6010053469002135,
+        "fraction_inside_95pct_xy_ellipse": 0.9749780509218613
+      },
+      "cleanup": {
+        "passed": true,
+        "forced_kill_groups": [],
+        "remaining_groups": []
+      },
+      "accepted": true
+    },
+    "mu07_vertical": {
+      "path": "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal",
+      "friction": {
+        "wall_mu": 0.7,
+        "drive_wheel_mu": 0.7,
+        "effective_drive_mu": 0.7,
+        "caster_mu": 0.35
+      },
+      "capture": {
+        "passed": true,
+        "captures": 12,
+        "scan_segments": 2,
+        "maximum_camera_position_error_m": 0.002229876494558012,
+        "camera_position_over_limit_count": 0,
+        "maximum_heading_error_deg": 0.04532633416818487
+      },
+      "noise": {
+        "total_station_sim": {
+          "random_seed": 424242,
+          "position_stddev_m": 0.001,
+          "publish_rate_hz": 12.0,
+          "fixed_delay_s": 0.01,
+          "drop_probability": 0.0,
+          "localization_profile": "precision",
+          "prism_extrinsic_error_enabled": false,
+          "prism_extrinsic_error_robot_m": [
+            0.02,
+            -0.01,
+            0.0
+          ],
+          "measurement_timestamp_error_enabled": false,
+          "measurement_timestamp_bias_s": 0.02,
+          "measurement_timestamp_jitter_stddev_s": 0.002,
+          "measurement_timestamp_jitter_seed": 20260827
+        },
+        "wall_imu_adapter": {
+          "random_seed": 171717,
+          "orientation_stddev_rad": 0.00174532925
+        }
+      },
+      "loads": {
+        "scope": "All final-generation physics steps from release+1 to recorder end",
+        "generation": 0,
+        "raw_rows": 57000,
+        "scored_rows": 55114,
+        "load_acceptance": {
+          "criterion": {
+            "version": "m2_load_v3_explicit_mu_20261022",
+            "mu": 0.7,
+            "window_ms": 50,
+            "minimum_window_margin": 1.5,
+            "minimum_loaded_instant_margin_exclusive": 1.0,
+            "loaded_drive_threshold_n": 5.0,
+            "support_floors_n_left_right_ball": [
+              5.0,
+              5.0,
+              10.0
+            ],
+            "maximum_contact_or_low_load_run_steps": 2,
+            "start_after_release_s": 1.0,
+            "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+            "sensitivity_windows_ms": [
+              20,
+              50,
+              100
+            ]
+          },
+          "passed": false,
+          "checks": {
+            "sustained_50ms_margin_at_least_1_5": true,
+            "every_loaded_drive_frame_margin_above_1": false,
+            "contact_or_low_load_runs_at_most_two_steps": true
+          },
+          "step_s": 0.0009999999999994458,
+          "samples": 55114,
+          "scoring_time_range_s": [
+            1.887,
+            57.0
+          ],
+          "minimum_loaded_instant_margin_left_right": [
+            0.9696574031244151,
+            1.1817538089911668
+          ],
+          "window_sensitivity_ms": {
+            "20": {
+              "samples": 20,
+              "minimum_margin_left_right": [
+                1.6293847437786788,
+                2.049385021460065
+              ]
+            },
+            "50": {
+              "samples": 50,
+              "minimum_margin_left_right": [
+                1.709411825082921,
+                2.1689452685068638
+              ]
+            },
+            "100": {
+              "samples": 100,
+              "minimum_margin_left_right": [
+                1.8578363182880393,
+                2.2059643410050467
+              ]
+            }
+          },
+          "raw": {
+            "minimum_drive_margin_left_right": [
+              0.0,
+              0.0
+            ],
+            "drive_below_1_5_frames_left_right": [
+              70,
+              58
+            ],
+            "loaded_drive_below_1_5_frames_left_right": [
+              26,
+              8
+            ],
+            "loaded_drive_at_or_below_1_frames_left_right": [
+              2,
+              0
+            ],
+            "maximum_contact_loss_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "contact_loss_frames_left_right_ball": [
+              44,
+              50,
+              299
+            ],
+            "low_load_frames_left_right_ball": [
+              44,
+              50,
+              299
+            ],
+            "contact_or_low_load_frames_left_right_ball": [
+              44,
+              50,
+              299
+            ],
+            "maximum_low_load_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "maximum_contact_or_low_load_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "maximum_simultaneous_contact_losses": 2
+          }
+        },
+        "minimum_pressure_pa": 7774.988973171654,
+        "runtime_failed": false,
+        "startup_failed": false,
+        "maximum_stop_normal_n": 0.0,
+        "source_sha256": "5ccdaf5f9c802af766f459c308ab01fdca26cad4a94bd343f80f83c9cf31a2d3",
+        "trace_sha256": "035a490060bf327724e887df66ffed1ea46335845b33b11aad3c3d686c30a863",
+        "passed": false
+      },
+      "camera_1ms": {
+        "frame_count": 12,
+        "hard_limit_m": 0.005,
+        "truth_definition": "optical axis intersected with native M2 surface at exposure",
+        "surface_offset_m": 0.05,
+        "optical_footprint": {
+          "count": 12,
+          "bias_xy_m": [
+            -0.00022230380658405657,
+            -2.5596032114623874e-05
+          ],
+          "p95_m": 0.0019790080112815837,
+          "max_m": 0.0022394700112877285,
+          "p95_nearest_rank_m": 0.0022394700112877285,
+          "over_5mm_count": 0
+        },
+        "camera_center": {
+          "count": 12,
+          "bias_xy_m": [
+            -0.00014128444838249857,
+            0.00028567919927604174
+          ],
+          "p95_m": 0.002195790946690362,
+          "max_m": 0.0022887911264918817,
+          "p95_nearest_rank_m": 0.0022887911264918817,
+          "over_5mm_count": 0
+        },
+        "legacy_planar": {
+          "count": 12,
+          "bias_xy_m": [
+            -0.00022255253475559714,
+            -2.5745591443452714e-05
+          ],
+          "p95_m": 0.0019791175198362117,
+          "max_m": 0.0022392801693186365,
+          "p95_nearest_rank_m": 0.0022392801693186365,
+          "over_5mm_count": 0
+        },
+        "surface_vs_plane_footprint": {
+          "count": 12,
+          "bias_xy_m": [
+            -2.9825847273438434e-08,
+            1.5287570185688418e-07
+          ],
+          "p95_m": 9.890822202619922e-07,
+          "max_m": 1.3084057017189335e-06,
+          "p95_nearest_rank_m": 1.3084057017189335e-06,
+          "over_5mm_count": 0
+        },
+        "max_truth_bracket_s": 0.0010000000000047748,
+        "mean_reported_position_sigma_m": [
+          0.0014189752596971937,
+          0.0009722578965323051
+        ],
+        "up": {
+          "count": 6,
+          "bias_xy_m": [
+            -0.00045531488121171765,
+            3.4558509733514007e-06
+          ],
+          "p95_m": 0.0021210781931031175,
+          "max_m": 0.0022394700112877285,
+          "p95_nearest_rank_m": 0.0022394700112877285,
+          "over_5mm_count": 0
+        },
+        "down": {
+          "count": 6,
+          "bias_xy_m": [
+            1.070726804360452e-05,
+            -5.464791520259915e-05
+          ],
+          "p95_m": 0.0012895133363447797,
+          "max_m": 0.0013146094090839442,
+          "p95_nearest_rank_m": 0.0013146094090839442,
+          "over_5mm_count": 0
+        }
+      },
+      "covariance": {
+        "p95_mm": 2.685269993023397,
+        "max_mm": 5.449672501694391,
+        "median_sigma_xy_mm": [
+          1.2117858379858266,
+          1.0739620582674296
+        ],
+        "nees_xy_mean": 1.6186693548023379,
+        "fraction_inside_95pct_xy_ellipse": 0.9723939019365472
+      },
+      "cleanup": {
+        "passed": true,
+        "forced_kill_groups": [],
+        "remaining_groups": []
+      },
+      "accepted": false
+    },
+    "mu08_vertical": {
+      "path": "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical",
+      "friction": {
+        "wall_mu": 0.8,
+        "drive_wheel_mu": 0.8,
+        "effective_drive_mu": 0.8,
+        "caster_mu": 0.35
+      },
+      "capture": {
+        "passed": true,
+        "captures": 12,
+        "scan_segments": 2,
+        "maximum_camera_position_error_m": 0.0021420404193821067,
+        "camera_position_over_limit_count": 0,
+        "maximum_heading_error_deg": 0.03996619205431158
+      },
+      "noise": {
+        "total_station_sim": {
+          "random_seed": 424242,
+          "position_stddev_m": 0.001,
+          "publish_rate_hz": 12.0,
+          "fixed_delay_s": 0.01,
+          "drop_probability": 0.0,
+          "localization_profile": "precision",
+          "prism_extrinsic_error_enabled": false,
+          "prism_extrinsic_error_robot_m": [
+            0.02,
+            -0.01,
+            0.0
+          ],
+          "measurement_timestamp_error_enabled": false,
+          "measurement_timestamp_bias_s": 0.02,
+          "measurement_timestamp_jitter_stddev_s": 0.002,
+          "measurement_timestamp_jitter_seed": 20260827
+        },
+        "wall_imu_adapter": {
+          "random_seed": 171717,
+          "orientation_stddev_rad": 0.00174532925
+        }
+      },
+      "loads": {
+        "scope": "All final-generation physics steps from release+1 to recorder end",
+        "generation": 0,
+        "raw_rows": 57417,
+        "scored_rows": 55531,
+        "recorded_physics_mu": null,
+        "scoring_mu": 0.8,
+        "coefficient_source": "explicit_argument",
+        "counterfactual": false,
+        "load_acceptance": {
+          "criterion": {
+            "version": "m2_load_v3_explicit_mu_20261022",
+            "mu": 0.8,
+            "window_ms": 50,
+            "minimum_window_margin": 1.5,
+            "minimum_loaded_instant_margin_exclusive": 1.0,
+            "loaded_drive_threshold_n": 5.0,
+            "support_floors_n_left_right_ball": [
+              5.0,
+              5.0,
+              10.0
+            ],
+            "maximum_contact_or_low_load_run_steps": 2,
+            "start_after_release_s": 1.0,
+            "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+            "sensitivity_windows_ms": [
+              20,
+              50,
+              100
+            ]
+          },
+          "passed": true,
+          "checks": {
+            "sustained_50ms_margin_at_least_1_5": true,
+            "every_loaded_drive_frame_margin_above_1": true,
+            "contact_or_low_load_runs_at_most_two_steps": true
+          },
+          "step_s": 0.0009999999999994458,
+          "samples": 55531,
+          "scoring_time_range_s": [
+            1.887,
+            57.417
+          ],
+          "minimum_loaded_instant_margin_left_right": [
+            1.1908337690052868,
+            1.5059908897477068
+          ],
+          "window_sensitivity_ms": {
+            "20": {
+              "samples": 20,
+              "minimum_margin_left_right": [
+                2.110151221469724,
+                2.2585355150744904
+              ]
+            },
+            "50": {
+              "samples": 50,
+              "minimum_margin_left_right": [
+                2.274957752666359,
+                2.436879461489218
+              ]
+            },
+            "100": {
+              "samples": 100,
+              "minimum_margin_left_right": [
+                2.373996303908144,
+                2.500029792203142
+              ]
+            }
+          },
+          "raw": {
+            "minimum_drive_margin_left_right": [
+              0.0,
+              0.0
+            ],
+            "drive_below_1_5_frames_left_right": [
+              57,
+              47
+            ],
+            "loaded_drive_below_1_5_frames_left_right": [
+              12,
+              0
+            ],
+            "loaded_drive_at_or_below_1_frames_left_right": [
+              0,
+              0
+            ],
+            "maximum_contact_loss_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "contact_loss_frames_left_right_ball": [
+              45,
+              47,
+              319
+            ],
+            "low_load_frames_left_right_ball": [
+              45,
+              47,
+              319
+            ],
+            "contact_or_low_load_frames_left_right_ball": [
+              45,
+              47,
+              319
+            ],
+            "maximum_low_load_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "maximum_contact_or_low_load_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "maximum_simultaneous_contact_losses": 2
+          }
+        },
+        "minimum_pressure_pa": 7788.343969339447,
+        "runtime_failed": false,
+        "startup_failed": false,
+        "maximum_stop_normal_n": 0.0,
+        "source_sha256": "cc3aa58210bb980fdfe30b102344a38fd53bb6c31cf50f55d73a5cfcec8e084c",
+        "trace_sha256": "710fcf22b49389397f892ecff2307d3b585212a69e4ae8ff7b39b4af8690a259",
+        "passed": true
+      },
+      "camera_1ms": {
+        "frame_count": 12,
+        "hard_limit_m": 0.005,
+        "truth_definition": "optical axis intersected with native M2 surface at exposure",
+        "surface_offset_m": 0.05,
+        "optical_footprint": {
+          "count": 12,
+          "bias_xy_m": [
+            9.603391826384922e-05,
+            -0.0004658346223298526
+          ],
+          "p95_m": 0.0021316310478507535,
+          "max_m": 0.0021378570129951652,
+          "p95_nearest_rank_m": 0.0021378570129951652,
+          "over_5mm_count": 0
+        },
+        "camera_center": {
+          "count": 12,
+          "bias_xy_m": [
+            0.00016405005433250963,
+            -0.0001485547150772426
+          ],
+          "p95_m": 0.0025079060792125734,
+          "max_m": 0.002583981179929533,
+          "p95_nearest_rank_m": 0.002583981179929533,
+          "over_5mm_count": 0
+        },
+        "legacy_planar": {
+          "count": 12,
+          "bias_xy_m": [
+            9.590893054471177e-05,
+            -0.0004658934353619452
+          ],
+          "p95_m": 0.0021310849724089863,
+          "max_m": 0.0021375974602840008,
+          "p95_nearest_rank_m": 0.0021375974602840008,
+          "over_5mm_count": 0
+        },
+        "surface_vs_plane_footprint": {
+          "count": 12,
+          "bias_xy_m": [
+            4.2065626611649996e-08,
+            1.8513734073577481e-07
+          ],
+          "p95_m": 1.0389418202213202e-06,
+          "max_m": 1.4879402660243373e-06,
+          "p95_nearest_rank_m": 1.4879402660243373e-06,
+          "over_5mm_count": 0
+        },
+        "max_truth_bracket_s": 0.0010000000000047748,
+        "mean_reported_position_sigma_m": [
+          0.0016193464345497753,
+          0.001047983370480664
+        ],
+        "up": {
+          "count": 6,
+          "bias_xy_m": [
+            -0.00030790968210088937,
+            -2.00327015682511e-05
+          ],
+          "p95_m": 0.0021350270288386145,
+          "max_m": 0.0021378570129951652,
+          "p95_nearest_rank_m": 0.0021378570129951652,
+          "over_5mm_count": 0
+        },
+        "down": {
+          "count": 6,
+          "bias_xy_m": [
+            0.0004999775186285879,
+            -0.0009116365430914541
+          ],
+          "p95_m": 0.001986536612932362,
+          "max_m": 0.002018007810514139,
+          "p95_nearest_rank_m": 0.002018007810514139,
+          "over_5mm_count": 0
+        }
+      },
+      "covariance": {
+        "p95_mm": 2.7611106641558325,
+        "max_mm": 4.776533535196462,
+        "median_sigma_xy_mm": [
+          1.2656757851045461,
+          1.1159807895060707
+        ],
+        "nees_xy_mean": 1.602231257735479,
+        "fraction_inside_95pct_xy_ellipse": 0.9719298245614035
+      },
+      "cleanup": {
+        "passed": true,
+        "forced_kill_groups": [],
+        "remaining_groups": []
+      },
+      "accepted": true
+    },
+    "mu08_horizontal_holdout": {
+      "path": "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal",
+      "friction": {
+        "wall_mu": 0.8,
+        "drive_wheel_mu": 0.8,
+        "effective_drive_mu": 0.8,
+        "caster_mu": 0.35
+      },
+      "capture": {
+        "passed": true,
+        "captures": 10,
+        "scan_segments": 2,
+        "maximum_camera_position_error_m": 0.002950626989396308,
+        "camera_position_over_limit_count": 0,
+        "maximum_heading_error_deg": 0.023233386956647374
+      },
+      "noise": {
+        "total_station_sim": {
+          "random_seed": 515151,
+          "position_stddev_m": 0.001,
+          "publish_rate_hz": 12.0,
+          "fixed_delay_s": 0.01,
+          "drop_probability": 0.0,
+          "localization_profile": "precision",
+          "prism_extrinsic_error_enabled": false,
+          "prism_extrinsic_error_robot_m": [
+            0.02,
+            -0.01,
+            0.0
+          ],
+          "measurement_timestamp_error_enabled": false,
+          "measurement_timestamp_bias_s": 0.02,
+          "measurement_timestamp_jitter_stddev_s": 0.002,
+          "measurement_timestamp_jitter_seed": 20260827
+        },
+        "wall_imu_adapter": {
+          "random_seed": 818181,
+          "orientation_stddev_rad": 0.00174532925
+        }
+      },
+      "loads": {
+        "scope": "All final-generation physics steps from release+1 to recorder end",
+        "generation": 0,
+        "raw_rows": 61573,
+        "scored_rows": 59687,
+        "recorded_physics_mu": 0.8,
+        "scoring_mu": 0.8,
+        "coefficient_source": "trace_metadata",
+        "counterfactual": false,
+        "load_acceptance": {
+          "criterion": {
+            "version": "m2_load_v3_explicit_mu_20261022",
+            "mu": 0.8,
+            "window_ms": 50,
+            "minimum_window_margin": 1.5,
+            "minimum_loaded_instant_margin_exclusive": 1.0,
+            "loaded_drive_threshold_n": 5.0,
+            "support_floors_n_left_right_ball": [
+              5.0,
+              5.0,
+              10.0
+            ],
+            "maximum_contact_or_low_load_run_steps": 2,
+            "start_after_release_s": 1.0,
+            "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+            "sensitivity_windows_ms": [
+              20,
+              50,
+              100
+            ]
+          },
+          "passed": true,
+          "checks": {
+            "sustained_50ms_margin_at_least_1_5": true,
+            "every_loaded_drive_frame_margin_above_1": true,
+            "contact_or_low_load_runs_at_most_two_steps": true
+          },
+          "step_s": 0.0009999999999994458,
+          "samples": 59687,
+          "scoring_time_range_s": [
+            1.887,
+            61.573
+          ],
+          "minimum_loaded_instant_margin_left_right": [
+            1.1559886703637798,
+            1.2274274247470296
+          ],
+          "window_sensitivity_ms": {
+            "20": {
+              "samples": 20,
+              "minimum_margin_left_right": [
+                2.0017481093524245,
+                2.015515008354319
+              ]
+            },
+            "50": {
+              "samples": 50,
+              "minimum_margin_left_right": [
+                2.2496704183679492,
+                2.138302299033046
+              ]
+            },
+            "100": {
+              "samples": 100,
+              "minimum_margin_left_right": [
+                2.349340268375394,
+                2.238378803097993
+              ]
+            }
+          },
+          "raw": {
+            "minimum_drive_margin_left_right": [
+              0.0,
+              0.0
+            ],
+            "drive_below_1_5_frames_left_right": [
+              51,
+              55
+            ],
+            "loaded_drive_below_1_5_frames_left_right": [
+              10,
+              13
+            ],
+            "loaded_drive_at_or_below_1_frames_left_right": [
+              0,
+              0
+            ],
+            "maximum_contact_loss_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "contact_loss_frames_left_right_ball": [
+              41,
+              42,
+              311
+            ],
+            "low_load_frames_left_right_ball": [
+              41,
+              42,
+              311
+            ],
+            "contact_or_low_load_frames_left_right_ball": [
+              41,
+              42,
+              311
+            ],
+            "maximum_low_load_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "maximum_contact_or_low_load_steps_left_right_ball": [
+              1,
+              1,
+              1
+            ],
+            "maximum_simultaneous_contact_losses": 2
+          }
+        },
+        "minimum_pressure_pa": 7957.907478637382,
+        "runtime_failed": false,
+        "startup_failed": false,
+        "maximum_stop_normal_n": 0.0,
+        "source_sha256": "74b7db4ecbde070176855d251488c7316370f8feaf25a612782994594474c3c1",
+        "trace_sha256": "3809da13e1a956fde84e8735c229f28694d4bf3f75760d0b17558838c08d54c9",
+        "passed": true
+      },
+      "camera_1ms": {
+        "frame_count": 10,
+        "hard_limit_m": 0.005,
+        "truth_definition": "optical axis intersected with native M2 surface at exposure",
+        "surface_offset_m": 0.05,
+        "optical_footprint": {
+          "count": 10,
+          "bias_xy_m": [
+            -1.4551968209985944e-06,
+            -0.0006777898858797871
+          ],
+          "p95_m": 0.0029153558845743856,
+          "max_m": 0.0029470132055825758,
+          "p95_nearest_rank_m": 0.0029470132055825758,
+          "over_5mm_count": 0
+        },
+        "camera_center": {
+          "count": 10,
+          "bias_xy_m": [
+            9.28315243077904e-05,
+            -0.00044487299373432434
+          ],
+          "p95_m": 0.003060571576237614,
+          "max_m": 0.0031969531847181585,
+          "p95_nearest_rank_m": 0.0031969531847181585,
+          "over_5mm_count": 0
+        },
+        "legacy_planar": {
+          "count": 10,
+          "bias_xy_m": [
+            6.784190471620377e-08,
+            -0.0006786356272084904
+          ],
+          "p95_m": 0.0029143325978451856,
+          "max_m": 0.002947164162119022,
+          "p95_nearest_rank_m": 0.002947164162119022,
+          "over_5mm_count": 0
+        },
+        "surface_vs_plane_footprint": {
+          "count": 10,
+          "bias_xy_m": [
+            4.861414463874781e-07,
+            -9.832256875341727e-09
+          ],
+          "p95_m": 2.019473567340371e-06,
+          "max_m": 2.444755016752397e-06,
+          "p95_nearest_rank_m": 2.444755016752397e-06,
+          "over_5mm_count": 0
+        },
+        "max_truth_bracket_s": 0.0010000000000047748,
+        "mean_reported_position_sigma_m": [
+          0.0010807109689334722,
+          0.0016760796638466608
+        ],
+        "horizontal": {
+          "count": 10,
+          "bias_xy_m": [
+            -1.4551968209985944e-06,
+            -0.0006777898858797871
+          ],
+          "p95_m": 0.0029153558845743856,
+          "max_m": 0.0029470132055825758,
+          "p95_nearest_rank_m": 0.0029470132055825758,
+          "over_5mm_count": 0
+        }
+      },
+      "covariance": {
+        "p95_mm": 2.8295267273765785,
+        "max_mm": 4.748683553538818,
+        "median_sigma_xy_mm": [
+          1.074943730437007,
+          1.2230385702823547
+        ],
+        "nees_xy_mean": 1.7405201257457878,
+        "fraction_inside_95pct_xy_ellipse": 0.9704811969268096
+      },
+      "cleanup": {
+        "passed": true,
+        "forced_kill_groups": [],
+        "remaining_groups": []
+      },
+      "accepted": true
+    }
+  },
+  "historical_screen": [
+    {
+      "input": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/loads.bin",
+      "recorded_physics_mu": 1.1,
+      "scoring_mu": 0.7,
+      "counterfactual_only": true,
+      "passed": false,
+      "minimum_loaded_instant_margin_left_right": [
+        0.8829798373534133,
+        0.8763432132162793
+      ],
+      "minimum_50ms_margin_left_right": [
+        1.7202419761139016,
+        1.8389357297723865
+      ]
+    },
+    {
+      "input": "${CLIMBOT_DATA_ROOT}/speed30_20261020/m2_horizontal_loads.bin",
+      "recorded_physics_mu": 1.1,
+      "scoring_mu": 0.7,
+      "counterfactual_only": true,
+      "passed": false,
+      "minimum_loaded_instant_margin_left_right": [
+        0.8713977206947888,
+        0.8754244765603283
+      ],
+      "minimum_50ms_margin_left_right": [
+        1.6582867760325073,
+        1.778352998853265
+      ]
+    },
+    {
+      "input": "${CLIMBOT_DATA_ROOT}/speed30_20261020/m2_vertical_loads.bin",
+      "recorded_physics_mu": 1.1,
+      "scoring_mu": 0.7,
+      "counterfactual_only": true,
+      "passed": false,
+      "minimum_loaded_instant_margin_left_right": [
+        0.95952029681102,
+        1.1087782846434442
+      ],
+      "minimum_50ms_margin_left_right": [
+        1.7180341578918088,
+        1.8312696852963766
+      ]
+    }
+  ],
+  "analytic_nominal": {
+    "1.1": {
+      "mu": 1.1,
+      "rounded_pressure_pa": 4800.0,
+      "worst": {
+        "profile": "rated_grid_112",
+        "group": "actuator",
+        "state": [
+          46.6,
+          0.0,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 4739.139854209498,
+        "minimum_pressure_force_n": 622.2158888787277
+      },
+      "minimum_normals_at_design_n": [
+        128.39554502797125,
+        128.39554502797128,
+        138.14195273377342
+      ],
+      "maximum_motor_torque_at_design_nm": 4.770203727976918
+    },
+    "0.7": {
+      "mu": 0.7,
+      "rounded_pressure_pa": 6900.0,
+      "worst": {
+        "profile": "rated_grid_137",
+        "group": "actuator",
+        "state": [
+          50.5,
+          0.189,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 6839.67623161152,
+        "minimum_pressure_force_n": 898.0016114769714
+      },
+      "minimum_normals_at_design_n": [
+        206.33336411151828,
+        206.33336411151828,
+        227.34124073860698
+      ],
+      "maximum_motor_torque_at_design_nm": 4.89618911948909
+    },
+    "0.8": {
+      "mu": 0.8,
+      "rounded_pressure_pa": 6100.0,
+      "worst": {
+        "profile": "rated_grid_137",
+        "group": "actuator",
+        "state": [
+          49.8,
+          0.189,
+          0.7,
+          -1.2,
+          0.0
+        ],
+        "minimum_pressure_pa": 6098.29960973002,
+        "minimum_pressure_force_n": 800.6640506602837
+      },
+      "minimum_normals_at_design_n": [
+        176.64276636540518,
+        176.6427663654052,
+        193.3605595939084
+      ],
+      "maximum_motor_torque_at_design_nm": 4.84819468462731
+    }
+  },
+  "analytic_preload_bound_mu08": {
+    "scope": "Observed horizontal M2 patch preload extrema, current geometry, CG +8mm, all headings and actuator profiles; capability screen not dynamic acceptance",
+    "source": "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/native_fixed_patch/horizontal",
+    "preload_samples": 202,
+    "selected": [
+      15,
+      23,
+      51,
+      63
+    ],
+    "profile_count": 149,
+    "rows": [
+      {
+        "mu": 0.8,
+        "preload_index": 15,
+        "source_time_s": 3.36,
+        "mechanical_force_n": 14.277189736401018,
+        "required_pa": 6300.0,
+        "worst": {
+          "profile": "rated_grid_114",
+          "group": "actuator",
+          "state": [
+            132.5,
+            0.0,
+            0.7,
+            1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6206.571536022238,
+          "minimum_pressure_force_n": 814.8793966789679
+        },
+        "normal_n": [
+          231.3156953757669,
+          180.94955627216484,
+          308.8124586156675
+        ],
+        "motor_torque_nm": 4.855983543669375
+      },
+      {
+        "mu": 0.8,
+        "preload_index": 23,
+        "source_time_s": 4.16,
+        "mechanical_force_n": 22.980728623346646,
+        "required_pa": 6300.0,
+        "worst": {
+          "profile": "rated_grid_137",
+          "group": "actuator",
+          "state": [
+            49.6,
+            0.189,
+            0.7,
+            -1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6223.272815113887,
+          "minimum_pressure_force_n": 817.0721577147477
+        },
+        "normal_n": [
+          182.108178589608,
+          224.8968840143293,
+          305.36910877271634
+        ],
+        "motor_torque_nm": 4.873373196021835
+      },
+      {
+        "mu": 0.8,
+        "preload_index": 51,
+        "source_time_s": 6.96,
+        "mechanical_force_n": 21.032462998533717,
+        "required_pa": 6300.0,
+        "worst": {
+          "profile": "rated_grid_137",
+          "group": "actuator",
+          "state": [
+            49.6,
+            0.189,
+            0.7,
+            -1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6248.1002864660695,
+          "minimum_pressure_force_n": 820.3318309109898
+        },
+        "normal_n": [
+          180.83842746596235,
+          223.75320210932267,
+          309.73080742618157
+        ],
+        "motor_torque_nm": 4.865460959184551
+      },
+      {
+        "mu": 0.8,
+        "preload_index": 63,
+        "source_time_s": 8.16,
+        "mechanical_force_n": 19.211490509692197,
+        "required_pa": 6300.0,
+        "worst": {
+          "profile": "rated_grid_139",
+          "group": "actuator",
+          "state": [
+            130.4,
+            0.189,
+            0.7,
+            1.2,
+            0.0
+          ],
+          "minimum_pressure_pa": 6220.365410554223,
+          "minimum_pressure_force_n": 816.6904358478957
+        },
+        "normal_n": [
+          223.90828920960908,
+          181.5359239765452,
+          310.69919630415376
+        ],
+        "motor_torque_nm": 4.859284555910335
+      }
+    ],
+    "fan_pressure_at_180mm2_pa": 8404.442641159962,
+    "fan_pressure_at_270mm2_pa": 6617.422894748144
+  },
+  "excluded_or_diagnostic_runs": [
+    {
+      "name": "native_screen",
+      "reason": "3m fixture generation refused 10um geometry-error guard before physics; no result counted"
+    },
+    {
+      "name": "native_fixed_patch",
+      "reason": "0.5m/s2 exploratory straight ramps; above production cruise acceleration, not default acceptance"
+    },
+    {
+      "name": "native_production_ramps",
+      "reason": "1.2m crossed-joint patch boundary screen; vertical mu=1.1 control also fails; no default-scene rejection inferred from this fixture"
+    },
+    {
+      "name": "baseline_mu11",
+      "reason": "same patch vertical baseline also fails; preserved counterevidence"
+    },
+    {
+      "name": "default_wall_vertical",
+      "reason": "WSL D3D12 loader segmentation fault before usable physical records; software renderer used for subsequent comparisons"
+    },
+    {
+      "name": "default_wall_vertical_software",
+      "reason": "incorrectly selected realistic fault-injection profile (20/-10mm extrinsics and timestamp errors); 22.8mm error not attributed to original EKF; nominal profiles rerun with original stochastic noise"
+    }
+  ],
+  "validation": {
+    "targeted": "73 passed, 5 deselected; /tmp/climbot_friction_targeted_final_20261022.log",
+    "build": "exit 0; /tmp/climbot_friction_build_20261022.log",
+    "full_j8_log": "/tmp/climbot_friction_full_j8_final_20261022.log",
+    "full_j8_summary": "/tmp/climbot_friction_full_j8_final_20261022_summary.log",
+    "full_j8_result": "build/climbot_bringup/Testing/20261022-1017/Test.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_bringup/test_results/climbot_bringup/copyright.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_bringup/test_results/climbot_bringup/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_bringup/test_results/climbot_bringup/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_bringup/test_results/climbot_bringup/pep257.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_bringup/test_results/climbot_bringup/test_geometry_consumers.xunit.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_bringup/test_results/climbot_bringup/test_workspace_consistency.xunit.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_bringup/test_results/climbot_bringup/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/Testing/20261022-1016/Test.xml: 10 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/copyright.xunit.xml: 11 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/pep257.xunit.xml: 11 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/test_acceleration.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/test_atomic.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/test_dds.xunit.xml: 13 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/test_hashing.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/test_provenance.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_common/test_results/climbot_common/xmllint.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/Testing/20261022-1016/Test.xml: 39 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/copyright.xunit.xml: 60 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/cppcheck.xunit.xml: 32 tests, 0 errors, 0 failures, 32 skipped\nbuild/climbot_control/test_results/climbot_control/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/pep257.xunit.xml: 28 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_control_clock.gtest.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_goal_handle_retirement.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_line_tracker.gtest.xml: 35 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_scan_entry.gtest.xml: 10 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_schedule_estimate.gtest.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_segment_arrival.gtest.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_segment_duration.gtest.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_cmd_vel_watchdog_node.py.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_arc_entry.py.xunit.xml: 5 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_executor.py.xunit.xml: 13 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_executor_config.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_executor_pause.py.xunit.xml: 10 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_executor_pause_start.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager.py.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager_archive.py.xunit.xml: 10 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager_executor_loss.py.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager_forced_recovery.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager_hold_release.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager_late_callbacks.py.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager_pause.py.xunit.xml: 12 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager_pause_loss.py.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_manager_states.py.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_progress.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_coverage_schedule_pose.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_line_tracker_alignment.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_line_tracker_completion.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_line_tracker_node.py.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_line_tracker_time_mode.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_test_start_approach_recovery.py.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_timing_monitor.gtest.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_travel_profile.gtest.xml: 11 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/test_watchdog_rejects_bad_numbers.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/uncrustify.xunit.xml: 32 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_control/test_results/climbot_control/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/Testing/20261022-1016/Test.xml: 20 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/copyright.xunit.xml: 19 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/cppcheck.xunit.xml: 4 tests, 0 errors, 0 failures, 4 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/pep257.xunit.xml: 15 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_coverage_geometry.gtest.xml: 24 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_planner_launch_grid.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_planner_rejects_bad_numbers.xunit.xml: 9 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_rviz_config.xunit.xml: 5 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_coverage_configure.py.xunit.xml: 12 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_coverage_maneuver_envelope.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_coverage_planner_failure.py.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_coverage_planner_node.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_coverage_planner_rviz.py.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_coverage_top_edge_scan.py.xunit.xml: 9 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_coverage_visual_refresh.py.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_coverage_wall_grid_off.py.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/test_test_planner_geometry_profile.py.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/uncrustify.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_coverage/test_results/climbot_coverage/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/Testing/20261022-1016/Test.xml: 13 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/copyright.xunit.xml: 15 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/cppcheck.xunit.xml: 7 tests, 0 errors, 0 failures, 7 skipped\nbuild/climbot_description/test_results/climbot_description/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/pep257.xunit.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/test_geometry_cpp.gtest.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/test_inspection_camera_config.xunit.xml: 5 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/test_robot_description_defaults.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/test_robot_geometry.xunit.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/test_wall_frame.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/test_wall_frame_cpp.gtest.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/uncrustify.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_description/test_results/climbot_description/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/Testing/20261022-1017/Test.xml: 55 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/copyright.xunit.xml: 118 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/cppcheck.xunit.xml: 40 tests, 0 errors, 0 failures, 40 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/pep257.xunit.xml: 78 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_calibration_target.xunit.xml: 5 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_camera_distortion.xunit.xml: 9 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_camera_projection.xunit.xml: 11 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_caster_proxy_contract.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_clock_throttle.gtest.xml: 12 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_command_routing.xunit.xml: 20 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_coverage_metrics.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_ekf_startup.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_evaluation_tasks.xunit.xml: 18 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_execution_metrics.xunit.xml: 18 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_g2_inspection_metrics.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_gui_observer_shutdown.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_inspection_contract.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_large_image_transport.xunit.xml: 5 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_localization_replay_metrics.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_m2_full_wall.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_m2_load_criterion.xunit.xml: 22 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_mesa_runtime.xunit.xml: 14 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_model_defaults.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_native_clock_observer.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_normal_load_statistics.xunit.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_ode_runtime.xunit.xml: 11 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_pressure_sensor.gtest.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_results_are_machine_readable.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_safe_stop.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_small_message_transport.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_startup_readiness.xunit.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_suction_analysis.xunit.xml: 46 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_test_total_station_clock.py.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_total_station_model.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_total_station_model_cpp.gtest.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_trajectory_io.xunit.xml: 5 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_turn_profile.xunit.xml: 16 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_turn_slip_model.xunit.xml: 13 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_vacuum_assets.xunit.xml: 42 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_vacuum_bridge.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_vacuum_core.gtest.xml: 20 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_vacuum_design.xunit.xml: 50 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_vacuum_native.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_vacuum_physics.xunit.xml: 9 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_wall_imu_adapter.gtest.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_wall_slip_sampling.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_wall_surface.xunit.xml: 40 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_wall_surface_core.gtest.xml: 10 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_wall_texture.xunit.xml: 16 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_wall_texture_randomization.xunit.xml: 38 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_wall_wheel_odom_adapter.gtest.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/test_wall_world_matches_description.xunit.xml: 14 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/uncrustify.xunit.xml: 40 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_gazebo/test_results/climbot_gazebo/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_image_processing/Testing/20261022-1016/Test.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_image_processing/test_results/climbot_image_processing/copyright.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_image_processing/test_results/climbot_image_processing/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_image_processing/test_results/climbot_image_processing/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_image_processing/test_results/climbot_image_processing/pep257.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_image_processing/test_results/climbot_image_processing/test_flat_field_pin.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_image_processing/test_results/climbot_image_processing/test_processing_chain.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_image_processing/test_results/climbot_image_processing/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/Testing/20261022-1016/Test.xml: 13 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/copyright.xunit.xml: 14 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/cppcheck.xunit.xml: 2 tests, 0 errors, 0 failures, 2 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/pep257.xunit.xml: 12 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/test_archive_core.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/test_flat_field.xunit.xml: 5 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/test_test_archive_recorder_node.py.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/test_test_automatic_capture_node.py.xunit.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/test_test_automatic_capture_pause.py.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/test_test_capture_once_node.py.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/uncrustify.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_inspection/test_results/climbot_inspection/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_interfaces/Testing/20261022-1016/Test.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_interfaces/test_results/climbot_interfaces/copyright.xunit.xml: 0 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_interfaces/test_results/climbot_interfaces/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_interfaces/test_results/climbot_interfaces/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/Testing/20261022-1016/Test.xml: 22 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/copyright.xunit.xml: 36 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/pep257.xunit.xml: 36 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_backend_controller.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_candidates.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_cli_install.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_cuda_fusion.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_diagnostic_coverage_preflight.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_diagnostic_inspection.xunit.xml: 22 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_diagnostic_truth.xunit.xml: 8 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_evidence_chain.xunit.xml: 18 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_evidence_summary.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_fusion.xunit.xml: 14 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_matching.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_mosaic_inputs.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_native_tile_review.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_pose_graph.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_projection.xunit.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_stage_provenance.xunit.xml: 4 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/test_wall_texture_evaluation.xunit.xml: 3 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_mosaic/test_results/climbot_mosaic/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/Testing/20261022-1016/Test.xml: 9 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/copyright.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/cppcheck.xunit.xml: 6 tests, 0 errors, 0 failures, 6 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/test_coverage_panel_config.gtest.xml: 15 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/test_coverage_panel_layout.gtest.xml: 7 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/test_coverage_panel_plugin.gtest.xml: 1 test, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/test_request_gate.gtest.xml: 5 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/uncrustify.xunit.xml: 6 tests, 0 errors, 0 failures, 0 skipped\nbuild/climbot_rviz_plugins/test_results/climbot_rviz_plugins/xmllint.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped\n\nSummary: 1996 tests, 0 errors, 0 failures, 91 skipped",
+    "initial_full_run": "2001 tests, 9 failures: six E501 formatting findings and a pre-existing published-path check, including CTest wrappers; both causes repaired, same -j8 rerun passed",
+    "after_final_full_run": "Only docs, evidence summaries and the independently verified normal-load envelope metadata changed; tyre dynamics and acceptance thresholds unchanged."
+  },
+  "artifacts_sha256": {
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/historical_screen.json": "7d2f053911d0c364f6973e319718558a70291fb37f6680f87d5037af322c8e54",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/analytic_nominal_with_mu08.json": "839bc8b6e463ea7ae468a92178aebc074c01766c315bd8970219661c60a52946",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/analytic_observed_mu08.json": "9279472f8eec5c4507ee1ff3a9c68ebe0c69f883b6447d08381310f3b8ad92ae",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/diagnosis.json": "fa24d22c36f18979e9cb44cbcb1e88323732bed2131785a06bd1bfd329ed5a3a",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/fan_budget.json": "c62255c129415b457d668eab035e89ef5250476ec0dc9fa5ba4cb1eec29ffd81",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/runtime_source.tar.gz": "ae0791b1583ff0cb0455c876d196145680a4a15f90fc918c7ea2217eeb5af16b",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_source.json": "86a872845ac83f8b0e214e71e42cd97e8349edd79355bc874450264345816165",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/mu08_horizontal_source.json": "078ad601deead9c8f4931c12de9b2c0266eebd215e42fc0dd804575b51a8b4dc",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/source_after_validation.tar.gz": "482f0e2d7911d7ab1383c83e04e4d2650077f3a928eb43fd0fb363929882c69e",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/source_after_validation.json": "2b2ce6e650189db3924704c9ce93dfed184e5e6a894e759e15d34a546cd4a6b0",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/tyre_upper_450n/summary.json": "60d3411140b7ebbd140d6e5c2abb57fc746ae569655a1c4dae2869cd373570c0",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/tyre_upper_450n/protocol.json": "f0b999d74a7c57d2ecf9ab16cf7655b15156f7d76f6abc07b2aeb532b456dc43",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/tyre_upper_450n/native/run.yaml": "ea1def9505d501a3a352b9dde78765c426ad5f19103d52aff19f6fe0afa0138e",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/loads.bin": "a6eadd6937437e206777499c1ab0b0bb71fc39376e147a65923fc496bee7a326",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/loads.bin.json": "83f01825b4757b8c7d652db58b3970031d839d8c7f3172f05c4b724cef2556ef",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/load_summary.json": "0816e082e0188a51e1247c2bf542c96327bbd09b215a4d763b1c8a1f439c1727",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/camera_1ms/summary.json": "355c49882523290c26d308e35875bb85cf448f6e07862539a3275d0350def09e",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/native_covariance_score.json": "4d709bb32a45665c072fa198ed66b121207d6a9a18616472ff33e55f89e2dfc0",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/case/summary.json": "57d51000a1fb5a0558b429e5bce4827d9b5ed7fc98568b83d37e0bd472574bd0",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/case/cleanup.json": "8c17779dfbc509d51a73c47d2625f2b3702f49fbede7a49c6111162fe80c64d9",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/resolved/resolved.json": "412b93181655043f17b3ad7bba70c8b904389d758b8ae0d4c3cd0835ca5d8eac",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_baseline_nominal/resolved/world.sdf": "dc9d43b2c705cbcae9d636def81217749ffb17475d37a30d4dd32694b0a45a35",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/loads.bin": "035a490060bf327724e887df66ffed1ea46335845b33b11aad3c3d686c30a863",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/loads.bin.json": "83f01825b4757b8c7d652db58b3970031d839d8c7f3172f05c4b724cef2556ef",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/load_summary.json": "15aae95eb78717f4fc6c3057ff76b22fa0b5858fe5a5d0520758ca2006e54f91",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/camera_1ms/summary.json": "ebd8c09b390f64559335b0e4cda7575ee63d2cd0bdffbfc3165f9cd484cc40af",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/native_covariance_score.json": "b0e150a16b5b17ff18ebd6ae33fb86cdeb94ec0d51f9627887493fa32d30a592",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/case/summary.json": "28b5c705399bb36b2f239f4a2106b6365c7c5cbc174761ba249ecc2b32f7124e",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/case/cleanup.json": "1f353b4f570907d94373c901042c4704836745b780461522108e8dc1ca333cea",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/resolved/resolved.json": "eb4119f0ae7560b976b08c328226d752966659359e85d2463abc19e2eb0837ce",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_vertical_nominal/resolved/world.sdf": "d7722464c960cf5fe9c7c3c9d24cebd94d678a87dfb32de024fd68d66a8e5bdb",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/loads.bin": "710fcf22b49389397f892ecff2307d3b585212a69e4ae8ff7b39b4af8690a259",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/loads.bin.json": "83f01825b4757b8c7d652db58b3970031d839d8c7f3172f05c4b724cef2556ef",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/load_summary.json": "d12648909d1052d242f25c62234ef8b02b0285fd1ee6bf1a9c4fc7b7a3f6d751",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/camera_1ms/summary.json": "8133bd4be1cb5e3461396d010a022b40d0edab765064fa217541fc6d38c1505a",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/native_covariance_score.json": "36d7751fa81c4f7c3ddae6c6c83ebd848cc92d98fc5f222f7de244bb51134dbe",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/case/summary.json": "a8a4de34cbcc60fc88f6fa4b3492b8bffe0e7e4967b511a754aff0d0caae5c38",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/case/cleanup.json": "5919c7ee5d75f7e67644d49375aa77d6d408fd6312b0c5c0469322ccebd9c442",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/resolved/resolved.json": "a19356fabf7880abadcbaddf4e3c3fde627f8a06bd7dca197ec81a9025a44e02",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_vertical/resolved/world.sdf": "0256ee266d70dffff2f02758864527dac59fd1d184ccb4d05057b7e7b736b0fc",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/loads.bin": "3809da13e1a956fde84e8735c229f28694d4bf3f75760d0b17558838c08d54c9",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/loads.bin.json": "75541df8e5d10c1002c1509f31359c448fb190259d8e8d1c3ff15a5dc2f1b101",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/load_summary.json": "29517955742febabe59d2ad330aa4b21c8592faf969e9ea6f6ff091ab084e28f",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/camera_1ms/summary.json": "17e726782d3c7e08195ff03e723057a8819dc8150df6c22b73ba8a690292e23f",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/native_covariance_score.json": "f95944dfca03171bc4bb40f39c4ea9492c8afb33169e3fa65d4af9e1eb432778",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/case/summary.json": "b185b51c160ad25f01384efe9b2b38fc6cb17bcaef8d17f8757dde0a4f516f7b",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/case/cleanup.json": "b82cb450dd81c228c271dac9065c9b9a0f9d744160495eb8089964dcb088e22f",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/resolved/resolved.json": "a19356fabf7880abadcbaddf4e3c3fde627f8a06bd7dca197ec81a9025a44e02",
+    "${CLIMBOT_DATA_ROOT}/m2_mu07_20261022/default_wall_mu08_horizontal/resolved/world.sdf": "b408ec6d93a31f6ba94fd9b5af07f8f61d1d5e6397c2d698e74f6dc38fd3286c"
+  },
+  "tyre_upper_450n": {
+    "passed": true,
+    "checks": {
+      "finite": true,
+      "target": true,
+      "settled": true,
+      "independent_load": true,
+      "linear": true,
+      "repeat_150": true,
+      "unloaded": true,
+      "no_upper_stop": true,
+      "no_tensile_extension": true
+    },
+    "windows": {
+      "50": {
+        "expected_load_n": 50,
+        "compression_m": 0.0003333333338832612,
+        "compression_peak_to_peak_m": 5.3327150638035614e-12,
+        "contact_load_mean_n": 49.99999988911407
+      },
+      "150_up": {
+        "expected_load_n": 150,
+        "compression_m": 0.001000000001566709,
+        "compression_peak_to_peak_m": 1.0912175676947022e-11,
+        "contact_load_mean_n": 150.0000007867096
+      },
+      "300_up": {
+        "expected_load_n": 300,
+        "compression_m": 0.002000000002350143,
+        "compression_peak_to_peak_m": 1.6368307317188302e-11,
+        "contact_load_mean_n": 300.00000049966303
+      },
+      "450": {
+        "expected_load_n": 450,
+        "compression_m": 0.0030000000023502203,
+        "compression_peak_to_peak_m": 1.6368349817913463e-11,
+        "contact_load_mean_n": 450.0000004996894
+      },
+      "300_down": {
+        "expected_load_n": 300,
+        "compression_m": 0.0019999999976502434,
+        "compression_peak_to_peak_m": 1.636809741564771e-11,
+        "contact_load_mean_n": 299.999999500469
+      },
+      "150_down": {
+        "expected_load_n": 150,
+        "compression_m": 0.0009999999976497789,
+        "compression_peak_to_peak_m": 1.6368350251594332e-11,
+        "contact_load_mean_n": 149.99999950031054
+      },
+      "unloaded": {
+        "expected_load_n": 0,
+        "compression_m": 2.6595270450403603e-124,
+        "compression_peak_to_peak_m": 2.781505964527376e-122,
+        "contact_load_mean_n": 0.0
+      }
+    },
+    "compression_range_m": [
+      0.0,
+      0.0030464068634406833
+    ],
+    "binary_sha256": "cc12df368f98acc104e0381bcb2132cc52a159f83ea48601ddcfd81e8b643560",
+    "mesa": {
+      "backend": "wsl_d3d12",
+      "mesa": "private",
+      "gallium_sha256": "f2c80fbfb37a73aab1e4b94cf95bc862f271cd30055573c6196b9073cc4d6d66"
+    },
+    "ode": {
+      "install": "${HOME}/opt/climbot-ode-0.16.2-hashfix-ccd/install",
+      "library": "${HOME}/opt/climbot-ode-0.16.2-hashfix-ccd/install/lib/libode.so.8.0.2",
+      "library_sha256": "93a6810850cde1349eaa6126d13a9c22e8fc1ee9856e474b31dfa0df31f1f998",
+      "patch_sha256": "fc35f0a3fc066f976f89557dbea39a7bced8fb06c8fe02cfa4754c2a441f2747"
+    },
+    "log": "/tmp/climbot_mu08_upper_1792664323474901576.log"
+  },
+  "publication_path_repairs": [
+    {
+      "path": "results/m2_calibrated_full_vertical_2026-10-22/summary.json",
+      "before_sha256": "55c7e6b69834689f50a7710fcac652df7eb3375c51a1964919eacccf3ee8d71a",
+      "after_sha256": "ad2ce1acf1eab8721dc7f589b755dc6c67d06f68cde7cef1b9d3ca2688496de1",
+      "change": "publication reference paths only; numeric values and native producer artifacts unchanged"
+    },
+    {
+      "path": "results/m2_localization_calibration_2026-10-22/summary.json",
+      "before_sha256": "36df181f681f1558c9703649b87c85034e81ebd32a48a5103745e732a7ae4b2c",
+      "after_sha256": "73f1b327f66cb4562efcd952a481d143ef7939a9b9ba4c3cd5219419491cd0aa",
+      "change": "publication reference paths only; numeric values and native producer artifacts unchanged"
+    }
+  ]
+}

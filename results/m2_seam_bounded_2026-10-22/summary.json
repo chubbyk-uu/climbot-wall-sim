@@ -1,0 +1,747 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-22",
+  "input_root": "$CLIMBOT_DATA_ROOT/m2_calibrated_full_vertical_20261022_1792648266010867445",
+  "data_root": "$CLIMBOT_DATA_ROOT/m2_seam_bounded_20261022_1792658361169919062",
+  "protocol": {
+    "scope": "one direct measurement, at most one image-only local affine candidate, at most one full CUDA validation; no parameter search, no new capture",
+    "input_root": "$CLIMBOT_DATA_ROOT/m2_calibrated_full_vertical_20261022_1792648266010867445",
+    "variants": [
+      "default",
+      "scale_candidate"
+    ],
+    "windows": [
+      {
+        "id": "panel_v1_y2.1",
+        "feature": "panel_v1",
+        "center_m": [
+          3.4,
+          2.1
+        ],
+        "normal": [
+          1,
+          0
+        ],
+        "tangent": [
+          0,
+          1
+        ]
+      },
+      {
+        "id": "panel_v1_y5.5",
+        "feature": "panel_v1",
+        "center_m": [
+          3.4,
+          5.5
+        ],
+        "normal": [
+          1,
+          0
+        ],
+        "tangent": [
+          0,
+          1
+        ]
+      },
+      {
+        "id": "panel_v2_y2.1",
+        "feature": "panel_v2",
+        "center_m": [
+          7.0,
+          2.1
+        ],
+        "normal": [
+          1,
+          0
+        ],
+        "tangent": [
+          0,
+          1
+        ]
+      },
+      {
+        "id": "panel_v2_y5.5",
+        "feature": "panel_v2",
+        "center_m": [
+          7.0,
+          5.5
+        ],
+        "normal": [
+          1,
+          0
+        ],
+        "tangent": [
+          0,
+          1
+        ]
+      },
+      {
+        "id": "panel_h1_x2.0",
+        "feature": "panel_h1",
+        "center_m": [
+          2.0,
+          4.24
+        ],
+        "normal": [
+          0,
+          1
+        ],
+        "tangent": [
+          1,
+          0
+        ]
+      },
+      {
+        "id": "panel_h1_x8.0",
+        "feature": "panel_h1",
+        "center_m": [
+          8.0,
+          4.24
+        ],
+        "normal": [
+          0,
+          1
+        ],
+        "tangent": [
+          1,
+          0
+        ]
+      }
+    ],
+    "resolution_m": 0.00025,
+    "window_width_px": 640,
+    "window_height_px": 2400,
+    "event_selection": "all original-default source-owner transitions along feature centerline, excluding 200px at window ends; same pairs/locations in both variants",
+    "evaluation_notes": [
+      "Groove two-edge displacement is appearance-sensitive, not guaranteed material-point geometric error.",
+      "Independent background point tracks measure image correspondence geometry; global anchors are separate."
+    ],
+    "candidate": {
+      "model": "one local affine fit to background forward/backward LK tracks; no truth, no groove straightening constraint",
+      "max_corners": 400,
+      "min_distance_px": 12,
+      "quality_level": 0.01,
+      "lk_window_px": 21,
+      "lk_max_level": 3,
+      "fb_max_px": 0.5,
+      "max_motion_px": 24,
+      "excluded_core_half_width_px": 52,
+      "train_split": "deterministic alternating 32px checkerboard; even=train, odd=heldout",
+      "minimum_train_points": 12,
+      "ransac_reprojection_px": 1.0,
+      "max_affine_center_shift_px": 24,
+      "max_singular_value_deviation": 0.03,
+      "local_half_height_px": 200
+    },
+    "stop_rules": {
+      "minimum_seam_edge_p95_improvement_fraction": 0.3,
+      "maximum_background_heldout_p95_worsening_px": 1.0,
+      "do_not_proceed_if": "unobservable or primarily view-dependent edges without reliable geometric correction; rejected fit counts retained",
+      "full_wall_run_only_if": "local gate passes with at least 80 percent observable transitions and no >1px background deterioration in any window"
+    },
+    "ekf_and_physics": "frozen",
+    "frozen_before_measurement": true
+  },
+  "full_affine_protocol": {
+    "model": "one affine correction per source photograph, globally coupled by measured image correspondences; full-image extension of the same local-affine feasibility model",
+    "parameterization": "A=[[1+s+d,h-r],[h+r,1+s-d]], p_new=c+t+A@(p_initial-c)",
+    "priors": "original complete archived XY/yaw covariance for t_x,t_y,r; s,d,h independent sigma .004; no override of sensor priors",
+    "point_constraints": "existing immutable SIFT correspondences; equal total weight per edge, native sigma; no new matching or truth",
+    "fit": "linear sparse least squares, up to 8 fixed soft-L1 IRLS steps, tolerance .000001 relative; no candidate or hyperparameter search",
+    "safety": "positive determinant; full-image relative singular values within .03 and maximum corner displacement from existing scale candidate <=.006m; rejected frames retain baseline",
+    "evaluation": "same six frozen windows, original source pairs and heldout background tracks; same eight truth anchors; native CUDA renderer and native truth/inspection tools",
+    "rendering": "separate experimental renderer adapter supplies fitted affine homographies to native fusion. Adapter and fit manifest bound in a separate provenance file; native producer manifests not edited. Not a production default.",
+    "uncertainty": "conditional diagonal approximation only; no claim of calibrated full affine covariance"
+  },
+  "baseline_same_events": {
+    "default": {
+      "events": 19,
+      "edge_samples": 342,
+      "edge_delta_p95_mm": 3.5,
+      "description": "appearance-sensitive two-edge displacement; same original-default source pairs in six frozen windows"
+    },
+    "scale_candidate": {
+      "events": 19,
+      "edge_samples": 342,
+      "edge_delta_p95_mm": 1.5,
+      "description": "appearance-sensitive two-edge displacement; same original-default source pairs in six frozen windows"
+    }
+  },
+  "local_pair_feasibility": {
+    "default": {
+      "selected_events": 19,
+      "fitted_events": 18,
+      "statuses": {
+        "affine_safety_rejected": 1,
+        "fitted": 18
+      },
+      "edge_before": {
+        "count": 324,
+        "p50_px": 4.0,
+        "p95_px": 13.849999999999966,
+        "maximum_px": 15.0,
+        "p95_mm": 3.4624999999999915
+      },
+      "edge_after": {
+        "count": 324,
+        "p50_px": 1.0,
+        "p95_px": 3.0,
+        "maximum_px": 10.0,
+        "p95_mm": 0.75
+      },
+      "background_before": {
+        "count": 2888,
+        "p50_px": 6.817788124084473,
+        "p95_px": 16.13755044937134,
+        "maximum_px": 20.922449111938477,
+        "p95_mm": 4.034387612342835
+      },
+      "background_after": {
+        "count": 2888,
+        "p50_px": 0.40432657301425934,
+        "p95_px": 1.679098117351532,
+        "maximum_px": 7.452160358428955,
+        "p95_mm": 0.419774529337883
+      },
+      "edge_p95_improvement_fraction": 0.7833935018050536,
+      "gate": true
+    },
+    "scale_candidate": {
+      "selected_events": 19,
+      "fitted_events": 19,
+      "statuses": {
+        "fitted": 19
+      },
+      "edge_before": {
+        "count": 342,
+        "p50_px": 3.0,
+        "p95_px": 6.0,
+        "maximum_px": 9.0,
+        "p95_mm": 1.5
+      },
+      "edge_after": {
+        "count": 342,
+        "p50_px": 1.0,
+        "p95_px": 3.0,
+        "maximum_px": 9.0,
+        "p95_mm": 0.75
+      },
+      "background_before": {
+        "count": 3165,
+        "p50_px": 3.3083391189575195,
+        "p95_px": 8.714604949951172,
+        "maximum_px": 11.71616268157959,
+        "p95_mm": 2.178651237487793
+      },
+      "background_after": {
+        "count": 3165,
+        "p50_px": 0.4120771288871765,
+        "p95_px": 1.584916901588437,
+        "maximum_px": 4.905488014221191,
+        "p95_mm": 0.39622922539710925
+      },
+      "edge_p95_improvement_fraction": 0.5,
+      "gate": true
+    }
+  },
+  "global_affine_model": {
+    "frames": 660,
+    "edges": 2194,
+    "point_pairs": 56283,
+    "baseline_fallback_count": 0,
+    "maximum_corner_displacement_m": 0.0024192484420682827,
+    "shape_prior_std": 0.004,
+    "irls_steps": 8,
+    "position_prior_override": null
+  },
+  "full_candidate_fixed_windows": {
+    "edge_baseline_px": {
+      "count": 342,
+      "p50_px": 3.0,
+      "p95_px": 6.0,
+      "maximum_px": 9.0,
+      "p95_mm": 1.5
+    },
+    "edge_candidate_px": {
+      "count": 342,
+      "p50_px": 2.0,
+      "p95_px": 7.0,
+      "maximum_px": 10.0,
+      "p95_mm": 1.75
+    },
+    "background_baseline_px": {
+      "count": 3165,
+      "p50_px": 3.3083391189575195,
+      "p95_px": 8.714603424072266,
+      "maximum_px": 11.716174125671387,
+      "p95_mm": 2.1786508560180664
+    },
+    "background_candidate_px": {
+      "count": 3165,
+      "p50_px": 2.625847452870124,
+      "p95_px": 9.508243087517192,
+      "maximum_px": 12.678415858327151,
+      "p95_mm": 2.377060771879298
+    },
+    "events": 19,
+    "all_sections_paired": true,
+    "windows": {
+      "panel_v1_y2.1": {
+        "edge_baseline_px": {
+          "count": 72,
+          "p50_px": 2.0,
+          "p95_px": 4.0,
+          "maximum_px": 9.0,
+          "p95_mm": 1.0
+        },
+        "edge_candidate_px": {
+          "count": 72,
+          "p50_px": 2.0,
+          "p95_px": 4.0,
+          "maximum_px": 10.0,
+          "p95_mm": 1.0
+        },
+        "background_baseline_px": {
+          "count": 672,
+          "p50_px": 2.600073456764221,
+          "p95_px": 6.607436060905453,
+          "maximum_px": 9.940855979919434,
+          "p95_mm": 1.6518590152263632
+        },
+        "background_candidate_px": {
+          "count": 672,
+          "p50_px": 2.241634667488739,
+          "p95_px": 4.793655924517366,
+          "maximum_px": 7.750485353925029,
+          "p95_mm": 1.1984139811293415
+        }
+      },
+      "panel_v1_y5.5": {
+        "edge_baseline_px": {
+          "count": 72,
+          "p50_px": 2.0,
+          "p95_px": 6.0,
+          "maximum_px": 7.0,
+          "p95_mm": 1.5
+        },
+        "edge_candidate_px": {
+          "count": 72,
+          "p50_px": 2.0,
+          "p95_px": 3.0,
+          "maximum_px": 3.0,
+          "p95_mm": 0.75
+        },
+        "background_baseline_px": {
+          "count": 521,
+          "p50_px": 3.3750834465026855,
+          "p95_px": 7.912560939788818,
+          "maximum_px": 9.446158409118652,
+          "p95_mm": 1.9781402349472046
+        },
+        "background_candidate_px": {
+          "count": 521,
+          "p50_px": 2.337001494183019,
+          "p95_px": 4.377095510096956,
+          "maximum_px": 6.225423455431978,
+          "p95_mm": 1.094273877524239
+        }
+      },
+      "panel_v2_y2.1": {
+        "edge_baseline_px": {
+          "count": 72,
+          "p50_px": 4.0,
+          "p95_px": 7.0,
+          "maximum_px": 8.0,
+          "p95_mm": 1.75
+        },
+        "edge_candidate_px": {
+          "count": 72,
+          "p50_px": 5.0,
+          "p95_px": 8.0,
+          "maximum_px": 8.0,
+          "p95_mm": 2.0
+        },
+        "background_baseline_px": {
+          "count": 760,
+          "p50_px": 6.556196928024292,
+          "p95_px": 10.167801904678342,
+          "maximum_px": 11.716174125671387,
+          "p95_mm": 2.5419504761695855
+        },
+        "background_candidate_px": {
+          "count": 760,
+          "p50_px": 6.6709816538362645,
+          "p95_px": 11.394477184304746,
+          "maximum_px": 12.678415858327151,
+          "p95_mm": 2.848619296076187
+        }
+      },
+      "panel_v2_y5.5": {
+        "edge_baseline_px": {
+          "count": 72,
+          "p50_px": 3.0,
+          "p95_px": 6.0,
+          "maximum_px": 6.0,
+          "p95_mm": 1.5
+        },
+        "edge_candidate_px": {
+          "count": 72,
+          "p50_px": 3.0,
+          "p95_px": 5.0,
+          "maximum_px": 5.0,
+          "p95_mm": 1.25
+        },
+        "background_baseline_px": {
+          "count": 806,
+          "p50_px": 2.5216825008392334,
+          "p95_px": 6.767822504043579,
+          "maximum_px": 9.033138275146484,
+          "p95_mm": 1.6919556260108948
+        },
+        "background_candidate_px": {
+          "count": 806,
+          "p50_px": 2.2980025089237035,
+          "p95_px": 6.823225394607003,
+          "maximum_px": 9.070074868152254,
+          "p95_mm": 1.7058063486517507
+        }
+      },
+      "panel_h1_x2.0": {
+        "edge_baseline_px": {
+          "count": 18,
+          "p50_px": 0.0,
+          "p95_px": 1.0,
+          "maximum_px": 1.0,
+          "p95_mm": 0.25
+        },
+        "edge_candidate_px": {
+          "count": 18,
+          "p50_px": 1.0,
+          "p95_px": 1.0,
+          "maximum_px": 1.0,
+          "p95_mm": 0.25
+        },
+        "background_baseline_px": {
+          "count": 116,
+          "p50_px": 2.5053629875183105,
+          "p95_px": 3.5285714864730835,
+          "maximum_px": 3.773073196411133,
+          "p95_mm": 0.8821428716182709
+        },
+        "background_candidate_px": {
+          "count": 116,
+          "p50_px": 2.1329015908815365,
+          "p95_px": 3.1089359302351762,
+          "maximum_px": 3.742635644529174,
+          "p95_mm": 0.7772339825587941
+        }
+      },
+      "panel_h1_x8.0": {
+        "edge_baseline_px": {
+          "count": 36,
+          "p50_px": 1.0,
+          "p95_px": 2.0,
+          "maximum_px": 2.0,
+          "p95_mm": 0.5
+        },
+        "edge_candidate_px": {
+          "count": 36,
+          "p50_px": 1.0,
+          "p95_px": 2.0,
+          "maximum_px": 2.0,
+          "p95_mm": 0.5
+        },
+        "background_baseline_px": {
+          "count": 290,
+          "p50_px": 3.698192000389099,
+          "p95_px": 7.210803079605103,
+          "maximum_px": 7.832222938537598,
+          "p95_mm": 1.802700769901276
+        },
+        "background_candidate_px": {
+          "count": 290,
+          "p50_px": 3.234185132027882,
+          "p95_px": 5.337402388889613,
+          "maximum_px": 5.929364801968792,
+          "p95_mm": 1.3343505972224032
+        }
+      }
+    },
+    "new_owner_transitions": [
+      {
+        "window": "panel_v1_y2.1",
+        "actual_candidate_transitions_in_fixed_window": 4
+      },
+      {
+        "window": "panel_v1_y5.5",
+        "actual_candidate_transitions_in_fixed_window": 4
+      },
+      {
+        "window": "panel_v2_y2.1",
+        "actual_candidate_transitions_in_fixed_window": 4
+      },
+      {
+        "window": "panel_v2_y5.5",
+        "actual_candidate_transitions_in_fixed_window": 4
+      },
+      {
+        "window": "panel_h1_x2.0",
+        "actual_candidate_transitions_in_fixed_window": 1
+      },
+      {
+        "window": "panel_h1_x8.0",
+        "actual_candidate_transitions_in_fixed_window": 2
+      }
+    ],
+    "edge_p95_improvement_fraction": -0.16666666666666674,
+    "local_stop_gate_passed": false
+  },
+  "full_wall_native_metrics": {
+    "scale_baseline": {
+      "accepted_anchor_ids": [
+        "graffiti_decal_02",
+        "graffiti_decal_03",
+        "repair_patch_01",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "absolute_anchor_p95_m": 0.0006181112302319858,
+      "local_residual_p95_m": 0.0004992347841729283,
+      "scale_error_ppm": 3.755952524775452,
+      "yaw_error_deg": -0.0006490331086354464,
+      "seam_excess_p95_dn": 7.0,
+      "seam_on_to_off_p95_ratio": 3.5
+    },
+    "affine_candidate": {
+      "accepted_anchor_ids": [
+        "graffiti_decal_02",
+        "graffiti_decal_03",
+        "repair_patch_01",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "absolute_anchor_p95_m": 0.0006816812494427904,
+      "local_residual_p95_m": 0.0005087404552726796,
+      "scale_error_ppm": 15.358988893154901,
+      "yaw_error_deg": -0.001403842678215401,
+      "seam_excess_p95_dn": 7.0,
+      "seam_on_to_off_p95_ratio": 3.5
+    }
+  },
+  "full_candidate_overlap_quality": {
+    "gray_std_mean": 1.9834357664843432,
+    "gray_std_p95": 4.483516483516484,
+    "overlap_pixel_count": 694408600
+  },
+  "feature_coverage_retained_for_completeness": {
+    "all_inspection_region_feature_pixels_covered": false,
+    "all_visible_feature_pixels_covered": false,
+    "feature_pixels_inside_inspection_region": 120791893,
+    "pixel_count": 122361195,
+    "uncovered_inside_inspection_region": 149834,
+    "uncovered_outside_inspection_region": 50590,
+    "uncovered_outside_region_inside_planned_scan_footprint": 1280,
+    "uncovered_outside_region_inside_safe_pose_envelope": 50590,
+    "uncovered_outside_region_outside_planned_scan_footprint": 49310,
+    "uncovered_outside_region_outside_safe_pose_envelope": 0,
+    "uncovered_pixel_count": 200424
+  },
+  "native_verification": {
+    "effective": "cuda",
+    "fallback": false,
+    "outputs_verified": 10,
+    "native_tiles_verified": 169,
+    "experimental_geometry_provenance_verified": true
+  },
+  "measurement_checks": {
+    "synthetic_known_shifts": [
+      {
+        "known_shift_px": [
+          0,
+          0
+        ],
+        "correspondences": 400,
+        "track_error_p95_px": 0.0,
+        "edge_delta_before_px": [
+          0.0
+        ],
+        "edge_delta_after_px": [
+          0.0
+        ]
+      },
+      {
+        "known_shift_px": [
+          3,
+          -2
+        ],
+        "correspondences": 314,
+        "track_error_p95_px": 0.0019450531341151604,
+        "edge_delta_before_px": [
+          2.0,
+          3.0,
+          4.0
+        ],
+        "edge_delta_after_px": [
+          0.0
+        ]
+      },
+      {
+        "known_shift_px": [
+          -4,
+          2
+        ],
+        "correspondences": 271,
+        "track_error_p95_px": 0.0021221395470979506,
+        "edge_delta_before_px": [
+          3.0,
+          4.0,
+          5.0
+        ],
+        "edge_delta_after_px": [
+          0.0
+        ]
+      }
+    ],
+    "real_events_paired_sections_verified": 37,
+    "status": "passed"
+  },
+  "manual_review": {
+    "reviewed_six_bands": [
+      "panel_v1_y2.1",
+      "panel_v1_y5.5",
+      "panel_v2_y2.1",
+      "panel_v2_y5.5",
+      "panel_h1_x2.0",
+      "panel_h1_x8.0"
+    ],
+    "native_band_rows_px": [
+      600,
+      1600
+    ],
+    "left": "existing scale candidate",
+    "right": "new full-image affine candidate",
+    "finding": "Some local changes; visible panel discontinuities persist. No consistent visual improvement.",
+    "full_native_tile_visual_pass": false
+  },
+  "steps": {
+    "cuda": {
+      "exit_code": 0,
+      "elapsed_s": 42.72686726599932,
+      "log": "$TMPDIR/climbot_seam_bounded_cuda_1792658361169919062.log",
+      "program": "$CLIMBOT_DATA_ROOT/m2_seam_bounded_20261022_1792658361169919062/build_wall_mosaic",
+      "args": [
+        "--input-run",
+        "$CLIMBOT_DATA_ROOT/m2_calibrated_full_vertical_20261022_1792648266010867445/processed",
+        "--pose-graph-dir",
+        "$CLIMBOT_DATA_ROOT/m2_calibrated_full_vertical_20261022_1792648266010867445/scale_candidate_graph",
+        "--output-dir",
+        "$CLIMBOT_DATA_ROOT/m2_seam_bounded_20261022_1792658361169919062/affine_mosaic",
+        "--work-dir",
+        "$CLIMBOT_DATA_ROOT/m2_seam_bounded_20261022_1792658361169919062/affine_cuda_work",
+        "--backend",
+        "cuda",
+        "--resolution-mm-per-pixel",
+        ".25",
+        "--jobs",
+        "8",
+        "--memory-budget-gb",
+        "4",
+        "--preview-max-side-px",
+        "4096"
+      ]
+    },
+    "truth": {
+      "exit_code": 0,
+      "elapsed_s": 109.58286551399942,
+      "log": "$TMPDIR/climbot_seam_bounded_truth_1792658361169919062.log",
+      "program": "src/climbot_mosaic/scripts/evaluate_diagnostic_mosaic",
+      "args": [
+        "--mosaic-dir",
+        "$CLIMBOT_DATA_ROOT/m2_seam_bounded_20261022_1792658361169919062/affine_mosaic",
+        "--wall-manifest",
+        "$CLIMBOT_DATA_ROOT/assets/wall_local_m2_v6/wall_texture.json",
+        "--output-dir",
+        "$CLIMBOT_DATA_ROOT/m2_seam_bounded_20261022_1792658361169919062/affine_truth"
+      ]
+    },
+    "inspection": {
+      "exit_code": 0,
+      "elapsed_s": 71.12255131899656,
+      "log": "$TMPDIR/climbot_seam_bounded_inspection_1792658361169919062.log",
+      "program": "src/climbot_mosaic/scripts/inspect_diagnostic_mosaic",
+      "args": [
+        "--mosaic-dir",
+        "$CLIMBOT_DATA_ROOT/m2_seam_bounded_20261022_1792658361169919062/affine_mosaic",
+        "--wall-manifest",
+        "$CLIMBOT_DATA_ROOT/assets/wall_local_m2_v6/wall_texture.json",
+        "--input-run",
+        "$CLIMBOT_DATA_ROOT/m2_calibrated_full_vertical_20261022_1792648266010867445/processed",
+        "--archive-root",
+        "$CLIMBOT_DATA_ROOT/m2_calibrated_full_vertical_20261022_1792648266010867445/capture",
+        "--output-dir",
+        "$CLIMBOT_DATA_ROOT/m2_seam_bounded_20261022_1792658361169919062/affine_inspection"
+      ]
+    }
+  },
+  "runtime_files_unchanged_against_previously_tested_index": 35,
+  "mu_and_flicker_todos_unchanged": true,
+  "decision": {
+    "status": "bounded_experiment_closed_candidate_rejected",
+    "reason": "Image-edge P95 worsened 1.50 to 1.75 mm; independent heldout background has a window worsening above the frozen 1px allowance. Native anchors also did not improve.",
+    "stop_conditions_frozen": true,
+    "additional_candidates": 0,
+    "additional_full_wall_runs": 0,
+    "production_runtime_changed": false,
+    "retain_calibrated_default_ekf": true,
+    "retain_scale_as_explicit_option": true,
+    "mosaic_default_changed": false,
+    "new_capture": false,
+    "coverage_work_deferred": true,
+    "no_goal_commit_push_or_deletion": true
+  },
+  "artifact_sha256": {
+    "protocol.json": "b58c4c4198c0006bc7ea3ab53cae97caba537c16ed34eaa817d1bf94b1e57f93",
+    "full_affine_protocol.json": "4653540c155de0c2c7cf7905da42ac2b55dba166c03beb8de622523cfee71259",
+    "selected_events.json": "50cd2c7650d032d8cb64381222e3041ba64ff73427a47f53bebfe80ab89ae9cd",
+    "measurements.json": "000a29fcb30ee889a4269b8a2368a8f8bee3c31c1b1c1fdf259eac536379eaad",
+    "summary.json": "c1980ba3e9f41a812dff6bb2985052fa5555f693f9cec30f8136f16f36a06778",
+    "measurement_checks.json": "5cfc39d17805d7157f98046d2b4383d309bc518a7304da7bf51a6acfb2e1a78d",
+    "affine_fit.json": "06a0d50234cb94d72a82dd86d3070d04f22067c18a3a80ab8cce60eff31cd14c",
+    "experimental_render_provenance.json": "337a498442f6bc0dd0d5b6ea958629ca93250395b0e82c6f28d3226a0c681d55",
+    "full_steps.json": "9b035648824a5731cffc45ee0595cae2350e52807ae58c94042e0273217c3528",
+    "full_window_summary.json": "bcdff7a71982237429b964be88446941863582ec70eb0eded1fe3be0914143f9",
+    "full_window_records.json": "b8db59c448010250388ade33a453414aac1fbf30d31ae25a1ed835b18dc797df",
+    "native_review_selection.json": "18eab20645b9d15dd3e01d48dcc34a9eee12a7e72e5c99bea7d24dcf69b8004c",
+    "manual_review.json": "3799e15cef245ed14d2b0e118bd03a2d76face3efd03d33045cee5da84fc3a9e",
+    "stop_decision.json": "7098e8cf990ee56b120cbb0312676bb9d753c34c1e3b6fd7ed5bcd92fc04b547",
+    "affine_mosaic/mosaic_manifest.json": "76ea28b5092f056fe241bafbde6d5514e322db44ddd1c48445bbc5fa31002e57",
+    "affine_truth/diagnostic_truth_summary.json": "3dc523e75ec98ea8ebd0425012c2d82151eb07248d6adef6d5bdaf738c900b6a",
+    "affine_inspection/diagnostic_inspection_summary.json": "2b5ecbe3171f145d8197127041676559dea99c04713fa106cff1d8cb0a147562"
+  },
+  "scripts_sha256": {
+    "evaluate_full_windows.py": "9b303050a538895446a6325133d5bc405403bcbaecdbcaa249e180609275fe29",
+    "check_measurement.py": "c6aeb6827f85c0fc1618471a136b52aae040a8ce6d73b0b563bde7a961c2a7c7",
+    "review_native_images.py": "0d7abe5af8d33bb2c1839bd2407bd5459737ef5e903ae2bee945d2279957eb21",
+    "bounded_affine_cuda_worker.py": "a5d8a4ce9b3dfb1f2537006bf7bee27cbde9af7b3a6e6f11cedc63444d34e72a",
+    "fit_full_affine.py": "124781492c8cb49419c68c55cce6f2967f3b8cb6baa8ab1c4ff1f71a3e91c7a0",
+    "measure_seams.py": "6c48a4809fb936e65a43b933af4e802583cfa2d8a75d290aaed4bdbf382a1f58",
+    "affine_render_adapter.py": "57c6851037deac9ed573ea58b2e9464c71ddcc2c204c38f51e940ae1cbacb357",
+    "finalize.py": "fc515c1ef0543b8ec1683d2bd9161fac2a951bcb2426a6f85e49936f71bf4636",
+    "full_pipeline.py": "df9c7e5558ee3d75a6dd59c33a8bb4500b32a4209b6dc5b096a523fb469dc92b",
+    "build_wall_mosaic": "2a76478c2b615e665e9e97f8cda8537291d863434d72adee46523f7557b3e9fa"
+  },
+  "limits": [
+    "Frozen double-edge image measurements are appearance-sensitive proxies, not physical groove dimensions or a replacement for P2-06 geometry.",
+    "Forward/backward-consistent LK background tracks are image correspondence diagnostics, not independent simulator truth.",
+    "Window samples and frames are correlated; statistics are descriptive, without independent-sample confidence claims.",
+    "Local independent pair fits are a feasibility bound. The single full-wall candidate uses one globally consistent affine per photograph, not an adopted nonrigid local mesh.",
+    "Experimental provider is bound separately; native manifests are unmodified. Retained baseline uncertainty raster is not a calibrated affine covariance.",
+    "No production source changed this turn; the previously passing 1987-test suite was not rerun."
+  ]
+}

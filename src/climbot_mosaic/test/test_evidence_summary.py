@@ -75,6 +75,11 @@ def test_formal_summary_records_its_generator_and_only_the_causal_chain(
     processing = _write(run / 'processing_manifest.json', {
         'source_archive': {'run_id': run_id, 'manifest_sha256': sha256_file(archive)}})
     processed_digest = sha256_file(processing)
+    content = _stage(tmp_path / 'content', 'archive_content', {
+        'archive_manifests': [{'run': run_id, 'manifest': _artifact(archive)}]}, {
+        'archive_content_summary.json': {
+            'archive_content_format_version': 2, 'all_runs_match_reference': True,
+            'runs': {run_id: {'against_reference': {'passed': True, 'failures': []}}}}})
 
     matches = _stage(tmp_path / 'matches', 'local_matches', {}, {
         'local_matches.json': {'match_summary': {'candidate_count': 1}}})
@@ -144,6 +149,7 @@ def test_formal_summary_records_its_generator_and_only_the_causal_chain(
         '--pose-graph-dir', str(graph), '--mosaic-dir', str(mosaic),
         '--truth-dir', str(truth), '--inspection-dir', str(inspection),
         '--input-run', str(run), '--archive-root', str(tmp_path / 'archives'),
+        '--archive-content-dir', str(content),
         '--output', str(output), '--status', 'test-pass'])
     assert tool.main() == 0
     summary = json.loads(output.read_text(encoding='utf-8'))

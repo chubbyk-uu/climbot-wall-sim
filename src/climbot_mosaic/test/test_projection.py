@@ -80,6 +80,20 @@ def test_rejects_camera_that_does_not_face_wall(tmp_path):
         project_inputs(inputs)
 
 
+def test_explicit_projection_geometry_changes_footprint_without_changing_prior(tmp_path):
+    from copy import deepcopy
+    inputs = make_inputs(tmp_path)
+    label = inputs.frames[0].label
+    prior = deepcopy(label['camera_pose'])
+    geometry = deepcopy(prior['pose'])
+    geometry['position']['z'] = 0.5
+    label['projection_camera_pose'] = geometry
+    projection = project_frame(inputs.frames[0], inputs)
+    assert projection.camera_plane_distance_m == pytest.approx(0.5)
+    assert np.ptp(np.asarray(projection.footprint_xy_m)[:, 0]) == pytest.approx(0.5)
+    assert label['camera_pose'] == prior
+
+
 def test_projection_manifest_is_stable_and_host_path_free(tmp_path):
     """Projection records are ordered, finite and never leak archive paths."""
     inputs = make_inputs(tmp_path)

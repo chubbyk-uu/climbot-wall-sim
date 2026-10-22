@@ -19,6 +19,7 @@ from climbot_description.vacuum_loads import minimum_pressure
 from climbot_gazebo.mesa_runtime import rendering_environment
 from climbot_gazebo.vacuum_assets import build_assets
 from freeze_suction_baseline import INPUTS
+from m2_load_criterion import resolved_mu
 import numpy as np
 from validate_vacuum_physics import reference_pressure, reference_rate, response_time
 import yaml
@@ -89,6 +90,7 @@ def cases(stage):
 
 
 def motion_metrics(c, resolved, directory, profile_name):
+    mu = resolved_mu(resolved)
     t = c['sim_time_s']
     released = (c['paused'] == 0) & (c['vac_fixture_active'] == 0)
     if not released.any():
@@ -103,7 +105,7 @@ def motion_metrics(c, resolved, directory, profile_name):
     normal = np.column_stack([c[side + '_fx'][ids] for side in ['left', 'right', 'ball']])
     tangent = np.column_stack([np.hypot(c[side + '_fy'][ids], c[side + '_fz'][ids])
                                for side in ['left', 'right']])
-    required = np.maximum(5, 1.5 * tangent / 1.1)
+    required = np.maximum(5, 1.5 * tangent / mu)
     qx, qy, qz, qw = [c[k] for k in ['qx', 'qy', 'qz', 'qw']]
     forward = np.column_stack((
         1 - 2 * (qy**2 + qz**2), 2 * (qx * qy + qw * qz), 2 * (qx * qz - qw * qy)))
@@ -119,13 +121,13 @@ def motion_metrics(c, resolved, directory, profile_name):
     alpha = np.gradient(w, t)
     state = np.column_stack((heading[ids], v[ids], a[ids], w[ids], alpha[ids]))
     pressure_min = np.concatenate([minimum_pressure(
-        resolved['model'], state[i:i + 256], lateral='conservative')
+        resolved['model'], state[i:i + 256], mu=mu, lateral='conservative')
         for i in range(0, len(state), 256)])
     actual_pressure = c['vac_delta_pa'][ids]
     flow_reserve = np.array([-reference_rate(
         p, [c[f'vac_fan_speed_{j}'][i] for j in range(3)],
         c['vac_leak_area_m2'][i], resolved['physics']) for i, p in zip(ids, pressure_min)])
-    margin = 1.1 * normal[:, :2] / np.maximum(tangent, 1e-12)
+    margin = mu * normal[:, :2] / np.maximum(tangent, 1e-12)
     checks = {
         'released': True,
         'no_runtime_failure': not bool(np.any(c['vac_runtime_failed'])),
@@ -188,7 +190,7 @@ def fault_metrics(c, resolved, spec):
     valid = (c['vac_fixture_active'] == 0) & (c['paused'] == 0) & (c['vac_runtime_failed'] == 0)
     normals = np.column_stack([c[s + '_fx'] for s in ['left', 'right', 'ball']])
     tangents = np.column_stack([np.hypot(c[s + '_fy'], c[s + '_fz']) for s in ['left', 'right']])
-    margin = 1.1 * normals[:, :2] / np.maximum(tangents, 1e-12)
+    margin = resolved_mu(resolved) * normals[:, :2] / np.maximum(tangents, 1e-12)
     violation = valid & ((normals < [5, 5, 10]).any(axis=1) | (margin < 1.5).any(axis=1))
     first = np.flatnonzero(violation & (t >= 3))
     checks = {'finite_observations': all(np.isfinite(v).all() for v in c.values())}

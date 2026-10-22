@@ -170,7 +170,7 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                  physics_overrides=None, caster_proxy=False, wheel_compliance=False,
                  surface_patch=None, caster_compliance=False,
                  tyre_lateral=False, wall_surface='flat', wall_texture=None,
-                 tyre_crown=False, contact_topics=None):
+                 tyre_crown=False, contact_topics=None, traction_mu=None):
     """Generate an inspectable runtime world, model, URDF and resolved inputs."""
     if mode not in ('fan_ode', 'fixed_pressure'):
         raise ValueError('pressure mode must be fan_ode or fixed_pressure')
@@ -201,6 +201,12 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     robot = _read(description / 'config/robot.yaml', 'robot')
     wall = _read(description / 'config/wall.yaml', 'wall')
     simulation = _read(gazebo / 'config/simulation.yaml', 'simulation')
+    if traction_mu is not None:
+        if not math.isfinite(traction_mu) or traction_mu <= 0:
+            raise ValueError('traction_mu must be finite and positive')
+        simulation['wall']['mu'] = float(traction_mu)
+        simulation['drive_wheel']['mu'] = float(traction_mu)
+    drive_mu = min(simulation['drive_wheel']['mu'], simulation['wall']['mu'])
     if contact_topics is None:
         contact_topics = simulation['contact']['observer_topics']
     if type(contact_topics) is not bool:
@@ -347,13 +353,13 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     node(sp, 'nominal_volume_m3', model['volume_m3'])
     node(sp, 'centre_x_m', cfg['body']['centre_x_m'])
     node(sp, 'nominal_gap_m', cfg['body']['bottom_z_m'])
-    node(sp, 'drive_mu', min(simulation['drive_wheel']['mu'], simulation['wall']['mu']))
+    node(sp, 'drive_mu', drive_mu)
     for key in ['margin', 'drive_floor_n', 'caster_floor_n']:
         node(sp, key, cfg['analysis'][key])
     node(sp, 'reference_area_m2', physics['calibration']['reference_area_m2'])
     node(sp, 'residual_area_m2', physics['calibration']['residual_area_m2'])
     nominal_minimum = float(minimum_pressure(
-        model, states([heading_deg]), lateral='conservative')[0])
+        model, states([heading_deg]), mu=drive_mu, lateral='conservative')[0])
     node(sp, 'nominal_startup_minimum_pa', nominal_minimum)
     gas = node(sp, 'gas')
     for key, value in physics['gas'].items():
@@ -431,6 +437,9 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
     finally:
         world_file.unlink(missing_ok=True)
     world = world_root.find('world')
+    for tag in ('mu', 'mu2'):
+        path = 'model[@name="wall"]/link/collision/surface/friction/ode/' + tag
+        world.find(path).text = str(simulation['wall']['mu'])
     if not contact_topics:
         drop_contact_observer(world)
     if caster_proxy:
@@ -458,7 +467,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         world_plugin = world.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
         patch = apply_surface_patch(world, world_plugin, out, surface_patch,
                                     surface + wall['origin_rpy'], cfg['wheel']['radius_m'],
-                                    size=surface_patch.get('patch_size_m', 1.2))
+                                    size=surface_patch.get('patch_size_m', 1.2),
+                                    wall_mu=simulation['wall']['mu'])
         for key in ['wall_pose', 'wall_size']:
             sp.find(key).text = world_plugin.findtext(key)
         for key in ['channel_drape_m', 'channel_transition_m', 'channel_refinement']:
@@ -473,7 +483,8 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
         asset_dir, asset_manifest = prepare(source, size, wall_texture)
         world_plugin = world.find('.//plugin[@name="climbot_gazebo::VacuumSystem"]')
         wall_assets = apply_full_wall(world, world_plugin, asset_dir, asset_manifest,
-                                      surface+wall['origin_rpy'], size, source)
+                                      surface+wall['origin_rpy'], size, source,
+                                      wall_mu=simulation['wall']['mu'])
         for key in ['wall_surface_yaml', 'channel_drape_m', 'channel_transition_m',
                     'channel_refinement', 'seal_corner']:
             for item in world_plugin.findall(key):
@@ -493,6 +504,10 @@ def build_assets(directory, mode='fan_ode', heading_deg=0.0, step_s=0.001,
                 'runtime': runtime, 'model': model, 'physics': physics, 'io': io,
                 'wall_surface_pose': surface + wall['origin_rpy'],
                 'nominal_startup_minimum_pa': nominal_minimum,
+                'friction': {'wall_mu': simulation['wall']['mu'],
+                             'drive_wheel_mu': simulation['drive_wheel']['mu'],
+                             'effective_drive_mu': drive_mu,
+                             'caster_mu': simulation['caster']['mu']},
                 'camera_enabled': runtime['camera_enabled']}
     if caster_proxy:
         resolved['caster_proxy'] = {'surface': 'flat_calibration_only',

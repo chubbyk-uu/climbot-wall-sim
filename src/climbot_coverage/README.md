@@ -35,7 +35,7 @@ ros2 launch climbot_bringup coverage_mission.launch.py
 通过 `config_file:=<配置绝对路径>` 选择配置（`coverage_mission.launch.py` 用
 `planner_config_file`）。用 `coverage_sim.launch.py` 时还需另行启动
 `climbot_control/coverage_executor.launch.py` 才能执行；`coverage_mission.launch.py`
-已经包含它。主线命令见 [根 README 的快速启动](../../README.md#快速启动)，
+已经包含它。主线命令见 [快速启动](../../docs/QUICKSTART.md#快速启动)，
 批处理与实验变体见 [docs/OPERATION.md](../../docs/OPERATION.md)。
 
 等腰梯形点选顺序为 A（左下）、B（右上）、C（右下）；矩形只使用 A、B。点选工具

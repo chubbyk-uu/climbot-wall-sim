@@ -191,7 +191,7 @@ def prepare(config, size, texture_manifest=None):
     return final, result
 
 
-def apply(world, plugin, assets, manifest, surface_pose, size, config):
+def apply(world, plugin, assets, manifest, surface_pose, size, config, *, wall_mu):
     """Install exact same-source optical surface, driver heightmap and ball proxy."""
     q = quaternion_from_rpy(*surface_pose[3:])
     origin = np.array(surface_pose[:3])
@@ -222,8 +222,8 @@ def apply(world, plugin, assets, manifest, surface_pose, size, config):
         surface = node(collision, 'surface')
         node(node(surface, 'contact'), 'collide_bitmask', mask)
         ode = node(node(surface, 'friction'), 'ode')
-        node(ode, 'mu', 1.1)
-        node(ode, 'mu2', 1.1)
+        node(ode, 'mu', wall_mu)
+        node(ode, 'mu2', wall_mu)
 
     friction(collision, 1)
 

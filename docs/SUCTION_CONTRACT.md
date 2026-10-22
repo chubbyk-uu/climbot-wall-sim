@@ -1,5 +1,7 @@
 # 吸附专项 S0 实验合同
 
+> 冻结合同／方法，按文中试验时点与配置解释。保留原路径供工具溯源；当前默认与后续证据见[M2 入口](SUCTION_M2_PLAN.md)和[验收矩阵](ACCEPTANCE.md)。
+
 冻结日期：2026-10-17。适用于 `feature/pressure-suction` 的 M1；下列数值是仿真工程目标，
 没有实机测量依据的参数仍是 provisional。设计范围由 [项目规范](../PROJECT_GUIDE.md) 定义，
 阶段见 [实施计划](SUCTION_PLAN.md)，通过状态仅在 [验收矩阵](ACCEPTANCE.md) 更新。

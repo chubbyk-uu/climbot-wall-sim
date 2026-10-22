@@ -16,7 +16,7 @@
 
 import math
 
-from climbot_gazebo.camera_projection import camera_centre
+from climbot_gazebo.camera_projection import camera_centre, optical_axis_footprint
 import pytest
 
 
@@ -40,3 +40,22 @@ def test_camera_centre_rotates_the_front_offset(yaw, expected):
 def test_nonfinite_projection_input_is_rejected(position, yaw, offset):
     with pytest.raises(ValueError):
         camera_centre(position, yaw, offset)
+
+
+def test_optical_footprint_intersects_a_sloped_surface():
+    import numpy as np
+
+    axis = np.array([0.1, 0, -1.0])
+    axis /= np.linalg.norm(axis)
+    camera = np.array([2.0, 3.0, 0.275])
+    point, distance = optical_axis_footprint(camera, axis, lambda x, y: 0.01 * (x - 2))
+    expected_distance = 0.275 / (0.01 * axis[0] - axis[2])
+    np.testing.assert_allclose(point, camera + expected_distance * axis, atol=1e-12)
+    assert distance == pytest.approx(expected_distance)
+    assert point[2] == pytest.approx(0.01 * (point[0] - 2), abs=1e-12)
+
+
+@pytest.mark.parametrize('axis', [[0, 0, 1], [1, 0, 0], [0, 0, -2]])
+def test_optical_footprint_rejects_backward_parallel_or_nonunit_rays(axis):
+    with pytest.raises(ValueError):
+        optical_axis_footprint([0, 0, 0.275], axis)

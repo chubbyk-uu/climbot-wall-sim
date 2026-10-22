@@ -13,7 +13,7 @@ S0～S3 原始证据保持不变。
 未加入止回阀、连续调速、压力闭环或运行低压运动门禁。
 
 正式 topic、类型、QoS、时间戳、量程与故障／reset 语义见
-[INTERFACES](../../docs/INTERFACES.md#实验吸附与压力接口s4)。主要接口：
+[INTERFACES](../../docs/INTERFACES.md#吸附与压力接口)。主要接口：
 
 - `/suction/pressure`：FluidPressure，腔内**绝压 Pa**，header 为采样时刻；
 - `/suction/ambient_pressure`：带时间戳的外界绝压，当前固定 101325 Pa；

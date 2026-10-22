@@ -19,7 +19,7 @@
 修复前默认积分为 19.73339 mm²，8 倍积分也未完全恢复末段，因此不能只凭粗细相近排除漏段。
 新增 `SealChannels.FinalEndpointCannotRoundOutsideAndOmitAnEdgeTail` 用无槽平面上的常量开口
 核对**完整周长**积分；旧源码确定性失败，修复后 1／2／4／8 倍全部通过。
-见[问题记录 45](../../docs/INCIDENTS.md#45-密封边积分终点因舍入被丢弃造成局部漏气低估)。
+见[问题记录 45](../../docs/incidents/PHYSICS.md#45-密封边积分终点因舍入被丢弃造成局部漏气低估)。
 
 ## 2. 新需求初筛与风机边界
 

@@ -45,6 +45,8 @@ class VisualEdge:
     sigma_m: float
     lever_m: float
     inliers: int
+    first_points: tuple[tuple[float, float], ...] = ()
+    second_points: tuple[tuple[float, float], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -55,6 +57,8 @@ class PoseGraphResult:
     posterior_std: np.ndarray
     retained_edges: tuple[int, ...]
     report: dict[str, Any]
+    scales: np.ndarray | None = None
+    log_scale_std: np.ndarray | None = None
 
 
 def _wrap(angle: float | np.ndarray) -> float | np.ndarray:
@@ -122,21 +126,42 @@ def read_local_matches(path: Path, inputs: MosaicInputs,
         polygon = np.asarray(candidates[pair].intersection_xy_m, dtype=np.float64)
         center = polygon.mean(axis=0)
         lever = max(0.05, float(np.sqrt(np.mean(np.sum((polygon - center) ** 2, axis=1)))))
+        try:
+            first_points = np.asarray(match.get('inlier_points_first_xy_m', []), float)
+            second_points = np.asarray(match.get('inlier_points_second_xy_m', []), float)
+        except (TypeError, ValueError) as error:
+            raise PoseGraphError('invalid inlier point constraints.') from error
+        if first_points.size or second_points.size:
+            if (first_points.ndim != 2 or first_points.shape[1:] != (2,) or
+                    first_points.shape != second_points.shape or
+                    not 4 <= len(first_points) <= min(32, inliers) or
+                    not np.isfinite(first_points).all() or
+                    not np.isfinite(second_points).all()):
+                raise PoseGraphError('invalid inlier point constraints.')
         edges.append(VisualEdge(
             frame_index[first], frame_index[second], values,
-            (float(center[0]), float(center[1])), max(0.0005, p95), lever, inliers))
+            (float(center[0]), float(center[1])), max(0.0005, p95), lever, inliers,
+            tuple(tuple(point) for point in first_points),
+            tuple(tuple(point) for point in second_points)))
     if not edges:
         raise PoseGraphError('local match file contains no accepted constraints.')
     return tuple(edges)
 
 
-def _priors(inputs: MosaicInputs) -> tuple[np.ndarray, np.ndarray]:
+def _priors(inputs: MosaicInputs, position_prior_std_m: float | None = None
+            ) -> tuple[np.ndarray, np.ndarray]:
+    if position_prior_std_m is not None and (
+            not math.isfinite(position_prior_std_m) or position_prior_std_m <= 0):
+        raise PoseGraphError('position prior must be finite and positive.')
     centers, whiteners = [], []
     for frame in inputs.frames:
         pose = frame.label['camera_pose']['pose']['position']
         centers.append((float(pose['x']), float(pose['y'])))
         covariance = np.asarray(frame.label['camera_pose']['covariance'], np.float64).reshape(6, 6)
         planar = covariance[np.ix_((0, 1, 5), (0, 1, 5))]
+        if position_prior_std_m is not None:
+            planar = np.diag([position_prior_std_m ** 2, position_prior_std_m ** 2,
+                              planar[2, 2]])
         planar = 0.5 * (planar + planar.T)
         eigenvalues, eigenvectors = np.linalg.eigh(planar)
         if not np.all(np.isfinite(eigenvalues)) or eigenvalues[-1] <= 0.0:
@@ -266,11 +291,12 @@ def _component_sizes(frame_count: int, edges: tuple[VisualEdge, ...],
 
 
 def optimize_pose_graph(inputs: MosaicInputs, edges: tuple[VisualEdge, ...],
-                        recheck_floor_m: float = 0.005) -> PoseGraphResult:
+                        recheck_floor_m: float = 0.005,
+                        position_prior_std_m: float | None = None) -> PoseGraphResult:
     """Run robust optimization, data-driven edge recheck, and a final solve."""
     if not math.isfinite(recheck_floor_m) or recheck_floor_m <= 0.0:
         raise PoseGraphError('recheck_floor_m must be finite and positive.')
-    centers, whiteners = _priors(inputs)
+    centers, whiteners = _priors(inputs, position_prior_std_m)
     selected = tuple(range(len(edges)))
     initial = np.zeros((len(inputs.frames), 3), np.float64)
     initial_errors = _metric_errors(initial, centers, edges, selected)
@@ -334,4 +360,6 @@ def optimize_pose_graph(inputs: MosaicInputs, edges: tuple[VisualEdge, ...],
         'final_solver': {'cost': float(final.cost), 'evaluations': int(final.nfev)},
         'posterior_note': 'diagonal standard-deviation approximation from final robust Jacobian',
     }
+    if position_prior_std_m is not None:
+        report['position_prior_std_m'] = position_prior_std_m
     return PoseGraphResult(corrections, posterior, retained, report)

@@ -40,6 +40,17 @@ def test_intersection_keeps_only_positive_area():
     assert _intersection((0.0, 0.0, 1.0, 1.0), (1.0, 0.0, 2.0, 1.0)) is None
 
 
+def test_surface_groove_mask_has_narrow_tapered_tips():
+    grid = MosaicGrid(0, 0, 0.01, 0.01, 0.001, 10, 10)
+    feature = {'kind': 'surface_groove', 'geometry': {
+        'start_m': [0, 0.005], 'end_m': [0.01, 0.005],
+        'width_m': 0.004, 'end_taper_m': 0.004}}
+    mask = _feature_mask(feature, grid, (0, 0, 0.01, 0.01))
+    assert mask[:, 0].sum() == 0
+    assert mask[:, 4].sum() == 4
+    np.testing.assert_array_equal(mask, np.fliplr(mask))
+
+
 def test_padding_preserves_pixels_without_resampling():
     image = np.asarray(((3, 4), (5, 6)), np.uint8)
     padded = _pad_to_shape(image, 3, 4)

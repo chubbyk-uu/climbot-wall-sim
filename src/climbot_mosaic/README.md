@@ -32,7 +32,7 @@ JSON 工具。构建母版的全过程**不读 Gazebo 真值、也不读墙面 D
 
 ## 正常顺序
 
-可复制的逐步命令见 [README 的离线墙面拼接](../../README.md#5-离线墙面拼接)，这里只说每一步
+可复制的逐步命令见 [README 的离线墙面拼接](../../docs/QUICKSTART.md#6-离线墙面拼接)，这里只说每一步
 在做什么、为什么这么做。
 
 **0. `validate_mosaic_inputs`** — 赶在昂贵的特征提取开始之前，逐项校验每张 processed PNG
@@ -62,6 +62,18 @@ SE(2) 估计。`--ratio-test`（`0.75`）、`--ransac-threshold-m`（`5 mm`）�
 `median + 6·1.4826·MAD` 里的较大者——这个参数是那个阈值的下限，防止残差分布本身很窄时
 把正常的边也一并剔掉。
 
+M2 离线候选可显式启用 `--scale-prior-std 0.004 --position-prior-std-m 0.0015`：
+逐帧增加正值尺度（对数尺度先验 σ=0.4%），XY 先验 σ=1.5 mm，绕每帧初始相机中心
+修正投影。位置先验覆盖是本次仿真数据的实验参数，不改写归档协方差，也不是实机默认。
+新匹配文件额外保留每边最多 32 对真实内点；旧文件缺少内点时须重建匹配，禁止从刚性变换
+虚构比例观测。Sim(2) 图／优化位姿使用格式版本 2，旧渲染器会拒绝该图，当前渲染器仍兼容
+SE(2) 版本 1。尺度后验的对角项计入 CPU/CUDA 的径向不确定度；它不是完整边缘协方差。
+原有 SE(2) 和归档先验仍为默认，原因与完整横纵对照见
+[M2 离线报告](../../results/m2_camera_mosaic_2026-10-22/REPORT.md)。
+后续 EKF 已按当前 M2 数据标定，新归档继续直接使用其实际位姿／协方差，不自动覆盖紧先验。
+同批 70 张原图的 SE(2) CUDA 对照支持绝对对齐改善，但接缝与整墙局部问题仍保留，见
+[定位标定与拼接验证](../../results/m2_localization_calibration_2026-10-22/REPORT.md)。
+
 **4. `build_wall_mosaic`** — 分块渲染 pose-only 与 optimized 两版母版，同时输出差分、
 覆盖次数、不确定度和预览。渲染器内存有界，单写入器，产物原子发布；`--work-dir` 是可重建的
 临时 tile 缓存。两版母版之间的比较规则见下节。
@@ -80,7 +92,7 @@ pose-only 与 optimized 使用**同一批帧、同一网格、同一分辨率、
 | `mosaic_pose_only.tif` | 直接按曝光位姿拼出的母版 |
 | `mosaic_optimized.tif` | 经位姿图对齐后拼出的母版 |
 | `mosaic_difference.tif` | 两者差分；由 optimized 那趟逐块相减得出，不重复渲染 |
-| `coverage_pose_only_count.tif` / `coverage_count.tif` | pose-only / optimized 各自的覆盖次数；**为零表示相机从未拍到** |
+| `coverage_pose_only_count.tif` / `coverage_count.tif` | pose-only / optimized 各自的覆盖次数；为零表示该投影模型下没有有效源像素覆盖 |
 | `uncertainty.tif` | 量化后验不确定度，`65535` 标记无覆盖 |
 | `seams_{pose_only,optimized}.npz` | 稀疏 hard-cut 源图切换邻接；用于后验接缝指标，不是整幅 owner 图 |
 | `mosaic_preview.jpg` | optimized 母版的 JPEG 预览 |
@@ -117,9 +129,9 @@ source install/setup.bash
 ros2 run climbot_mosaic build_wall_mosaic <其余参数> --backend cuda
 ```
 
-Toolkit 的 WSL2 安装步骤见仓库根目录 [README](../../README.md#可选安装-cuda-拼接后端)。本项目
+Toolkit 的 WSL2 安装步骤见仓库根目录 [安装说明](../../docs/INSTALLATION.md#可选安装-cuda-拼接后端)。本项目
 CUDA 开发机上的完整拼接、性能和验收运行都必须显式使用 `--backend cuda`，并确认 manifest 的
-`execution.backend.effective` 为 `cuda`；`auto` 只适合允许回退的普通批处理，不能作为 GPU 证据。
+`execution.effective` 为 `cuda` 且 `execution.fallback=false`；`auto` 只适合允许回退的普通批处理，不能作为 GPU 证据。
 
 `cuda` 强制使用 GPU，环境、显存或 kernel 失败就明确失败；`auto` 才允许从干净状态改跑 CPU。
 输入、哈希、参数和共享输出错误不会回退。GPU 启动时至少保留 `2 GiB` 显存，且计划占用不超过

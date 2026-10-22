@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from m2_load_criterion import resolved_mu
 import matplotlib
 import numpy as np
 import yaml
@@ -21,6 +22,7 @@ def audit(directory, spec):
         names = next(csv.reader(stream))
         data = np.loadtxt(stream, delimiter=',', ndmin=2)
     c = {name: data[:, i] for i, name in enumerate(names)}
+    mu = resolved_mu(json.loads((directory/'resolved.json').read_text()))
     result = {
         'frames': len(data), 'all_finite': bool(np.isfinite(data).all()),
         'maximum_absolute_pressure_identity_error_pa': float(np.max(np.abs(
@@ -46,9 +48,9 @@ def audit(directory, spec):
         result.update({
             'scored_samples': int(mask.sum()),
             'minimum_native_friction_margin': float(np.min(
-                1.1 * normal[:, :2] / np.maximum(tangent, 1e-12))),
+                mu * normal[:, :2] / np.maximum(tangent, 1e-12))),
             'native_drive_requirement_pass': bool(np.all(
-                normal[:, :2] >= np.maximum(5, 1.5 * tangent / 1.1))),
+                normal[:, :2] >= np.maximum(5, 1.5 * tangent / mu))),
             'native_ball_floor_pass': bool(np.all(normal[:, 2] >= 10)),
             'all_fixture_wrench_zero': all(
                 np.all(c['vac_fixture_' + kind + axis][mask] == 0)

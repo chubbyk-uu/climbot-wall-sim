@@ -45,7 +45,7 @@ simulation:
     # ground without any other symptom.
     centre_xyz: [0.0, 0.0, 4.0]
     thickness_m: 0.10
-    mu: 1.1
+    mu: 0.8
     # The reference grid pitch used to live here. It moved to
     # climbot_description/config/wall.yaml, because RViz draws the same grid
     # and cannot read this file.
@@ -67,7 +67,9 @@ simulation:
     height_m: 2.0
 
   drive_wheel:
-    mu: 1.1
+    # User design input; mu=0.7 failed the unchanged instantaneous load gate.
+    # Short horizontal/vertical validation: results/m2_friction_2026-10-22.
+    mu: 0.8
     # Accepted empirical WheelSlip calibration. The compliance/nominal-load
     # ratios are preserved independently of the new chassis load distribution.
     slip_lateral: 0.208

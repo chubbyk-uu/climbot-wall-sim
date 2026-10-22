@@ -440,7 +440,8 @@ def launch_setup(context, *args, **kwargs):
         package_share, description_share)
     wall_config = os.path.join(description_share, 'config', 'wall.yaml')
     control_config = os.path.join(control_share, 'config', 'control.yaml')
-    ekf_config = os.path.join(package_share, 'config', 'ekf_wall.yaml')
+    ekf_config = (LaunchConfiguration('ekf_config_file').perform(context) or
+                  os.path.join(package_share, 'config', 'ekf_wall.yaml'))
     existing_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
     existing_system_plugin_path = os.environ.get('GZ_SIM_SYSTEM_PLUGIN_PATH', '')
     library_path = os.environ.get('LD_LIBRARY_PATH', '')
@@ -800,6 +801,11 @@ def generate_launch_description():
             'use_sim_time',
             default_value='true',
             description='Use Gazebo simulation time.',
+        ),
+        DeclareLaunchArgument(
+            'ekf_config_file',
+            default_value='',
+            description='Optional full EKF parameter file; empty uses the package configuration.',
         ),
         DeclareLaunchArgument(
             'clock_publish_hz',

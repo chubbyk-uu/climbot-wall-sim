@@ -11,7 +11,7 @@
   <xacro:arg name="thickness" default="0.10"/>
   <xacro:arg name="width" default="10.0"/>
   <xacro:arg name="height" default="8.0"/>
-  <xacro:arg name="mu" default="1.1"/>
+  <xacro:arg name="mu" default="0.8"/>
   <xacro:arg name="grid_spacing" default="1.0"/>
   <xacro:arg name="spawn_gap" default="0.001"/>
   <xacro:arg name="spawn_lateral" default="0.0"/>
@@ -349,8 +349,8 @@
         <!-- Editor lighting only: keep night-time sensor lighting in <scene>. -->
         <ambient_light>0.30 0.30 0.30</ambient_light>
         <background_color>0.005 0.005 0.008</background_color>
-        <!-- Front-on view centred on the robot's initial pose. -->
-        <camera_pose>${face_x + 2.75} $(arg spawn_lateral) $(arg spawn_height) 0 0 3.14159265359</camera_pose>
+        <!-- Front-on overview of the whole wall, with room around its edges. -->
+        <camera_pose>${face_x + 1.2 * max(width, height)} ${centre_y} ${centre_z} 0 0 3.14159265359</camera_pose>
       </plugin>
       <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
         <gz-gui>

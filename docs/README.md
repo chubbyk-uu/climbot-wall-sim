@@ -1,87 +1,52 @@
-# 文档导航与治理
+# 文档导航与维护边界
 
-本目录只保留当前有效的工程说明、接口合同、操作手册和验收结论。历史设计讨论、review
-记录、过期运行日志和参考资料应保留可追溯性，但不应干扰日常查找。
+更新：2026-10-22。当前说明与历史过程分开维护；历史报告的数字、门槛和 producer provenance
+不因当前默认改变而改写。文档整理记录见[本轮盘点](DOCUMENTATION_AUDIT_2026-10-22.md)。
 
-`README.md`（仓库根目录）是所有使用者的入口。它必须能够独立回答：运行环境是什么、如何
-安装和构建，以及怎样从零跑完仿真、规划、控制、采集、图像预处理和墙面拼接这一整条主线。
-它不承载批量回归、参数变体和历史决策。
+## 按任务查找
 
-README 和 `OPERATION.md` **按读者分工，不按详略分工**：README 面向第一次跑通的人，
-OPERATION 面向已经跑通、要做实验或者出了问题的人。判据只有一条——**同一条命令只出现在
-一处**：它属不属于“第一次跑通”这条主线，就决定它写在哪边。所以 README 里的步骤可以写得
-比 OPERATION 详细，这不是倒置。平台专用的 Mesa 构建配方单独归属 `MESA_SETUP.md`，
-README 只保留 WSL／原生 Linux 的选择和入口，不重复该配方。
+| 需要做什么 | 入口 |
+| --- | --- |
+| 了解项目与默认行为 | [根 README](../README.md)、[当前状态](STATUS.md) |
+| 安装、构建、生成资产、测试 | [安装](INSTALLATION.md)，WSL 图形库详见[Mesa](MESA_SETUP.md) |
+| 首次跑通仿真、采集与拼接 | [快速启动](QUICKSTART.md) |
+| 变更参数、批处理或排查故障 | [操作入口](OPERATION.md)、[故障索引](INCIDENTS.md) |
+| 产品目标与硬约束 | [项目规范](../PROJECT_GUIDE.md) |
+| 包职责、数据流与配置归属 | [系统架构](ARCHITECTURE.md) |
+| ROS 话题、服务、Action 与文件格式 | [接口合同](INTERFACES.md)及各包 README |
+| 验收状态、指标与证据 | [验收矩阵](ACCEPTANCE.md)、[结果入口](../results/README.md) |
+| 负压、起伏与轮胎模型 | [M1](SUCTION_PLAN.md)、[M2](SUCTION_M2_PLAN.md) |
+| 离线拼接、CUDA 与墙面资产 | [拼接](MOSAIC_PLAN.md)、[CUDA](GPU_ACCELERATION_PLAN.md)、[墙面资产](WALL_TEXTURE_PLAN.md) |
+| 数据能否清理、已删什么 | [当前保留规则](DATA_RETENTION.md)、[历史回执索引](archive/data-retention/README.md) |
+| 查旧设计、失败路线和阶段流水 | [归档入口](archive/README.md)，不以归档默认替代当前配置 |
 
-## 当前文档的职责
+## 文件职责
 
-下表按“唯一归属”列出，`README.md`、`PROJECT_GUIDE.md` 和 `results/README.md`
-不在 `docs/` 内，但同样受这套边界约束。
+- 根 README：项目概览与导航，不重复安装和完整运行命令。
+- INSTALLATION／QUICKSTART：分别负责准备环境与首次跑通；OPERATION 只写额外实验／排查。
+- PROJECT_GUIDE：目标和硬约束；INTERFACES：接口语义；ARCHITECTURE：依赖与配置归属。
+- STATUS：当前状态和停止边界，不按日期堆叠日志；ACCEPTANCE：逐项状态与证据。
+- M1／M2、拼接、CUDA、墙面入口：现行模型／合同及证据入口；已完成计划放 archive。
+- 包 README：包内职责、参数与 API，不再复制整套主线流程。
+- results：正式批次报告／小型摘要。当前入口与分阶段历史索引分开，报告不因默认变化重写结论。
+- DATA_RETENTION：现行保留与最新清理结果；每次授权和旧目录状态放清理历史。
 
-| 文档 | 只应包含 | 不应包含 |
-| --- | --- | --- |
-| [`../README.md`](../README.md) | 环境需求、安装部署、构建测试、**一条跑通全链路的主线**、文档入口 | 批量回归、参数变体、实验过程、历史决策 |
-| [`PROJECT_GUIDE.md`](../PROJECT_GUIDE.md) | 产品目标、范围、不可违背的设计约束、规范性验收要求 | 具体命令、已完成的开发日志 |
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | 包职责、依赖、配置归属、运行时数据流 | 命令教程、接口字段的逐项字典 |
-| [`INTERFACES.md`](INTERFACES.md) | 当前话题、服务、Action、参数、文件格式与兼容性合同 | 已废弃接口的演变过程 |
-| [`OPERATION.md`](OPERATION.md) | **主线之外**的批量回归、评价工具、参数变体、诊断与故障处置 | 主线命令的第二份拷贝、架构解释、结果结论 |
-| [`MESA_SETUP.md`](MESA_SETUP.md) | WSL D3D12 修复库的本仓库构建配方、共享安装、切换和验证 | 原生 Linux 或 ROS 的另一份安装教程、二进制分发 |
-| [`ACCEPTANCE.md`](ACCEPTANCE.md) | 当前验收项、状态、正式证据和实机边界 | 完整实验流水账 |
-| [`MOSAIC_PLAN.md`](MOSAIC_PLAN.md) | 离线拼接的当前设计、判据、证据范围和已知限制 | 已废弃试验的逐轮细节 |
-| [`GPU_ACCELERATION_PLAN.md`](GPU_ACCELERATION_PLAN.md) | 已完成 fusion CUDA 专项、否决路线、回退和验收合同 | 已关闭 P2-06 的重新叙述、ROS/Gazebo 图形后端调优 |
-| [`SUCTION_PLAN.md`](SUCTION_PLAN.md) | 已完成 M1 S0～S7 的范围、等效模型与证据入口，以及独立扩展链接 | 尚未取得的真机性能或无证据的通过宣称 |
-| [`SUCTION_M2_PLAN.md`](SUCTION_M2_PLAN.md) | 起伏墙、真实板缝／裂缝、柔顺轮的参数、T0～T3、性能与验收合同 | 已通过声明、M1 历史试验流水或提速任务 |
-| [`SUCTION_CONTRACT.md`](SUCTION_CONTRACT.md) | S0 冻结的逐轮裕量、启动、数据分集、数值与 M2 表面误差合同 | 模型实现细节、试验通过声明 |
-| [`WALL_TEXTURE_PLAN.md`](WALL_TEXTURE_PLAN.md) | 墙面贴图局部去重与随机变换的方法、实施顺序与待验证判据 | 负压物理模型、已通过验收的宣称 |
-| [`LOCALIZATION_GAP_PLAN.md`](LOCALIZATION_GAP_PLAN.md) | 长任务时序的当前结论、运行判据和未关闭边界 | 已关闭调查的逐轮日志 |
-| [`INCIDENTS.md`](INCIDENTS.md) | 已确认的隐蔽故障、误判线索、修复提交和回归入口 | 尚未定位的猜测或普通开发日志 |
-| [`STATUS.md`](STATUS.md) | 一页式当前阶段、风险、近期下一步 | 按日期追加的开发日记 |
-| [`../results/README.md`](../results/README.md) | 当前有效基线和归档结果的索引、重生成入口 | 长篇技术分析 |
-| [`DATA_RETENTION.md`](DATA_RETENTION.md) | 工作区外大数据的保留等级、清理前置条件和目录清单 | 删除命令或临时日志 |
+## 分册结构
 
-## 当前结构
+| 目录 | 职责 |
+| --- | --- |
+| `architecture/` | 包职责与运行数据流 |
+| `acceptance/` | 控制／定位与成像／归档验收分册 |
+| `operations/` | 采集、图像链与 M2 物理专项命令 |
+| `m2/`、`suction/` | 当前模型与验收边界 |
+| `incidents/` | 保留案例编号的故障分册 |
+| `archive/` | 按主题／日期组织的阶段历史、旧协议与清理回执索引 |
 
-```text
-docs/
-  README.md                本页：文档导航与写作边界
-  ARCHITECTURE.md          当前架构
-  INTERFACES.md            当前接口合同
-  OPERATION.md             实验与故障处置手册
-  MESA_SETUP.md            WSL D3D12 修复库安装与验证
-  ACCEPTANCE.md            当前验收矩阵
-  MOSAIC_PLAN.md           当前离线拼接设计
-  GPU_ACCELERATION_PLAN.md fusion CUDA 结果与验收合同
-  SUCTION_PLAN.md          三风机负压 M1 收口与证据入口
-  SUCTION_M2_PLAN.md       起伏墙、真实缝隙与柔顺轮计划
-  SUCTION_CONTRACT.md      吸附专项 S0 实验合同
-  WALL_TEXTURE_PLAN.md     墙面贴图局部去重计划
-  LOCALIZATION_GAP_PLAN.md 长任务时序稳定性
-  INCIDENTS.md             隐蔽故障与排查经验
-  STATUS.md                当前状态快照
-  DATA_RETENTION.md        数据保留与清理清单
-  images/                  当前文档引用的截图
-  archive/
-    README.md              归档索引与迁移规则
-    interfaces/            已替代的详细接口说明
-    operations/            已替代的操作与实验流水
-    plans/                 已完成或被替代的设计计划
-    reviews/               需要长期保留的历史 review
-    specifications/        已替代的完整规范
-    status-history/        状态与开发过程记录
-```
+## 更新规则
 
-本地 review 工作稿统一放在 `archive/reviews/` 并按 `.gitignore` 忽略，不占用当前文档根目录；
-只有逐份确认需要随项目长期分发时才解除忽略并提交。
-
-`results/` 分为“当前正式基线”和“历史对照”两层；文件本身可以保留，根目录索引只指向
-当前仍有效的证据和归档入口。
-
-## 迁移规则
-
-1. 当前合同优先于历史叙事；同一事实只能有一个规范性来源。
-2. 历史文档迁移到 `archive/` 时保留日期和原文件名，并在当前文档留下简短链接。
-   迁移会改变相对深度，必须同时把文中的相对链接改到新位置——归档件失效的链接
-   和当前文档失效的链接一样算错误。
-3. 结果摘要、输入哈希和提交号不改写；只调整索引和目录位置。
-4. 新功能先更新其唯一归属文档，再更新根 README 的快速入口；不要把同一段说明复制到多处。
-5. 数据清理必须先更新 `DATA_RETENTION.md`，经确认后才执行删除。
+1. 同一规范性事实只维护一份；状态页和 README 用简短结论链接它，不复制大表或完整过程。
+2. 当前配置与冻结试验分清；“默认关闭／待验收”若来自历史报告，须标明记录时点。
+3. 归档／拆分保留内容与日期，同时修复相对链接和章节锚点。长归档继续拆分，旧文件名保留索引。
+4. 代码或 YAML 是运行参数的来源；文档解释作用与边界，不创建第二份长期配置。
+5. 清理数据只按用户明确授权的精确范围，保留哈希、保留项核对和回执；规则本身不授权删除。
+6. 本地 `archive/reviews/REVIEW_*.md` 为忽略的工作稿，不在公开文档分册迁移范围。

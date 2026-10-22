@@ -12,6 +12,7 @@ __pycache__/
 *.doc
 *.docx
 docs/*.pdf
+docs/archive/references/*.pdf
 docs/archive/reviews/REVIEW_*.md
 
 # Windows alternate data streams occasionally appear as ordinary WSL files.

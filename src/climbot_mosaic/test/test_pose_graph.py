@@ -71,3 +71,45 @@ def test_pose_graph_is_deterministic(tmp_path):
     second = optimize_pose_graph(inputs, edges)
     np.testing.assert_array_equal(first.corrections, second.corrections)
     assert first.report == second.report
+
+
+def test_measured_correspondences_recover_distinct_frame_scales(tmp_path):
+    from climbot_mosaic.scaled_pose_graph import optimize_scaled_pose_graph
+
+    inputs = _inputs(tmp_path)
+    centers = np.array([[i, 0.0] for i in range(3)])
+    scales = np.array([0.98, 1.02, 0.995])
+    edges = []
+    for i, j in [(0, 1), (1, 2), (0, 2)]:
+        truth = np.array([[0.7, -0.2], [0.7, 0.2], [1.3, -0.2], [1.3, 0.2]])
+        first = centers[i] + (truth - centers[i]) / scales[i]
+        second = centers[j] + (truth - centers[j]) / scales[j]
+        edges.append(VisualEdge(i, j, (1, 0, 0, 0, 1, 0), (1, 0), 1e-5, 0.2, 4,
+                                tuple(map(tuple, first)), tuple(map(tuple, second))))
+    result = optimize_scaled_pose_graph(inputs, tuple(edges), 0.1, 1e-5)
+    np.testing.assert_allclose(result.scales, scales, atol=1e-4)
+    np.testing.assert_allclose(result.corrections, 0, atol=1e-4)
+    assert result.report['connected_component_sizes'] == [3]
+
+
+def test_scaled_graph_jacobian_matches_numerical_derivatives(tmp_path):
+    from climbot_mosaic.pose_graph import _priors
+    from climbot_mosaic.scaled_pose_graph import _functions
+
+    centers, whiteners = _priors(_inputs(tmp_path))
+    edge = VisualEdge(0, 1, (1, 0, 0, 0, 1, 0), (0.5, 0), 0.001, 0.2, 4,
+                      ((0.1, 0.2), (0.3, 0.4), (0.2, -0.2), (-0.1, 0.3)),
+                      ((0.12, 0.21), (0.31, 0.38), (0.19, -0.22), (-0.09, 0.3)))
+    fun, jac = _functions(centers, whiteners, (edge,), (0,), 0.004)
+    x = np.random.default_rng(9).normal(0, 0.01, 12)
+    step = 1e-6
+    numeric = np.column_stack([(fun(x + step * v) - fun(x - step * v)) / (2 * step)
+                               for v in np.eye(12)])
+    np.testing.assert_allclose(jac(x).toarray(), numeric, atol=2e-7)
+
+
+def test_scaled_graph_requires_real_correspondences(tmp_path):
+    from climbot_mosaic.scaled_pose_graph import optimize_scaled_pose_graph
+
+    with pytest.raises(PoseGraphError, match='rebuild local matches'):
+        optimize_scaled_pose_graph(_inputs(tmp_path), (_translation(0, 1, 0.0),), 0.004)

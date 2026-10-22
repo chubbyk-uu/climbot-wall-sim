@@ -1,5 +1,7 @@
 # S2 纯物理核心与隔离验证方法
 
+> 冻结合同／方法，按文中试验时点与配置解释。保留原路径供工具溯源；当前默认与后续证据见[M2 入口](SUCTION_M2_PLAN.md)和[验收矩阵](ACCEPTANCE.md)。
+
 范围：M1平墙、刚性轮的等效风机、腔压和裙边子模型。核心为
 `climbot_gazebo/vacuum_core.hpp`及`vacuum_core.cpp`，只依赖C++17标准库。
 YAML文件和`vacuum_core_probe`仅是参数与离线实验适配器，不是Gazebo System。

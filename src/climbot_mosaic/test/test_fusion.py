@@ -14,6 +14,7 @@
 
 """Small deterministic geometry tests for tiled mosaic fusion."""
 
+import json
 import os
 from types import SimpleNamespace
 
@@ -48,6 +49,30 @@ def _frame(index, bbox):
     return RenderFrame(FrameKey('run', index), f'{index}.png',
                        (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0),
                        bbox, (0.0, 0.0), (0.001, 0.001, 0.001))
+
+
+def test_projection_scale_is_applied_about_the_frame_center():
+    matrix = fusion._correction_matrix((0.01, -0.02, np.pi / 2), (2, 3), 1.1)
+    np.testing.assert_allclose(matrix @ [2, 3, 1], [2.01, 2.98, 1], atol=1e-12)
+    np.testing.assert_allclose(matrix @ [3, 3, 1], [2.01, 4.08, 1], atol=1e-12)
+
+
+def test_scaled_graph_with_null_uncertainty_is_refused_cleanly(tmp_path, monkeypatch):
+    key = {'source_run_id': 'run', 'frame_index': 0}
+    label = {'wall_heading_rad': 0,
+             'camera_pose': {'pose': {'position': {'x': 0, 'y': 0}}}}
+    inputs = SimpleNamespace(frames=[SimpleNamespace(key=FrameKey('run', 0), label=label)])
+    documents = {
+        'pose_graph.json': {'pose_graph_format_version': 2, 'input_summary': {}},
+        'initial_poses.json': {'poses': [{**key, 'x_m': 0, 'y_m': 0, 'wall_heading_rad': 0}]},
+        'optimized_poses.json': {'poses': [{**key, 'projection_scale': 1,
+                                           'correction': {}, 'posterior_std': None}]},
+    }
+    for name, document in documents.items():
+        (tmp_path / name).write_text(json.dumps(document))
+    monkeypatch.setattr(fusion, 'input_summary', lambda inputs: {})
+    with pytest.raises(FusionError, match='posterior uncertainty'):
+        fusion.read_pose_graph(tmp_path, inputs, (None,))
 
 
 def test_common_grid_covers_both_pose_variants_exactly():

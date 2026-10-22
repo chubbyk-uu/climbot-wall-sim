@@ -104,5 +104,22 @@ def test_runtime_copy_must_match_the_committed_source(tmp_path):
     assert state['source_matches_commit'] is False
 
 
+def test_new_runtime_module_keeps_its_digest_without_claiming_commit_identity(tmp_path):
+    import hashlib
+    from types import SimpleNamespace
+
+    repository = _repository(tmp_path)
+    source = repository / 'src/climbot_mosaic/climbot_mosaic/new_module.py'
+    source.parent.mkdir(parents=True)
+    source.write_text('revision = 1\n', encoding='utf-8')
+    state = runtime_source_state(
+        path=repository,
+        modules={'climbot_mosaic.new_module': SimpleNamespace(__file__=str(source))},
+        entrypoint='')
+    assert state['source_matches_commit'] is False
+    assert state['files'][0]['matches_commit'] is False
+    assert state['files'][0]['sha256'] == hashlib.sha256(source.read_bytes()).hexdigest()
+
+
 if __name__ == '__main__':
     raise SystemExit(pytest.main([__file__]))

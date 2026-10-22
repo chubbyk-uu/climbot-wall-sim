@@ -1,0 +1,710 @@
+{
+  "data_root": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445",
+  "protocol": {
+    "purpose": "single new vertical full-wall collection with frozen data-calibrated EKF, followed by CUDA mosaic and native truth/coverage review",
+    "task_id": "m2-calibrated-full-vertical-20261022",
+    "direction": "vertical",
+    "expected_frames": 660,
+    "expected_scans": 22,
+    "total_station_seed": 424242,
+    "imu_attitude_seed": 171717,
+    "headless": true,
+    "cruise_speed_m_s": 0.3,
+    "mu": 1.1,
+    "sensor_R_or_noise_change": false,
+    "max_exposure_error_m": 0.005,
+    "record_actual_localization_inputs": true,
+    "mosaic_backend": "cuda",
+    "mosaic_resolution_m_per_pixel": 0.00025,
+    "graph_primary": "SE2, actual archived prior, no position-prior override",
+    "optional_existing_candidate": "per-frame scale .004, separate output, no prior override",
+    "calibration_frozen_before_capture": true,
+    "source_head": "d88b46291d1ec9340ed4d4699cabe40beae5fc83",
+    "uncommitted_tree": true,
+    "source_sha256": {
+      "src/climbot_gazebo/config/ekf_wall.yaml": "86bf1d188b9a16cd933b62a236b36771731468cfcac5f8b1ba46ca46bbe14c93",
+      "src/climbot_gazebo/config/simulation.yaml": "b1d1f982f07a513432934a3a12626c4b7cc868a2b1cf17946d6d4b5559e21432",
+      "src/climbot_gazebo/config/m2_wall_surface.yaml": "0caa3610d43b2dd59ecee0d5e4d788da34d37c565d8bf672244d6d81a96b7cf5",
+      "src/climbot_description/config/inspection_camera.yaml": "f76bb343e0ebcf8cab65354a135a42ff413bbd7198a845cd727fa0c15138eabb",
+      "tools/run_g2_inspection_acceptance.sh": "af402173e94e2bd5e0316567d5d580f5c78874faf3bb634af7c2c9ec0f2ebacc"
+    },
+    "baseline_reference": "historical final vertical 660 images; different noise seed/captures, not a paired causal comparison"
+  },
+  "runtime_code_or_parameter_changes": false,
+  "capture": {
+    "passed": true,
+    "task_id": "m2-calibrated-full-vertical-20261022",
+    "revision": 1,
+    "captures": 660,
+    "scan_segments": 22,
+    "captured_segments": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20,
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34,
+      36,
+      38,
+      40,
+      42
+    ],
+    "scan_only": true,
+    "all_scan_segments_captured": true,
+    "numbering_complete": true,
+    "capture_counts_complete": true,
+    "exact_image_metadata_pairing": true,
+    "nominal_overlap_ratio": 0.2,
+    "minimum_actual_overlap_ratio": 0.15,
+    "maximum_target_gap_m": 0.22276966572328138,
+    "maximum_actual_gap_m": 0.22958117390286503,
+    "maximum_actual_gap_limit_m": 0.23906249999999998,
+    "maximum_lateral_spacing_m": 0.40452471089208153,
+    "maximum_lateral_spacing_limit_m": 0.425,
+    "photo_coverage": {
+      "ratio": 0.9662964199664781,
+      "missed_ratio": 0.03370358003352192,
+      "covered_cells": 590353,
+      "region_cells": 610944,
+      "resolution_m": 0.01,
+      "covered_area_m2": 59.0353,
+      "region_area_m2": 61.09440000000001
+    },
+    "minimum_photo_coverage_ratio": 0.0,
+    "maximum_camera_position_error_m": 0.0047425892534975434,
+    "p95_camera_position_error_m": 0.0024272435560262853,
+    "maximum_camera_position_error_components_m": [
+      0.004728312837293025,
+      0.0024921822211536604,
+      0.0
+    ],
+    "maximum_camera_position_error_limit_m": 0.005,
+    "camera_position_error_definition": "optical_axis_surface_footprint_xy",
+    "truth_wall_surface": "undulating",
+    "legacy_planar_camera_error_max_m": 0.004746281622311627,
+    "camera_position_over_limit_count": 0,
+    "maximum_heading_error_deg": 0.06102937981397157,
+    "maximum_heading_error_limit_deg": 1.0
+  },
+  "camera_1ms": {
+    "frame_count": 660,
+    "hard_limit_m": 0.005,
+    "truth_definition": "optical axis intersected with native M2 surface at exposure",
+    "surface_offset_m": 0.05,
+    "optical_footprint": {
+      "count": 660,
+      "bias_xy_m": [
+        -1.0475050566955026e-05,
+        -1.768998124675576e-05
+      ],
+      "p95_m": 0.0024322566834724555,
+      "max_m": 0.004740362886340742,
+      "p95_nearest_rank_m": 0.0024306104848655307,
+      "over_5mm_count": 0
+    },
+    "camera_center": {
+      "count": 660,
+      "bias_xy_m": [
+        -1.7469577849719177e-05,
+        0.00018797456026737862
+      ],
+      "p95_m": 0.0028928574794126758,
+      "max_m": 0.004730144726209772,
+      "p95_nearest_rank_m": 0.0028926339991959785,
+      "over_5mm_count": 0
+    },
+    "legacy_planar": {
+      "count": 660,
+      "bias_xy_m": [
+        -1.0564943144875779e-05,
+        -1.8283530053051196e-05
+      ],
+      "p95_m": 0.0024308519632496696,
+      "max_m": 0.004744065398235861,
+      "p95_nearest_rank_m": 0.0024291577996331483,
+      "over_5mm_count": 0
+    },
+    "surface_vs_plane_footprint": {
+      "count": 660,
+      "bias_xy_m": [
+        -3.7904502688947086e-08,
+        2.3082815464087697e-08
+      ],
+      "p95_m": 3.2827175237731065e-06,
+      "max_m": 7.4224788314192445e-06,
+      "p95_nearest_rank_m": 3.28185969790683e-06,
+      "over_5mm_count": 0
+    },
+    "max_truth_bracket_s": 0.00100000000009004,
+    "mean_reported_position_sigma_m": [
+      0.001489527132717456,
+      0.001002625569554354
+    ],
+    "up": {
+      "count": 330,
+      "bias_xy_m": [
+        3.8770842872609513e-05,
+        -6.853746630116855e-05
+      ],
+      "p95_m": 0.0024095518225724574,
+      "max_m": 0.004740362886340742,
+      "p95_nearest_rank_m": 0.0024160303620241706,
+      "over_5mm_count": 0
+    },
+    "down": {
+      "count": 330,
+      "bias_xy_m": [
+        -5.9720944006519565e-05,
+        3.315750380765703e-05
+      ],
+      "p95_m": 0.002608069434425886,
+      "max_m": 0.0037267936123773584,
+      "p95_nearest_rank_m": 0.0026320835815792144,
+      "over_5mm_count": 0
+    }
+  },
+  "loads": {
+    "scope": "All final-generation physics steps from release+1 to recorder end",
+    "generation": 0,
+    "raw_rows": 898000,
+    "scored_rows": 896116,
+    "load_acceptance": {
+      "criterion": {
+        "version": "m2_load_v2_20261019",
+        "mu": 1.1,
+        "window_ms": 50,
+        "minimum_window_margin": 1.5,
+        "minimum_loaded_instant_margin_exclusive": 1.0,
+        "loaded_drive_threshold_n": 5.0,
+        "support_floors_n_left_right_ball": [
+          5.0,
+          5.0,
+          10.0
+        ],
+        "maximum_contact_or_low_load_run_steps": 2,
+        "start_after_release_s": 1.0,
+        "window_denominator": "sum(norm(F_t) * dt); no signed-force cancellation",
+        "sensitivity_windows_ms": [
+          20,
+          50,
+          100
+        ]
+      },
+      "passed": true,
+      "checks": {
+        "sustained_50ms_margin_at_least_1_5": true,
+        "every_loaded_drive_frame_margin_above_1": true,
+        "contact_or_low_load_runs_at_most_two_steps": true
+      },
+      "step_s": 0.0009999999999763531,
+      "samples": 896116,
+      "scoring_time_range_s": [
+        1.885,
+        898.0
+      ],
+      "minimum_loaded_instant_margin_left_right": [
+        1.387539744412507,
+        1.377110763625582
+      ],
+      "window_sensitivity_ms": {
+        "20": {
+          "samples": 20,
+          "minimum_margin_left_right": [
+            2.498495772100874,
+            2.454523226335538
+          ]
+        },
+        "50": {
+          "samples": 50,
+          "minimum_margin_left_right": [
+            2.7032373910361316,
+            2.8897561467851793
+          ]
+        },
+        "100": {
+          "samples": 100,
+          "minimum_margin_left_right": [
+            2.8404694811187836,
+            3.0432963956072188
+          ]
+        }
+      },
+      "raw": {
+        "minimum_drive_margin_left_right": [
+          0.0,
+          0.0
+        ],
+        "drive_below_1_5_frames_left_right": [
+          859,
+          908
+        ],
+        "loaded_drive_below_1_5_frames_left_right": [
+          10,
+          9
+        ],
+        "loaded_drive_at_or_below_1_frames_left_right": [
+          0,
+          0
+        ],
+        "maximum_contact_loss_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "contact_loss_frames_left_right_ball": [
+          849,
+          899,
+          11101
+        ],
+        "low_load_frames_left_right_ball": [
+          849,
+          899,
+          11101
+        ],
+        "contact_or_low_load_frames_left_right_ball": [
+          849,
+          899,
+          11101
+        ],
+        "maximum_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_contact_or_low_load_steps_left_right_ball": [
+          1,
+          1,
+          1
+        ],
+        "maximum_simultaneous_contact_losses": 2
+      }
+    },
+    "minimum_pressure_pa": 7024.031008474703,
+    "runtime_failed": false,
+    "startup_failed": false,
+    "maximum_stop_normal_n": 0.0,
+    "source_sha256": "8eb9cf5cb94738ce7a8e66c40ce569aac750bcc16a6c224c34bcdc48ab66921d",
+    "trace_sha256": "2ed2a136ba4a364c689fd8dfadd70ad5afb31a177290ce144713760de07c2a10",
+    "passed": true
+  },
+  "cleanup": {
+    "passed": true,
+    "forced_kill_groups": [],
+    "remaining_groups": []
+  },
+  "localization": {
+    "p95_mm": 2.6258853369987474,
+    "max_mm": 5.851431099675902,
+    "median_sigma_xy_mm": [
+      1.2684116975712063,
+      1.060346335194107
+    ],
+    "nees_xy_mean": 1.472406141699997,
+    "fraction_inside_95pct_xy_ellipse": 0.9792225352112676,
+    "camera_exposures": {
+      "count": 660,
+      "bias_xy_mm": [
+        -0.011186726588788023,
+        -0.01753738771560201
+      ],
+      "std_xy_mm": [
+        1.1280566701753971,
+        0.8186634313527124
+      ],
+      "p95_mm": 2.42925953016573,
+      "max_mm": 4.742588794234232,
+      "worst_index": 265,
+      "median_sigma_xy_mm": [
+        1.552556410175917,
+        1.0288143112307355
+      ],
+      "nees_xy_mean": 1.2732231221054953,
+      "nees_xy_p95": 3.887376461845636,
+      "fraction_inside_95pct_xy_ellipse": 0.9863636363636363,
+      "over_5mm_count": 0,
+      "worst_time_s": 370.98400000000004
+    }
+  },
+  "mosaics": {
+    "default": {
+      "common_anchor_ids": [
+        "graffiti_decal_02",
+        "graffiti_decal_03",
+        "repair_patch_01",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "variants": {
+        "optimized": {
+          "absolute_anchor_offset_m": {
+            "maximum": 0.001231159580408463,
+            "median": 0.0002887297443431218,
+            "p95": 0.001231159580408463
+          },
+          "similarity": {
+            "inlier_count": 8,
+            "local_residual_maximum": 0.0010001588935836458,
+            "local_residual_median": 0.0004137206367830086,
+            "local_residual_observable": true,
+            "local_residual_p95": 0.0010001588935836458,
+            "scale": 1.0001253821630818,
+            "scale_error_ppm": 125.38216308177752,
+            "translation_m": [
+              -0.0005125109979377427,
+              -0.00047763029561172693
+            ],
+            "yaw_error_deg": -0.0005906674015809736
+          },
+          "seam_excess_p95_dn": 8.0,
+          "off_seam_excess_p95_dn": 2.0,
+          "seam_ratio": 4.0
+        },
+        "pose_only": {
+          "absolute_anchor_offset_m": {
+            "maximum": 0.00261352102117994,
+            "median": 0.0013781313433980362,
+            "p95": 0.00261352102117994
+          },
+          "similarity": {
+            "inlier_count": 8,
+            "local_residual_maximum": 0.002336093297677489,
+            "local_residual_median": 0.0009997103669940617,
+            "local_residual_observable": true,
+            "local_residual_p95": 0.002336093297677489,
+            "scale": 1.000084840569577,
+            "scale_error_ppm": 84.84056957702713,
+            "translation_m": [
+              -0.0010843178457142833,
+              0.0002334789251617865
+            ],
+            "yaw_error_deg": -0.0036020425924234143
+          },
+          "seam_excess_p95_dn": 10.0,
+          "off_seam_excess_p95_dn": 2.0,
+          "seam_ratio": 5.0
+        }
+      },
+      "optimized_not_worse_than_pose_only": true,
+      "effective": "cuda",
+      "fallback": false,
+      "resolution_m_per_pixel": 0.00025,
+      "native_outputs_reverified": {
+        "coverage_count.tif": {
+          "bytes": 17676925,
+          "sha256": "2f489e7d0a0805356fe2f8e1ff61601e8dca7fed20afb5529e86c7a23e9b4d03"
+        },
+        "coverage_pose_only_count.tif": {
+          "bytes": 17974577,
+          "sha256": "7a45a2bc244699f38acfc9f7d7a70e6d689c424f3f85fe2d52cffc0703ac458e"
+        },
+        "mosaic_comparison.jpg": {
+          "bytes": 8614204,
+          "sha256": "5ea357d5c345c0b24df403d520d41cb4a8c683a558ffef44a4875c0ee61bb1c5"
+        },
+        "mosaic_difference.tif": {
+          "bytes": 465650788,
+          "sha256": "20a47229c6db1612436b398f334a41d553457b98a53ad93224222ff9a20afcee"
+        },
+        "mosaic_optimized.tif": {
+          "bytes": 423388361,
+          "sha256": "e516e8474f625614edfec7b8d3b2e08e4b17bf3bebde88b41d490d9084a23481"
+        },
+        "mosaic_pose_only.tif": {
+          "bytes": 423270927,
+          "sha256": "18d56e7d754d22d2cccbd2a36429e7bc016af5999f9ad2cff79c977326c8bf18"
+        },
+        "mosaic_preview.jpg": {
+          "bytes": 3216627,
+          "sha256": "f20965858a72ffa687e2426aa893f5d356508ad3ac2f6300a2f83f55c28f6047"
+        },
+        "seams_optimized.npz": {
+          "bytes": 2278605,
+          "sha256": "ed45bb7281b860864e35aa51c4eb9fdf66bb4d494d6e5d1c2916c06ea5c8c19e"
+        },
+        "seams_pose_only.npz": {
+          "bytes": 2285978,
+          "sha256": "cf98be2d388c04d3f82cec88901b19e470d0ac803b1ae6c9db69e5b2efc7e11a"
+        },
+        "uncertainty.tif": {
+          "bytes": 18988545,
+          "sha256": "e222d0b383376fe13378b283398168e84c8e335281189ae37d18633fa9ddf85b"
+        }
+      },
+      "inspection_tiles_reverified": 169,
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 120791770,
+        "uncovered_inside_inspection_region": 148471,
+        "all_inspection_region_feature_pixels_covered": false
+      },
+      "uncovered_feature_fraction": 0.001229148310352601,
+      "pose_graph_parameters": "SE2 actual prior"
+    },
+    "scale_candidate": {
+      "common_anchor_ids": [
+        "graffiti_decal_02",
+        "graffiti_decal_03",
+        "repair_patch_01",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "variants": {
+        "optimized": {
+          "absolute_anchor_offset_m": {
+            "maximum": 0.0006181112302319858,
+            "median": 0.0002700078892053489,
+            "p95": 0.0006181112302319858
+          },
+          "similarity": {
+            "inlier_count": 8,
+            "local_residual_maximum": 0.0004992347841729283,
+            "local_residual_median": 0.0002466708820092354,
+            "local_residual_observable": true,
+            "local_residual_p95": 0.0004992347841729283,
+            "scale": 1.0000037559525248,
+            "scale_error_ppm": 3.755952524775452,
+            "translation_m": [
+              5.365538724049225e-05,
+              -5.9853297834345915e-05
+            ],
+            "yaw_error_deg": -0.0006490331086354464
+          },
+          "seam_excess_p95_dn": 7.0,
+          "off_seam_excess_p95_dn": 2.0,
+          "seam_ratio": 3.5
+        },
+        "pose_only": {
+          "absolute_anchor_offset_m": {
+            "maximum": 0.002726260933310895,
+            "median": 0.0014102633806480796,
+            "p95": 0.002726260933310895
+          },
+          "similarity": {
+            "inlier_count": 8,
+            "local_residual_maximum": 0.0025002918563177003,
+            "local_residual_median": 0.0012167393035083021,
+            "local_residual_observable": true,
+            "local_residual_p95": 0.0025002918563177003,
+            "scale": 1.0000012366613478,
+            "scale_error_ppm": 1.2366613477698962,
+            "translation_m": [
+              -0.00016444583313445074,
+              0.0007518426924714317
+            ],
+            "yaw_error_deg": -0.004991542363783935
+          },
+          "seam_excess_p95_dn": 10.0,
+          "off_seam_excess_p95_dn": 2.0,
+          "seam_ratio": 5.0
+        }
+      },
+      "optimized_not_worse_than_pose_only": true,
+      "effective": "cuda",
+      "fallback": false,
+      "resolution_m_per_pixel": 0.00025,
+      "native_outputs_reverified": {
+        "coverage_count.tif": {
+          "bytes": 17910358,
+          "sha256": "bb002c6fa028c0336c06bcaf1007875b288efa0ebabbbd32822b83a8b0594416"
+        },
+        "coverage_pose_only_count.tif": {
+          "bytes": 17948883,
+          "sha256": "02ee954ab5a4d5afc6b9e97f54e53b0e847475ab3e233f3c993ee84da3ad7199"
+        },
+        "mosaic_comparison.jpg": {
+          "bytes": 8498310,
+          "sha256": "89ed8d76dfb8e680ace4a0253f48dfcaeb211763c60237e3c357882941526f75"
+        },
+        "mosaic_difference.tif": {
+          "bytes": 460604117,
+          "sha256": "6b3ee0cb167785af277dab56783821862dc2e2b15edda8bd7cf468a0ab6d0a40"
+        },
+        "mosaic_optimized.tif": {
+          "bytes": 423361241,
+          "sha256": "819dec2b8239501ed6b6c70747751e86d58de77a36200556c9b6e18b3e0911ae"
+        },
+        "mosaic_pose_only.tif": {
+          "bytes": 423247754,
+          "sha256": "c293094654555ea9fc76dbef8ab63e1528946cfdb12390d595490a471f974da4"
+        },
+        "mosaic_preview.jpg": {
+          "bytes": 3215214,
+          "sha256": "9061e6be2c8607193f63a09c880245d07e311cd3c2b97765381c2ed11813ec6c"
+        },
+        "seams_optimized.npz": {
+          "bytes": 2283833,
+          "sha256": "bdfcde4590cf8948055fb9d0c66afdb5bbec59650f693f5f5ab057403c63a122"
+        },
+        "seams_pose_only.npz": {
+          "bytes": 2285634,
+          "sha256": "cadda88a4c9e62843d06788fd9b09baba67bdc7e82d6ed5e5fe491332992d9e2"
+        },
+        "uncertainty.tif": {
+          "bytes": 42576656,
+          "sha256": "dc10445812fbe8d03fbf7d9e7eaf6786b94a35dc1092ac8bbc745e8993c436e5"
+        }
+      },
+      "inspection_tiles_reverified": 169,
+      "coverage": {
+        "feature_pixels_inside_inspection_region": 120791762,
+        "uncovered_inside_inspection_region": 149850,
+        "all_inspection_region_feature_pixels_covered": false
+      },
+      "uncovered_feature_fraction": 0.001240564733214174,
+      "pose_graph_parameters": "Sim2 log-scale sigma .004, actual prior; no position override"
+    }
+  },
+  "manual_review": {
+    "scope": "limited native-scale crop review; not all full-wall tiles",
+    "records": [
+      {
+        "variant": "default",
+        "feature": "panel_v2",
+        "source_tile": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/default_inspection/native_tiles/panel_v2/r0007_c0000.png",
+        "pixel_box": [
+          0,
+          574,
+          1260,
+          1474
+        ],
+        "output": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/manual_review/default_panel_v2.png",
+        "resampling": false,
+        "layout": "truth, pose_only, optimized"
+      },
+      {
+        "variant": "default",
+        "feature": "repair_patch_02",
+        "source_tile": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/default_inspection/native_tiles/repair_patch_02/r0000_c0000.png",
+        "pixel_box": [
+          0,
+          547,
+          6144,
+          1447
+        ],
+        "output": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/manual_review/default_repair_patch_02.png",
+        "resampling": false,
+        "layout": "truth, pose_only, optimized"
+      },
+      {
+        "variant": "default",
+        "feature": "graffiti_decal_03",
+        "source_tile": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/default_inspection/native_tiles/graffiti_decal_03/r0000_c0000.png",
+        "pixel_box": [
+          0,
+          574,
+          6144,
+          1474
+        ],
+        "output": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/manual_review/default_graffiti_decal_03.png",
+        "resampling": false,
+        "layout": "truth, pose_only, optimized"
+      },
+      {
+        "variant": "scale_candidate",
+        "feature": "panel_v2",
+        "source_tile": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/scale_candidate_inspection/native_tiles/panel_v2/r0007_c0000.png",
+        "pixel_box": [
+          0,
+          574,
+          1260,
+          1474
+        ],
+        "output": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/manual_review/scale_candidate_panel_v2.png",
+        "resampling": false,
+        "layout": "truth, pose_only, optimized"
+      },
+      {
+        "variant": "scale_candidate",
+        "feature": "repair_patch_02",
+        "source_tile": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/scale_candidate_inspection/native_tiles/repair_patch_02/r0000_c0000.png",
+        "pixel_box": [
+          0,
+          547,
+          6144,
+          1447
+        ],
+        "output": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/manual_review/scale_candidate_repair_patch_02.png",
+        "resampling": false,
+        "layout": "truth, pose_only, optimized"
+      },
+      {
+        "variant": "scale_candidate",
+        "feature": "graffiti_decal_03",
+        "source_tile": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/scale_candidate_inspection/native_tiles/graffiti_decal_03/r0000_c0000.png",
+        "pixel_box": [
+          0,
+          574,
+          6144,
+          1474
+        ],
+        "output": "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/manual_review/scale_candidate_graffiti_decal_03.png",
+        "resampling": false,
+        "layout": "truth, pose_only, optimized"
+      }
+    ],
+    "findings": "Viewed three native-pixel strips per variant. Panel misalignment and brightness seams remain in both. Limited review, not every exported tile."
+  },
+  "validation": {
+    "capture_exit_code": 0,
+    "postprocess_resume_exit_code": 0,
+    "previous_unchanged_code_full_tests": 1987,
+    "full_suite_rerun_this_task": false,
+    "main_log": "/tmp/climbot_calibrated_full_vertical_1792648266010867445.log",
+    "post_log": "/tmp/climbot_calibrated_full_post_r2_1792648266010867445.log",
+    "initial_inspection_refusal": "Wrong archive root level; corrected invocation to explicit capture root. Original failure preserved."
+  },
+  "artifacts_sha256": {
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/default_mosaic/mosaic_manifest.json": "453f25afa5db7fa5390a3d2003f931ea125e819f4cf43b9e7274d785ebcc09e1",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/default_truth/diagnostic_truth_summary.json": "791c63ccdfe9238124c229cc2cc8f39f7be0b99103b4a2cecf99de39a2df89c9",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/default_inspection/diagnostic_inspection_summary.json": "442e8ffcf155ab8e5d20d1956797aa02cabbb78974e4d11766a92c88108b8523",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/scale_candidate_mosaic/mosaic_manifest.json": "543b2668ebe46c00f79102c690c80e93493687834d4395455e1af7352cbefd83",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/scale_candidate_truth/diagnostic_truth_summary.json": "deb6e9d6ac51aa582a7410e35acbb1f32d7b89bc733ed713f8fd78e7c82e5bbc",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/scale_candidate_inspection/diagnostic_inspection_summary.json": "b22ca4b881c4a0df9c41d1945cb4619a426b035bc0a9919cc943698dfc73064b",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/protocol.json": "4696b064e9b70460f7e99328b15963c7ea5db53b066072c601ab3e487ef3e5f6",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/case/summary.json": "9ec1cf6119e2e9093d552eaa81b11fa9d17418cc565e83e31b44ce0e4cf62b4d",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/case/cleanup.json": "6fa9f3c45ca5a6e31428ef6e21ec6f40f421dbe70d1b09e7dc6265e11d9a485c",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/loads.bin": "2ed2a136ba4a364c689fd8dfadd70ad5afb31a177290ce144713760de07c2a10",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/load_summary.json": "4e55f7bc579b73a73874c6c818a729a62c76c1f25315c0a71ffb91f2498c6ad0",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/camera_1ms/summary.json": "ce571d3e370aad07fd0ba254a559eb8601d72be6c3dee3aeb06e1a510e5cda84",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/native_covariance_score.json": "e24d7708e73adeb93980a044fab954348d5d3088d23f1be64ddbc81bc19d9ceb",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/manual_review/selection.json": "1bcbcf23ba53c45217ca1484ecac7be5f0c9886e054a79f8974834294bac2cbd",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/postprocess.py": "2768d40b772f2434b502408606fa04f33c038056a909dd391ad44eb7f338406c",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/postprocess_resume.py": "e219d14a4d182ce52d0427af1be789f8e1f29895cc2f83665e84aa2ecc93321f",
+    "${CLIMBOT_DATA_ROOT}/m2_calibrated_full_vertical_20261022_1792648266010867445/frozen/source_after_run.tar.gz": "464662e96a443ac47f154afb6dbbb774779141e51fe7a9fa588bb8f25b273137"
+  },
+  "runtime_source_files_unchanged": 35,
+  "source_snapshot_note": "Key configurations frozen before capture; runtime sources verified against previous tested hash index. Initial optional dirty-tree snapshot was empty due to a NUL-separator escaping bug; retained as invalid evidence, complete snapshot saved after run.",
+  "recorded_topic_counts": {
+    "/odometry/filtered": 44477,
+    "/model/climbot/ground_truth": 88945,
+    "/wheel_odom": 44477,
+    "/total_station/pose": 10675,
+    "/cmd_vel": 44478,
+    "/imu_wall": 88956,
+    "/clock": 444701
+  },
+  "limits": [
+    "not a paired comparison against historical EKF because captures and seeds differ",
+    "scale candidate local residual is only narrowly below 0.5mm",
+    "both mosaics retain uncovered domain feature pixels",
+    "native crop review still shows panel misalignment and brightness seams",
+    "no mosaic default change; no new physics, friction or flicker work"
+  ]
+}

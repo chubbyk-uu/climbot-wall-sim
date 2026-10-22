@@ -1,5 +1,7 @@
 # S1 布局与逐轮逆动力学计算
 
+> 冻结合同／方法，按文中试验时点与配置解释。保留原路径供工具溯源；当前默认与后续证据见[M2 入口](SUCTION_M2_PLAN.md)和[验收矩阵](ACCEPTANCE.md)。
+
 这是 M1 平墙、刚性轮的离线设计方法；不是 Gazebo 动态实验，也不表示风机或裙边已经验证。
 候选输入在 `src/climbot_description/config/vacuum_chassis.yaml`；当前启动默认仍读旧 `robot.yaml`。
 新旧结构不混用质量参数。相机标定与光心继续从 `inspection_camera.yaml` 读取。

@@ -34,7 +34,7 @@
 
 ## 复现与边界
 
-按 [M2 操作入口](../../docs/OPERATION.md#m2-原生接触与局部-ode-修复) 准备环境和局部 ODE，
+按 [M2 操作入口](../../docs/operations/M2_PHYSICS.md#m2-原生接触与局部-ode-修复) 准备环境和局部 ODE，
 运行 `tools/probe_m2_wall_surface.py --boundary-only --ode-prefix <局部安装目录> --output <新目录>`。
 原始配置、世界和逐步数据在本地数据根 `m2_t0_20261019/boundary_final/`；准确测试源码副本
 保存在该目录的 `source_snapshot/`。未补偿对照和原有五组回归分别为 `boundary_uncompensated/`

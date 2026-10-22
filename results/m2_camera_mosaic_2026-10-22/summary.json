@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-22",
+  "status": "offline_candidate_validated_not_default_not_full_acceptance",
+  "source": {
+    "base_commit": "d88b46291d1ec9340ed4d4699cabe40beae5fc83",
+    "source_modified": true,
+    "formal_clean_commit_acceptance": false
+  },
+  "data_directory": "m2_camera_mosaic_20261022_1792635535887",
+  "parameters": {
+    "scale_prior_std": 0.004,
+    "position_prior_std_m": 0.0015,
+    "camera_maximum_error_limit_m": 0.005,
+    "resolution_mm_per_pixel": 0.25,
+    "ekf_default_changed": false,
+    "mosaic_default_changed": false
+  },
+  "vertical": {
+    "baseline": {
+      "common_anchor_ids": [
+        "graffiti_decal_02",
+        "graffiti_decal_03",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "absolute_p95_mm": 8.105180041943902,
+      "local_p95_mm": 1.7327681642352453,
+      "scale_error_ppm": 1805.4840115568904,
+      "yaw_error_deg": -0.007966533313460276,
+      "seam_excess_p95_gray": 8.0,
+      "seam_to_off_ratio": 4.0,
+      "native_summary_sha256": "3b05cdf1e55848348e31871435398759f64a46bbe60473824d8ef813b91b6e22"
+    },
+    "position_prior_only": {
+      "common_anchor_ids": [
+        "graffiti_decal_02",
+        "graffiti_decal_03",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "absolute_p95_mm": 1.5073080347585985,
+      "local_p95_mm": 1.0186551132291066,
+      "scale_error_ppm": 122.27352173321826,
+      "yaw_error_deg": -0.0005535618448206172,
+      "seam_excess_p95_gray": 8.0,
+      "seam_to_off_ratio": 4.0,
+      "native_summary_sha256": "d70eab6807051a5dfa1cbc36e44eb0ec45a5c46bd73a70b9a080b0ecbc55efce"
+    },
+    "scale_only": {
+      "common_anchor_ids": [
+        "graffiti_decal_02",
+        "graffiti_decal_03",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "absolute_p95_mm": 7.006500197462895,
+      "local_p95_mm": 0.48519868236066305,
+      "scale_error_ppm": 1671.7455479640098,
+      "yaw_error_deg": -0.00370993082687167,
+      "seam_excess_p95_gray": 7.0,
+      "seam_to_off_ratio": 3.5,
+      "native_summary_sha256": "c48452f060f754b2029ed19d70d86f4d0586f9be2ce4dca82936384851f51363"
+    },
+    "combined": {
+      "common_anchor_ids": [
+        "graffiti_decal_02",
+        "graffiti_decal_03",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "absolute_p95_mm": 0.7450335674175127,
+      "local_p95_mm": 0.5658697449226583,
+      "scale_error_ppm": -5.675191378617939,
+      "yaw_error_deg": -0.0015379056104183188,
+      "seam_excess_p95_gray": 7.0,
+      "seam_to_off_ratio": 3.5,
+      "native_summary_sha256": "7d8a69ec0ed03c43bb0fd373684cbef9acae8c59138b3af05ee15f0193004575"
+    }
+  },
+  "horizontal": {
+    "condition": "preload absent; separate 680-frame acquisition",
+    "strict_paired_evaluator_exit_code": 2,
+    "strict_failure": "fewer than two common anchors meet the truth-response contract",
+    "common_anchor_ids": [
+      "repair_patch_05"
+    ],
+    "diagnostic_only": {
+      "accepted_anchor_ids": [
+        "graffiti_decal_01",
+        "graffiti_decal_03",
+        "repair_patch_01",
+        "repair_patch_02",
+        "repair_patch_03",
+        "repair_patch_04",
+        "repair_patch_05",
+        "repair_patch_06"
+      ],
+      "absolute_p95_mm": 1.7192608002538885,
+      "local_p95_mm": 1.0296399543542152,
+      "scale_error_ppm": 51.11176409511309,
+      "yaw_error_deg": -0.001618192800105509,
+      "seam_to_off_ratio": 4.0
+    },
+    "diagnostic_sha256": "02085b8e2f863c994b9abf61bac0b7fec59622dec8ddc87a33fd738efc6f9df9"
+  },
+  "coverage": {
+    "vertical_baseline": {
+      "all_inspection_region_feature_pixels_covered": false,
+      "uncovered_inside_inspection_region": 127433,
+      "feature_pixels_inside_inspection_region": 120795013,
+      "uncovered_fraction": 0.0010549524921198527,
+      "declared_feature_count": 24,
+      "native_tile_count": 169,
+      "native_summary_sha256": "1e2a893983f3de91f56329c79d5833f21390b8ec97b4c93f51d6212be6edc489"
+    },
+    "vertical_combined": {
+      "all_inspection_region_feature_pixels_covered": false,
+      "uncovered_inside_inspection_region": 143402,
+      "feature_pixels_inside_inspection_region": 120791778,
+      "uncovered_fraction": 0.0011871834521717198,
+      "declared_feature_count": 24,
+      "native_tile_count": 167,
+      "native_summary_sha256": "5a16b2bb4596f9582997cd3ed8e724edd96f7c5ee3bc65fdd85efddcd829fa85"
+    },
+    "horizontal_combined": {
+      "all_inspection_region_feature_pixels_covered": false,
+      "uncovered_inside_inspection_region": 607172,
+      "feature_pixels_inside_inspection_region": 120786808,
+      "uncovered_fraction": 0.005026807232127535,
+      "declared_feature_count": 24,
+      "native_tile_count": 171,
+      "native_summary_sha256": "e56b86247212916bf9835bea35d7a1feb6f1d60e7c9e3d28c635d9d28c076acd"
+    }
+  },
+  "camera": {
+    "final_vertical": {
+      "frame_count": 660,
+      "hard_limit_m": 0.005,
+      "truth_definition": "optical axis intersected with native M2 surface at exposure",
+      "surface_offset_m": 0.05,
+      "optical_footprint": {
+        "count": 660,
+        "bias_xy_m": [
+          -2.6839347563433305e-06,
+          3.724170732555602e-06
+        ],
+        "p95_m": 0.0030874626726898444,
+        "max_m": 0.00446785302361909,
+        "over_5mm_count": 0
+      },
+      "camera_center": {
+        "count": 660,
+        "bias_xy_m": [
+          -9.547833316756157e-06,
+          0.00020214622757415616
+        ],
+        "p95_m": 0.003476597595546951,
+        "max_m": 0.005414570940671654,
+        "over_5mm_count": 3
+      },
+      "legacy_planar": {
+        "count": 660,
+        "bias_xy_m": [
+          -2.7301573491674803e-06,
+          3.1519841389358913e-06
+        ],
+        "p95_m": 0.0030840763695700124,
+        "max_m": 0.004465582150886835,
+        "over_5mm_count": 0
+      },
+      "surface_vs_plane_footprint": {
+        "count": 660,
+        "bias_xy_m": [
+          -7.725944705711478e-09,
+          2.5456579447444032e-08
+        ],
+        "p95_m": 3.1441179156762537e-06,
+        "max_m": 6.760490972866461e-06,
+        "over_5mm_count": 0
+      },
+      "max_truth_bracket_s": 0.00100000000009004,
+      "mean_reported_position_sigma_m": [
+        0.04877492340970546,
+        0.047216555585381716
+      ],
+      "up": {
+        "count": 330,
+        "bias_xy_m": [
+          3.4885808293048305e-07,
+          -0.00025756634019714116
+        ],
+        "p95_m": 0.003133152887476197,
+        "max_m": 0.0041981582396148015,
+        "over_5mm_count": 0
+      },
+      "down": {
+        "count": 330,
+        "bias_xy_m": [
+          -5.716727595617144e-06,
+          0.00026501468166225235
+        ],
+        "p95_m": 0.002970164914351666,
+        "max_m": 0.00446785302361909,
+        "over_5mm_count": 0
+      }
+    },
+    "preload_absent_horizontal": {
+      "frame_count": 680,
+      "hard_limit_m": 0.005,
+      "truth_definition": "optical axis intersected with native M2 surface at exposure",
+      "surface_offset_m": 0.05,
+      "optical_footprint": {
+        "count": 680,
+        "bias_xy_m": [
+          3.659762691706987e-07,
+          0.00011931615167659256
+        ],
+        "p95_m": 0.002670067839108595,
+        "max_m": 0.0047752877069478445,
+        "over_5mm_count": 0
+      },
+      "camera_center": {
+        "count": 680,
+        "bias_xy_m": [
+          -0.0001349020847071643,
+          0.00015916488461338926
+        ],
+        "p95_m": 0.004307436951248521,
+        "max_m": 0.007251288499050687,
+        "over_5mm_count": 10
+      },
+      "legacy_planar": {
+        "count": 680,
+        "bias_xy_m": [
+          2.426022469979942e-06,
+          0.00011749122130005226
+        ],
+        "p95_m": 0.002679907424302248,
+        "max_m": 0.004750794558141576,
+        "over_5mm_count": 0
+      },
+      "surface_vs_plane_footprint": {
+        "count": 680,
+        "bias_xy_m": [
+          8.999990053721743e-08,
+          1.7072583790170128e-07
+        ],
+        "p95_m": 9.089467161704739e-06,
+        "max_m": 1.67317437836472e-05,
+        "over_5mm_count": 0
+      },
+      "max_truth_bracket_s": 0.00100000000009004,
+      "mean_reported_position_sigma_m": [
+        0.04775707180155332,
+        0.0493121900826705
+      ],
+      "horizontal": {
+        "count": 680,
+        "bias_xy_m": [
+          3.659762691706987e-07,
+          0.00011931615167659256
+        ],
+        "p95_m": 0.002670067839108595,
+        "max_m": 0.0047752877069478445,
+        "over_5mm_count": 0
+      }
+    }
+  },
+  "runtime_smoke": {
+    "passed": true,
+    "captures": 10,
+    "maximum_camera_position_error_m": 0.003159716452549048,
+    "p95_camera_position_error_m": 0.003159716452549048,
+    "camera_position_error_definition": "optical_axis_surface_footprint_xy",
+    "legacy_planar_camera_error_max_m": 0.0031597798687845397,
+    "cleanup": {
+      "known_process_groups": [
+        28770,
+        29206,
+        29247,
+        29255,
+        29263,
+        29271,
+        29411,
+        29419
+      ],
+      "forced_kill_groups": [],
+      "remaining_groups": [],
+      "passed": true
+    }
+  },
+  "real_input_replay": {
+    "archived": {
+      "bias_xy_mm": [
+        -0.006624811040727102,
+        0.010437700771981482
+      ],
+      "std_xy_mm": [
+        1.0832856645839122,
+        1.1527166010954695
+      ],
+      "p95_mm": 2.907146683001312,
+      "max_mm": 4.648939063050022,
+      "median_reported_sigma_mm": [
+        50.03123506787126,
+        50.041408795394375
+      ],
+      "max_sample_gap_s": 0.020000000000003126
+    },
+    "baseline": {
+      "bias_xy_mm": [
+        -0.042416465358926965,
+        -0.012050296396327062
+      ],
+      "std_xy_mm": [
+        1.0510290665162585,
+        1.2174553928282654
+      ],
+      "p95_mm": 2.909918987285276,
+      "max_mm": 4.5145696106241315,
+      "median_reported_sigma_mm": [
+        50.02928019578338,
+        50.411541298329254
+      ],
+      "max_sample_gap_s": 0.030000000000001137
+    },
+    "q5e5": {
+      "bias_xy_mm": [
+        -0.02482049409581482,
+        0.05994174002471167
+      ],
+      "std_xy_mm": [
+        1.1600742704047589,
+        1.4480390143620558
+      ],
+      "p95_mm": 3.378622736808019,
+      "max_mm": 6.217080754722998,
+      "median_reported_sigma_mm": [
+        2.176217811161127,
+        2.5089231841314295
+      ],
+      "max_sample_gap_s": 0.030000000000001137
+    },
+    "common_time_range_s": [
+      12.69,
+      57.61
+    ],
+    "sample_count": 2246,
+    "definition": "20 ms common grid, first 2 s excluded; recorded IMU; wall XY error"
+  },
+  "cuda_manifests": {
+    "horizontal_baseline_mosaic": {
+      "effective": "cuda",
+      "fallback": false,
+      "manifest_sha256": "812a3bd51e4db18d47b3678260c597138954d276737aad8452b7a8e70705fdb7"
+    },
+    "horizontal_prior_mosaic": {
+      "effective": "cuda",
+      "fallback": false,
+      "manifest_sha256": "f4db0722a50ee48bbfba892bfb837aec0575144296375f59492e7f71a544b241"
+    },
+    "horizontal_scale_mosaic": {
+      "effective": "cuda",
+      "fallback": false,
+      "manifest_sha256": "dca53bcf6fa884c34f1c5f19332dae316c2fb5a1c43f32aef92b3fe85230a837"
+    },
+    "horizontal_combined_mosaic": {
+      "effective": "cuda",
+      "fallback": false,
+      "manifest_sha256": "f4b31fcf8e4f8b931639e08b6acc698df17864b72312103a864003f76f98b4c8"
+    },
+    "vertical_prior_mosaic": {
+      "effective": "cuda",
+      "fallback": false,
+      "manifest_sha256": "ae87bb2c0136fb9c96d2e29b423049b6ad26aa2dc7af1a2b712ebba490934be8"
+    },
+    "vertical_scale_mosaic": {
+      "effective": "cuda",
+      "fallback": false,
+      "manifest_sha256": "a6117029a91fe33d957da9b361ec8e51a744ba58def64d4f013789e0cf082bea"
+    },
+    "vertical_final_mosaic": {
+      "effective": "cuda",
+      "fallback": false,
+      "manifest_sha256": "4546fcaa1d53e30d21dec50f5dabbf2dcd4ba6edbc36cd383596e2e47d7b9394"
+    },
+    "vertical_release_mosaic": {
+      "effective": "cuda",
+      "fallback": false,
+      "manifest_sha256": "5f6eaad00f9ef908c91db61d0272a214527390fe32e3eeb97f8f55d426f371fd"
+    }
+  },
+  "vertical_final_release_products_identical": true,
+  "tests": {
+    "full_j8": {
+      "exit_code": 0,
+      "tests": 1974,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 91,
+      "log": "/tmp/climbot_camera_full_j8_final_r2_20261022.log",
+      "result_summary": "/tmp/climbot_camera_full_j8_final_r2_20261022_summary.log"
+    },
+    "targeted_pytest": {
+      "tests": 159,
+      "failures": 0,
+      "log": "/tmp/climbot_camera_packages_final_20261022.log"
+    }
+  },
+  "remaining_limits": [
+    "vertical local residual p95 > 0.5 mm",
+    "horizontal paired truth refusal",
+    "coverage remains incomplete and vertical uncovered count increases",
+    "native groove discontinuities remain visible in sampled review",
+    "first-round position-only Q candidate degrades accuracy; initial default retained; subsequent joint calibration evaluated separately"
+  ],
+  "source_snapshots": {
+    "source_snapshot.tar.gz": "849e3804c79efce670c66ec4b7153e138a8ec8953627aa1f47cc0d24808e3b59",
+    "source_sha256.json": "70ddb50d328ea1a5d581a4debf40828e972488b30ffdf1441fa01c1bb426e229",
+    "source_snapshot_final.tar.gz": "8eaa22b8d49aa0332d46fc9f0a89ac54bc90f360c2c3344e70cf02b924e81ef4",
+    "source_final_sha256.json": "b8b9e2b0b269c341eab7c799d62fcc6df525448e27290df2868092fa02e465ed"
+  }
+}

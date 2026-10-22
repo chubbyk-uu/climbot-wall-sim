@@ -69,6 +69,10 @@ class LocalMatch:
     overlap_center_correction_m: float | None
     residual_median_m: float | None
     residual_p95_m: float | None
+    # Evaluation-independent image correspondences in the initial wall plane.
+    # A bounded, deterministic sample preserves spatial support for Sim(2).
+    inlier_points_first_xy_m: tuple[tuple[float, float], ...] = ()
+    inlier_points_second_xy_m: tuple[tuple[float, float], ...] = ()
 
 
 def extract_sift(key: FrameKey, image_path: Path, use_clahe: bool = False) -> FeatureSet:
@@ -188,8 +192,12 @@ def match_candidate(candidate: OverlapCandidate,
     overlap_center = np.asarray(candidate.intersection_xy_m, np.float64).mean(axis=0)
     corrected_center = transform[:, :2] @ overlap_center + transform[:, 2]
     center_correction = float(np.linalg.norm(corrected_center - overlap_center))
+    indices = np.flatnonzero(mask)
+    indices = indices[np.linspace(0, len(indices) - 1, min(32, len(indices)), dtype=int)]
     return LocalMatch(
         candidate.first, candidate.second, 'accepted', '', *counts, inlier_count,
         tuple(float(value) for value in transform.reshape(-1)),
         center_correction,
-        float(np.median(residuals)), float(np.percentile(residuals, 95.0)))
+        float(np.median(residuals)), float(np.percentile(residuals, 95.0)),
+        tuple(tuple(map(float, point)) for point in first_wall[indices]),
+        tuple(tuple(map(float, point)) for point in second_wall[indices]))

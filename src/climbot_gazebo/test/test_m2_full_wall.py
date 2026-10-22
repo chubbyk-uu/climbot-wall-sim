@@ -88,7 +88,9 @@ def test_wall_tiles_share_one_static_link_per_role(tmp_path, monkeypatch):
     plugin = ET.fromstring('<plugin><sample><attachment>.1 .1 .02</attachment></sample>'
                            '<sample><attachment>.3 .2 .02</attachment></sample></plugin>')
     pose = [.4, -1., 2., 0., -1.2, .7]
-    apply(world, plugin, directory, manifest, pose, size, config())
+    apply(world, plugin, directory, manifest, pose, size, config(), wall_mu=.7)
+    assert all(float(e.text) == .7 for tag in ('mu', 'mu2')
+               for e in world.findall('.//collision/surface/friction/ode/' + tag))
     # Separate static models each become a DART skeleton updated every step.
     assert sorted(m.get('name') for m in world.findall('model')) == [
         'm2_caster_proxy', 'm2_driver_wall', 'm2_optical_wall']

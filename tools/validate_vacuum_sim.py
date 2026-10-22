@@ -12,6 +12,7 @@ import subprocess
 import time
 import uuid
 
+from m2_load_criterion import resolved_mu
 import numpy as np
 import yaml
 
@@ -33,7 +34,8 @@ def write(path, value):
 
 def recalculate_design(out):
     """Keep historical allocation numbers and the revised envelope explicit."""
-    config, robot, camera, control, _, gravity = inputs()
+    config, robot, camera, control, sim, gravity = inputs()
+    mu = min(sim['wall']['mu'], sim['drive_wheel']['mu'])
     model = build(config, camera, robot)
     cases = profiles(control, robot, model['track_m'])
     rows = []
@@ -46,12 +48,12 @@ def recalculate_design(out):
             for profile in cases:
                 kwargs = {key: profile[key] for key in ['v', 'a', 'omega', 'alpha']}
                 state = states(np.arange(360), **kwargs)
-                pressure = minimum_pressure(model, state, gravity=gravity, lateral=allocation)
+                pressure = minimum_pressure(model, state, gravity=gravity, mu=mu, lateral=allocation)
                 for h, p in zip(state[:, 0], pressure):
                     writer.writerow([profile['name'], allocation, h, p])
                 peak = state[int(np.argmax(pressure)), 0]
                 fine = states(np.arange(peak-1, peak+1.001, .1) % 360, **kwargs)
-                refined = minimum_pressure(model, fine, gravity=gravity, lateral=allocation)
+                refined = minimum_pressure(model, fine, gravity=gravity, mu=mu, lateral=allocation)
                 index = int(np.argmax(refined))
                 item = {'profile': profile['name'], 'state': fine[index].tolist(),
                         'minimum_pressure_pa': float(refined[index]),
@@ -60,7 +62,7 @@ def recalculate_design(out):
                 if best is None or item['minimum_pressure_pa'] > best['minimum_pressure_pa']:
                     best = item
             worst[allocation] = best
-    result = {'profiles': len(cases), 'gravity_mps2': gravity,
+    result = {'profiles': len(cases), 'gravity_mps2': gravity, 'mu': mu,
               'area_m2': model['effective_area_m2'], 'worst': worst,
               'interpretation': 'Equal and proportional allocation envelope; motion still requires S5 validation.'}
     write(out / 'revised_design.json', result)
@@ -74,6 +76,7 @@ def summarize(directory, resolved):
         data = np.loadtxt(stream, delimiter=',', ndmin=2)
     columns = {name: data[:, i] for i, name in enumerate(names)}
     c = columns
+    mu = resolved_mu(resolved)
     active = c['paused'] == 0
     released = active & (c['vac_fixture_active'] == 0)
     if not released.any():
@@ -83,11 +86,11 @@ def summarize(directory, resolved):
     steady = released & (c['sim_time_s'] >= release + 2) & (c['sim_time_s'] < release + 62)
     model = resolved['model']
     state = states(np.full(released.sum(), resolved['heading_deg']))
-    predicted = evaluate(model, state, c['vac_delta_pa'][released], lateral='conservative')
+    predicted = evaluate(model, state, c['vac_delta_pa'][released], mu=mu, lateral='conservative')
     normals = np.column_stack([c[s + '_fx'] for s in ['left', 'right', 'ball']])
     tangent = np.column_stack([np.hypot(c[s + '_fy'], c[s + '_fz'])
                               for s in ['left', 'right']])
-    required = 1.5 * predicted['drive_demand_n'] / 1.1
+    required = 1.5 * predicted['drive_demand_n'] / mu
     force = np.zeros((len(data), 3))
     moment = np.zeros_like(force)
     for source in ['pressure', 'skirt', 'fixture']:
@@ -119,18 +122,18 @@ def summarize(directory, resolved):
     floor = np.array([5., 5., 10.])
     delta_pose = origin[steady] - origin[steady][0]
     result = {
-        'released': True, 'release_s': release, 'native_samples': int(active.sum()),
+        'released': True, 'mu': mu, 'release_s': release, 'native_samples': int(active.sum()),
         'steady_samples': int(steady.sum()), 'expected_steady_samples': expected,
         'steady_normal_mean_n': normals[steady].mean(axis=0).tolist(),
         'normal_min_since_release_n': normals[released].min(axis=0).tolist(),
         'normal_prediction_max_error_n': float(np.abs(
             normals[released] - predicted['normals_n']).max()),
         'drive_requirement_min_slack_n': float((normals[released, :2] - required).min()),
-        'native_friction_margin_min': float((1.1 * normals[released, :2] /
+        'native_friction_margin_min': float((mu * normals[released, :2] /
                                             np.maximum(tangent[released], 1e-20)).min()),
         'steady_delta_pa': float(c['vac_delta_pa'][steady].mean()),
         'minimum_pressure_pa': float(minimum_pressure(
-            model, states([resolved['heading_deg']]), lateral='conservative')[0]),
+            model, states([resolved['heading_deg']]), mu=mu, lateral='conservative')[0]),
         'steady_force_residual_mean_n': force[steady].mean(axis=0).tolist(),
         'steady_world_moment_residual_mean_nm': moment[steady].mean(axis=0).tolist(),
         'steady_force_residual_max_n': float(np.linalg.norm(force[steady], axis=1).max()),
